@@ -14,7 +14,7 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
   - **Esquiva:** um pulo rápido que deixa seu monstro invulnerável por um instante.
   - O inimigo avisa antes de atacar: uma **faixa ou círculo vermelho no chão**. Saia dele ou use a esquiva.
   - No PC: J, K e L para os golpes, Espaço para esquivar.
-- **Capturar:** enfraqueça o monstro e toque em **Cristal** (tecla C). O número ao lado é a chance de captura. Formas evoluídas são bem mais difíceis de capturar.
+- **Capturar:** enfraqueça o monstro e toque no botão do cristal (tecla C). O número ao lado é a chance de captura. O botão **Tipo** (tecla V) troca entre Comum, Forte e Supremo. Formas evoluídas são bem mais difíceis de capturar.
 - **Evoluir:** cada linha tem 4 formas. A forma inicial evolui no **nível 6**, a 1ª evolução no **nível 12** e a 2ª evolução no **nível 30**. Quando seu monstro chega ao nível, aparece a animação de evolução e ele ganha atributos e golpes mais fortes.
 - **Dia e noite:** um ciclo completo dura 4 minutos (2 de dia e 2 de noite). **Sol e Luz** só aparecem de dia; **Lua e Trevas**, só à noite. O relógio fica no canto superior direito.
 - **Equipe:** até 3 monstros. Com a equipe cheia, o capturado vai para a reserva.
@@ -43,8 +43,36 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
   - o **líder entra por último**;
   - seus golpes miram no inimigo mais perto (com um anel branco embaixo dele) e a área acerta todos dentro dela;
   - dá para capturar qualquer um no meio da luta, e a batalha continua com os outros.
-- **Recompensa:** experiência de todos os vencidos (60% de cada), **2 cristais garantidos pelo líder** e chance de cristal pelos outros.
+- **Recompensa:** experiência de todos os vencidos (60% de cada), **2 cristais comuns + 1 Cristal Forte garantidos pelo líder** e chance de cristal pelos outros.
 - Se você fugir ou perder, os que sobraram continuam andando no mapa.
+
+## Monstros de tipo duplo
+
+- São mais raros: **a cada 10 monstros que aparecem no mapa, 1 é de tipo duplo**. Eles têm um anel de duas cores em volta e aparecem na região de um dos seus elementos.
+- Quando um aparece, chega um aviso dizendo qual e onde.
+- Também evoluem no Nv.6, 12 e 30 e ganham as mesmas melhorias. A partir da 2ª evolução, o **disparo também causa o efeito** do elemento dele, então eles causam dois efeitos diferentes.
+- **Golpes:** perto e área são do 1º elemento; o disparo é do 2º.
+- **Na defesa:** o golpe é comparado com os dois elementos e os multiplicadores se somam. Um monstro nunca é fraco contra o próprio elemento.
+- **Captura mais difícil:** formas inicial e 1ª evolução só com **Cristal Forte** (ou melhor); 2ª evolução e forma final só com **Cristal Supremo**.
+- Valem 50% a mais de experiência e, ao serem vencidos, deixam 1 Cristal Forte.
+
+| Tipo | Nv.1 | Nv.6 | Nv.12 | Nv.30 | Onde aparece |
+|---|---|---|---|---|---|
+| Fogo + Planta | Brotobrasa | Chamafolha | Ardentroco | Florinferno | Floresta, Vulcão, Campo |
+| Água + Fogo | Vaporito | Fumarolo | Gêiserão | Caldeirax | Lago, Vulcão, Campo |
+| Terra + Raio | Imanito | Magnetito | Ferrovolt | Titanvolt | Pedreira, Planalto, Campo |
+
+## Cristais de captura
+
+| Cristal | Cor | Chance | Como conseguir |
+|---|---|---|---|
+| Comum | Azul | 1× | Brilhos azuis no mapa, vitórias |
+| Forte | Roxo | 1,5× | Brilhos roxos no mapa (raros), líder de grupo (+1), vencer um tipo duplo (+1), fundir 3 comuns |
+| Supremo | Dourado | 2,2× | Brilhos dourados (muito raros), tipos duplos evoluídos (às vezes), fundir 3 fortes |
+
+- **Fundir:** no painel **Equipe**, perto da sua casa, 3 cristais iguais viram 1 do tipo acima.
+- Na batalha, o jogo escolhe sozinho o cristal mais fraco que funciona no alvo; o botão **Tipo** troca na mão.
+- Os cristais do chão reaparecem 1 minuto depois, com a cor sorteada de novo.
 
 ## Regiões
 

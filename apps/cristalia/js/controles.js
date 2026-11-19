@@ -12,7 +12,7 @@ const TECLAS_MOV = {
 };
 const TECLAS_ACAO = {
   KeyJ: 'golpe0', Digit1: 'golpe0', KeyK: 'golpe1', Digit2: 'golpe1', KeyL: 'golpe2', Digit3: 'golpe2',
-  Space: 'esquiva', ShiftLeft: 'esquiva', KeyC: 'cristal', KeyQ: 'trocar', KeyF: 'fugir',
+  Space: 'esquiva', ShiftLeft: 'esquiva', KeyC: 'cristal', KeyV: 'tipoCristal', KeyQ: 'trocar', KeyF: 'fugir',
 };
 
 export class Controles {

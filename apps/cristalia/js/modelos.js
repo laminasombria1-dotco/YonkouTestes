@@ -7,7 +7,7 @@
 // carregaremos arquivos .glb no lugar dessas formas.
 // =============================================================
 import * as THREE from 'three';
-import { ESPECIES } from './dados.js';
+import { ESPECIES, CRISTAIS } from './dados.js';
 
 // ---------- peças reaproveitáveis ----------
 const GEO = {};
@@ -546,7 +546,187 @@ function linhaTrevas(c, u, e) {
   olhos(c, yC + 0.06, zC + 0.3, 0.14, 0.09, olho);
 }
 
-const LINHAS_MODELO = { fogo: linhaFogo, agua: linhaAgua, planta: linhaPlanta, terra: linhaTerra, raio: linhaRaio, sol: linhaSol, lua: linhaLua, luz: linhaLuz, trevas: linhaTrevas };
+// =============================================================
+// TIPO DUPLO
+// =============================================================
+
+// Chama: cone brilhante com um miolo amarelo que pulsa
+function chama(c, u, x, y, z, tam, cor = '#ff7a2a') {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+  p(g, G.cone(0.16 * tam, 0.5 * tam, 5), brilho(cor, 0.8), [0, 0.25 * tam, 0]);
+  p(g, G.cone(0.08 * tam, 0.3 * tam, 4), brilho('#ffe14a', 0.9), [0, 0.17 * tam, 0.03]);
+  c.add(g);
+  u.pulsos.push({ obj: g, base: 1, amp: 0.18, vel: 6 + Math.random() * 3 });
+  return g;
+}
+function folha(c, m, x, y, z, dir, tam = 1) {
+  apontar(p(c, G.cone(0.16 * tam, 0.55 * tam, 4), m, [x, y, z], null, [1, 1, 0.35]), dir);
+}
+
+// ---------- Fogo + Planta: Brotobrasa > Chamafolha > Ardentroco > Florinferno ----------
+function linhaFogoPlanta(c, u, e) {
+  const verde = mat(['#7ccf4a', '#5fae3e', '#4d8a38', '#3c6b2e'][e]);
+  const folhaM = mat(['#9be05a', '#7cc94a', '#e0a33a', '#d8512a'][e]);
+  const casca = mat(e === 3 ? '#3a2018' : '#5c3a26');
+  const brasa = brilho('#ff6a1f', 0.85);
+  if (e <= 1) {
+    const r = e ? 0.66 : 0.5;
+    p(c, G.ico(r, 1), verde, [0, r + 0.08, 0], null, [1, 0.92, 1]);
+    for (const s of [-1, 1]) folha(c, folhaM, s * r * 0.95, r * 0.9, 0, V(s, 0.5, 0), e ? 1.3 : 1);
+    p(c, G.cil(0.04, 0.05, 0.3, 4), verde, [0, r * 2 + 0.1, 0]);
+    chama(c, u, 0, r * 2 + 0.2, 0, e ? 1.3 : 1);
+    if (e) {
+      for (const [x, z] of [[-0.45, 0.2], [0.45, 0.15], [0, -0.45]]) chama(c, u, x, 1.2, z, 0.8, '#ff9a2a');
+      for (const s of [-1, 1]) p(c, G.caixa(0.26, 0.14, 0.32), casca, [s * 0.26, 0.07, 0.1]);
+    }
+    for (let i = 0; i < (e ? 4 : 2); i++) p(c, G.caixa(0.05, 0.05, 0.22), brasa, [(i - 0.5 * (e ? 3 : 1)) * 0.16, r * 0.45, r * 0.95]);
+    olhos(c, r + 0.18, r * 0.92, 0.18, 0.1);
+    return;
+  }
+  const g = e === 3;
+  const rT = g ? 0.58 : 0.46, hT = g ? 1.5 : 1.15, y0 = 0.22;
+  p(c, G.cil(rT * 0.85, rT, hT, 7), casca, [0, y0 + hT / 2, 0]);
+  // rachaduras em brasa no tronco
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2 + 0.3;
+    p(c, G.caixa(0.05, hT * 0.5, 0.05), brasa, [Math.cos(a) * rT * 0.92, y0 + hT * 0.45, Math.sin(a) * rT * 0.92], [0, 0, (i % 2 ? 0.3 : -0.3)]);
+  }
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
+    apontar(p(c, G.cone(0.12, 0.5, 4), casca, [Math.cos(a) * rT * 0.9, 0.18, Math.sin(a) * rT * 0.9]), V(Math.cos(a), -0.6, Math.sin(a)));
+  }
+  const yC = y0 + hT + (g ? 0.7 : 0.5);
+  p(c, G.ico(g ? 0.95 : 0.8, 0), folhaM, [0, yC, 0], null, [1.1, 0.8, 1.1]);
+  if (g) for (const s of [-1, 1]) p(c, G.ico(0.6, 0), mat('#b8401f'), [s * 0.8, yC - 0.2, 0]);
+  const n = g ? 7 : 4;
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2;
+    chama(c, u, Math.cos(a) * (g ? 0.8 : 0.6), yC + 0.35, Math.sin(a) * (g ? 0.75 : 0.55), g ? 1.1 : 0.9);
+  }
+  chama(c, u, 0, yC + 0.55, 0, g ? 1.6 : 1.2);
+  for (const s of [-1, 1]) {
+    apontar(p(c, G.cil(0.07, 0.1, 0.8, 5), casca, [s * (rT + 0.25), y0 + hT * 0.6, 0.05]), V(s, 0.5, 0.3));
+    folha(c, folhaM, s * (rT + 0.6), y0 + hT * 0.6 + 0.4, 0.2, V(s, 1, 0.2), 1.2);
+  }
+  if (g) {
+    for (let i = 0; i < 4; i++) {
+      const fl = new THREE.Group();
+      p(fl, G.ico(0.13, 0), brilho('#ff4a1a', 0.7));
+      p(fl, G.esf(1), brilho('#ffe14a', 0.9), [0, 0.02, 0.1], null, 0.05);
+      c.add(fl);
+      u.orbitas.push({ obj: fl, raio: 1.25, vel: 1.2, y: y0 + hT * 0.5, fase: (i / 4) * Math.PI * 2 });
+    }
+  }
+  olhos(c, y0 + hT * 0.62, rT * 0.85 + 0.1, 0.17, 0.11, g ? '#ffb030' : '#ffd23f');
+}
+
+// Vapor: bolinha branca que sobe e some (cada uma com seu material)
+function vapor(c, u, x, y, z, alt = 0.8, tam = 0.18) {
+  const o = p(c, G.ico(tam, 0), mat('#f2f6ff', { transparent: true, opacity: 0.75 }), [x, y, z]);
+  u.fumacas.push({ obj: o, x, y, z, alt });
+}
+
+// ---------- Água + Fogo: Vaporito > Fumarolo > Gêiserão > Caldeirax ----------
+function linhaAguaFogo(c, u, e) {
+  const agua = mat(['#5fd0e8', '#46b8e0', '#2f9ed0', '#2a7fc0'][e], { transparent: true, opacity: 0.82 });
+  const magma = brilho('#ff7a2a', 0.85);
+  if (e === 2) {
+    // Gêiserão: tartaruga com gêiser no casco
+    const pele = mat('#4fb0c8'), casco = mat('#6a3a2a');
+    p(c, G.esf(1), pele, [0, 0.5, 0], null, [0.8, 0.42, 0.95]);
+    p(c, G.cil(0.45, 0.95, 0.75, 7), casco, [0, 1.0, -0.05]);
+    for (let i = 0; i < 7; i++) {
+      const a = (i / 7) * Math.PI * 2;
+      p(c, G.caixa(0.06, 0.5, 0.06), magma, [Math.cos(a) * 0.72, 0.95, Math.sin(a) * 0.72 - 0.05], [Math.sin(a) * 0.5, 0, -Math.cos(a) * 0.5]);
+    }
+    const jato = p(c, G.cil(0.16, 0.28, 0.9, 7), agua, [0, 1.75, -0.05]);
+    u.pulsos.push({ obj: jato, base: 1, amp: 0.12, vel: 5 });
+    for (let i = 0; i < 3; i++) vapor(c, u, (i - 1) * 0.15, 2.1, -0.05, 1.1, 0.22);
+    p(c, G.ico(0.36, 1), pele, [0, 0.62, 0.95]);
+    for (const [x, z] of [[-0.55, 0.5], [0.55, 0.5], [-0.55, -0.5], [0.55, -0.5]]) p(c, G.cil(0.16, 0.18, 0.36, 6), pele, [x, 0.18, z]);
+    olhos(c, 0.74, 1.22, 0.16, 0.1);
+    return;
+  }
+  const r = [0.55, 0.65, 0, 0.9][e];
+  p(c, G.esf(r, 10, 8), agua, [0, r + 0.05, 0]);
+  const nucleo = p(c, G.ico(r * 0.42, 1), magma, [0, r + 0.02, 0]);
+  u.pulsos.push({ obj: nucleo, base: 1, amp: 0.15, vel: 5 });
+  for (const s of [-1, 1]) p(c, G.esf(1), mat('#ff9ec4'), [s * r * 0.6, r * 0.85, r * 0.78], null, [0.09, 0.06, 0.04]);
+  vapor(c, u, 0, r * 2 + 0.05, 0, 0.7);
+  if (e >= 1) {
+    for (const s of [-1, 1]) {
+      p(c, G.cil(0.09, 0.12, 0.35, 6), mat('#6a3a2a'), [s * 0.28, r * 1.5, -r * 0.75], [-0.6, 0, s * 0.3]);
+      vapor(c, u, s * 0.36, r * 1.7, -r * 0.95, 0.9, 0.15);
+      apontar(p(c, G.cone(0.15, 0.45, 4), magma, [s * r * 0.98, r * 0.8, 0]), V(s, 0.2, -0.4));
+    }
+  }
+  if (e === 3) {
+    for (let i = 0; i < 5; i++) {
+      const pl = p(c, G.dode(0.2), brilho('#ff5a1a', 0.7), [0, 0, 0]);
+      u.orbitas.push({ obj: pl, raio: 1.35, vel: 1.1, y: 1.0, fase: (i / 5) * Math.PI * 2 });
+    }
+    for (let i = 0; i < 4; i++) vapor(c, u, Math.cos(i * 1.6) * 0.6, 1.9, Math.sin(i * 1.6) * 0.5, 1.2, 0.24);
+    p(c, G.toro(0.55, 0.08, Math.PI * 2, 4, 14), magma, [0, 1.85, 0], [Math.PI / 2, 0, 0]);
+  }
+  olhos(c, r * 1.12 + 0.05, r * 0.9, 0.2 * (r / 0.55) * 0.9, 0.11, e === 3 ? '#ffd23f' : null);
+  u.gelatina = true;
+}
+
+// Ímã em forma de U virado para baixo (vermelho com pontas de metal)
+function ima(c, x, y, z, r = 0.3) {
+  p(c, G.toro(r, r * 0.3, Math.PI, 5, 10), mat('#e8443a'), [x, y, z]);
+  for (const s of [-1, 1]) p(c, G.caixa(r * 0.62, r * 0.4, r * 0.62), mat('#d8dde6'), [x + s * r, y - r * 0.2, z]);
+}
+
+// ---------- Terra + Raio: Imanito > Magnetito > Ferrovolt > Titanvolt ----------
+function linhaTerraRaio(c, u, e) {
+  const pedra = mat(['#8a93a6', '#7a8296', '#5a6070', '#454a58'][e]);
+  const claro = mat('#b9c0cc');
+  const eletrico = brilho('#ffe74c', 0.8);
+  if (e <= 1) {
+    const r = e ? 0.66 : 0.52;
+    p(c, G.dode(r), pedra, [0, r + 0.06, 0], null, [1, 0.9, 1]);
+    p(c, G.dode(r * 0.35), claro, [r * 0.5, r * 1.5, -0.1]);
+    ima(c, 0, r * 1.85 + 0.12, 0, e ? 0.34 : 0.26);
+    zigue(c, eletrico, [0, r * 0.9, r * 0.95], 3, 0.06, 0.12, 0.01, 0.06);
+    for (const s of [-1, 1]) p(c, G.caixa(0.24, 0.12, 0.28), claro, [s * 0.24, 0.06, 0.14]);
+    if (e) {
+      for (const s of [-1, 1]) p(c, G.dode(0.26), claro, [s * 0.84, 0.55, 0.15]);
+      for (let i = 0; i < 3; i++) {
+        const fa = p(c, G.octa(0.09), eletrico, [0, 0, 0], null, [1, 2, 1]);
+        u.orbitas.push({ obj: fa, raio: 1.05, vel: 2.4, y: 0.8, fase: (i / 3) * Math.PI * 2 });
+      }
+    }
+    olhos(c, r + 0.16, r * 0.9, 0.19, 0.1, e ? '#ffe74c' : null);
+    return;
+  }
+  const big = e === 3;
+  const W = big ? 1.3 : 1.05, H = big ? 1.15 : 0.95, D = big ? 0.95 : 0.8, yT = big ? 1.4 : 1.15;
+  p(c, G.caixa(W, H, D), pedra, [0, yT, 0]);
+  // rachaduras elétricas
+  for (let i = 0; i < 3; i++) p(c, G.caixa(0.05, H * 0.6, 0.05), eletrico, [(i - 1) * W * 0.28, yT, D / 2 + 0.01], [0, 0, (i - 1) * 0.6]);
+  const yH = yT + H / 2 + 0.3;
+  p(c, G.dode(big ? 0.42 : 0.36), claro, [0, yH, D * 0.15]);
+  ima(c, 0, yH + 0.45, D * 0.15, big ? 0.4 : 0.32);
+  for (const s of [-1, 1]) {
+    p(c, G.cil(0.16, 0.2, 0.75, 6), pedra, [s * (W / 2 + 0.2), yT - 0.15, 0.05]);
+    p(c, G.dode(big ? 0.46 : 0.38), claro, [s * (W / 2 + 0.25), yT - 0.65, 0.15]);
+    p(c, G.caixa(0.36, yT - H / 2, 0.4), pedra, [s * 0.3, (yT - H / 2) / 2, 0]);
+    zigue(c, eletrico, [s * (W / 2 + 0.25), yT - 0.3, 0.4], 3, 0.06, 0.14, 0, 0.05);
+  }
+  const n = big ? 6 : 3;
+  for (let i = 0; i < n; i++) {
+    const o = i % 2 && big
+      ? p(c, G.octa(0.12), eletrico, [0, 0, 0], null, [1, 2.2, 1])
+      : p(c, G.dode(big ? 0.24 : 0.2), pedra, [0, 0, 0]);
+    u.orbitas.push({ obj: o, raio: big ? 1.7 : 1.4, vel: big ? 1.4 : 1.1, y: yT + (i % 2) * 0.4, fase: (i / n) * Math.PI * 2 });
+  }
+  olhos(c, yH + 0.04, D * 0.15 + 0.32, 0.14, 0.09, '#ffe74c');
+}
+
+const LINHAS_MODELO = { fogo: linhaFogo, agua: linhaAgua, planta: linhaPlanta, terra: linhaTerra, raio: linhaRaio, sol: linhaSol, lua: linhaLua, luz: linhaLuz, trevas: linhaTrevas,
+  fogoPlanta: linhaFogoPlanta, aguaFogo: linhaAguaFogo, terraRaio: linhaTerraRaio };
 
 // =============================================================
 // RAROS (sem evolução)
@@ -692,10 +872,34 @@ export function animarCasa(casa, t, noite) {
 }
 
 // ---------- Cristal de captura ----------
-export function criarCristal(escala = 1) {
-  const m = new THREE.Mesh(G.octa(0.28), new THREE.MeshLambertMaterial({ color: '#8ff4ff', emissive: '#2ab8d8', emissiveIntensity: 0.6, flatShading: true }));
+// tipo: 0 comum (azul), 1 forte (roxo), 2 supremo (dourado)
+export function criarCristal(escala = 1, tipo = 0) {
+  const c = CRISTAIS[tipo];
+  const m = new THREE.Mesh(G.octa(0.28), new THREE.MeshLambertMaterial({ color: c.cor, emissive: c.emissivo, emissiveIntensity: 0.6, flatShading: true }));
   m.scale.set(escala, escala * 1.45, escala);
   return m;
+}
+
+export function pintarCristal(m, tipo) {
+  const c = CRISTAIS[tipo];
+  m.material.color.set(c.cor);
+  m.material.emissive.set(c.emissivo);
+}
+
+// Aura de tipo duplo: dois anéis girando, um de cada cor (fica em volta do monstro no mapa)
+export function criarAuraDupla(cores, raio = 1) {
+  const g = new THREE.Group();
+  cores.forEach((cor, i) => {
+    const anel = new THREE.Mesh(G.toro(raio, 0.045, Math.PI * 1.3, 4, 20), new THREE.MeshBasicMaterial({ color: cor, transparent: true, opacity: 0.85 }));
+    anel.rotation.x = -Math.PI / 2;
+    anel.position.y = 0.15 + i * 0.12;
+    g.add(anel);
+  });
+  g.userData.aura = true;
+  return g;
+}
+export function animarAura(g, t) {
+  g.children.forEach((a, i) => { a.rotation.z = t * (i ? -2.2 : 1.8); });
 }
 
 // ---------- Animação parada/andando ----------

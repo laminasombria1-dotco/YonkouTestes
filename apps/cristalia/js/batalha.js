@@ -7,8 +7,8 @@
 // =============================================================
 import * as THREE from 'three';
 import {
-  ESPECIES, GOLPES, ELEMENTOS, EFEITOS, EFEITO_DO_ELEMENTO, PODER_DISPARO_EXTRA, DURACAO_EFEITO_PERTO,
-  multiplicador, chanceCaptura, melhoriaDe, statsDe, modificadorArena, fatorDanoNivel,
+  ESPECIES, GOLPES, ELEMENTOS, EFEITOS, EFEITO_DO_ELEMENTO, PODER_DISPARO_EXTRA, DURACAO_EFEITO_PERTO, DURACAO_EFEITO_DISPARO,
+  multiplicadorContra, chanceCaptura, melhoriaDe, statsDe, modificadorArena, fatorDanoNivel, CRISTAIS, nomeTipo, fundoTipo,
 } from './dados.js';
 import { criarModelo, criarCristal, criarCoroa, animarModelo, piscar, descartar } from './modelos.js';
 
@@ -126,6 +126,8 @@ export class Batalha {
 
     this.projeteis = [];
     this.captura = null;
+    this.tipoCristal = 0;          // 0 comum, 1 forte, 2 supremo
+    this.cristalEscolhido = false; // o jogador trocou na mão? então respeita a escolha
     this.fim = null;
     this.t = 0;
     this.trocaCd = 0;
@@ -192,7 +194,7 @@ export class Batalha {
 
   // Bônus ou penalidade que a arena (e o dia/noite) dão ao monstro
   aplicarModArena(l) {
-    l.mod = modificadorArena(this.arena.zona, l.esp.elemento, this.periodo);
+    l.mod = modificadorArena(this.arena.zona, l.esp.elementos, this.periodo);
   }
 
   // Dano do cenário (pedras, raios): uma fração da vida máxima
@@ -235,6 +237,7 @@ export class Batalha {
     if (!this.fim && liberado) {
       if (ctrl.consumir('fugir')) this.fugir();
       if (ctrl.consumir('cristal')) this.lancarCristal();
+      if (ctrl.consumir('tipoCristal')) this.trocarCristal();
       if (ctrl.consumir('trocar')) this.trocar(false);
     }
     if (!this.captura) this.escolherAlvo();
@@ -417,12 +420,14 @@ export class Batalha {
   }
 
   // Efeito que um golpe causa, conforme a evolução do monstro (ou null)
+  // O efeito é o do elemento do golpe (no tipo duplo, cada golpe traz o efeito do seu elemento)
   efeitoDoGolpe(c, gp) {
-    const nome = EFEITO_DO_ELEMENTO[c.esp.elemento];
+    const nome = EFEITO_DO_ELEMENTO[gp.elemento];
     const m = c.melhoria;
-    if (!nome || gp.elemento === 'normal') return null;
+    if (!nome || !c.esp.elementos.includes(gp.elemento)) return null;
     if (gp.tipo === 'area' && m.efeitoArea) return { nome, dur: EFEITOS[nome].duracao * m.forcaEfeito };
     if (gp.tipo === 'corpo' && m.efeitoPerto) return { nome, dur: EFEITOS[nome].duracao * m.forcaEfeito * DURACAO_EFEITO_PERTO };
+    if (gp.tipo === 'projetil' && m.efeitoDisparo) return { nome, dur: EFEITOS[nome].duracao * m.forcaEfeito * DURACAO_EFEITO_DISPARO };
     return null;
   }
 
@@ -468,7 +473,7 @@ export class Batalha {
       this.jogo.numero('Errou!', topo, '#ffab2e', 'pequeno');
       return false;
     }
-    const mult = multiplicador(gp.elemento, alvo.esp.elemento);
+    const mult = multiplicadorContra(gp.elemento, alvo.esp.elementos);
     const def = alvo.stats.def * (alvo.tem('soterrado') ? 0.7 : 1);
     const exposto = alvo.tem('exposto') ? 1.3 : 1;
     const nivel = fatorDanoNivel(at.dados.nivel);  // dano cresce com o nível de quem ataca
@@ -678,7 +683,7 @@ export class Batalha {
     mesh.rotation.y = ang;
     this.cena.add(mesh);
     if (fator < 1) mesh.scale.multiplyScalar(0.8);
-    this.projeteis.push({ mesh, pos, dir, gp, dono: c, lado: c.lado, vida: 1.4, fator });
+    this.projeteis.push({ mesh, pos, dir, gp, dono: c, lado: c.lado, vida: 1.4, fator, efeito: this.efeitoDoGolpe(c, gp) });
   }
 
   atualizarProjeteis(dt) {
@@ -698,7 +703,7 @@ export class Batalha {
       }
       const alvo = acabou ? null : alvos.find((o) => Math.hypot(p.pos.x - o.pos.x, p.pos.z - o.pos.z) < p.gp.raio + o.raio);
       if (alvo) {
-        this.aplicarDano(p.dono, alvo, p.gp, p.dir, { fator: p.fator });
+        this.aplicarDano(p.dono, alvo, p.gp, p.dir, { fator: p.fator, efeito: p.efeito });
         acabou = true;
       }
       if (acabou) {
@@ -748,15 +753,40 @@ export class Batalha {
   }
 
   // ---------- captura ----------
+  // Escolhe sozinho o cristal mais fraco que funciona no alvo (para não gastar os fortes à toa)
+  cristalAutomatico() {
+    const min = this.ini?.esp.cristalMin || 0, p = this.jogo.estado.pedras;
+    for (let k = min; k < CRISTAIS.length; k++) if (p[CRISTAIS[k].id] > 0) return k;
+    return min;
+  }
+
+  // Botão "Tipo": passa para o próximo cristal que você tem
+  trocarCristal() {
+    const p = this.jogo.estado.pedras;
+    for (let k = 1; k <= CRISTAIS.length; k++) {
+      const n = (this.tipoCristal + k) % CRISTAIS.length;
+      if (p[CRISTAIS[n].id] > 0) { this.tipoCristal = n; this.cristalEscolhido = true; return; }
+    }
+    this.jogo.aviso('Você só tem esse tipo de cristal.');
+  }
+
   lancarCristal() {
     if (this.fim || this.captura || this.jog.morto || !this.ini || this.ini.morto) return;
-    const est = this.jogo.estado;
-    if (est.cristais <= 0) { this.jogo.aviso('Sem cristais! Procure brilhos azuis pelo mapa.'); return; }
-    est.cristais--;
-    const sucesso = Math.random() < chanceCaptura(this.ini.dados);
+    const est = this.jogo.estado, tipo = CRISTAIS[this.tipoCristal];
+    const min = this.ini.esp.cristalMin || 0;
+    if (this.tipoCristal < min) {
+      this.jogo.aviso(`${this.ini.esp.nome} é de tipo duplo: só um ${CRISTAIS[min].nome} (ou melhor) segura ele.`);
+      return;
+    }
+    if (est.pedras[tipo.id] <= 0) {
+      this.jogo.aviso(this.tipoCristal === 0 ? 'Sem cristais! Procure brilhos azuis pelo mapa.' : `Sem ${tipo.nome}! Junte cristais na sua casa ou vença líderes.`);
+      return;
+    }
+    est.pedras[tipo.id]--;
+    const sucesso = Math.random() < chanceCaptura(this.ini.dados, this.tipoCristal);
     if (this.jog.prep) this.cancelarPreparo(this.jog);
     for (const l of this.inimigos) { if (l.prep) this.cancelarPreparo(l); l.dash = null; l.rajada = null; }
-    const cr = criarCristal(1.1);
+    const cr = criarCristal(1.1, this.tipoCristal);
     this.cena.add(cr);
     this.captura = {
       fase: 'voando', t: 0, cr, sucesso,
@@ -773,7 +803,7 @@ export class Batalha {
       cr.position.lerpVectors(c.de, c.ate, k);
       cr.position.y = 1 + Math.sin(k * Math.PI) * 2.5;
       cr.rotation.y += dt * 12;
-      if (k >= 1) { c.fase = 'sugando'; c.t = 0; this.particulas(ini.pos, '#8ff4ff', 12, 1); }
+      if (k >= 1) { c.fase = 'sugando'; c.t = 0; this.particulas(ini.pos, CRISTAIS[this.tipoCristal].cor, 12, 1); }
     } else if (c.fase === 'sugando') {
       const k = Math.min(1, c.t / 0.35);
       ini.modelo.scale.setScalar(ini.escala * (1 - k));
@@ -877,8 +907,13 @@ export class Batalha {
     if (!e) return;
     ui.biNome.textContent = e.esp.nome;
     ui.biNivel.textContent = 'Nv.' + e.dados.nivel;
-    ui.biEl.textContent = ELEMENTOS[e.esp.elemento].nome;
-    ui.biEl.style.setProperty('--cor', ELEMENTOS[e.esp.elemento].cor);
+    ui.biEl.textContent = nomeTipo(e.esp);
+    ui.biEl.style.setProperty('--cor', fundoTipo(e.esp));
+    if (!this.cristalEscolhido || this.tipoCristal < (e.esp.cristalMin || 0)) this.tipoCristal = this.cristalAutomatico();
+    if (e.esp.dupla && !this.avisouDuplo?.has(e)) {
+      (this.avisouDuplo ||= new Set()).add(e);
+      this.jogo.aviso(`Tipo duplo! Para capturar precisa de ${CRISTAIS[e.esp.cristalMin].nome} ou melhor.`);
+    }
   }
 
   montarHud() {
@@ -896,8 +931,8 @@ export class Batalha {
     const ui = this.jogo.ui, j = this.jog;
     ui.bjNome.textContent = j.esp.nome;
     ui.bjNivel.textContent = 'Nv.' + j.dados.nivel;
-    ui.bjEl.textContent = ELEMENTOS[j.esp.elemento].nome;
-    ui.bjEl.style.setProperty('--cor', ELEMENTOS[j.esp.elemento].cor);
+    ui.bjEl.textContent = nomeTipo(j.esp);
+    ui.bjEl.style.setProperty('--cor', fundoTipo(j.esp));
     const tipos = { corpo: 'perto', projetil: 'disparo', area: 'área' };
     ui.golpes.forEach((b, i) => {
       const gp = j.golpe(i);
@@ -946,8 +981,17 @@ export class Batalha {
     if (ui.biStatus.innerHTML !== si) ui.biStatus.innerHTML = si;
     ui.esquiva.style.setProperty('--p', (j.cdEsq / 1.0).toFixed(3));
     ui.esquiva.classList.toggle('carregando', j.cdEsq > 0);
-    ui.qtdCristal.textContent = this.jogo.estado.cristais;
-    ui.chanceCristal.textContent = e.morto ? '' : Math.round(chanceCaptura(e.dados) * 100) + '%';
+    const cr = CRISTAIS[this.tipoCristal], min = e.esp.cristalMin || 0;
+    const txtCr = `${cr.curto}|${this.jogo.estado.pedras[cr.id]}|${e.morto ? '' : this.tipoCristal < min ? 'precisa ' + CRISTAIS[min].curto : Math.round(chanceCaptura(e.dados, this.tipoCristal) * 100) + '%'}`;
+    if (this.txtCristal !== txtCr) {
+      this.txtCristal = txtCr;
+      const [nome, qtd, chance] = txtCr.split('|');
+      ui.nomeCristal.textContent = nome;
+      ui.qtdCristal.textContent = qtd;
+      ui.chanceCristal.textContent = chance;
+      ui.btnCristal.style.setProperty('--crist', cr.cor);
+      ui.btnCristal.classList.toggle('fraco', this.tipoCristal < min);
+    }
     const eq = this.jogo.estado.equipe;
     const marcas = eq.map((m, i) => `<i class="${m.hp <= 0 ? 'fora' : ''} ${i === this.idx ? 'atual' : ''}"></i>`).join('');
     if (ui.bjEquipe.innerHTML !== marcas) ui.bjEquipe.innerHTML = marcas;

@@ -33,6 +33,32 @@ export function fracoContra(elemento) {
   return ORDEM_ELEMENTOS.filter((e) => ELEMENTOS[e].forteContra.includes(elemento));
 }
 
+// Tipo duplo: o golpe é comparado com os DOIS elementos do alvo e os efeitos se somam.
+// Ex.: Água contra Fogo+Planta = 1,5 (fogo) × 0,6 (planta) = 0,9.
+// Um monstro nunca é fraco contra o próprio elemento (Fogo+Planta não sofre super efetivo de Fogo).
+export function multiplicadorContra(elementoGolpe, elementosAlvo) {
+  const m = elementosAlvo.reduce((t, el) => t * multiplicador(elementoGolpe, el), 1);
+  return elementosAlvo.includes(elementoGolpe) ? Math.min(1, m) : m;
+}
+
+// Fraquezas e forças de uma espécie (funciona para tipo simples e duplo)
+export function fracoContraEspecie(esp) {
+  return ORDEM_ELEMENTOS.filter((x) => multiplicadorContra(x, esp.elementos) > 1);
+}
+export function forteContraEspecie(esp) {
+  const lista = new Set();
+  for (const el of esp.elementos) for (const x of ELEMENTOS[el].forteContra) lista.add(x);
+  return ORDEM_ELEMENTOS.filter((x) => lista.has(x));
+}
+export function temElemento(esp, el) { return esp.elementos.includes(el); }
+
+// Nome e fundo da etiqueta do tipo ("Fogo + Planta" com as duas cores)
+export function nomeTipo(esp) { return esp.elementos.map((e) => ELEMENTOS[e].nome).join(' + '); }
+export function fundoTipo(esp) {
+  const [a, b] = esp.elementos.map((e) => ELEMENTOS[e].cor);
+  return b ? `linear-gradient(90deg, ${a} 50%, ${b} 50%)` : a;
+}
+
 // Tipos de golpe:
 //  corpo    -> o monstro avança e acerta de perto (alcance em metros)
 //  projetil -> dispara algo que voa em linha reta (quantidade > 1 = leque)
@@ -170,9 +196,19 @@ export const MELHORIAS = [
 export const PODER_DISPARO_EXTRA = 0.75; // cada disparo extra tem 75% da força
 export const DURACAO_EFEITO_PERTO = 0.6;  // efeito do golpe de perto dura 60% do normal
 
+// Tipo duplo: a partir da 2ª evolução o disparo também causa o efeito do elemento dele
+export const DURACAO_EFEITO_DISPARO = 0.5;
 export function melhoriaDe(especie) {
   const e = ESPECIES[especie];
-  return e.raro ? MELHORIAS[0] : MELHORIAS[e.estagio];
+  if (e.raro) return MELHORIAS[0];
+  const m = MELHORIAS[e.estagio];
+  return e.dupla ? { ...m, efeitoDisparo: e.estagio >= 2 } : m;
+}
+
+// Efeito que um golpe pode causar: o do elemento do golpe (golpe Normal não causa)
+export function efeitoDoElementoDoGolpe(golpe) {
+  const nome = EFEITO_DO_ELEMENTO[GOLPES[golpe].elemento];
+  return nome ? EFEITOS[nome] : null;
 }
 
 function seg(n) { return n.toFixed(1).replace('.', ',').replace(',0', '') + 's'; }
@@ -181,12 +217,13 @@ function seg(n) { return n.toFixed(1).replace('.', ',').replace(',0', '') + 's';
 export function textosMelhoria(especie) {
   const e = ESPECIES[especie];
   const m = melhoriaDe(especie);
-  const ef = EFEITOS[EFEITO_DO_ELEMENTO[e.elemento]];
+  const [efP, efD, efA] = e.golpes.map(efeitoDoElementoDoGolpe);
   const [perto, disparo, area] = e.golpes.map((g) => GOLPES[g].nome);
   const lista = [];
   if (m.disparos > 1) lista.push(`${disparo} dispara ${m.disparos} vezes seguidas.`);
-  if (m.efeitoArea && ef) lista.push(`${area} causa ${ef.nome}: ${ef.descricao} (${seg(ef.duracao * m.forcaEfeito)}).`);
-  if (m.efeitoPerto && ef) lista.push(`${perto} também causa ${ef.nome} (${seg(ef.duracao * m.forcaEfeito * DURACAO_EFEITO_PERTO)}).`);
+  if (m.efeitoArea && efA) lista.push(`${area} causa ${efA.nome}: ${efA.descricao} (${seg(efA.duracao * m.forcaEfeito)}).`);
+  if (m.efeitoDisparo && efD) lista.push(`${disparo} causa ${efD.nome}: ${efD.descricao} (${seg(efD.duracao * m.forcaEfeito * DURACAO_EFEITO_DISPARO)}).`);
+  if (m.efeitoPerto && efP) lista.push(`${perto} também causa ${efP.nome} (${seg(efP.duracao * m.forcaEfeito * DURACAO_EFEITO_PERTO)}).`);
   return lista;
 }
 
@@ -194,12 +231,13 @@ export function textosMelhoria(especie) {
 export function novidadesDaEvolucao(de, para) {
   const a = melhoriaDe(de), b = melhoriaDe(para);
   const e = ESPECIES[para];
-  const ef = EFEITOS[EFEITO_DO_ELEMENTO[e.elemento]];
+  const [efP, efD, efA] = e.golpes.map(efeitoDoElementoDoGolpe);
   const [perto, disparo, area] = e.golpes.map((g) => GOLPES[g].nome);
   const lista = [];
   if (b.disparos > a.disparos) lista.push(`${disparo} agora dispara ${b.disparos} vezes`);
-  if (b.efeitoArea && !a.efeitoArea) lista.push(`${area} agora causa ${ef.nome}`);
-  if (b.efeitoPerto && !a.efeitoPerto) lista.push(`${perto} agora causa ${ef.nome}`);
+  if (b.efeitoArea && !a.efeitoArea && efA) lista.push(`${area} agora causa ${efA.nome}`);
+  if (b.efeitoDisparo && !a.efeitoDisparo && efD) lista.push(`${disparo} agora causa ${efD.nome}`);
+  if (b.efeitoPerto && !a.efeitoPerto && efP) lista.push(`${perto} agora causa ${efP.nome}`);
   if (b.forcaEfeito > a.forcaEfeito) lista.push('efeitos duram mais');
   return lista;
 }
@@ -266,23 +304,85 @@ export const LINHAS = {
   ] },
 };
 
+// =============================================================
+// MONSTROS DE TIPO DUPLO (mais raros)
+// Aparece 1 a cada 10 monstros que surgem no mapa, na região dos seus elementos.
+// Golpes: perto e área do 1º elemento, disparo do 2º elemento.
+// Só são capturados com cristais mais fortes (veja CRISTAIS lá embaixo).
+// =============================================================
+export const ORDEM_DUPLAS = ['fogoPlanta', 'aguaFogo', 'terraRaio'];
+export const DUPLAS = {
+  fogoPlanta: { elementos: ['fogo', 'planta'], zonas: ['planta', 'fogo', 'campo'],
+    base: { hp: 54, atk: 15, def: 12, vel: 6.0 }, formas: [
+    ['brotobrasa', 'Brotobrasa', 'Broto com uma brasa no lugar da flor. Nunca se queima.'],
+    ['chamafolha', 'Chamafolha', 'Arbusto de folhas que ardem sem virar cinza.'],
+    ['ardentroco', 'Ardentroco', 'Tronco de casca em brasa. Os galhos soltam faíscas.'],
+    ['florinferno', 'Florinferno', 'Árvore de chamas eternas. Onde passa, brotam flores de fogo.'],
+  ] },
+  aguaFogo: { elementos: ['agua', 'fogo'], zonas: ['agua', 'fogo', 'campo'],
+    base: { hp: 56, atk: 14, def: 12, vel: 5.8 }, formas: [
+    ['vaporito', 'Vaporito', 'Bolinha de água fervendo. Chia quando está feliz.'],
+    ['fumarolo', 'Fumarolo', 'Solta jatos de vapor pelas costas para correr.'],
+    ['geiserao', 'Gêiserão', 'Tartaruga com um gêiser fervente no casco.'],
+    ['caldeirax', 'Caldeirax', 'Colosso de água fervente, sempre cercado de névoa.'],
+  ] },
+  terraRaio: { elementos: ['terra', 'raio'], zonas: ['terra', 'raio', 'campo'],
+    base: { hp: 60, atk: 14, def: 14, vel: 5.4 }, formas: [
+    ['imanito', 'Imanito', 'Pedrinha magnética que gruda em tudo que é de metal.'],
+    ['magnetito', 'Magnetito', 'Ganhou um ímã na cabeça e solta faíscas pelas pedras.'],
+    ['ferrovolt', 'Ferrovolt', 'Golem de ferro com raios correndo pelas rachaduras.'],
+    ['titanvolt', 'Titanvolt', 'Titã de rocha magnetizada. Pedras e raios giram em volta dele.'],
+  ] },
+};
+export function nomeDupla(k) { return DUPLAS[k].elementos.map((e) => ELEMENTOS[e].nome).join(' + '); }
+export const INTERVALO_DUPLO = 10; // 1 monstro de tipo duplo a cada 10 que aparecem
+
 // Quanto cada estágio multiplica os atributos, o tamanho e a dificuldade de captura
 const MULT = [1, 1.22, 1.5, 1.85];
 const MULT_VEL = [1, 1.04, 1.08, 1.12];
 const TAMANHO = [1, 1.1, 1.25, 1.4];
 const CAPTURA = [0.55, 0.4, 0.25, 0.12];
+const CAPTURA_DUPLA = [0.3, 0.22, 0.12, 0.06];
+// Cristal mínimo para capturar: 0 = comum, 1 = forte, 2 = supremo
+const CRISTAL_MIN_DUPLA = [1, 1, 2, 2];
+
+// Golpes de tipo duplo: perto e área do 1º elemento, disparo do 2º
+function golpesDuplos([a, b], estagio) {
+  const A = KITS[a], B = KITS[b];
+  return [
+    ['investida', B.proj, A.area],
+    [A.corpo, B.proj, A.area],
+    [A.corpoF, B.projF, A.area],
+    [A.corpoF, B.projF, A.areaF],
+  ][estagio];
+}
 
 // Espécies: geradas a partir das linhas + 3 monstros raros sem evolução
 export const ESPECIES = {};
 for (const [el, linha] of Object.entries(LINHAS)) {
   linha.formas.forEach(([id, nome, descricao], e) => {
     ESPECIES[id] = {
-      nome, descricao, elemento: el, linha: el, estagio: e,
+      nome, descricao, elemento: el, elementos: [el], linha: el, estagio: e, cristalMin: 0,
       tamanho: TAMANHO[e], captura: CAPTURA[e],
       raio: 0.65 * TAMANHO[e] * (1 + e * 0.12),
       altura: (1.7 + e * 0.45) * TAMANHO[e],
       base: { hp: linha.base.hp * MULT[e], atk: linha.base.atk * MULT[e], def: linha.base.def * MULT[e], vel: linha.base.vel * MULT_VEL[e] },
       golpes: golpesDoEstagio(el, e),
+      evoluiPara: linha.formas[e + 1]?.[0] ?? null,
+      nivelEvolucao: NIVEIS_EVOLUCAO[e] ?? null,
+    };
+  });
+}
+for (const [k, linha] of Object.entries(DUPLAS)) {
+  linha.formas.forEach(([id, nome, descricao], e) => {
+    ESPECIES[id] = {
+      nome, descricao, elemento: linha.elementos[0], elemento2: linha.elementos[1], elementos: linha.elementos,
+      linha: k, dupla: true, estagio: e, cristalMin: CRISTAL_MIN_DUPLA[e],
+      tamanho: TAMANHO[e], captura: CAPTURA_DUPLA[e],
+      raio: 0.65 * TAMANHO[e] * (1 + e * 0.12),
+      altura: (1.7 + e * 0.45) * TAMANHO[e],
+      base: { hp: linha.base.hp * MULT[e], atk: linha.base.atk * MULT[e], def: linha.base.def * MULT[e], vel: linha.base.vel * MULT_VEL[e] },
+      golpes: golpesDuplos(linha.elementos, e),
       evoluiPara: linha.formas[e + 1]?.[0] ?? null,
       nivelEvolucao: NIVEIS_EVOLUCAO[e] ?? null,
     };
@@ -306,18 +406,20 @@ Object.assign(ESPECIES, {
   },
 });
 export const RAROS = ['vulcarapa', 'aquaraia', 'espinhal'];
+for (const id of RAROS) Object.assign(ESPECIES[id], { elementos: [ESPECIES[id].elemento], cristalMin: 0 });
 
 // Monstros iniciais: a primeira forma de cada linha
 export const INICIAIS = ORDEM_ELEMENTOS.map((el) => LINHAS[el].formas[0][0]);
 
-export function formasDaLinha(el) {
-  return LINHAS[el].formas.map((f) => f[0]);
+// Serve para as linhas simples ('fogo') e as duplas ('fogoPlanta')
+export function formasDaLinha(k) {
+  return (LINHAS[k] || DUPLAS[k]).formas.map((f) => f[0]);
 }
 
 // Qual forma um monstro selvagem tem num certo nível
-export function formaPorNivel(el, nivel) {
+export function formaPorNivel(k, nivel) {
   const estagio = NIVEIS_EVOLUCAO.filter((n) => nivel >= n).length;
-  return LINHAS[el].formas[estagio][0];
+  return (LINHAS[k] || DUPLAS[k]).formas[estagio][0];
 }
 
 // Onde e quando cada monstro aparece. "L:fogo" = alguém da linha de fogo
@@ -360,14 +462,16 @@ export const ARENAS = {
 export const BONUS_ARENA = { favorecido: 1.25, velFavorecido: 1.1, prejudicado: 0.8, periodo: 1.15 };
 
 // Modificadores que a arena (e o dia/noite) dão a um elemento
-export function modificadorArena(zona, elemento, periodo) {
+// Tipo duplo: basta um dos elementos ser o favorecido; só é prejudicado se nenhum for
+export function modificadorArena(zona, elementos, periodo) {
+  if (!Array.isArray(elementos)) elementos = [elementos];
   const a = ARENAS[zona] || ARENAS.campo;
   let dano = 1, vel = 1;
   const textos = [];
-  if (a.favorece === elemento) { dano *= BONUS_ARENA.favorecido; vel *= BONUS_ARENA.velFavorecido; textos.push({ t: 'Arena +25%', bom: true }); }
-  else if (a.favorece && ELEMENTOS[a.favorece].forteContra.includes(elemento)) { dano *= BONUS_ARENA.prejudicado; textos.push({ t: 'Arena −20%', bom: false }); }
+  if (elementos.includes(a.favorece)) { dano *= BONUS_ARENA.favorecido; vel *= BONUS_ARENA.velFavorecido; textos.push({ t: 'Arena +25%', bom: true }); }
+  else if (a.favorece && elementos.some((el) => ELEMENTOS[a.favorece].forteContra.includes(el))) { dano *= BONUS_ARENA.prejudicado; textos.push({ t: 'Arena −20%', bom: false }); }
   const doPeriodo = periodo === 'dia' ? ['sol', 'luz'] : ['lua', 'trevas'];
-  if (doPeriodo.includes(elemento)) { dano *= BONUS_ARENA.periodo; textos.push({ t: (periodo === 'dia' ? 'Dia' : 'Noite') + ' +15%', bom: true }); }
+  if (elementos.some((el) => doPeriodo.includes(el))) { dano *= BONUS_ARENA.periodo; textos.push({ t: (periodo === 'dia' ? 'Dia' : 'Noite') + ' +15%', bom: true }); }
   return { dano, vel, textos };
 }
 
@@ -434,10 +538,26 @@ export function verificarEvolucao(m) {
   return feitas;
 }
 
-// Chance de captura: maior quando o monstro está com pouca vida
-export function chanceCaptura(monstro) {
+// =============================================================
+// CRISTAIS DE CAPTURA
+// poder = multiplica a chance de captura
+// Monstros de tipo duplo exigem um cristal mínimo (cristalMin na espécie):
+// formas inicial e 1ª evolução -> Forte; 2ª evolução e forma final -> Supremo.
+// =============================================================
+export const CRISTAIS = [
+  { id: 'comum',   nome: 'Cristal',         plural: 'cristais',          curto: 'Comum',   cor: '#8ff4ff', emissivo: '#2ab8d8', poder: 1 },
+  { id: 'forte',   nome: 'Cristal Forte',   plural: 'Cristais Fortes',   curto: 'Forte',   cor: '#c79bff', emissivo: '#7a3ad8', poder: 1.5 },
+  { id: 'supremo', nome: 'Cristal Supremo', plural: 'Cristais Supremos', curto: 'Supremo', cor: '#ffd23f', emissivo: '#e08a10', poder: 2.2 },
+];
+// Fusão na casa: 3 cristais de um tipo viram 1 do tipo acima
+export const CUSTO_FUSAO = 3;
+
+// Chance de captura: maior quando o monstro está com pouca vida e com cristal mais forte.
+// Devolve 0 se o cristal for fraco demais para essa espécie.
+export function chanceCaptura(monstro, tipoCristal = 0) {
   const esp = ESPECIES[monstro.especie];
+  if (tipoCristal < (esp.cristalMin || 0)) return 0;
   const fracVida = monstro.hp / statsDe(monstro.especie, monstro.nivel).hpMax;
-  const c = esp.captura * (1.7 - 1.5 * fracVida);
+  const c = esp.captura * CRISTAIS[tipoCristal].poder * (1.7 - 1.5 * fracVida);
   return Math.min(0.95, Math.max(0.05, c));
 }

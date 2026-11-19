@@ -278,7 +278,7 @@ export class Arena {
     if (perigo === 'vento') {
       // o vento empurra quem não é de planta
       const vx = Math.cos(this.vento.ang), vz = Math.sin(this.vento.ang);
-      for (const l of lutadores) if (l.esp.elemento !== 'planta') { l.pos.x += vx * 1.4 * dt; l.pos.z += vz * 1.4 * dt; }
+      for (const l of lutadores) if (!l.esp.elementos.includes('planta')) { l.pos.x += vx * 1.4 * dt; l.pos.z += vz * 1.4 * dt; }
     }
     if (perigo === 'lava' || perigo === 'pocas') {
       const elementoCasa = perigo === 'lava' ? 'fogo' : 'agua';
@@ -287,7 +287,7 @@ export class Arena {
       if (tick) this.tickPoca = 0.5;
       for (const l of lutadores) {
         if (!this.pocaEm(l.pos)) continue;
-        if (l.esp.elemento === elementoCasa) { if (tick) b.curar(l, 0.015); }
+        if (l.esp.elementos.includes(elementoCasa)) { if (tick) b.curar(l, 0.015); }
         else if (perigo === 'lava') b.aplicarEfeito(l, 'queimadura', 1.5, null);
         else b.aplicarEfeito(l, 'encharcado', 1.2, null);
       }
@@ -336,8 +336,8 @@ export class Arena {
       if (ativo) {
         for (const l of lutadores) {
           if (Math.hypot(l.pos.x - al.p.x, l.pos.z - al.p.z) > al.raio + l.raio * 0.5) continue;
-          if (al.tipo === 'raios' && l.esp.elemento !== 'raio') { b.danoAmbiente(l, 0.06, '#ffe74c'); b.aplicarEfeito(l, 'paralisia', 0.8, null); }
-          if (al.tipo === 'pedras' && l.esp.elemento !== 'terra') b.danoAmbiente(l, 0.08, '#c9a46a');
+          if (al.tipo === 'raios' && !l.esp.elementos.includes('raio')) { b.danoAmbiente(l, 0.06, '#ffe74c'); b.aplicarEfeito(l, 'paralisia', 0.8, null); }
+          if (al.tipo === 'pedras' && !l.esp.elementos.includes('terra')) b.danoAmbiente(l, 0.08, '#c9a46a');
         }
       }
       if (al.tipo === 'raios') this.raioVisual(al.p);

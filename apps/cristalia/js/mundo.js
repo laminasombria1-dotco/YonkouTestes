@@ -6,8 +6,8 @@
 // Monstros selvagens passeiam; encostou, começa a batalha.
 // =============================================================
 import * as THREE from 'three';
-import { criarModelo, criarTreinador, criarCristal, criarCoroa, criarCasa, animarCasa, animarModelo, descartar } from './modelos.js';
-import { ESPECIES, ELEMENTOS, APARICOES, PERIODO_DA_LINHA, criarMonstro, statsDe, formaPorNivel } from './dados.js';
+import { criarModelo, criarTreinador, criarCristal, pintarCristal, criarCoroa, criarCasa, animarCasa, animarModelo, criarAuraDupla, animarAura, descartar } from './modelos.js';
+import { ESPECIES, ELEMENTOS, APARICOES, PERIODO_DA_LINHA, DUPLAS, ORDEM_DUPLAS, INTERVALO_DUPLO, CRISTAIS, criarMonstro, statsDe, formaPorNivel, nomeTipo } from './dados.js';
 
 export const RAIO_MUNDO = 88;
 const LAGO = { x: -32, z: 30, r: 15 };
@@ -22,6 +22,7 @@ const ZONAS = [
   { id: 'fogo', x: 42, z: -34, r: 32 },
   { id: 'planta', x: -40, z: -32, r: 34 },
 ];
+const NA_ZONA = { campo: 'no Campo', agua: 'no Lago', fogo: 'no Vulcão', planta: 'na Floresta', terra: 'na Pedreira', raio: 'no Planalto da Tempestade' };
 export const NOMES_ZONA = { campo: 'Campo', agua: 'Lago', fogo: 'Vulcão', planta: 'Floresta', terra: 'Pedreira', raio: 'Planalto da Tempestade' };
 const VEL_JOGADOR = 7.5;
 const MAX_SELVAGENS = 18;
@@ -39,6 +40,11 @@ export function niveisDoGrupo(media) {
   const comum = Math.round(media * 1.1 + 2);
   const lider = Math.round(media * 1.4 + 8);
   return { comum: Math.min(48, comum), lider: Math.min(50, lider) };
+}
+// Cristais do chão: a cor mostra o tipo (sorteado de novo cada vez que reaparece)
+function sortearTipoCristal() {
+  const r = Math.random();
+  return r < 0.05 ? 2 : r < 0.22 ? 1 : 0;
 }
 export const DURACAO_DIA = 240; // segundos para um ciclo completo (metade dia, metade noite)
 
@@ -134,6 +140,7 @@ export class Mundo {
     this.grupos = [];
     this.timerSpawn = 0;
     this.timerGrupo = 0;
+    this.contaSpawn = 0; // a cada 10 monstros que aparecem, 1 é de tipo duplo
     this.povoar();
     this.atualizarCeu(0);
     this.posicionarCamera(1);
@@ -357,10 +364,11 @@ export class Mundo {
     for (let tent = 0; tent < 800 && n < 14; tent++) {
       const x = (rng() * 2 - 1) * (RAIO_MUNDO - 8), z = (rng() * 2 - 1) * (RAIO_MUNDO - 8);
       if (!this.pontoLivre(x, z, 1.5)) continue;
-      const m = criarCristal(1);
+      const tipo = sortearTipoCristal();
+      const m = criarCristal(1, tipo);
       m.position.set(x, alturaEm(x, z) + 0.8, z);
       this.cena.add(m);
-      this.cristais.push({ mesh: m, x, z, ativo: true, volta: 0 });
+      this.cristais.push({ mesh: m, x, z, ativo: true, volta: 0, tipo });
       n++;
     }
   }
@@ -405,11 +413,13 @@ export class Mundo {
   }
 
   povoar() {
+    this.povoando = true;
     for (const s of [...this.selvagens]) this.removerSelvagem(s);
     for (const g of [...this.grupos]) this.removerGrupo(g);
     for (let i = 0; i < 3; i++) this.spawnarSelvagem(true);
     for (let i = 0; i < MAX_SELVAGENS - 4; i++) this.spawnarSelvagem(false);
     for (let i = 0; i < gruposDesejados(this.mediaEquipe()); i++) this.spawnarGrupo();
+    this.povoando = false;
   }
 
   // Sorteia quem aparece numa região (devolve a linha 'L:xx' ou uma espécie rara)
@@ -457,6 +467,7 @@ export class Mundo {
         this.cena.add(modelo);
         membros.push({ dados, modelo, ox, oz });
       }
+      this.contaSpawn += TAMANHO_GRUPO;
       const velMin = Math.min(...membros.map((m) => statsDe(m.dados.especie, m.dados.nivel).vel));
       this.grupos.push({ grupo: true, membros, x, z, ang: Math.random() * 6.28, estado: 'parado', t: 2, zona, vel: velMin * 0.35 });
       return;
@@ -556,6 +567,13 @@ export class Mundo {
       }
       if (!this.pontoLivre(x, z, 1)) continue;
       const zona = zonaEm(x, z);
+      // o 10º monstro (sem ser o que aparece colado em você) é de tipo duplo
+      if (!perto && this.contaSpawn + 1 >= INTERVALO_DUPLO) {
+        this.contaSpawn = 0;
+        this.spawnarDuplo(x, z, zona);
+        return;
+      }
+      this.contaSpawn++;
       const lista = APARICOES[zona][this.periodo];
       const total = lista.reduce((s, [, peso]) => s + peso, 0);
       let sorteio = Math.random() * total, escolha = lista[0][0];
@@ -577,6 +595,23 @@ export class Mundo {
       this.selvagens.push({ dados, modelo, x, z, ang: Math.random() * 6.28, estado: 'parado', t: Math.random() * 2, zona, periodo, vel: statsDe(especie, nivel).vel * 0.45 });
       return;
     }
+  }
+
+  // Monstro de tipo duplo: escolhe uma linha que combine com a região; é um pouco mais forte
+  spawnarDuplo(x, z, zona) {
+    const opcoes = ORDEM_DUPLAS.filter((k) => DUPLAS[k].zonas.includes(zona));
+    const k = opcoes[Math.floor(Math.random() * opcoes.length)] || ORDEM_DUPLAS[0];
+    const nivel = Math.min(48, this.nivelSelvagem(x, z, false) + 2);
+    const especie = formaPorNivel(k, nivel);
+    const esp = ESPECIES[especie];
+    const dados = criarMonstro(especie, nivel);
+    const modelo = criarModelo(especie);
+    const aura = criarAuraDupla(esp.elementos.map((el) => ELEMENTOS[el].cor), esp.raio * 1.5);
+    modelo.add(aura);
+    modelo.position.set(x, alturaEm(x, z), z);
+    this.cena.add(modelo);
+    this.selvagens.push({ dados, modelo, aura, dupla: true, x, z, ang: Math.random() * 6.28, estado: 'parado', t: Math.random() * 2, zona, periodo: null, vel: statsDe(especie, nivel).vel * 0.45 });
+    if (!this.povoando && this.jogo.estado) this.jogo.aviso(`Um monstro de tipo duplo apareceu: ${esp.nome} (${nomeTipo(esp)}) ${NA_ZONA[zona]}!`);
   }
 
   removerSelvagem(s) {
@@ -677,15 +712,15 @@ export class Mundo {
     for (const c of this.cristais) {
       if (!c.ativo) {
         c.volta -= dt;
-        if (c.volta <= 0) { c.ativo = true; c.mesh.visible = true; }
+        if (c.volta <= 0) { c.ativo = true; c.mesh.visible = true; c.tipo = sortearTipoCristal(); pintarCristal(c.mesh, c.tipo); }
         continue;
       }
       c.mesh.rotation.y += dt * 2;
       c.mesh.position.y = alturaEm(c.x, c.z) + 0.8 + Math.sin(t * 3 + c.x) * 0.12;
       if (est && Math.hypot(this.pos.x - c.x, this.pos.z - c.z) < 1.4) {
         c.ativo = false; c.mesh.visible = false; c.volta = 60;
-        est.cristais++;
-        this.jogo.aviso('Você achou um cristal de captura!');
+        est.pedras[CRISTAIS[c.tipo].id]++;
+        this.jogo.aviso(c.tipo === 0 ? 'Você achou um cristal de captura!' : `Você achou um ${CRISTAIS[c.tipo].nome}!`);
         this.jogo.atualizarHudMundo();
         this.jogo.salvar();
       }
@@ -711,6 +746,7 @@ export class Mundo {
       s.modelo.position.set(s.x, alturaEm(s.x, s.z), s.z);
       s.modelo.rotation.y = lerpAngulo(s.modelo.rotation.y, s.ang, 1 - Math.exp(-8 * dt));
       animarModelo(s.modelo, t, andando);
+      if (s.aura) animarAura(s.aura, t);
       if (d < menorD) { menorD = d; maisPerto = s; }
     }
 
@@ -766,7 +802,8 @@ export class Mundo {
         new THREE.Vector3(lider.x, lider.modelo.position.y + esp.altura * 1.3 + 0.8, lider.z), this.camera);
     } else if (maisPerto && est) {
       const esp = ESPECIES[maisPerto.dados.especie];
-      this.jogo.mostrarRotulo(`<i style="background:${ELEMENTOS[esp.elemento].cor}"></i>${esp.nome} <b>Nv.${maisPerto.dados.nivel}</b>`,
+      const bolinhas = esp.elementos.map((el) => `<i style="background:${ELEMENTOS[el].cor}"></i>`).join('');
+      this.jogo.mostrarRotulo(`${bolinhas}${esp.dupla ? '<span class="duplo">Tipo duplo · </span>' : ''}${esp.nome} <b>Nv.${maisPerto.dados.nivel}</b>`,
         new THREE.Vector3(maisPerto.x, maisPerto.modelo.position.y + esp.altura + 0.3, maisPerto.z), this.camera);
     } else this.jogo.mostrarRotulo(null);
 

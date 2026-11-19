@@ -65,6 +65,9 @@
     background: var(--painel); font-weight: 800; font-size: 0.8rem; }
   .col-abas button i { width: 10px; height: 10px; border-radius: 50%; background: var(--cor); }
   .col-abas button.ativa { border-color: var(--cor); background: #23406e; }
+  .col-abas button.dupla i { background: linear-gradient(90deg, var(--cor) 50%, var(--cor2) 50%); }
+  .col-detalhe .evo.duplo { border-left: 3px solid #c79bff; padding-left: 8px; }
+  #rotulo .duplo { color: #e2c8ff; font-weight: 800; }
   #tela-colecao .col-palco { grid-area: palco; pointer-events: none; }
   .col-info { grid-area: info; background: var(--painel); border-radius: 14px; padding: 10px 12px; overflow-y: auto; touch-action: pan-y;
     display: flex; flex-direction: column; gap: 10px; }
@@ -147,6 +150,12 @@
   .painel-cabeca { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
   .painel-caixa h2, .painel-caixa h3 { margin: 0; font-family: var(--f-titulo); font-weight: 600; }
   .painel-caixa h3 { font-size: 1rem; color: var(--creme-suave); }
+  #painel-cristais { display: flex; flex-direction: column; gap: 8px; }
+  #painel-cristais .linha-cr { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  #painel-cristais .cr { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,0.08); border: 2px solid var(--c); font-weight: 800; }
+  #painel-cristais .cr .losango { background: var(--c); }
+  #painel-cristais button[disabled] { opacity: 0.45; }
+  #painel-cristais small { color: var(--creme-suave); }
   .grade-fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
   .ficha { background: var(--painel); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 6px; border-top: 3px solid var(--cor); min-width: 0; }
   .ficha header { display: flex; align-items: center; gap: 8px; }
@@ -180,8 +189,14 @@
   #bj-equipe i.atual { box-shadow: 0 0 0 2px var(--creme); }
   .acoes-topo { display: flex; flex-wrap: nowrap; width: max-content; justify-content: flex-end; gap: 6px; }
   .acoes-topo .btn-hud { pointer-events: auto; }
-  #btn-cristal { display: inline-flex; align-items: center; gap: 6px; border-color: var(--cristal); }
-  #chance-cristal { color: var(--cristal); font-size: 0.75rem; }
+  #btn-cristal { --crist: var(--cristal); display: inline-flex; align-items: center; gap: 6px; border-color: var(--crist); }
+  #btn-cristal .losango { background: var(--crist); }
+  #chance-cristal { color: var(--crist); font-size: 0.75rem; }
+  #btn-cristal.fraco { opacity: 0.6; border-style: dashed; }
+  #btn-cristal.fraco #chance-cristal { color: #ff8a9a; }
+  .losango.forte { background: #c79bff; } .losango.supremo { background: #ffd23f; }
+  .pilula.cristais { gap: 8px; }
+  .pilula.cristais span { display: inline-flex; align-items: center; gap: 4px; }
   .golpes { position: absolute; right: max(14px, calc(env(safe-area-inset-right, 0px) + 8px)); bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) + 8px));
     display: grid; grid-template-columns: repeat(2, var(--toque)); grid-template-areas: "g2 esq" "g1 g0"; gap: 10px; }
   .golpe, .esquiva { position: relative; width: var(--toque); height: var(--toque); border-radius: 50%; border: 3px solid var(--cor, var(--creme)); background: var(--painel);
@@ -285,7 +300,7 @@
   <div id="hud-mundo" class="hud" hidden>
     <div id="equipe-chips"></div>
     <div class="topo-dir">
-      <span class="pilula" title="Cristais de captura"><span class="losango"></span><span id="contador-cristais">0</span></span>
+      <span class="pilula cristais" title="Cristais de captura: comum, forte e supremo" id="contador-cristais"></span>
       <button id="btn-monstros" class="btn-hud" type="button">Monstros</button>
       <button id="btn-equipe" class="btn-hud" type="button">Equipe</button>
     </div>
@@ -310,7 +325,8 @@
         <div class="status-lista" id="bi-status"></div>
       </div>
       <div class="acoes-topo">
-        <button id="btn-cristal" class="btn-hud" data-acao="cristal" type="button"><span class="losango"></span>Cristal <b id="qtd-cristal">0</b> <span id="chance-cristal"></span></button>
+        <button id="btn-cristal" class="btn-hud" data-acao="cristal" type="button"><span class="losango"></span><span id="nome-cristal">Comum</span> <b id="qtd-cristal">0</b> <span id="chance-cristal"></span></button>
+        <button id="btn-tipo-cristal" class="btn-hud" data-acao="tipoCristal" type="button" title="Trocar o tipo de cristal (tecla V)" aria-label="Trocar o tipo de cristal">Tipo</button>
         <button class="btn-hud" data-acao="trocar" type="button">Trocar</button>
         <button class="btn-hud" data-acao="fugir" type="button">Fugir</button>
       </div>
@@ -330,6 +346,8 @@
     <div class="painel-caixa">
       <div class="painel-cabeca"><h2>Equipe</h2><button id="fechar-equipe" class="btn-hud" type="button">Fechar</button></div>
       <div id="lista-equipe" class="grade-fichas"></div>
+      <h3>Cristais</h3>
+      <div id="painel-cristais"></div>
       <h3>Reserva</h3>
       <div id="lista-reserva" class="grade-fichas"></div>
       <p id="info-colecao"></p>
