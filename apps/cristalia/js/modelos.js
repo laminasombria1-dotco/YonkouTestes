@@ -631,6 +631,66 @@ export function criarTreinador() {
   return r;
 }
 
+// ---------- Coroa do líder de grupo ----------
+export function criarCoroa(escala = 1) {
+  const g = new THREE.Group();
+  const ouro = brilho('#ffd23f', 0.8);
+  p(g, G.toro(0.28, 0.06, Math.PI * 2, 4, 16), ouro, [0, 0, 0], [Math.PI / 2, 0, 0]);
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2;
+    p(g, G.cone(0.07, 0.24, 4), ouro, [Math.cos(a) * 0.28, 0.13, Math.sin(a) * 0.28]);
+  }
+  p(g, G.octa(0.08), brilho('#ff4f8a', 0.8), [0, 0.05, 0.3]);
+  g.scale.setScalar(escala);
+  g.userData.coroa = true;
+  return g;
+}
+
+// ---------- Casa portátil (base) ----------
+export function criarCasa() {
+  const g = new THREE.Group();
+  const parede = mat('#f3e3c3'), madeira = mat('#8a5a3a'), telhado = mat('#d9534f'), pedra = mat('#c9c0ad');
+  p(g, G.caixa(4.4, 0.3, 3.8), pedra, [0, 0.15, 0]);
+  p(g, G.caixa(3.6, 2.2, 3.0), parede, [0, 1.4, 0]);
+  const teto = p(g, G.cone(3.1, 1.7, 4), telhado, [0, 3.35, 0], [0, Math.PI / 4, 0]);
+  teto.scale.set(1, 1, 0.88);
+  // vigas nos cantos
+  for (const [x, z] of [[-1.8, 1.5], [1.8, 1.5], [-1.8, -1.5], [1.8, -1.5]]) p(g, G.caixa(0.2, 2.2, 0.2), madeira, [x, 1.4, z]);
+  p(g, G.caixa(0.95, 1.45, 0.1), madeira, [0, 1.03, 1.52]);
+  p(g, G.esf(0.06), mat('#ffd23f'), [0.3, 1.0, 1.59]);
+  const janelas = [];
+  for (const x of [-1.15, 1.15]) {
+    const j = p(g, G.caixa(0.7, 0.6, 0.08), mat('#9fe0ff', { emissive: '#ffd37a', emissiveIntensity: 0.1 }), [x, 1.6, 1.52]);
+    p(g, G.caixa(0.8, 0.08, 0.12), madeira, [x, 1.26, 1.55]);
+    janelas.push(j);
+  }
+  p(g, G.caixa(0.45, 1.2, 0.45), pedra, [1.0, 3.6, -0.5]);
+  // sinal de cura (cruz verde) acima da porta
+  const cruz = brilho('#5fe08a', 0.8);
+  p(g, G.caixa(0.5, 0.15, 0.08), cruz, [0, 2.15, 1.55]);
+  p(g, G.caixa(0.15, 0.5, 0.08), cruz, [0, 2.15, 1.55]);
+  p(g, G.caixa(1.2, 0.04, 0.7), mat('#c9533a'), [0, 0.32, 2.3]);
+  // bandeira no telhado
+  p(g, G.cil(0.03, 0.03, 1.2, 4), madeira, [-1.0, 4.0, 0.2]);
+  const bandeira = p(g, G.caixa(0.6, 0.35, 0.03), mat('#8ff4ff'), [-0.7, 4.4, 0.2]);
+  const fumacas = [];
+  for (let i = 0; i < 3; i++) fumacas.push(p(g, G.ico(0.22, 0), mat('#e0e0e0', { transparent: true, opacity: 0.7, depthWrite: false }), [1.0, 4.3, -0.5]));
+  g.userData = { janelas, fumacas, bandeira };
+  return g;
+}
+
+export function animarCasa(casa, t, noite) {
+  const u = casa.userData;
+  u.fumacas.forEach((f, i) => {
+    const k = (t * 0.35 + i / 3) % 1;
+    f.position.set(1.0 + k * 0.4, 4.3 + k * 1.6, -0.5);
+    f.scale.setScalar(0.6 + k * 1.2);
+    f.material.opacity = 0.7 * (1 - k);
+  });
+  for (const j of u.janelas) j.material.emissiveIntensity = 0.1 + noite * 0.9;
+  u.bandeira.rotation.y = Math.sin(t * 3) * 0.3;
+}
+
 // ---------- Cristal de captura ----------
 export function criarCristal(escala = 1) {
   const m = new THREE.Mesh(G.octa(0.28), new THREE.MeshLambertMaterial({ color: '#8ff4ff', emissive: '#2ab8d8', emissiveIntensity: 0.6, flatShading: true }));

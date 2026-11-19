@@ -10,7 +10,10 @@ import {
   ESPECIES, GOLPES, ELEMENTOS, EFEITOS, EFEITO_DO_ELEMENTO, PODER_DISPARO_EXTRA, DURACAO_EFEITO_PERTO,
   multiplicador, chanceCaptura, melhoriaDe, statsDe, modificadorArena, fatorDanoNivel,
 } from './dados.js';
-import { criarModelo, criarCristal, animarModelo, piscar, descartar } from './modelos.js';
+import { criarModelo, criarCristal, criarCoroa, animarModelo, piscar, descartar } from './modelos.js';
+
+const MAX_ATIVOS = 3;      // quantos inimigos de um grupo lutam ao mesmo tempo
+const ESCALA_LIDER = 1.3;  // o líder do grupo é maior
 import { Arena, RAIO_ARENA } from './arena.js';
 
 export { RAIO_ARENA };
@@ -74,8 +77,12 @@ class Lutador {
     this.tickFogo = 0;
     this.visT = 0;
     this.rajada = null;   // disparos extras na fila
+    this.escala = 1;
+    this.mortoT = 0;
+    this.ia = { t: 0.8, strafe: Math.random() < 0.5 ? -1 : 1, troca: 1 };
   }
-  get raio() { return this.esp.raio; }
+  get raio() { return this.esp.raio * this.escala; }
+  get altura() { return this.esp.altura * this.escala; }
   get frac() { return this.dados.hp / this.stats.hpMax; }
   golpe(i) { return GOLPES[this.esp.golpes[i]]; }
   tem(efeito) { return this.status[efeito] > 0; }
@@ -97,13 +104,25 @@ export class Batalha {
 
     this.idx = idxInicial;
     this.jog = new Lutador(jogo.estado.equipe[idxInicial], 'jogador');
-    this.ini = new Lutador(selvagem.dados, 'inimigo');
     this.jog.pos.set(0, 0, 5);
     this.jog.ang = this.jog.angAlvo = Math.PI;
-    this.ini.pos.set(0, 0, -5);
-    this.cena.add(this.jog.modelo, this.ini.modelo);
+    this.cena.add(this.jog.modelo);
     this.aplicarModArena(this.jog);
-    this.aplicarModArena(this.ini);
+
+    // Inimigos: um selvagem sozinho ou um grupo (o líder entra por último)
+    const membros = selvagem.membros ? selvagem.membros.map((m) => m.dados) : [selvagem.dados];
+    this.grupo = membros.length > 1;
+    this.fila = [...membros].sort((a, b) => (a.lider ? 1 : 0) - (b.lider ? 1 : 0));
+    this.total = membros.length;
+    this.inimigos = [];
+    this.derrotados = [];
+    this.capturados = [];
+    this.liderDerrotado = false;
+    for (let i = 0; i < Math.min(MAX_ATIVOS, this.fila.length); i++) this.entrarInimigo(i);
+    this.alvo = this.inimigos[0];
+    this.marcaAlvo = new THREE.Mesh(GEO_ANEL, matBrilho('#ffffff', 0.7));
+    this.marcaAlvo.visible = this.grupo;
+    this.cena.add(this.marcaAlvo);
 
     this.projeteis = [];
     this.captura = null;
@@ -111,11 +130,64 @@ export class Batalha {
     this.t = 0;
     this.trocaCd = 0;
     this.trocaAuto = 0;
-    this.ia = { t: 0.8, strafe: 1, troca: 1 };
     this.posicionarCamera(1);
     this.montarHud();
-    jogo.aviso(`Um ${this.ini.esp.nome} selvagem apareceu!`);
+    if (this.grupo) {
+      const lider = membros.find((m) => m.lider);
+      jogo.aviso(`Um grupo de ${this.total} monstros atacou!`);
+      if (lider) jogo.aviso(`O líder é um ${ESPECIES[lider.especie].nome} Nv.${lider.nivel}. Ele entra por último.`);
+    } else jogo.aviso(`Um ${this.ini.esp.nome} selvagem apareceu!`);
     if (this.arena.cfg.descricaoPerigo) jogo.aviso(this.arena.cfg.descricaoPerigo);
+  }
+
+  // O inimigo que o jogador está mirando (o mais perto)
+  get ini() { return this.alvo; }
+
+  // Coloca o próximo monstro da fila na arena
+  entrarInimigo(posicaoInicial) {
+    const dados = this.fila.shift();
+    if (!dados) return;
+    const l = new Lutador(dados, 'inimigo');
+    if (dados.lider) {
+      l.escala = ESCALA_LIDER;
+      l.modelo.scale.setScalar(ESCALA_LIDER);
+      const coroa = criarCoroa(1.2);
+      coroa.position.y = l.esp.altura + 0.15;
+      l.modelo.add(coroa);
+      l.coroa = coroa;
+    }
+    if (posicaoInicial != null) {
+      l.pos.set((posicaoInicial - (Math.min(MAX_ATIVOS, this.total) - 1) / 2) * 4.5, 0, -5 - (posicaoInicial % 2) * 2);
+    } else {
+      // reforço: entra pela borda do lado de lá da arena
+      const a = -Math.PI / 2 + (Math.random() - 0.5) * 1.6;
+      l.pos.set(Math.cos(a) * (RAIO_ARENA - 3), 0, Math.sin(a) * (RAIO_ARENA - 3));
+      l.stun = 0.8;
+      this.particulas(l.pos, '#ffffff', 14, 1.2);
+      this.jogo.aviso(dados.lider ? `O líder ${l.esp.nome} entrou na luta!` : `Mais um ${l.esp.nome} entrou na luta!`);
+    }
+    l.ia.t = 0.8 + this.inimigos.length * 0.6;
+    l.angAlvo = l.ang = Math.atan2(this.jog.pos.x - l.pos.x, this.jog.pos.z - l.pos.z);
+    this.cena.add(l.modelo);
+    this.aplicarModArena(l);
+    this.inimigos.push(l);
+    return l;
+  }
+
+  vivos() { return this.inimigos.filter((l) => !l.morto && l.modelo.visible); }
+
+  // Quem um lutador pode acertar
+  alvosDe(c) {
+    if (c.lado === 'jogador') return this.vivos();
+    return this.jog.morto ? [] : [this.jog];
+  }
+
+  escolherAlvo() {
+    const v = this.vivos();
+    if (!v.length) return;
+    let melhor = v[0], md = Infinity;
+    for (const l of v) { const d = dist(l, this.jog); if (d < md) { md = d; melhor = l; } }
+    this.alvo = melhor;
   }
 
   // Bônus ou penalidade que a arena (e o dia/noite) dão ao monstro
@@ -131,7 +203,7 @@ export class Batalha {
     l.flash = 0.18;
     l.stun = 0.25;
     if (l.tem('sono')) l.status.sono = 0;
-    this.jogo.numero(String(dano), l.pos.clone().setY(l.esp.altura), cor, '');
+    this.jogo.numero(String(dano), l.pos.clone().setY(l.altura), cor, '');
     if (l.dados.hp <= 0) this.desmaiar(l);
   }
 
@@ -139,13 +211,14 @@ export class Batalha {
     if (l.morto || l.dados.hp >= l.stats.hpMax) return;
     const cura = Math.max(1, Math.round(l.stats.hpMax * fracao));
     l.dados.hp = Math.min(l.stats.hpMax, l.dados.hp + cura);
-    this.jogo.numero('+' + cura, l.pos.clone().setY(l.esp.altura), '#5fe08a', 'pequeno');
+    this.jogo.numero('+' + cura, l.pos.clone().setY(l.altura), '#5fe08a', 'pequeno');
   }
 
   posicionarCamera(k) {
-    const meio = new THREE.Vector3().addVectors(this.jog.pos, this.ini.pos).multiplyScalar(0.5);
-    // A câmera se afasta quando os monstros ficam longe um do outro
-    const afast = Math.min(10, Math.max(0, dist(this.jog, this.ini) - 4)) * 0.07 + 1;
+    const alvo = this.ini || this.jog;
+    const meio = new THREE.Vector3().addVectors(this.jog.pos, alvo.pos).multiplyScalar(0.5);
+    // A câmera se afasta quando os monstros ficam longe um do outro (e um pouco mais em grupo)
+    const afast = Math.min(10, Math.max(0, dist(this.jog, alvo) - 4)) * 0.07 + (this.grupo ? 1.15 : 1);
     const off = this.jogo.aspecto < 1 ? new THREE.Vector3(0, 12.5, 11.5) : new THREE.Vector3(0, 7.5, 8.5);
     off.multiplyScalar(afast);
     this.camera.position.lerp(meio.clone().add(off), k);
@@ -164,19 +237,47 @@ export class Batalha {
       if (ctrl.consumir('cristal')) this.lancarCristal();
       if (ctrl.consumir('trocar')) this.trocar(false);
     }
+    if (!this.captura) this.escolherAlvo();
+    const vivos = this.vivos();
     const podeAgir = !this.fim && !this.captura && liberado;
-    if (podeAgir && !j.morto) this.controlarJogador(j, e, ctrl.vetor(), dt, ctrl);
-    if (podeAgir && !e.morto && !j.morto) this.pensarIA(e, j, dt);
+    if (podeAgir && !j.morto && e) this.controlarJogador(j, e, ctrl.vetor(), dt, ctrl);
+    if (podeAgir && !j.morto) for (const ini of vivos) this.pensarIA(ini, j, dt, vivos.length);
 
-    this.fisica(this.jog, this.ini, dt);
-    this.fisica(this.ini, this.jog, dt);
-    // não deixa os dois ocuparem o mesmo lugar
-    const d = dist(this.jog, this.ini), min = this.jog.raio + this.ini.raio;
-    if (d < min && d > 0.001 && !this.ini.morto && this.ini.modelo.visible) {
-      const ex = (this.jog.pos.x - this.ini.pos.x) / d, ez = (this.jog.pos.z - this.ini.pos.z) / d, f = (min - d) / 2;
-      this.jog.pos.x += ex * f; this.jog.pos.z += ez * f;
-      this.ini.pos.x -= ex * f; this.ini.pos.z -= ez * f;
+    this.fisica(this.jog, dt);
+    for (const ini of this.inimigos) this.fisica(ini, dt);
+    // ninguém ocupa o mesmo lugar que outro
+    const todos = [this.jog, ...vivos];
+    for (let a = 0; a < todos.length; a++) for (let b = a + 1; b < todos.length; b++) {
+      const A = todos[a], B = todos[b];
+      if (A.morto) continue;
+      const d = dist(A, B), min = A.raio + B.raio;
+      if (d < min && d > 0.001) {
+        const ex = (A.pos.x - B.pos.x) / d, ez = (A.pos.z - B.pos.z) / d, f = (min - d) / 2;
+        A.pos.x += ex * f; A.pos.z += ez * f;
+        B.pos.x -= ex * f; B.pos.z -= ez * f;
+      }
     }
+    // desmaiados somem depois de um tempo e o próximo da fila entra
+    for (let i = this.inimigos.length - 1; i >= 0; i--) {
+      const l = this.inimigos[i];
+      if (!l.morto) continue;
+      l.mortoT += dt;
+      if (l.mortoT > 1.3) {
+        this.cena.remove(l.modelo);
+        descartar(l.modelo);
+        this.inimigos.splice(i, 1);
+      }
+    }
+    if (!this.fim && !this.captura && this.vivos().length < MAX_ATIVOS && this.fila.length && this.t > 1) {
+      this.reforcoT = (this.reforcoT || 0) + dt;
+      if (this.reforcoT > 1.2) { this.reforcoT = 0; this.entrarInimigo(null); }
+    }
+    // marca no chão embaixo do inimigo que você está mirando
+    if (this.grupo && this.ini && !this.ini.morto) {
+      this.marcaAlvo.visible = true;
+      this.marcaAlvo.position.set(this.ini.pos.x, 0.08, this.ini.pos.z);
+      this.marcaAlvo.scale.setScalar(this.ini.raio * 1.5 + Math.sin(this.t * 6) * 0.08);
+    } else this.marcaAlvo.visible = false;
 
     this.atualizarProjeteis(dt);
     this.arena.atualizar(dt, this.t);
@@ -214,14 +315,15 @@ export class Batalha {
   }
 
   // Inteligência do monstro selvagem
-  pensarIA(e, j, dt) {
-    const ia = this.ia;
+  pensarIA(e, j, dt, ativos = 1) {
+    const ia = e.ia;
     ia.t -= dt;
     ia.troca -= dt;
     const d = dist(e, j);
     if (ia.troca <= 0) { ia.strafe = Math.random() < 0.5 ? -1 : 1; ia.troca = 1.5 + Math.random() * 2; }
     if (ia.t <= 0 && !e.prep && !e.dash && e.stun <= 0 && e.podeAtacar()) {
-      ia.t = 0.3 + Math.random() * 0.4;
+      // com vários inimigos ao mesmo tempo, cada um ataca com menos frequência
+      ia.t = (0.3 + Math.random() * 0.4) * (1 + 0.6 * (ativos - 1));
       const opcoes = [];
       for (let i = 0; i < 3; i++) {
         if (e.rec[i] > 0) continue;
@@ -262,7 +364,7 @@ export class Batalha {
       if (c.lado === 'jogador' && this.t - (this.avisoBloqueio || 0) > 0.8) {
         this.avisoBloqueio = this.t;
         const nome = c.tem('medo') ? 'Com medo!' : c.tem('sono') ? 'Dormindo!' : 'Paralisado!';
-        this.jogo.numero(nome, c.pos.clone().setY(c.esp.altura), '#ffffff', 'pequeno');
+        this.jogo.numero(nome, c.pos.clone().setY(c.altura), '#ffffff', 'pequeno');
       }
       return;
     }
@@ -324,7 +426,7 @@ export class Batalha {
     return null;
   }
 
-  executar(c, alvo, p) {
+  executar(c, p) {
     const gp = p.gp, dir = p.dir;
     if (gp.tipo === 'corpo') {
       c.dash = { dir: dir.clone(), t: 0.17, vel: 12, gp, acertou: false, efeito: this.efeitoDoGolpe(c, gp) };
@@ -338,8 +440,11 @@ export class Batalha {
       this.efeitoAnel(c.pos, gp.raio, cor);
       if (efeito) this.efeitoAnel(c.pos, gp.raio * 0.7, EFEITOS[efeito.nome].cor);
       this.particulas(c.pos, cor, 14, 1.2);
-      if (!alvo.morto && dist(c, alvo) <= gp.raio + alvo.raio * 0.5) {
-        this.aplicarDano(c, alvo, gp, new THREE.Vector3(alvo.pos.x - c.pos.x, 0, alvo.pos.z - c.pos.z).normalize(), { efeito });
+      // a área acerta todos os adversários dentro do círculo
+      for (const alvo of this.alvosDe(c)) {
+        if (dist(c, alvo) <= gp.raio + alvo.raio * 0.5) {
+          this.aplicarDano(c, alvo, gp, new THREE.Vector3(alvo.pos.x - c.pos.x, 0, alvo.pos.z - c.pos.z).normalize(), { efeito });
+        }
       }
     }
   }
@@ -353,7 +458,7 @@ export class Batalha {
   // opcoes.fator = multiplica a força | opcoes.efeito = { nome, dur } | opcoes.queimadura = dano fixo do fogo
   aplicarDano(at, alvo, gp, dir, opcoes = {}) {
     if (alvo.morto || this.captura || !alvo.modelo.visible) return false;
-    const topo = alvo.pos.clone().setY(alvo.esp.altura);
+    const topo = alvo.pos.clone().setY(alvo.altura);
     if (alvo.invul > 0) {
       this.jogo.numero('Esquivou!', topo, '#ffffff', 'pequeno');
       return false;
@@ -393,7 +498,7 @@ export class Batalha {
     if (nome === 'queimadura') { alvo.fonteFogo = causador; alvo.tickFogo = 0.5; }
     if ((nome === 'paralisia' || nome === 'sono') && alvo.prep) this.cancelarPreparo(alvo);
     if (novo) {
-      this.jogo.numero(ef.nome + '!', alvo.pos.clone().setY(alvo.esp.altura + 0.7), ef.cor, 'pequeno');
+      this.jogo.numero(ef.nome + '!', alvo.pos.clone().setY(alvo.altura + 0.7), ef.cor, 'pequeno');
       this.particulas(alvo.pos, ef.cor, 12, 1);
     }
   }
@@ -411,7 +516,7 @@ export class Batalha {
         c.tickFogo = 0.5;
         const dano = Math.max(1, Math.round(c.stats.hpMax * 0.02));
         c.dados.hp = Math.max(0, c.dados.hp - dano);
-        this.jogo.numero(String(dano), c.pos.clone().setY(c.esp.altura * 0.8), '#ff9a4a', 'pequeno');
+        this.jogo.numero(String(dano), c.pos.clone().setY(c.altura * 0.8), '#ff9a4a', 'pequeno');
         if (c.dados.hp <= 0) { this.desmaiar(c); return; }
       }
     }
@@ -423,23 +528,37 @@ export class Batalha {
         c.visT = 0.35;
         const ef = EFEITOS[ativos[Math.floor(Math.random() * ativos.length)]];
         this.particulas(c.pos, ef.cor, 2, 0.35);
-        if (c.tem('sono') && Math.random() < 0.5) this.jogo.numero('z', c.pos.clone().setY(c.esp.altura + 0.3), '#dcd6ff', 'pequeno');
+        if (c.tem('sono') && Math.random() < 0.5) this.jogo.numero('z', c.pos.clone().setY(c.altura + 0.3), '#dcd6ff', 'pequeno');
       }
     }
   }
 
   desmaiar(l) {
+    if (l.morto) return;
     l.morto = true;
     if (l.prep) this.cancelarPreparo(l);
     l.dash = null;
-    if (l === this.ini) {
-      this.jogo.aviso(`${l.esp.nome} selvagem desmaiou!`);
-      this.fim = { tipo: 'vitoria', t: 1.5 };
+    l.rajada = null;
+    if (l.lado === 'inimigo') {
+      this.derrotados.push(l.dados);
+      if (l.dados.lider) this.liderDerrotado = true;
+      const resta = this.restantes();
+      this.jogo.aviso(l.dados.lider ? `O líder ${l.esp.nome} desmaiou!` : `${l.esp.nome} selvagem desmaiou!` + (this.grupo && resta ? ` Restam ${resta}.` : ''));
+      this.verificarFim();
     } else {
       this.jogo.aviso(`${l.esp.nome} desmaiou!`);
       if (this.proximoDePe() >= 0) this.trocaAuto = 1.2;
       else this.fim = { tipo: 'derrota', t: 1.8 };
     }
+  }
+
+  // Quantos inimigos ainda faltam (na arena + esperando na fila)
+  restantes() {
+    return this.inimigos.filter((l) => !l.morto && !this.capturados.includes(l.dados)).length + this.fila.length;
+  }
+
+  verificarFim() {
+    if (!this.fim && this.restantes() === 0) this.fim = { tipo: 'vitoria', t: 1.6 };
   }
 
   esquivar(c, mv, outro) {
@@ -453,7 +572,7 @@ export class Batalha {
     c.cdEsq = 1.0;
   }
 
-  fisica(c, outro, dt) {
+  fisica(c, dt) {
     for (let i = 0; i < 3; i++) c.rec[i] = Math.max(0, c.rec[i] - dt);
     c.cdEsq = Math.max(0, c.cdEsq - dt);
     c.invul = Math.max(0, c.invul - dt);
@@ -492,7 +611,7 @@ export class Batalha {
         c.prep = null;
         piscar(c.modelo, 0);
         c.brilhando = false;
-        this.executar(c, outro, p);
+        this.executar(c, p);
       }
     }
 
@@ -500,15 +619,22 @@ export class Batalha {
       const ds = c.dash;
       c.pos.addScaledVector(ds.dir, ds.vel * dt);
       ds.t -= dt;
-      if (ds.gp && !ds.acertou && !outro.morto && dist(c, outro) < c.raio + outro.raio + 0.5) {
-        ds.acertou = true;
-        this.aplicarDano(c, outro, ds.gp, ds.dir, { efeito: ds.efeito });
-        ds.t = 0;
+      if (ds.gp && !ds.acertou) {
+        // o golpe de perto acerta o primeiro adversário que encostar
+        const alvo = this.alvosDe(c).find((o) => dist(c, o) < c.raio + o.raio + 0.5);
+        if (alvo) {
+          ds.acertou = true;
+          this.aplicarDano(c, alvo, ds.gp, ds.dir, { efeito: ds.efeito });
+          ds.t = 0;
+        }
       }
       if (ds.t <= 0) {
-        if (ds.gp && !ds.acertou && !outro.morto) {
-          const tx = outro.pos.x - c.pos.x, tz = outro.pos.z - c.pos.z, d = Math.hypot(tx, tz);
-          if (d <= ds.gp.alcance + outro.raio * 0.5 && (tx * ds.dir.x + tz * ds.dir.z) / (d || 1) > 0.5) this.aplicarDano(c, outro, ds.gp, ds.dir, { efeito: ds.efeito });
+        if (ds.gp && !ds.acertou) {
+          const alvo = this.alvosDe(c).find((o) => {
+            const tx = o.pos.x - c.pos.x, tz = o.pos.z - c.pos.z, d = Math.hypot(tx, tz);
+            return d <= ds.gp.alcance + o.raio * 0.5 && (tx * ds.dir.x + tz * ds.dir.z) / (d || 1) > 0.5;
+          });
+          if (alvo) this.aplicarDano(c, alvo, ds.gp, ds.dir, { efeito: ds.efeito });
         }
         c.dash = null;
       }
@@ -563,14 +689,15 @@ export class Batalha {
       p.mesh.position.copy(p.pos);
       if (p.gp.elemento === 'lua') p.mesh.rotation.y += dt * 14;
       else if (p.gp.elemento !== 'planta' && p.gp.elemento !== 'raio') p.mesh.rotation.x += dt * 8;
-      const alvo = p.lado === 'jogador' ? this.ini : this.jog;
+      const alvos = p.lado === 'jogador' ? this.vivos() : (this.jog.morto ? [] : [this.jog]);
       let acabou = p.vida <= 0 || Math.hypot(p.pos.x, p.pos.z) > RAIO_ARENA + 1;
       // obstáculos seguram os disparos: dá para se esconder atrás deles
       if (!acabou && this.arena.bloqueia(p.pos, p.gp.raio * 0.6)) {
         acabou = true;
         this.particulas(p.pos, ELEMENTOS[p.gp.elemento].cor, 5, 0.6);
       }
-      if (!acabou && !alvo.morto && alvo.modelo.visible && Math.hypot(p.pos.x - alvo.pos.x, p.pos.z - alvo.pos.z) < p.gp.raio + alvo.raio) {
+      const alvo = acabou ? null : alvos.find((o) => Math.hypot(p.pos.x - o.pos.x, p.pos.z - o.pos.z) < p.gp.raio + o.raio);
+      if (alvo) {
         this.aplicarDano(p.dono, alvo, p.gp, p.dir, { fator: p.fator });
         acabou = true;
       }
@@ -622,14 +749,13 @@ export class Batalha {
 
   // ---------- captura ----------
   lancarCristal() {
-    if (this.fim || this.captura || this.jog.morto || this.ini.morto) return;
+    if (this.fim || this.captura || this.jog.morto || !this.ini || this.ini.morto) return;
     const est = this.jogo.estado;
     if (est.cristais <= 0) { this.jogo.aviso('Sem cristais! Procure brilhos azuis pelo mapa.'); return; }
     est.cristais--;
     const sucesso = Math.random() < chanceCaptura(this.ini.dados);
     if (this.jog.prep) this.cancelarPreparo(this.jog);
-    if (this.ini.prep) this.cancelarPreparo(this.ini);
-    this.ini.dash = null;
+    for (const l of this.inimigos) { if (l.prep) this.cancelarPreparo(l); l.dash = null; l.rajada = null; }
     const cr = criarCristal(1.1);
     this.cena.add(cr);
     this.captura = {
@@ -650,7 +776,7 @@ export class Batalha {
       if (k >= 1) { c.fase = 'sugando'; c.t = 0; this.particulas(ini.pos, '#8ff4ff', 12, 1); }
     } else if (c.fase === 'sugando') {
       const k = Math.min(1, c.t / 0.35);
-      ini.modelo.scale.setScalar(1 - k);
+      ini.modelo.scale.setScalar(ini.escala * (1 - k));
       cr.position.set(c.ate.x, 1.2, c.ate.z);
       if (k >= 1) { ini.modelo.visible = false; c.fase = 'caindo'; c.t = 0; }
     } else if (c.fase === 'caindo') {
@@ -671,13 +797,25 @@ export class Batalha {
             cr.material.emissiveIntensity = 1;
             this.particulas(ini.pos, '#ffd23f', 22, 1.3);
             this.jogo.aviso(`Você capturou ${ini.esp.nome}!`);
-            this.fim = { tipo: 'captura', t: 1.7 };
+            this.capturados.push(ini.dados);
+            if (ini.dados.lider) this.liderDerrotado = true;
+            // tira o capturado da arena; se ainda há inimigos, a luta continua
+            this.inimigos.splice(this.inimigos.indexOf(ini), 1);
+            this.cena.remove(ini.modelo);
+            descartar(ini.modelo);
+            this.verificarFim();
+            if (!this.fim) {
+              const crCapturado = cr;
+              this.efeitos.push({ obj: crCapturado, vida: 0.8, total: 0.8, upd: (e, k) => { e.obj.position.y = 0.4 + k * 3; e.obj.scale.setScalar(1.1 * (1 - k)); } });
+              this.captura = null;
+              this.escolherAlvo();
+            }
           } else {
             this.particulas(ini.pos, '#8ff4ff', 16, 1.4);
             this.cena.remove(cr);
             cr.material.dispose();
             ini.modelo.visible = true;
-            ini.modelo.scale.setScalar(1);
+            ini.modelo.scale.setScalar(ini.escala);
             ini.rec = [0, 0, 0];
             ini.stun = 0;
             this.jogo.aviso(`${ini.esp.nome} escapou do cristal!`);
@@ -713,7 +851,8 @@ export class Batalha {
     this.particulas(velho.pos, '#8ff4ff', 12, 1);
     const novo = new Lutador(this.jogo.estado.equipe[prox], 'jogador');
     novo.pos.copy(velho.pos);
-    novo.ang = novo.angAlvo = Math.atan2(this.ini.pos.x - novo.pos.x, this.ini.pos.z - novo.pos.z);
+    const mira = this.ini || velho;
+    novo.ang = novo.angAlvo = Math.atan2(mira.pos.x - novo.pos.x, mira.pos.z - novo.pos.z);
     novo.stun = 0.4;
     this.cena.add(novo.modelo);
     this.aplicarModArena(novo);
@@ -731,13 +870,20 @@ export class Batalha {
   }
 
   // ---------- interface ----------
-  montarHud() {
-    const ui = this.jogo.ui;
-    const e = this.ini;
+  // Barra do inimigo: mostra o alvo atual (muda quando você mira em outro)
+  montarHudInimigo() {
+    const ui = this.jogo.ui, e = this.ini;
+    this.alvoHud = e;
+    if (!e) return;
     ui.biNome.textContent = e.esp.nome;
     ui.biNivel.textContent = 'Nv.' + e.dados.nivel;
     ui.biEl.textContent = ELEMENTOS[e.esp.elemento].nome;
     ui.biEl.style.setProperty('--cor', ELEMENTOS[e.esp.elemento].cor);
+  }
+
+  montarHud() {
+    const ui = this.jogo.ui;
+    this.montarHudInimigo();
     // faixa no topo com o nome da arena e quem ela favorece
     const a = this.arena.cfg;
     const fav = a.favorece ? `<b style="color:${ELEMENTOS[a.favorece].cor}">${ELEMENTOS[a.favorece].nome} +25%</b>` : 'sem bônus de elemento';
@@ -774,6 +920,11 @@ export class Batalha {
 
   atualizarHud() {
     const ui = this.jogo.ui, j = this.jog, e = this.ini;
+    if (!e) return;
+    if (this.alvoHud !== e) this.montarHudInimigo();
+    const tipo = this.grupo ? `${e.dados.lider ? 'Líder' : 'Grupo'} · restam ${this.restantes()}` : 'Selvagem';
+    if (ui.biTipo.textContent !== tipo) ui.biTipo.textContent = tipo;
+    ui.biTipo.classList.toggle('lider', !!e.dados.lider);
     const barra = (el, txt, l) => {
       const f = Math.max(0, l.frac);
       el.style.width = (f * 100).toFixed(1) + '%';

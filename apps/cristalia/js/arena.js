@@ -239,7 +239,7 @@ export class Arena {
 
     const b = this.b;
     const ativo = !b.fim && !b.captura && b.t > 1.5;
-    const lutadores = [b.jog, b.ini].filter((l) => !l.morto && l.modelo.visible);
+    const lutadores = [b.jog, ...b.vivos()].filter((l) => !l.morto && l.modelo.visible);
     if (ativo) this.aplicarPerigos(dt, lutadores);
     this.atualizarAlertas(dt, lutadores, ativo);
   }

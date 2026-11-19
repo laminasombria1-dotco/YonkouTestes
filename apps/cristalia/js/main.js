@@ -52,7 +52,7 @@ class Jogo {
     this.ui = {
       bjNome: $('#bj-nome'), bjNivel: $('#bj-nivel'), bjEl: $('#bj-el'), bjVida: $('#bj-vida b'), bjHp: $('#bj-hp'), bjEquipe: $('#bj-equipe'),
       biNome: $('#bi-nome'), biNivel: $('#bi-nivel'), biEl: $('#bi-el'), biVida: $('#bi-vida b'), biHp: $('#bi-hp'),
-      bjStatus: $('#bj-status'), biStatus: $('#bi-status'), arenaInfo: $('#arena-info'),
+      bjStatus: $('#bj-status'), biStatus: $('#bi-status'), arenaInfo: $('#arena-info'), biTipo: $('#bi-tipo'),
       golpes: [...document.querySelectorAll('#hud-batalha .golpe')],
       esquiva: $('#btn-esquiva'), qtdCristal: $('#qtd-cristal'), chanceCristal: $('#chance-cristal'),
       rotulo: $('#rotulo'), numeros: $('#numeros'), avisos: $('#avisos'),
@@ -156,6 +156,7 @@ class Jogo {
     });
     $('#evo-continuar').addEventListener('click', () => this.fecharEvolucao());
     $('#btn-equipe').addEventListener('click', () => this.abrirEquipe());
+    $('#btn-casa').addEventListener('click', () => this.acaoCasa());
     $('#fechar-equipe').addEventListener('click', () => this.fecharEquipe());
     $('#painel-equipe').addEventListener('click', (e) => {
       const b = e.target.closest('[data-cmd]');
@@ -265,19 +266,52 @@ class Jogo {
   }
 
   novoJogo(especie) {
-    this.estado = { equipe: [criarMonstro(especie, 3)], reserva: [], cristais: 5, capturados: [especie] };
+    this.estado = { equipe: [criarMonstro(especie, 3)], reserva: [], cristais: 5, capturados: [especie], casa: null };
     this.mundo.hora = 0.08;
     this.entrarNoMundo();
     this.mundo.povoar();
     this.salvar();
     this.aviso(`${ESPECIES[especie].nome} agora é seu parceiro!`);
     this.aviso('Encoste num monstro selvagem para batalhar.');
+    this.aviso('Você tem uma casa na mochila: toque em "Montar casa".');
   }
 
   entrarNoMundo() {
-    this.mundo.irParaFonte();
+    // a casa salva volta para o lugar onde estava
+    if (this.estado.casa) this.mundo.montarCasa(this.estado.casa.x, this.estado.casa.z, this.estado.casa.rot, false);
+    else this.mundo.guardarCasa();
+    this.mundo.irParaBase();
     this.mostrarTela('mundo');
     this.atualizarHudMundo();
+  }
+
+  // ---------- casa ----------
+  // O botão muda conforme a situação: montar, guardar ou trazer a casa para perto
+  acaoCasa() {
+    const m = this.mundo;
+    if (m.casaPos && m.distanciaCasa() < 7) {
+      m.guardarCasa();
+      this.estado.casa = null;
+      this.aviso('Casa guardada na mochila.');
+    } else {
+      const lugar = m.acharLugarCasa();
+      if (!lugar) {
+        this.aviso('Não há espaço aqui. Procure um lugar mais aberto, longe de árvores, pedras e água.');
+        return;
+      }
+      const mudou = !!m.casaPos;
+      m.montarCasa(lugar.x, lugar.z, lugar.rot);
+      this.estado.casa = { ...m.casaPos };
+      this.aviso(mudou ? 'Você mudou a casa para cá!' : 'Casa montada! Encoste nela para curar a equipe.');
+    }
+    this.salvar();
+  }
+
+  atualizarBotaoCasa() {
+    const m = this.mundo;
+    const txt = !m.casaPos ? 'Montar casa' : m.distanciaCasa() < 7 ? 'Guardar casa' : 'Mudar casa p/ cá';
+    const b = $('#btn-casa');
+    if (b.dataset.txt !== txt) { b.dataset.txt = txt; b.querySelector('span').textContent = txt; }
   }
 
   // ---------- regras da equipe ----------
@@ -345,35 +379,44 @@ class Jogo {
   }
 
   terminarBatalha(tipo, b) {
-    const ini = b.ini.dados, ativo = b.jog.dados, nomeAtivo = ESPECIES[ativo.especie].nome;
-    if ((tipo === 'vitoria' || tipo === 'captura') && ativo.hp > 0) {
-      const xp = xpDaVitoria(ini.nivel);
+    const ativo = b.jog.dados, nomeAtivo = ESPECIES[ativo.especie].nome;
+    const vencidos = [...b.derrotados, ...b.capturados];
+    // Experiência: soma de todos os derrotados/capturados (em grupo, 60% de cada)
+    if (vencidos.length && ativo.hp > 0) {
+      const xp = Math.round(vencidos.reduce((s, d) => s + xpDaVitoria(d.nivel), 0) * (b.grupo ? 0.6 : 1));
       const subiu = this.ganharXp(ativo, xp);
       this.aviso(`${nomeAtivo} ganhou ${xp} de experiência.`);
       if (subiu) this.aviso(`${nomeAtivo} subiu para o nível ${ativo.nivel}!`);
     }
-    if (tipo === 'vitoria' && Math.random() < 0.35) {
-      this.estado.cristais++;
-      this.aviso('O monstro deixou cair um cristal!');
+    // Cristais: o líder sempre deixa 2; os outros às vezes deixam 1
+    let achados = 0;
+    if (b.grupo && b.liderDerrotado) achados += 2;
+    for (let i = 0; i < b.derrotados.length; i++) if (Math.random() < (b.grupo ? 0.2 : 0.35)) achados++;
+    if (achados) {
+      this.estado.cristais += achados;
+      this.aviso(achados === 1 ? 'Você ganhou um cristal!' : `Você ganhou ${achados} cristais!`);
     }
-    if (tipo === 'captura') {
-      ini.hp = Math.max(1, ini.hp);
-      if (!this.estado.capturados.includes(ini.especie)) this.estado.capturados.push(ini.especie);
+    for (const novo of b.capturados) {
+      novo.hp = Math.max(1, novo.hp);
+      delete novo.lider;
+      if (!this.estado.capturados.includes(novo.especie)) this.estado.capturados.push(novo.especie);
       if (this.estado.equipe.length < MAX_EQUIPE) {
-        this.estado.equipe.push(ini);
-        this.aviso(`${ESPECIES[ini.especie].nome} entrou na sua equipe.`);
+        this.estado.equipe.push(novo);
+        this.aviso(`${ESPECIES[novo.especie].nome} entrou na sua equipe.`);
       } else {
-        this.estado.reserva.push(ini);
-        this.aviso(`Equipe cheia: ${ESPECIES[ini.especie].nome} foi para a reserva.`);
+        this.estado.reserva.push(novo);
+        this.aviso(`Equipe cheia: ${ESPECIES[novo.especie].nome} foi para a reserva.`);
       }
     }
-    if (tipo === 'vitoria' || tipo === 'captura') this.mundo.removerSelvagem(b.selvagem);
+    // No mapa: some quem foi vencido (num grupo, os que sobraram continuam andando)
+    if (b.grupo) this.mundo.tirarDoGrupo(b.selvagem, vencidos.map((d) => d.uid));
+    else if (vencidos.length) this.mundo.removerSelvagem(b.selvagem);
     b.descartarTudo();
     this.batalha = null;
     if (tipo === 'derrota') {
       this.curarEquipe();
-      this.mundo.irParaFonte();
-      this.aviso('Sua equipe desmaiou. Vocês acordaram na fonte, curados.');
+      this.mundo.irParaBase();
+      this.aviso(this.mundo.casaPos ? 'Sua equipe desmaiou. Vocês acordaram em casa, curados.' : 'Sua equipe desmaiou. Vocês acordaram na fonte, curados.');
     } else {
       this.mundo.graca = 2.5;
     }
@@ -542,6 +585,7 @@ class Jogo {
     } else if (this.modo === 'mundo') {
       this.mundo.atualizar(dt, this.ctrl, this.t, this.painelAberto);
       this.atualizarRelogio();
+      if (this.modo === 'mundo') this.atualizarBotaoCasa();
       this.salvarT = (this.salvarT || 0) + dt;
       if (this.salvarT > 5) { this.salvarT = 0; this.salvar(); }
     } else if (this.modo === 'batalha') {

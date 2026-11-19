@@ -22,6 +22,30 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
 - **Nível dos selvagens:** acompanha o nível da sua equipe e aumenta quanto mais longe do centro você vai. Nas bordas aparecem as formas evoluídas.
 - O progresso é salvo automaticamente no navegador.
 
+## Casa (base portátil)
+
+- Você começa com a casa **na mochila**. O botão no canto inferior direito muda conforme a situação:
+  - **Montar casa:** monta na sua frente. Se ali estiver ocupado, o jogo procura o lugar livre mais próximo.
+  - **Guardar casa:** aparece quando você está perto dela; a casa volta para a mochila.
+  - **Mudar casa p/ cá:** aparece quando você está longe; a casa sai de onde estava e é montada onde você está.
+- **Encostar na casa cura todos os monstros**, inclusive os desmaiados, da equipe e da reserva.
+- Em volta da casa (10 m) é **área segura**: monstros não aparecem e dão meia-volta.
+- Se toda a equipe desmaiar, você **acorda na casa** (ou na fonte, se a casa estiver guardada).
+- A posição da casa fica salva.
+
+## Grupos de monstros
+
+- Pelo mapa andam **grupos de 6 monstros**: 5 comuns e 1 **líder**, que é maior e usa coroa dourada.
+- **Níveis:** acompanham a sua equipe. Comuns ficam em ~1,1× o seu nível médio + 2; o líder em ~1,4× + 8. No começo do jogo (equipe Nv.3), os comuns ficam no Nv.5 e o líder no Nv.12.
+- **Quantidade:** 1 grupo no começo e mais 1 a cada 5 níveis da equipe, até 5 grupos.
+- **Na batalha:**
+  - até **3 inimigos lutam ao mesmo tempo**, e quando um cai, o próximo entra pela borda;
+  - o **líder entra por último**;
+  - seus golpes miram no inimigo mais perto (com um anel branco embaixo dele) e a área acerta todos dentro dela;
+  - dá para capturar qualquer um no meio da luta, e a batalha continua com os outros.
+- **Recompensa:** experiência de todos os vencidos (60% de cada), **2 cristais garantidos pelo líder** e chance de cristal pelos outros.
+- Se você fugir ou perder, os que sobraram continuam andando no mapa.
+
 ## Regiões
 
 | Região | Onde fica | Quem aparece |

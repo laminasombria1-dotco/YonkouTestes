@@ -6,7 +6,7 @@
 // Monstros selvagens passeiam; encostou, começa a batalha.
 // =============================================================
 import * as THREE from 'three';
-import { criarModelo, criarTreinador, criarCristal, animarModelo, descartar } from './modelos.js';
+import { criarModelo, criarTreinador, criarCristal, criarCoroa, criarCasa, animarCasa, animarModelo, descartar } from './modelos.js';
 import { ESPECIES, ELEMENTOS, APARICOES, PERIODO_DA_LINHA, criarMonstro, statsDe, formaPorNivel } from './dados.js';
 
 export const RAIO_MUNDO = 88;
@@ -25,6 +25,21 @@ const ZONAS = [
 export const NOMES_ZONA = { campo: 'Campo', agua: 'Lago', fogo: 'Vulcão', planta: 'Floresta', terra: 'Pedreira', raio: 'Planalto da Tempestade' };
 const VEL_JOGADOR = 7.5;
 const MAX_SELVAGENS = 18;
+const RAIO_CASA = 2.6;        // tamanho da casa para colisão
+const CURA_CASA = 4.6;        // encostou nessa distância, a equipe é curada
+const AREA_SEGURA_CASA = 10;  // monstros não chegam perto da casa
+const TAMANHO_GRUPO = 6;      // 5 comuns + 1 líder
+
+// Quantos grupos andam pelo mapa: aumenta com o nível médio da sua equipe (máximo 5)
+export function gruposDesejados(media) {
+  return Math.min(5, 1 + Math.floor((media - 1) / 5));
+}
+// Níveis do grupo. Começo do jogo (equipe ~Nv.3): comuns ~Nv.5, líder ~Nv.12
+export function niveisDoGrupo(media) {
+  const comum = Math.round(media * 1.1 + 2);
+  const lider = Math.round(media * 1.4 + 8);
+  return { comum: Math.min(48, comum), lider: Math.min(50, lider) };
+}
 export const DURACAO_DIA = 240; // segundos para um ciclo completo (metade dia, metade noite)
 
 const CEU_DIA = new THREE.Color('#9fd8ff'), CEU_NOITE = new THREE.Color('#1b2550');
@@ -104,10 +119,21 @@ export class Mundo {
     this.proxRelampago = 3;
     this.periodoAvisado = this.periodo;
 
+    // Casa portátil: começa guardada (na mochila)
+    this.casa = criarCasa();
+    this.casa.visible = false;
+    this.cena.add(this.casa);
+    this.casaPos = null;
+    this.casaObst = null;
+    this.casaAnim = 1;
+    this.curaCasaAvisada = 0;
+
     this.cristais = [];
     this.criarCristaisChao();
     this.selvagens = [];
+    this.grupos = [];
     this.timerSpawn = 0;
+    this.timerGrupo = 0;
     this.povoar();
     this.atualizarCeu(0);
     this.posicionarCamera(1);
@@ -179,6 +205,7 @@ export class Mundo {
 
   pontoLivre(x, z, folga) {
     if (Math.hypot(x, z) < 13) return false;
+    if (this.casaPos && Math.hypot(x - this.casaPos.x, z - this.casaPos.z) < AREA_SEGURA_CASA + 4) return false;
     if (Math.hypot(x - LAGO.x, z - LAGO.z) < LAGO.r + 4) return false;
     if (Math.hypot(x, z) > RAIO_MUNDO - 3) return false;
     for (const o of this.obstaculos) if (Math.hypot(x - o.x, z - o.z) < o.r + folga) return false;
@@ -379,8 +406,142 @@ export class Mundo {
 
   povoar() {
     for (const s of [...this.selvagens]) this.removerSelvagem(s);
+    for (const g of [...this.grupos]) this.removerGrupo(g);
     for (let i = 0; i < 3; i++) this.spawnarSelvagem(true);
     for (let i = 0; i < MAX_SELVAGENS - 4; i++) this.spawnarSelvagem(false);
+    for (let i = 0; i < gruposDesejados(this.mediaEquipe()); i++) this.spawnarGrupo();
+  }
+
+  // Sorteia quem aparece numa região (devolve a linha 'L:xx' ou uma espécie rara)
+  sortearAparicao(zona) {
+    const lista = APARICOES[zona][this.periodo];
+    const total = lista.reduce((s, [, peso]) => s + peso, 0);
+    let sorteio = Math.random() * total;
+    for (const [e, peso] of lista) { sorteio -= peso; if (sorteio <= 0) return e; }
+    return lista[0][0];
+  }
+
+  especieDe(escolha, nivel) {
+    if (escolha.startsWith('L:')) return { especie: formaPorNivel(escolha.slice(2), nivel), nivel };
+    return { especie: escolha, nivel: Math.max(3, nivel + 1) };
+  }
+
+  // ---------- grupos de monstros ----------
+  spawnarGrupo() {
+    for (let tent = 0; tent < 80; tent++) {
+      const x = (Math.random() * 2 - 1) * (RAIO_MUNDO - 12), z = (Math.random() * 2 - 1) * (RAIO_MUNDO - 12);
+      if (Math.hypot(x, z) < 22 || Math.hypot(x - this.pos.x, z - this.pos.z) < 30) continue;
+      if (!this.pontoLivre(x, z, 3)) continue;
+      const zona = zonaEm(x, z);
+      const nv = niveisDoGrupo(this.mediaEquipe());
+      const membros = [];
+      for (let i = 0; i < TAMANHO_GRUPO; i++) {
+        const lider = i === 0;
+        let escolha = this.sortearAparicao(zona);
+        // o líder é sempre de uma linha evolutiva (assim ele aparece evoluído)
+        if (lider && !escolha.startsWith('L:')) escolha = 'L:' + ESPECIES[escolha].elemento;
+        const nivel = lider ? nv.lider : Math.max(1, nv.comum + Math.round(Math.random() * 2 - 1));
+        const { especie, nivel: nivelFinal } = this.especieDe(escolha, nivel);
+        const dados = criarMonstro(especie, nivelFinal);
+        if (lider) dados.lider = true;
+        const modelo = criarModelo(especie);
+        if (lider) {
+          modelo.scale.setScalar(1.3);
+          const coroa = criarCoroa(1.2);
+          coroa.position.y = ESPECIES[especie].altura + 0.15;
+          modelo.add(coroa);
+        }
+        // formação: líder no meio, os outros em roda
+        const a = ((i - 1) / (TAMANHO_GRUPO - 1)) * Math.PI * 2;
+        const ox = lider ? 0 : Math.cos(a) * 2.6, oz = lider ? 0 : Math.sin(a) * 2.6;
+        this.cena.add(modelo);
+        membros.push({ dados, modelo, ox, oz });
+      }
+      const velMin = Math.min(...membros.map((m) => statsDe(m.dados.especie, m.dados.nivel).vel));
+      this.grupos.push({ grupo: true, membros, x, z, ang: Math.random() * 6.28, estado: 'parado', t: 2, zona, vel: velMin * 0.35 });
+      return;
+    }
+  }
+
+  removerGrupo(g) {
+    const i = this.grupos.indexOf(g);
+    if (i >= 0) this.grupos.splice(i, 1);
+    for (const m of g.membros) { this.cena.remove(m.modelo); descartar(m.modelo); }
+  }
+
+  // Depois de uma batalha: tira do grupo quem foi derrotado ou capturado
+  tirarDoGrupo(g, uids) {
+    for (const m of g.membros.filter((mm) => uids.includes(mm.dados.uid))) { this.cena.remove(m.modelo); descartar(m.modelo); }
+    g.membros = g.membros.filter((m) => !uids.includes(m.dados.uid));
+    if (!g.membros.length) this.removerGrupo(g);
+  }
+
+  // ---------- casa ----------
+  podeMontarCasa(x, z) {
+    if (Math.hypot(x - LAGO.x, z - LAGO.z) < LAGO.r + 5) return false;
+    if (Math.hypot(x, z) > RAIO_MUNDO - 8) return false;
+    if (Math.hypot(x, z) < 6) return false; // em cima da fonte não
+    for (const o of this.obstaculos) {
+      if (o === this.casaObst) continue;
+      if (Math.hypot(x - o.x, z - o.z) < o.r + RAIO_CASA + 0.8) return false;
+    }
+    return true;
+  }
+
+  montarCasa(x, z, rot, animar = true) {
+    if (this.casaObst) this.obstaculos.splice(this.obstaculos.indexOf(this.casaObst), 1);
+    this.casaPos = { x, z, rot };
+    this.casaObst = { x, z, r: RAIO_CASA };
+    this.obstaculos.push(this.casaObst);
+    this.casa.position.set(x, alturaEm(x, z), z);
+    this.casa.rotation.y = rot;
+    this.casa.visible = true;
+    this.casaAnim = animar ? 0 : 1;
+    // monstros que estavam em cima do lugar vão embora
+    for (const s of [...this.selvagens]) if (Math.hypot(s.x - x, s.z - z) < AREA_SEGURA_CASA) this.removerSelvagem(s);
+    for (const g of [...this.grupos]) if (Math.hypot(g.x - x, g.z - z) < AREA_SEGURA_CASA + 3) this.removerGrupo(g);
+  }
+
+  guardarCasa() {
+    if (this.casaObst) this.obstaculos.splice(this.obstaculos.indexOf(this.casaObst), 1);
+    this.casaObst = null;
+    this.casaPos = null;
+    this.casa.visible = false;
+  }
+
+  // Lugar na frente do jogador onde a casa seria montada
+  lugarNaFrente() {
+    const d = RAIO_CASA + 2.2;
+    return { x: this.pos.x + Math.sin(this.ang) * d, z: this.pos.z + Math.cos(this.ang) * d, rot: this.ang + Math.PI };
+  }
+
+  // Procura um lugar livre: primeiro na frente do jogador, depois em volta dele
+  acharLugarCasa() {
+    const frente = this.lugarNaFrente();
+    if (this.podeMontarCasa(frente.x, frente.z)) return frente;
+    for (const d of [RAIO_CASA + 2.2, RAIO_CASA + 4, RAIO_CASA + 6]) {
+      for (let i = 1; i <= 16; i++) {
+        // alterna esquerda/direita a partir da frente
+        const a = this.ang + Math.ceil(i / 2) * (i % 2 ? 1 : -1) * (Math.PI / 8);
+        const x = this.pos.x + Math.sin(a) * d, z = this.pos.z + Math.cos(a) * d;
+        if (this.podeMontarCasa(x, z)) return { x, z, rot: Math.atan2(this.pos.x - x, this.pos.z - z) };
+      }
+    }
+    return null;
+  }
+
+  distanciaCasa() {
+    return this.casaPos ? Math.hypot(this.pos.x - this.casaPos.x, this.pos.z - this.casaPos.z) : Infinity;
+  }
+
+  // Ao perder a batalha: acorda na casa (se ela estiver montada) ou na fonte
+  irParaBase() {
+    if (!this.casaPos) { this.irParaFonte(); return; }
+    const { x, z, rot } = this.casaPos;
+    this.pos.set(x + Math.sin(rot) * (RAIO_CASA + 1.6), 0, z + Math.cos(rot) * (RAIO_CASA + 1.6));
+    this.ang = rot;
+    this.graca = 3;
+    this.posicionarCamera(1);
   }
 
   spawnarSelvagem(perto) {
@@ -497,6 +658,21 @@ export class Mundo {
       this.jogo.aviso('A fonte curou sua equipe!');
     }
 
+    // Casa: animação de montar, fumaça, cura e área segura
+    const naAreaSegura = this.distanciaCasa() < AREA_SEGURA_CASA;
+    if (this.casaPos) {
+      if (this.casaAnim < 1) {
+        this.casaAnim = Math.min(1, this.casaAnim + dt * 2.2);
+        const k = this.casaAnim, pulo = Math.sin(k * Math.PI) * 0.15;
+        this.casa.scale.set(k + pulo, k * (1 + pulo), k + pulo);
+      } else this.casa.scale.setScalar(1);
+      animarCasa(this.casa, t, this.fatorNoite);
+      if (est && this.distanciaCasa() < CURA_CASA && this.jogo.precisaCura()) {
+        this.jogo.curarEquipe();
+        this.jogo.aviso('Sua casa curou toda a equipe!');
+      }
+    }
+
     // Cristais no chão
     for (const c of this.cristais) {
       if (!c.ativo) {
@@ -529,35 +705,66 @@ export class Mundo {
         else { s.estado = 'parado'; s.t = 1 + Math.random() * 2.5; }
       }
       let andando = s.estado === 'andando';
-      if (d < 7 && this.graca <= 0 && est) { s.ang = Math.atan2(dx, dz); andando = true; }
-      if (andando && !pausado) {
-        s.x += Math.sin(s.ang) * s.vel * dt;
-        s.z += Math.cos(s.ang) * s.vel * dt;
-        const p = { x: s.x, z: s.z };
-        this.colidir(p, 0.6);
-        if (p.x !== s.x || p.z !== s.z) s.ang += Math.PI * 0.5;
-        s.x = p.x; s.z = p.z;
-      }
+      if (d < 7 && this.graca <= 0 && est && !naAreaSegura) { s.ang = Math.atan2(dx, dz); andando = true; }
+      andando = this.fugirDaCasa(s) || andando;
+      if (andando && !pausado) this.andar(s, s.vel * dt, 0.6);
       s.modelo.position.set(s.x, alturaEm(s.x, s.z), s.z);
       s.modelo.rotation.y = lerpAngulo(s.modelo.rotation.y, s.ang, 1 - Math.exp(-8 * dt));
       animarModelo(s.modelo, t, andando);
       if (d < menorD) { menorD = d; maisPerto = s; }
     }
 
+    // Grupos: andam juntos em formação; aparecem mais conforme sua equipe fica forte
+    this.timerGrupo -= dt;
+    if (this.timerGrupo <= 0) {
+      this.timerGrupo = 20;
+      if (est && this.grupos.length < gruposDesejados(this.mediaEquipe())) this.spawnarGrupo();
+    }
+    for (const g of this.grupos) {
+      g.t -= dt;
+      if (g.t <= 0) {
+        if (g.estado === 'parado') { g.estado = 'andando'; g.t = 2 + Math.random() * 3; g.ang = Math.random() * 6.28; }
+        else { g.estado = 'parado'; g.t = 2 + Math.random() * 3; }
+      }
+      const dg = Math.hypot(this.pos.x - g.x, this.pos.z - g.z);
+      let andando = g.estado === 'andando';
+      if (dg < 12 && this.graca <= 0 && est && !naAreaSegura) { g.ang = Math.atan2(this.pos.x - g.x, this.pos.z - g.z); andando = true; }
+      andando = this.fugirDaCasa(g) || andando;
+      if (andando && !pausado) this.andar(g, g.vel * dt, 3);
+      const cs = Math.cos(g.ang), sn = Math.sin(g.ang);
+      for (const m of g.membros) {
+        const x = g.x + m.ox * cs + m.oz * sn, z = g.z - m.ox * sn + m.oz * cs;
+        m.x = x; m.z = z;
+        m.modelo.position.set(x, alturaEm(x, z), z);
+        m.modelo.rotation.y = lerpAngulo(m.modelo.rotation.y, g.ang, 1 - Math.exp(-6 * dt));
+        animarModelo(m.modelo, t, andando);
+        const d = Math.hypot(this.pos.x - x, this.pos.z - z) - ESPECIES[m.dados.especie].raio * (m.dados.lider ? 1.3 : 1);
+        if (d < menorD) { menorD = d; maisPerto = { grupoDe: g, membro: m }; }
+      }
+    }
+
     // Encontro!
-    if (maisPerto && est && !pausado && this.graca <= 0 && menorD < 0.9 + ESPECIES[maisPerto.dados.especie].raio) {
+    const raioEncontro = maisPerto?.grupoDe ? 0.9 : 0.9 + (maisPerto ? ESPECIES[maisPerto.dados.especie].raio : 0);
+    if (maisPerto && est && !pausado && this.graca <= 0 && !naAreaSegura && menorD < raioEncontro) {
+      if (maisPerto.grupoDe) maisPerto = maisPerto.grupoDe;
       if (this.jogo.temMonstroDePe()) {
         this.jogo.iniciarBatalha(maisPerto);
         return;
       } else if (this.avisoT <= 0) {
         this.avisoT = 3;
         this.graca = 1.5;
-        this.jogo.aviso('Sua equipe está desmaiada. Volte à fonte no centro!');
+        this.jogo.aviso(this.casaPos ? 'Sua equipe está desmaiada. Volte para casa ou para a fonte!' : 'Sua equipe está desmaiada. Monte sua casa ou volte à fonte!');
       }
     }
 
-    // Plaquinha com nome do monstro mais perto
-    if (maisPerto && est) {
+    // Plaquinha com nome do monstro mais perto (ou do grupo)
+    if (maisPerto?.grupoDe && est) {
+      const g = maisPerto.grupoDe;
+      const lider = g.membros.find((m) => m.dados.lider) || g.membros[0];
+      const esp = ESPECIES[lider.dados.especie];
+      this.jogo.mostrarRotulo(`<i style="background:#ffd23f"></i>Grupo de ${g.membros.length} · ${lider.dados.lider ? 'Líder ' : ''}${esp.nome} <b>Nv.${lider.dados.nivel}</b>`,
+        new THREE.Vector3(lider.x, lider.modelo.position.y + esp.altura * 1.3 + 0.8, lider.z), this.camera);
+    } else if (maisPerto && est) {
       const esp = ESPECIES[maisPerto.dados.especie];
       this.jogo.mostrarRotulo(`<i style="background:${ELEMENTOS[esp.elemento].cor}"></i>${esp.nome} <b>Nv.${maisPerto.dados.nivel}</b>`,
         new THREE.Vector3(maisPerto.x, maisPerto.modelo.position.y + esp.altura + 0.3, maisPerto.z), this.camera);
@@ -566,12 +773,35 @@ export class Mundo {
     this.posicionarCamera(1 - Math.exp(-6 * dt));
   }
 
+  // Move um monstro (ou grupo) para frente; se bater em algo, vira
+  andar(s, passo, raio) {
+    s.x += Math.sin(s.ang) * passo;
+    s.z += Math.cos(s.ang) * passo;
+    const p = { x: s.x, z: s.z };
+    this.colidir(p, raio);
+    if (p.x !== s.x || p.z !== s.z) s.ang += Math.PI * 0.5;
+    s.x = p.x; s.z = p.z;
+  }
+
+  // Monstros dão meia-volta quando chegam perto da casa
+  fugirDaCasa(s) {
+    if (!this.casaPos) return false;
+    const dx = s.x - this.casaPos.x, dz = s.z - this.casaPos.z;
+    if (Math.hypot(dx, dz) > AREA_SEGURA_CASA + (s.grupo ? 3 : 0)) return false;
+    s.ang = Math.atan2(dx, dz);
+    return true;
+  }
+
   // Câmera girando devagar para a tela de título
   orbitar(t) {
     const a = t * 0.08;
     this.camera.position.set(Math.sin(a) * 34, 20, Math.cos(a) * 34);
     this.camera.lookAt(0, 0, 0);
     for (const s of this.selvagens) animarModelo(s.modelo, t, false);
+    for (const g of this.grupos) for (const m of g.membros) {
+      m.modelo.position.set(g.x + m.ox, alturaEm(g.x + m.ox, g.z + m.oz), g.z + m.oz);
+      animarModelo(m.modelo, t, false);
+    }
     this.cristalFonte.rotation.y = t;
   }
 }
