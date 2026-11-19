@@ -28,7 +28,7 @@ const G = {
 const CIMA = new THREE.Vector3(0, 1, 0);
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
-const MAT_SOMBRA = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.22, depthWrite: false });
+export const MAT_SOMBRA = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.22, depthWrite: false });
 
 // Cada modelo ganha materiais próprios, para poder "piscar" sozinho ao levar dano
 function mat(cor, extra = {}) {
@@ -1181,7 +1181,7 @@ export function piscar(modelo, k, cor = '#ffffff') {
 
 export function descartar(obj) {
   obj.traverse((o) => {
-    if ((o.isMesh || o.isPoints) && o.material !== MAT_SOMBRA) {
+    if ((o.isMesh || o.isPoints) && o.material !== MAT_SOMBRA && !o.material.userData?.fixo) {
       if (Array.isArray(o.material)) o.material.forEach((m) => m.dispose());
       else o.material.dispose();
     }

@@ -6,7 +6,7 @@
 // A disposição dos obstáculos muda a cada batalha.
 // =============================================================
 import * as THREE from 'three';
-import { ARENAS } from './dados.js';
+import { ARENAS, CHANCE_PERIGO } from './dados.js';
 
 export const RAIO_ARENA = 22;
 
@@ -51,6 +51,11 @@ export class Arena {
     this.alertas = [];
     this.vento = { ang: Math.random() * Math.PI * 2, alvo: 0, troca: 0 };
     this.vento.alvo = this.vento.ang;
+    // o vento vem em rajadas: a cada 3 s sorteia se sopra ou se fica calmo
+    this.vento.soprando = Math.random() < CHANCE_PERIGO.vento;
+    this.vento.rajadaT = 3;
+    this.escuroT = 0;      // Astro Negro (Noctífero): a arena escurece por um tempo
+    this.escuroTotal = 1;
     this.perigoT = 3;
     this.flash = 0;
     this.tickPoca = 0;
@@ -65,11 +70,14 @@ export class Arena {
   criarLuzes() {
     const ceu = new THREE.Color(this.cores.ceu).lerp(CEU_NOITE, this.noite * 0.85);
     this.cena.background = ceu;
+    this.ceuBase = ceu.clone();
     this.cena.fog = new THREE.Fog(ceu, 40, 95);
     this.intensidadeHemi = THREE.MathUtils.lerp(1.7, 0.85, this.noite) * (this.zona === 'raio' ? 0.8 : 1);
     this.hemi = new THREE.HemisphereLight(new THREE.Color('#d6f0ff').lerp(new THREE.Color('#8f9fe0'), this.noite), '#5d7a3e', this.intensidadeHemi);
     const sol = new THREE.DirectionalLight(new THREE.Color('#fff1d6').lerp(new THREE.Color('#a8b8ff'), this.noite), THREE.MathUtils.lerp(1.9, 0.6, this.noite));
     sol.position.set(20, 40, 25);
+    this.sol = sol;
+    this.intensidadeSol = sol.intensity;
     this.cena.add(this.hemi, sol);
   }
 
@@ -278,13 +286,28 @@ export class Arena {
     this.atualizarClima(dt, t);
     for (const pc of this.pocas) pc.mesh.position.y = 0.05 + Math.sin(t * 2 + pc.x) * 0.02;
     if (this.flash > 0) this.flash = Math.max(0, this.flash - dt);
-    this.hemi.intensity = this.intensidadeHemi + this.flash * 12;
+    // escuridão do Astro Negro: entra rápido, segura e volta devagar
+    let escuro = 0;
+    if (this.escuroT > 0) {
+      this.escuroT = Math.max(0, this.escuroT - dt);
+      const k = 1 - this.escuroT / this.escuroTotal;
+      escuro = Math.min(1, k / 0.15, (1 - k) / 0.3);
+      this.cena.background.copy(this.ceuBase).multiplyScalar(1 - 0.75 * escuro);
+      this.cena.fog.color.copy(this.cena.background);
+      if (this.escuroT === 0) { this.cena.background.copy(this.ceuBase); this.cena.fog.color.copy(this.ceuBase); }
+    }
+    this.hemi.intensity = (this.intensidadeHemi + this.flash * 12) * (1 - 0.7 * escuro);
+    this.sol.intensity = this.intensidadeSol * (1 - 0.8 * escuro);
 
     const b = this.b;
     const ativo = !b.fim && !b.captura && b.t > 1.5;
     const lutadores = [b.jog, ...b.vivos()].filter((l) => !l.morto && l.modelo.visible);
     if (ativo) this.aplicarPerigos(dt, lutadores);
     this.atualizarAlertas(dt, lutadores, ativo);
+  }
+
+  escurecer(dur) {
+    this.escuroT = this.escuroTotal = dur;
   }
 
   atualizarClima(dt, t) {
@@ -294,12 +317,15 @@ export class Arena {
       this.vento.troca -= dt;
       if (this.vento.troca <= 0) { this.vento.troca = 6; this.vento.alvo += (Math.random() - 0.5) * 2.4; }
       this.vento.ang += (this.vento.alvo - this.vento.ang) * Math.min(1, dt * 0.8);
+      this.vento.rajadaT -= dt;
+      if (this.vento.rajadaT <= 0) { this.vento.rajadaT = 3; this.vento.soprando = Math.random() < CHANCE_PERIGO.vento; }
     }
+    const forcaVento = this.vento.soprando ? 1 : 0.25; // sem rajada, as folhas só flutuam
     const vx = Math.cos(this.vento.ang), vz = Math.sin(this.vento.ang);
     for (let i = 0; i < p.count; i++) {
       const k = i * 3;
       switch (this.zona) {
-        case 'planta': a[k] += vx * 6 * dt; a[k + 2] += vz * 6 * dt; a[k + 1] -= (1 + Math.sin(t * 3 + i)) * dt; break;
+        case 'planta': a[k] += vx * 6 * forcaVento * dt; a[k + 2] += vz * 6 * forcaVento * dt; a[k + 1] -= (1 + Math.sin(t * 3 + i)) * dt; break;
         case 'cratera': a[k + 1] += (i % 2 ? -1.2 : 2) * dt; a[k] += Math.sin(t * 2 + i) * 0.8 * dt; break;
         case 'raizes':
         case 'santuario': // vaga-lumes e esporos flutuando, folhas caindo
@@ -325,7 +351,7 @@ export class Arena {
 
   aplicarPerigos(dt, lutadores) {
     const b = this.b, perigo = this.cfg.perigo;
-    if (perigo === 'vento') {
+    if (perigo === 'vento' && this.vento.soprando) {
       // o vento empurra quem não é de planta
       const vx = Math.cos(this.vento.ang), vz = Math.sin(this.vento.ang);
       for (const l of lutadores) if (!l.esp.elementos.includes('planta')) { l.pos.x += vx * 1.4 * dt; l.pos.z += vz * 1.4 * dt; }
@@ -338,8 +364,9 @@ export class Arena {
       for (const l of lutadores) {
         if (!this.pocaEm(l.pos)) continue;
         if (l.esp.elementos.some((el) => pc.cura.includes(el))) { if (tick) b.curar(l, 0.015); }
-        else if (pc.efeito) b.aplicarEfeito(l, pc.efeito, pc.dur, null);
-        else if (tick && !l.morto && l.invul <= 0) { // espinhos: um arranhão a cada meio segundo
+        // lava e poças: a cada meio segundo em cima, uma chance de pegar o efeito
+        else if (pc.efeito) { if (tick && Math.random() < CHANCE_PERIGO[perigo]) b.aplicarEfeito(l, pc.efeito, pc.dur, null); }
+        else if (tick && !l.morto && l.invul <= 0 && Math.random() < CHANCE_PERIGO[perigo]) { // espinhos: um arranhão a cada meio segundo
           const dano = Math.max(1, Math.round(l.stats.hpMax * pc.dano));
           l.dados.hp = Math.max(0, l.dados.hp - dano);
           l.flash = 0.12;
@@ -392,9 +419,9 @@ export class Arena {
       if (ativo) {
         for (const l of lutadores) {
           if (Math.hypot(l.pos.x - al.p.x, l.pos.z - al.p.z) > al.raio + l.raio * 0.5) continue;
-          if (al.tipo === 'raios' && !l.esp.elementos.includes('raio')) { b.danoAmbiente(l, 0.06, '#ffe74c'); b.aplicarEfeito(l, 'paralisia', 0.8, null); }
+          if (al.tipo === 'raios' && !l.esp.elementos.includes('raio')) { b.danoAmbiente(l, 0.06, '#ffe74c'); if (Math.random() < CHANCE_PERIGO.raios) b.aplicarEfeito(l, 'paralisia', 0.8, null); }
           if (al.tipo === 'pedras' && !l.esp.elementos.includes('terra')) b.danoAmbiente(l, 0.08, '#c9a46a');
-          if (al.tipo === 'raizes' && !l.esp.elementos.some((el) => el === 'planta' || el === 'silvestre')) { b.danoAmbiente(l, 0.07, '#1fe0a0'); b.aplicarEfeito(l, 'enraizado', 1, null); }
+          if (al.tipo === 'raizes' && !l.esp.elementos.some((el) => el === 'planta' || el === 'silvestre')) { b.danoAmbiente(l, 0.07, '#1fe0a0'); if (Math.random() < CHANCE_PERIGO.raizes) b.aplicarEfeito(l, 'enraizado', 1, null); }
         }
       }
       if (al.tipo === 'raios') this.raioVisual(al.p);

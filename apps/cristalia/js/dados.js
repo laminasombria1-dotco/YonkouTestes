@@ -176,20 +176,32 @@ function golpesDoEstagio(el, estagio) {
 // =============================================================
 // EFEITOS NEGATIVOS (um por elemento)
 // duracao = segundos | as regras de cada efeito ficam em batalha.js
+// chance  = chance de o efeito pegar num golpe de ÁREA (0,3 = 30%).
+//           Os golpes de perto e de disparo têm uma parte disso (veja CHANCE_POR_TIPO).
+//           Os efeitos que travam o monstro (Medo, Paralisia, Sono) têm chance menor.
 // =============================================================
 export const EFEITOS = {
-  queimadura: { nome: 'Queimadura', cor: '#ff7a3d', duracao: 4,   descricao: 'perde vida a cada segundo' },
-  encharcado: { nome: 'Encharcado', cor: '#3db8ff', duracao: 4,   descricao: 'fica 45% mais lento' },
-  enraizado:  { nome: 'Enraizado',  cor: '#5fd35a', duracao: 1.8, descricao: 'não consegue andar, mas ainda ataca' },
-  soterrado:  { nome: 'Soterrado',  cor: '#c9a46a', duracao: 5,   descricao: 'a defesa cai 30%' },
-  paralisia:  { nome: 'Paralisia',  cor: '#f7e43a', duracao: 1.4, descricao: 'não anda nem ataca' },
-  ofuscado:   { nome: 'Ofuscado',   cor: '#ffab2e', duracao: 4,   descricao: '40% de chance de errar os golpes' },
-  sono:       { nome: 'Sono',       cor: '#b9b4ff', duracao: 3,   descricao: 'dorme até levar um golpe' },
-  exposto:    { nome: 'Exposto',    cor: '#fff6c8', duracao: 5,   descricao: 'recebe 30% a mais de dano' },
-  medo:       { nome: 'Medo',       cor: '#b57be8', duracao: 2.2, descricao: 'não consegue atacar' },
-  combustao:  { nome: 'Combustão',  cor: '#ff3d6a', duracao: 3,   descricao: 'perde vida a cada segundo e não pode ser curado' },
-  parasita:   { nome: 'Parasita',   cor: '#1fe0a0', duracao: 3.5, descricao: 'uma semente suga a vida (quem causou se cura) e deixa 30% mais lento' },
+  queimadura: { nome: 'Queimadura', cor: '#ff7a3d', duracao: 4, chance: 0.45,   descricao: 'perde vida a cada segundo' },
+  encharcado: { nome: 'Encharcado', cor: '#3db8ff', duracao: 4, chance: 0.45,   descricao: 'fica 45% mais lento' },
+  enraizado:  { nome: 'Enraizado',  cor: '#5fd35a', duracao: 1.8, chance: 0.35, descricao: 'não consegue andar, mas ainda ataca' },
+  soterrado:  { nome: 'Soterrado',  cor: '#c9a46a', duracao: 5, chance: 0.45,   descricao: 'a defesa cai 30%' },
+  paralisia:  { nome: 'Paralisia',  cor: '#f7e43a', duracao: 1.4, chance: 0.3, descricao: 'não anda nem ataca' },
+  ofuscado:   { nome: 'Ofuscado',   cor: '#ffab2e', duracao: 4, chance: 0.4,   descricao: '40% de chance de errar os golpes' },
+  sono:       { nome: 'Sono',       cor: '#b9b4ff', duracao: 3, chance: 0.3,   descricao: 'dorme até levar um golpe' },
+  exposto:    { nome: 'Exposto',    cor: '#fff6c8', duracao: 5, chance: 0.4,   descricao: 'recebe 30% a mais de dano' },
+  medo:       { nome: 'Medo',       cor: '#b57be8', duracao: 2.2, chance: 0.3, descricao: 'não consegue atacar' },
+  combustao:  { nome: 'Combustão',  cor: '#ff3d6a', duracao: 3, chance: 0.5,   descricao: 'perde vida a cada segundo e não pode ser curado' },
+  parasita:   { nome: 'Parasita',   cor: '#1fe0a0', duracao: 3.5, chance: 0.5, descricao: 'uma semente suga a vida (quem causou se cura) e deixa 30% mais lento' },
 };
+// Quanto da chance cada tipo de golpe usa. O disparo tem a menor porque
+// cada tiro tenta de novo (uma rajada ×3 tem 3 chances).
+// Ex.: Medo (30%) -> área 30%, perto 21%, cada disparo 15%.
+export const CHANCE_POR_TIPO = { area: 1, corpo: 0.7, projetil: 0.5 };
+export function chanceDoEfeito(nome, tipo) {
+  return EFEITOS[nome].chance * (CHANCE_POR_TIPO[tipo] ?? 1);
+}
+export function pct(x) { return Math.round(x * 100) + '%'; }
+
 export const EFEITO_DO_ELEMENTO = {
   fogo: 'queimadura', agua: 'encharcado', planta: 'enraizado', terra: 'soterrado', raio: 'paralisia',
   sol: 'ofuscado', lua: 'sono', luz: 'exposto', trevas: 'medo', igneo: 'combustao', silvestre: 'parasita',
@@ -239,9 +251,9 @@ export function textosMelhoria(especie) {
   const [perto, disparo, area] = e.golpes.map((g) => GOLPES[g].nome);
   const lista = [];
   if (m.disparos > 1) lista.push(`${disparo} dispara ${m.disparos} vezes seguidas.`);
-  if (m.efeitoArea && efA) lista.push(`${area} causa ${efA.nome}: ${efA.descricao} (${seg(efA.duracao * m.forcaEfeito)}).`);
-  if (m.efeitoDisparo && efD) lista.push(`${disparo} causa ${efD.nome}: ${efD.descricao} (${seg(efD.duracao * m.forcaEfeito * DURACAO_EFEITO_DISPARO)}).`);
-  if (m.efeitoPerto && efP) lista.push(`${perto} também causa ${efP.nome} (${seg(efP.duracao * m.forcaEfeito * DURACAO_EFEITO_PERTO)}).`);
+  if (m.efeitoArea && efA) lista.push(`${area} tem ${pct(efA.chance * CHANCE_POR_TIPO.area)} de chance de causar ${efA.nome}: ${efA.descricao} (${seg(efA.duracao * m.forcaEfeito)}).`);
+  if (m.efeitoDisparo && efD) lista.push(`${disparo}: cada tiro tem ${pct(efD.chance * CHANCE_POR_TIPO.projetil)} de chance de causar ${efD.nome}: ${efD.descricao} (${seg(efD.duracao * m.forcaEfeito * DURACAO_EFEITO_DISPARO)}).`);
+  if (m.efeitoPerto && efP) lista.push(`${perto} também tem ${pct(efP.chance * CHANCE_POR_TIPO.corpo)} de chance de causar ${efP.nome} (${seg(efP.duracao * m.forcaEfeito * DURACAO_EFEITO_PERTO)}).`);
   return lista;
 }
 
@@ -501,6 +513,12 @@ export const ARENAS = {
   raio:   { nome: 'Topo da Tempestade',  clima: 'Relâmpagos',       favorece: 'raio',   perigo: 'raios',
             descricaoPerigo: 'Raios caem e paralisam. Raio não sente.' },
 };
+// Chance de cada perigo do mapa pegar em quem está nele:
+//  lava, poças e espinhos: a cada meio segundo em cima, tenta de novo
+//  raios e raízes: o dano é certo (o círculo avisa antes); a chance é só do efeito (paralisia, prender)
+//  vento: a cada 3 s sorteia se vem uma rajada (que empurra por 3 s) ou se fica calmo
+//  pedras: só dano, sem efeito (o círculo avisa antes), então não têm chance
+export const CHANCE_PERIGO = { lava: 0.35, pocas: 0.35, espinhos: 0.5, raios: 0.4, raizes: 0.45, vento: 0.5 };
 export const BONUS_ARENA = { favorecido: 1.25, velFavorecido: 1.1, prejudicado: 0.8, periodo: 1.15 };
 
 // Modificadores que a arena (e o dia/noite) dão a um elemento

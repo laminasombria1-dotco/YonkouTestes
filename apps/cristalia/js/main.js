@@ -11,7 +11,7 @@ import { Plataforma, CenaEvolucao } from './plataforma.js';
 import {
   ESPECIES, ELEMENTOS, GOLPES, ORDEM_ELEMENTOS, RAROS, NOMES_ESTAGIO, NIVEIS_EVOLUCAO,
   criarMonstro, statsDe, xpParaProximo, xpDaVitoria, verificarEvolucao, formasDaLinha, fracoContra,
-  textosMelhoria, novidadesDaEvolucao, melhoriaDe, EFEITOS, EFEITO_DO_ELEMENTO,
+  textosMelhoria, novidadesDaEvolucao, melhoriaDe, EFEITOS, EFEITO_DO_ELEMENTO, chanceDoEfeito, pct,
   CRISTAIS, CUSTO_FUSAO, ORDEM_DUPLAS, DUPLAS, nomeDupla, nomeTipo, fundoTipo, fracoContraEspecie, forteContraEspecie,
   DURACAO_EFEITO_DISPARO,
 } from './dados.js';
@@ -285,11 +285,12 @@ class Jogo {
     const mel = melhoriaDe(id);
     const golpes = e.golpes.map((g) => {
       const gp = GOLPES[g];
-      const nomeEf = e.elementos.includes(gp.elemento) ? EFEITOS[EFEITO_DO_ELEMENTO[gp.elemento]]?.nome : null;
+      const idEf = e.elementos.includes(gp.elemento) ? EFEITO_DO_ELEMENTO[gp.elemento] : null;
+      const nomeEf = idEf ? EFEITOS[idEf]?.nome : null;
       let extra = TIPOS[gp.tipo];
       if (gp.tipo === 'projetil' && mel.disparos > 1) extra += ` ×${mel.disparos}`;
       const causa = (gp.tipo === 'area' && mel.efeitoArea) || (gp.tipo === 'corpo' && mel.efeitoPerto) || (gp.tipo === 'projetil' && mel.efeitoDisparo);
-      if (causa && nomeEf) extra += ` · ${nomeEf}`;
+      if (causa && nomeEf) extra += ` · ${nomeEf} ${pct(chanceDoEfeito(idEf, gp.tipo))}`;
       return `<span style="--cor:${ELEMENTOS[gp.elemento].cor}">${gp.nome} <small>${extra}</small></span>`;
     }).join('');
     const textos = textosMelhoria(id);

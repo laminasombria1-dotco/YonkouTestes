@@ -193,6 +193,11 @@ Cada região tem a sua arena, com raio de 22 m e obstáculos que **bloqueiam o m
 | Pedreira | Fundo da Pedreira | Poeira | Terra | Fogo, Raio | Pedras caem (Terra não sente) |
 | Planalto | Topo da Tempestade | Relâmpagos | Raio | Água, Sol | Raios caem e paralisam (Raio não sente) |
 
+- **Chance dos perigos** (`CHANCE_PERIGO` no `dados.js`):
+  - **Lava, poças e espinhos:** a cada meio segundo em cima, 35% de chance de queimar ou encharcar; nos espinhos, 50% de chance de arranhar.
+  - **Raios e raízes:** o dano é certo, porque o círculo avisa antes. Só o efeito tem chance: 40% de paralisar e 45% de prender.
+  - **Vento:** vem em **rajadas**. A cada 3 s, 50% de chance de soprar e empurrar pelos 3 s seguintes. Quando as folhas correm, é rajada; quando só flutuam, está calmo.
+  - **Pedras:** só dão dano e não têm efeito, por isso não têm chance.
 - **Atrapalha:** o lugar enfraquece quem é fraco contra o elemento dele.
 - **Pedras e raios:** um círculo no chão avisa onde vão cair.
 - **Dia e noite:** de dia, Sol e Luz ganham +15%; à noite, Lua e Trevas.
@@ -209,25 +214,48 @@ Cada evolução acrescenta algo às habilidades. Os monstros selvagens evoluído
 | 2ª evolução (Nv.12) | A **área** passa a causar o **efeito do elemento** |
 | Forma final (Nv.30) | Disparo **3 vezes**, o golpe **perto** também causa o efeito e os efeitos duram 50% mais |
 
+"Causar o efeito" quer dizer ter uma **chance** de causar (veja a tabela de efeitos abaixo).
+
 Na batalha, o botão mostra "×2" ou "×3" no disparo e uma bolinha colorida nos golpes que causam efeito. Os efeitos ativos aparecem embaixo da barra de vida.
 
 ### Efeito de cada elemento
 
-| Elemento | Efeito | O que faz | Duração |
-|---|---|---|---|
-| Fogo | Queimadura | Perde 4% da vida por segundo | 4 s |
-| Ígneo (chefe) | Combustão | Perde 6% da vida por segundo e não pode ser curado | 3 s |
-| Silvestre (chefe) | Parasita | Perde 5% da vida por segundo, que vai para quem causou; 30% mais lento | 3,5 s |
-| Água | Encharcado | Fica 45% mais lento | 4 s |
-| Planta | Enraizado | Não consegue andar, mas ainda ataca | 1,8 s |
-| Terra | Soterrado | Defesa cai 30% | 5 s |
-| Raio | Paralisia | Não anda nem ataca | 1,4 s |
-| Sol | Ofuscado | 40% de chance de errar os golpes | 4 s |
-| Lua | Sono | Dorme até levar um golpe | 3 s |
-| Luz | Exposto | Recebe 30% a mais de dano | 5 s |
-| Trevas | Medo | Não consegue atacar | 2,2 s |
+| Elemento | Efeito | O que faz | Duração | Chance (área / perto / cada disparo) |
+|---|---|---|---|---|
+| Fogo | Queimadura | Perde 4% da vida por segundo | 4 s | 45% / 32% / 23% |
+| Ígneo (chefe) | Combustão | Perde 6% da vida por segundo e não pode ser curado | 3 s | 50% / 35% / 25% |
+| Silvestre (chefe) | Parasita | Perde 5% da vida por segundo, que vai para quem causou; 30% mais lento | 3,5 s | 50% / 35% / 25% |
+| Água | Encharcado | Fica 45% mais lento | 4 s | 45% / 32% / 23% |
+| Planta | Enraizado | Não consegue andar, mas ainda ataca | 1,8 s | 35% / 25% / 18% |
+| Terra | Soterrado | Defesa cai 30% | 5 s | 45% / 32% / 23% |
+| Raio | Paralisia | Não anda nem ataca | 1,4 s | 30% / 21% / 15% |
+| Sol | Ofuscado | 40% de chance de errar os golpes | 4 s | 40% / 28% / 20% |
+| Lua | Sono | Dorme até levar um golpe | 3 s | 30% / 21% / 15% |
+| Luz | Exposto | Recebe 30% a mais de dano | 5 s | 40% / 28% / 20% |
+| Trevas | Medo | Não consegue atacar | 2,2 s | 30% / 21% / 15% |
+
+**Chance dos efeitos:** um golpe que "causa efeito" não causa sempre. A cada acerto o jogo sorteia:
+- A chance cheia vale para o golpe de **área**. O golpe de **perto** usa 70% dela, e cada **disparo** usa 50%, porque cada tiro de uma rajada sorteia de novo.
+- Os efeitos que travam o monstro (Medo, Paralisia, Sono) têm a chance mais baixa.
+- Na batalha, o botão do golpe mostra a chance (ex.: "ÁREA 30%"). O Monstruário também mostra.
+- Para mudar, mexa em `chance` dentro de `EFEITOS` e em `CHANCE_POR_TIPO`, no `dados.js`.
 
 Dica: trocar de monstro na batalha tira os efeitos negativos de quem saiu.
+
+## Golpes de Trevas (visual)
+
+Os golpes da linha de Trevas invocam coisas da escuridão, e cada evolução ganha algo novo. É só a aparência: dano, alcance e efeitos são os mesmos de antes. Tudo aparece **dentro da área que o golpe acerta**. O código fica em `js/trevas.js`.
+
+| Forma | Perto | Disparo | Área |
+|---|---|---|---|
+| Breuzinho | Investida com rastro de fumaça preta | Bola Sombria: núcleo de breu **com olhos** e rastro de fumaça | Vazio: **poça de breu** com 6 tentáculos |
+| Sombrelo | Mordida Sombria: uma **bocarra de sombra** fecha no alvo | Onde a bola acerta, **um par de olhos se abre** no ar | **Olhos se abrem** dentro da poça |
+| Umbrafel | Garra Abissal: **cópias sombrias** no avanço e **marcas de garra** roxas | Sombras viram **lâminas de sombra** | **Mãos de sombra** saem do chão; quem é atingido é **agarrado** por dedos |
+| Noctífero | **Garra gigante** brota do chão embaixo do alvo | **Morcegos de sombra**, e uma **cópia sombria** aparece atrás e atira junto | Abismo: o **Astro Negro** (esfera preta com coroa roxa) sobe, a **arena escurece**, um **anel de olhos** se abre e 9 mãos agarram |
+
+- **Medo:** quem está com medo fica com **um par de olhos roxos** flutuando atrás dele até o efeito acabar.
+- **Astro Negro** é o nome do visual do Abismo. Não é "eclipse" para não confundir com o golpe Eclipse da Lua.
+- **Leve no celular:** as formas (dedo, dente, olho, morcego) são criadas uma vez só e reaproveitadas; cada golpe some em menos de 2 s.
 
 ## Vantagens entre elementos
 
@@ -260,7 +288,8 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/dungeon.js` | Base das dungeons abertas: a forma do corredor (`Tracado`), portões transparentes, acampamentos, monstros soltos, chefe e clima. Também o `Lote` e o `Bloco`, que juntam peças para ficar leve no celular |
 | `js/brasas.js` | Cenário do Caminho das Brasas (braseiros, forja, rio de lava, Trono de Magma, vulcão) |
 | `js/raizes.js` | Cenário da Trilha Ancestral e da Floresta (cogumelos, ruínas, lago, raízes, Árvore-Mãe, vaga-lumes, monstros extras) |
-| `js/arena.js` | Arenas: chão, obstáculos, clima animado e perigos de cada região |
+| `js/arena.js` | Arenas: chão, obstáculos, clima animado e perigos de cada região (com chance), e o escurecer do Astro Negro |
+| `js/trevas.js` | Visual dos golpes de Trevas: poça, tentáculos, mãos, olhos, bocarra, garras, cópias sombrias, morcegos e Astro Negro |
 | `js/controles.js` | Joystick de toque, botões e teclado |
 | `js/main.js` | Liga tudo: telas, equipe, experiência, evolução, salvamento |
 | `lib/three.module.min.js` | Biblioteca Three.js 0.170 (licença MIT, em `lib/THREE-LICENSE.txt`) |

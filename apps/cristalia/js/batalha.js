@@ -9,8 +9,9 @@ import * as THREE from 'three';
 import {
   ESPECIES, GOLPES, ELEMENTOS, EFEITOS, EFEITO_DO_ELEMENTO, PODER_DISPARO_EXTRA, DURACAO_EFEITO_PERTO, DURACAO_EFEITO_DISPARO,
   multiplicadorContra, chanceCaptura, melhoriaDe, statsDe, modificadorArena, fatorDanoNivel, CRISTAIS, nomeTipo, fundoTipo, DANO_GERAL,
-  fracoContraEspecie,
+  fracoContraEspecie, chanceDoEfeito, pct,
 } from './dados.js';
+import { VisualTrevas } from './trevas.js';
 import { criarModelo, criarCristal, criarCoroa, animarModelo, piscar, descartar } from './modelos.js';
 
 const MAX_ATIVOS = 2;      // quantos inimigos de um grupo lutam ao mesmo tempo (o próximo par só entra quando estes caírem)
@@ -101,6 +102,7 @@ export class Batalha {
     this.camera = new THREE.PerspectiveCamera(50, jogo.aspecto, 0.1, 200);
     this.efeitos = [];
     this.arena = new Arena(this);
+    this.trevas = new VisualTrevas(this); // visual especial dos golpes de Trevas
     this.periodo = jogo.mundo.periodo;
 
     this.idx = idxInicial;
@@ -314,6 +316,7 @@ export class Batalha {
     this.atualizarProjeteis(dt);
     this.arena.atualizar(dt, this.t);
     this.atualizarEfeitos(dt);
+    this.trevas.atualizar();
     if (this.captura) this.atualizarCaptura(dt);
 
     if (this.trocaAuto > 0) {
@@ -454,9 +457,11 @@ export class Batalha {
     const nome = EFEITO_DO_ELEMENTO[gp.elemento];
     const m = c.melhoria;
     if (!nome || !c.esp.elementos.includes(gp.elemento)) return null;
-    if (gp.tipo === 'area' && m.efeitoArea) return { nome, dur: EFEITOS[nome].duracao * m.forcaEfeito };
-    if (gp.tipo === 'corpo' && m.efeitoPerto) return { nome, dur: EFEITOS[nome].duracao * m.forcaEfeito * DURACAO_EFEITO_PERTO };
-    if (gp.tipo === 'projetil' && m.efeitoDisparo) return { nome, dur: EFEITOS[nome].duracao * m.forcaEfeito * DURACAO_EFEITO_DISPARO };
+    // chance = probabilidade de o efeito pegar a cada acerto (fica em dados.js)
+    const chance = chanceDoEfeito(nome, gp.tipo);
+    if (gp.tipo === 'area' && m.efeitoArea) return { nome, chance, dur: EFEITOS[nome].duracao * m.forcaEfeito };
+    if (gp.tipo === 'corpo' && m.efeitoPerto) return { nome, chance, dur: EFEITOS[nome].duracao * m.forcaEfeito * DURACAO_EFEITO_PERTO };
+    if (gp.tipo === 'projetil' && m.efeitoDisparo) return { nome, chance, dur: EFEITOS[nome].duracao * m.forcaEfeito * DURACAO_EFEITO_DISPARO };
     return null;
   }
 
@@ -464,22 +469,27 @@ export class Batalha {
     const gp = p.gp, dir = p.dir;
     if (gp.tipo === 'corpo') {
       c.dash = { dir: dir.clone(), t: 0.17, vel: 12, gp, acertou: false, efeito: this.efeitoDoGolpe(c, gp) };
+      if (this.trevas.dele(c)) this.trevas.avancar(c);
     } else if (gp.tipo === 'projetil') {
       this.disparar(c, gp, dir, 1);
+      if (this.trevas.dele(c) && gp.elemento === 'trevas') this.trevas.aoDisparar(c, dir);
       // Evoluções disparam de novo em sequência (rajada)
       if (c.melhoria.disparos > 1) c.rajada = { gp, dir: dir.clone(), restantes: c.melhoria.disparos - 1, t: 0.16 };
     } else {
       const cor = ELEMENTOS[gp.elemento].cor;
       const efeito = this.efeitoDoGolpe(c, gp);
+      const sombrio = this.trevas.dele(c) && gp.elemento === 'trevas';
       this.efeitoAnel(c.pos, gp.raio, cor);
       if (efeito) this.efeitoAnel(c.pos, gp.raio * 0.7, EFEITOS[efeito.nome].cor);
-      this.particulas(c.pos, cor, 14, 1.2);
+      if (!sombrio) this.particulas(c.pos, cor, 14, 1.2);
       // a área acerta todos os adversários dentro do círculo
+      const atingidos = [];
       for (const alvo of this.alvosDe(c)) {
         if (dist(c, alvo) <= gp.raio + alvo.raio * 0.5) {
-          this.aplicarDano(c, alvo, gp, new THREE.Vector3(alvo.pos.x - c.pos.x, 0, alvo.pos.z - c.pos.z).normalize(), { efeito });
+          if (this.aplicarDano(c, alvo, gp, new THREE.Vector3(alvo.pos.x - c.pos.x, 0, alvo.pos.z - c.pos.z).normalize(), { efeito })) atingidos.push(alvo);
         }
       }
+      if (sombrio) this.trevas.area(c, gp, atingidos);
     }
   }
 
@@ -527,7 +537,8 @@ export class Batalha {
       this.particulas(alvo.pos, corFuria, 30, 2);
       this.jogo.aviso(`${alvo.esp.nome} entrou em FÚRIA! Ataca mais rápido.`);
     }
-    if (opcoes.efeito) this.aplicarEfeito(alvo, opcoes.efeito.nome, opcoes.efeito.dur, at);
+    // o efeito só pega se passar no sorteio da chance (ex.: 30% para Medo na área)
+    if (opcoes.efeito && Math.random() < (opcoes.efeito.chance ?? 1)) this.aplicarEfeito(alvo, opcoes.efeito.nome, opcoes.efeito.dur, at);
     return true;
   }
 
@@ -683,7 +694,7 @@ export class Batalha {
         const alvo = this.alvosDe(c).find((o) => dist(c, o) < c.raio + o.raio + 0.5);
         if (alvo) {
           ds.acertou = true;
-          this.aplicarDano(c, alvo, ds.gp, ds.dir, { efeito: ds.efeito });
+          if (this.aplicarDano(c, alvo, ds.gp, ds.dir, { efeito: ds.efeito }) && this.trevas.dele(c)) this.trevas.acertoPerto(c, alvo);
           ds.t = 0;
         }
       }
@@ -693,7 +704,7 @@ export class Batalha {
             const tx = o.pos.x - c.pos.x, tz = o.pos.z - c.pos.z, d = Math.hypot(tx, tz);
             return d <= ds.gp.alcance + o.raio * 0.5 && (tx * ds.dir.x + tz * ds.dir.z) / (d || 1) > 0.5;
           });
-          if (alvo) this.aplicarDano(c, alvo, ds.gp, ds.dir, { efeito: ds.efeito });
+          if (alvo && this.aplicarDano(c, alvo, ds.gp, ds.dir, { efeito: ds.efeito }) && this.trevas.dele(c)) this.trevas.acertoPerto(c, alvo);
         }
         c.dash = null;
       }
@@ -728,6 +739,17 @@ export class Batalha {
   // ---------- projéteis e efeitos ----------
   criarProjetil(c, gp, ang, fator = 1) {
     const cor = ELEMENTOS[gp.elemento].cor;
+    if (this.trevas.dele(c) && gp.elemento === 'trevas') {
+      // tiro de Trevas: bola com olhos, lâmina ou morcego (depende da forma)
+      const info = this.trevas.projetil(c, ang);
+      const dir = new THREE.Vector3(Math.sin(ang), 0, Math.cos(ang));
+      const pos = c.pos.clone().addScaledVector(dir, c.raio + 0.3).setY(0.8 * c.esp.tamanho);
+      info.obj.position.copy(pos);
+      if (fator < 1) info.obj.scale.setScalar(0.85);
+      this.cena.add(info.obj);
+      this.projeteis.push({ mesh: info.obj, trevas: info, pos, dir, gp, dono: c, lado: c.lado, vida: 1.4, fator, efeito: this.efeitoDoGolpe(c, gp) });
+      return;
+    }
     const mesh = new THREE.Mesh(GEO_PROJ[gp.elemento] || GEO_PROJ.normal, new THREE.MeshLambertMaterial({ color: gp.elemento === 'trevas' ? '#3a1a5a' : cor, emissive: cor, emissiveIntensity: 0.6, flatShading: true, transparent: gp.elemento === 'agua', opacity: 0.85 }));
     if (gp.elemento === 'planta') mesh.scale.set(1, 0.3, 1.7);
     if (gp.elemento === 'raio') mesh.scale.set(0.7, 0.7, 2.4);
@@ -746,7 +768,8 @@ export class Batalha {
       p.pos.addScaledVector(p.dir, p.gp.velocidade * dt);
       p.vida -= dt;
       p.mesh.position.copy(p.pos);
-      if (p.gp.elemento === 'lua') p.mesh.rotation.y += dt * 14;
+      if (p.trevas) this.trevas.atualizarProjetil(p, dt);
+      else if (p.gp.elemento === 'lua') p.mesh.rotation.y += dt * 14;
       else if (p.gp.elemento !== 'planta' && p.gp.elemento !== 'raio') p.mesh.rotation.x += dt * 8;
       const alvos = p.lado === 'jogador' ? this.vivos() : (this.jog.morto ? [] : [this.jog]);
       let acabou = p.vida <= 0 || Math.hypot(p.pos.x, p.pos.z) > RAIO_ARENA + 1;
@@ -759,10 +782,11 @@ export class Batalha {
       if (alvo) {
         this.aplicarDano(p.dono, alvo, p.gp, p.dir, { fator: p.fator, efeito: p.efeito });
         acabou = true;
-      }
+        if (p.trevas) this.trevas.impacto(p);
+      } else if (acabou && p.trevas && p.vida > 0) this.trevas.impacto(p);
       if (acabou) {
         this.cena.remove(p.mesh);
-        p.mesh.material.dispose();
+        if (!p.trevas) p.mesh.material.dispose(); // os tiros de Trevas usam materiais fixos
         this.projeteis.splice(i, 1);
       }
     }
@@ -800,7 +824,9 @@ export class Batalha {
       e.upd(e, 1 - Math.max(0, e.vida) / e.total, dt);
       if (e.vida <= 0) {
         this.cena.remove(e.obj);
-        e.obj.material.dispose();
+        // efeitos de Trevas são grupos com materiais próprios (e.mats) ou fixos
+        if (e.mats) e.mats.forEach((m) => m.dispose());
+        else if (e.obj.material && !e.obj.material.userData?.fixo) e.obj.material.dispose();
         this.efeitos.splice(i, 1);
       }
     }
@@ -999,12 +1025,13 @@ export class Batalha {
       const gp = j.golpe(i);
       b.querySelector('.nome').textContent = gp.nome;
       const extra = gp.tipo === 'projetil' && j.melhoria.disparos > 1 ? ` ×${j.melhoria.disparos}` : '';
-      b.querySelector('.tipo').textContent = tipos[gp.tipo] + extra;
+      const efB = this.efeitoDoGolpe(j, gp);
+      b.querySelector('.tipo').textContent = tipos[gp.tipo] + extra + (efB ? ' ' + pct(efB.chance) : '');
       b.style.setProperty('--cor', ELEMENTOS[gp.elemento].cor);
       // bolinha na cor do efeito quando o golpe causa um efeito negativo
       const ef = this.efeitoDoGolpe(j, gp);
       b.classList.toggle('com-efeito', !!ef);
-      if (ef) { b.style.setProperty('--ef', EFEITOS[ef.nome].cor); b.title = `Causa ${EFEITOS[ef.nome].nome}`; }
+      if (ef) { b.style.setProperty('--ef', EFEITOS[ef.nome].cor); b.title = `${pct(ef.chance)} de chance de causar ${EFEITOS[ef.nome].nome}`; }
       else b.removeAttribute('title');
     });
   }
