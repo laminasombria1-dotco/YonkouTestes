@@ -1,0 +1,245 @@
+<title>Cristalia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap">
+<style>
+  /* Layout: jogo em tela cheia; o HUD flutua nas bordas e os controles ficam ao alcance dos polegares.
+     Visual único (não muda com tema claro/escuro): céu azul do jogo + painéis azul-noite translúcidos. */
+  :root {
+    --noite: #14233f;
+    --painel: rgba(18, 33, 61, 0.86);
+    --painel-borda: rgba(143, 244, 255, 0.28);
+    --creme: #fff6e3;
+    --creme-suave: #c9d6e8;
+    --cristal: #8ff4ff;
+    --sol: #ffd23f;
+    --vida-alta: #5fe08a;
+    --vida-media: #ffd23f;
+    --vida-baixa: #ff5470;
+    --f-titulo: 'Fredoka', 'Trebuchet MS', system-ui, sans-serif;
+    --f-corpo: 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --toque: 74px;
+    color-scheme: dark;
+  }
+  [hidden] { display: none !important; }
+  html { height: 100%; box-sizing: border-box; }
+  *, *::before, *::after { box-sizing: inherit; }
+  body { height: 100%; margin: 0; overflow: hidden; background: var(--noite); color: var(--creme); font-family: var(--f-corpo); }
+  #app { position: relative; width: 100%; height: 100%; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+  #palco { position: absolute; inset: 0; }
+  #palco canvas { display: block; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  button:focus-visible { outline: 3px solid var(--cristal); outline-offset: 2px; }
+
+  /* ---------- telas de título e escolha ---------- */
+  .tela { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center;
+    padding-block: 20px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  #tela-titulo { background: radial-gradient(ellipse at center, rgba(20, 35, 63, 0.1), rgba(20, 35, 63, 0.65)); }
+  .logo { margin: 0; font-family: var(--f-titulo); font-weight: 700; font-size: clamp(3rem, 11vmin, 6rem); letter-spacing: 0.02em; line-height: 1;
+    color: var(--creme); text-shadow: 0 4px 0 #2a7fb0, 0 8px 24px rgba(10, 30, 60, 0.6); }
+  .logo span { color: var(--cristal); }
+  .sub { margin: 0; max-width: 34ch; font-size: 1.05rem; text-wrap: balance; text-shadow: 0 2px 8px rgba(10, 20, 40, 0.8); }
+  .botoes { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .btn-grande { border: 0; border-radius: 999px; padding: 14px 28px; font-family: var(--f-titulo); font-weight: 600; font-size: 1.15rem;
+    background: var(--sol); color: #3a2a00; box-shadow: 0 5px 0 #b8860b; transition: transform 0.08s; }
+  .btn-grande.sec { background: var(--cristal); color: #0c3a48; box-shadow: 0 5px 0 #2a8fa8; }
+  .btn-grande:active { transform: translateY(3px); box-shadow: 0 2px 0 #b8860b; }
+  .btn-grande:disabled { opacity: 0.5; cursor: default; }
+  .dica { margin: 0; max-width: 46ch; font-size: 0.85rem; color: var(--creme-suave); text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8); }
+
+  #tela-inicial { justify-content: flex-end; gap: 12px; }
+  #tela-inicial h2 { margin: 0; font-family: var(--f-titulo); font-weight: 600; font-size: 1.5rem; text-shadow: 0 2px 8px rgba(10, 20, 40, 0.7); position: absolute; top: 16px; left: 0; right: 0; }
+  .cartas { display: grid; grid-template-columns: repeat(3, minmax(0, 220px)); gap: 10px; width: 100%; justify-content: center; }
+  .carta { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; text-align: left; padding: 10px 12px; border-radius: 14px;
+    background: var(--painel); border: 2px solid transparent; min-width: 0; }
+  .carta.escolhida { border-color: var(--cor); box-shadow: 0 0 0 3px color-mix(in srgb, var(--cor) 35%, transparent); }
+  .carta strong { font-family: var(--f-titulo); font-size: 1.15rem; font-weight: 600; }
+  .carta p { margin: 0 0 4px; font-size: 0.78rem; color: var(--creme-suave); line-height: 1.3; }
+  .tag { display: inline-block; padding: 1px 8px; border-radius: 999px; background: var(--cor); color: #10202e; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+  .stat { display: grid; grid-template-columns: 4.2em 1fr; align-items: center; gap: 6px; width: 100%; font-size: 0.7rem; color: var(--creme-suave); }
+  .stat i { height: 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
+  .stat b { display: block; height: 100%; background: var(--cor); }
+
+  /* ---------- HUD do mundo ---------- */
+  .hud { position: absolute; inset: 0; pointer-events: none; }
+  .hud button { pointer-events: auto; }
+  #equipe-chips { position: absolute; top: 10px; left: max(10px, env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; gap: 6px; }
+  .chip { display: grid; grid-template-columns: auto auto; gap: 2px 8px; align-items: center; padding: 6px 10px; border-radius: 10px; background: var(--painel);
+    border-left: 4px solid var(--cor); min-width: 128px; font-size: 0.8rem; }
+  .chip .nome { font-weight: 800; }
+  .chip .nv { justify-self: end; color: var(--creme-suave); font-variant-numeric: tabular-nums; }
+  .chip .vida { grid-column: 1 / -1; }
+  .chip.desmaiado { opacity: 0.55; }
+  .vida, .xp { display: block; height: 7px; border-radius: 4px; background: rgba(0, 0, 0, 0.4); overflow: hidden; }
+  .vida b, .xp b { display: block; height: 100%; background: var(--vida-alta); transition: width 0.2s; }
+  .xp b { background: var(--cristal); }
+  [data-nivel="medio"] { background: var(--vida-media) !important; }
+  [data-nivel="baixo"] { background: var(--vida-baixa) !important; }
+  .topo-dir { position: absolute; top: 10px; right: max(10px, env(safe-area-inset-right, 0px)); display: flex; gap: 8px; align-items: center; }
+  .pilula { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--painel); font-weight: 800; font-variant-numeric: tabular-nums; }
+  .losango { width: 10px; height: 14px; background: var(--cristal); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); display: inline-block; }
+  .btn-hud { border: 1px solid var(--painel-borda); border-radius: 999px; padding: 7px 14px; background: var(--painel); font-weight: 800; font-size: 0.85rem; }
+  .btn-hud:active, .btn-hud.apertado { background: #23406e; }
+
+  #rotulo { position: absolute; left: 0; top: 0; padding: 3px 9px; border-radius: 8px; background: var(--painel); font-size: 0.78rem; font-weight: 700; white-space: nowrap; pointer-events: none; }
+  #rotulo i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
+  #rotulo b { color: var(--sol); }
+
+  /* ---------- painel da equipe ---------- */
+  #painel-equipe { position: absolute; inset: 0; background: rgba(10, 18, 34, 0.75); display: flex; justify-content: center; align-items: flex-start; overflow-y: auto; touch-action: pan-y;
+    padding-block: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .painel-caixa { width: min(720px, 100%); background: var(--noite); border: 1px solid var(--painel-borda); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+  .painel-cabeca { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .painel-caixa h2, .painel-caixa h3 { margin: 0; font-family: var(--f-titulo); font-weight: 600; }
+  .painel-caixa h3 { font-size: 1rem; color: var(--creme-suave); }
+  .grade-fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .ficha { background: var(--painel); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 6px; border-top: 3px solid var(--cor); min-width: 0; }
+  .ficha header { display: flex; align-items: center; gap: 8px; }
+  .ficha header strong { font-family: var(--f-titulo); font-weight: 600; font-size: 1.05rem; }
+  .ficha header em { margin-left: auto; font-style: normal; color: var(--sol); font-weight: 800; }
+  .linha { display: grid; grid-template-columns: 2.6em 1fr auto; gap: 6px; align-items: center; font-size: 0.75rem; }
+  .linha small { font-variant-numeric: tabular-nums; color: var(--creme-suave); }
+  .atributos { display: flex; gap: 10px; font-size: 0.72rem; color: var(--creme-suave); flex-wrap: wrap; }
+  .atributos b { color: var(--creme); }
+  .golpes-lista { display: flex; flex-wrap: wrap; gap: 4px; }
+  .golpes-lista span { font-size: 0.7rem; padding: 2px 7px; border-radius: 6px; border: 1px solid var(--cor); }
+  .cmds { display: flex; flex-wrap: wrap; gap: 6px; }
+  .cmds button { border: 0; border-radius: 8px; padding: 6px 10px; background: #2a4a7a; font-weight: 700; font-size: 0.78rem; }
+  .lider { font-size: 0.75rem; color: var(--sol); font-weight: 700; }
+  .vazio, #info-colecao { margin: 0; font-size: 0.85rem; color: var(--creme-suave); }
+
+  /* ---------- HUD da batalha ---------- */
+  .barra-luta { position: absolute; top: 10px; width: min(40vw, 260px); padding: 7px 10px; border-radius: 12px; background: var(--painel); display: flex; flex-direction: column; gap: 4px; }
+  .barra-luta.jog { left: max(10px, env(safe-area-inset-left, 0px)); }
+  .barra-luta.ini { right: max(10px, env(safe-area-inset-right, 0px)); }
+  .barra-luta .topo { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; min-width: 0; }
+  .barra-luta .topo strong { font-family: var(--f-titulo); font-weight: 600; font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .barra-luta .topo span:last-child { margin-left: auto; color: var(--sol); font-weight: 800; }
+  .barra-luta .vida { height: 10px; }
+  .barra-luta .pe { display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: var(--creme-suave); font-variant-numeric: tabular-nums; }
+  #bj-equipe { display: flex; gap: 4px; }
+  #bj-equipe i { width: 9px; height: 9px; border-radius: 50%; background: var(--vida-alta); }
+  #bj-equipe i.fora { background: #55627a; }
+  #bj-equipe i.atual { box-shadow: 0 0 0 2px var(--creme); }
+  .acoes-topo { position: absolute; top: 74px; right: max(10px, env(safe-area-inset-right, 0px)); display: flex; gap: 6px; }
+  #btn-cristal { display: inline-flex; align-items: center; gap: 6px; border-color: var(--cristal); }
+  #chance-cristal { color: var(--cristal); font-size: 0.75rem; }
+  .golpes { position: absolute; right: max(14px, calc(env(safe-area-inset-right, 0px) + 8px)); bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) + 8px));
+    display: grid; grid-template-columns: repeat(2, var(--toque)); grid-template-areas: "g2 esq" "g1 g0"; gap: 10px; }
+  .golpe, .esquiva { position: relative; width: var(--toque); height: var(--toque); border-radius: 50%; border: 3px solid var(--cor, var(--creme)); background: var(--painel);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 4px; overflow: hidden; touch-action: none; }
+  .golpe[data-acao="golpe0"] { grid-area: g0; } .golpe[data-acao="golpe1"] { grid-area: g1; } .golpe[data-acao="golpe2"] { grid-area: g2; } .esquiva { grid-area: esq; --cor: var(--creme); }
+  .golpe .nome, .esquiva .nome { font-size: 0.66rem; font-weight: 800; line-height: 1.05; text-align: center; position: relative; z-index: 1; }
+  .golpe .tipo { font-size: 0.56rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--cor); position: relative; z-index: 1; }
+  .recarga { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(rgba(5, 10, 24, 0.72) calc(var(--p, 0) * 1turn), transparent 0); pointer-events: none; }
+  .carregando { border-color: rgba(255, 255, 255, 0.25); }
+  .apertado { transform: scale(0.92); }
+
+  /* ---------- joystick ---------- */
+  #joystick { position: absolute; inset: 0; pointer-events: none; }
+  #joystick .base { position: absolute; left: 0; top: 0; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%;
+    background: rgba(18, 33, 61, 0.35); border: 2px solid rgba(255, 246, 227, 0.35); opacity: 0.6; transition: opacity 0.15s; }
+  #joystick.ativo .base { opacity: 1; }
+  #joystick .manete { position: absolute; left: 50%; top: 50%; width: 54px; height: 54px; margin: -27px 0 0 -27px; border-radius: 50%; background: rgba(255, 246, 227, 0.85); }
+
+  /* ---------- avisos e números ---------- */
+  #numeros { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .numero { position: absolute; left: 0; top: 0; font-family: var(--f-titulo); font-weight: 700; font-size: 1.5rem; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.55); white-space: nowrap; will-change: transform; }
+  .numero.grande { font-size: 2rem; }
+  .numero.pequeno { font-size: 0.95rem; }
+  #avisos { position: absolute; left: 50%; bottom: max(18px, env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; width: min(46vw, 420px); }
+  .aviso { padding: 7px 14px; border-radius: 10px; background: var(--painel); font-size: 0.85rem; font-weight: 700; text-align: center; animation: entra 0.25s ease-out, sai 0.4s ease-in 2.4s forwards; }
+  @keyframes entra { from { opacity: 0; transform: translateY(8px); } }
+  @keyframes sai { to { opacity: 0; } }
+
+  /* Celular em pé: tudo um pouco menor */
+  @media (orientation: portrait) {
+    :root { --toque: 66px; }
+    .cartas { grid-template-columns: 1fr; max-width: 420px; }
+    .carta { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px; }
+    .carta p { grid-column: 1 / -1; }
+    .carta .tag { grid-column: 1 / -1; justify-self: start; }
+    .carta strong { grid-column: 1 / -1; }
+    .barra-luta { width: calc(50% - 16px); }
+    .acoes-topo { left: max(10px, env(safe-area-inset-left, 0px)); right: auto; top: 82px; }
+    #avisos { width: calc(100% - 32px); bottom: 190px; }
+  }
+  @media (max-height: 430px) and (orientation: landscape) {
+    .carta p { display: none; }
+    #tela-inicial h2 { top: 8px; font-size: 1.2rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .aviso { animation: none; }
+  }
+</style>
+
+<div id="app">
+  <div id="palco"></div>
+  <div id="numeros"></div>
+  <div id="rotulo" hidden></div>
+
+  <section id="tela-titulo" class="tela">
+    <h1 class="logo">Crist<span>a</span>lia</h1>
+    <p class="sub">Explore o vale, enfraqueça monstros selvagens e capture-os com cristais.</p>
+    <div class="botoes">
+      <button id="btn-novo" class="btn-grande" type="button">Novo jogo</button>
+      <button id="btn-continuar" class="btn-grande sec" type="button" hidden>Continuar</button>
+    </div>
+    <p class="dica">Melhor com o celular deitado. Arraste o dedo em qualquer lugar da tela para andar.<br>No PC: WASD anda, J K L golpes, Espaço esquiva, C cristal, Q troca.</p>
+  </section>
+
+  <section id="tela-inicial" class="tela" hidden>
+    <h2>Escolha seu primeiro parceiro</h2>
+    <div id="cartas-iniciais" class="cartas"></div>
+    <button id="btn-escolher" class="btn-grande" type="button" disabled>Toque num monstro</button>
+  </section>
+
+  <div id="hud-mundo" class="hud" hidden>
+    <div id="equipe-chips"></div>
+    <div class="topo-dir">
+      <span class="pilula" title="Cristais de captura"><span class="losango"></span><span id="contador-cristais">0</span></span>
+      <button id="btn-equipe" class="btn-hud" type="button">Equipe</button>
+    </div>
+  </div>
+
+  <div id="hud-batalha" class="hud" hidden>
+    <div class="barra-luta jog">
+      <div class="topo"><span class="tag" id="bj-el"></span><strong id="bj-nome"></strong><span id="bj-nivel"></span></div>
+      <i class="vida" id="bj-vida"><b></b></i>
+      <div class="pe"><span id="bj-hp"></span><span id="bj-equipe"></span></div>
+    </div>
+    <div class="barra-luta ini">
+      <div class="topo"><span class="tag" id="bi-el"></span><strong id="bi-nome"></strong><span id="bi-nivel"></span></div>
+      <i class="vida" id="bi-vida"><b></b></i>
+      <div class="pe"><span id="bi-hp"></span><span>Selvagem</span></div>
+    </div>
+    <div class="acoes-topo">
+      <button id="btn-cristal" class="btn-hud" data-acao="cristal" type="button"><span class="losango"></span>Cristal <b id="qtd-cristal">0</b> <span id="chance-cristal"></span></button>
+      <button class="btn-hud" data-acao="trocar" type="button">Trocar</button>
+      <button class="btn-hud" data-acao="fugir" type="button">Fugir</button>
+    </div>
+    <div class="golpes">
+      <button class="golpe" data-acao="golpe0" type="button"><span class="recarga"></span><span class="nome"></span><span class="tipo"></span></button>
+      <button class="golpe" data-acao="golpe1" type="button"><span class="recarga"></span><span class="nome"></span><span class="tipo"></span></button>
+      <button class="golpe" data-acao="golpe2" type="button"><span class="recarga"></span><span class="nome"></span><span class="tipo"></span></button>
+      <button class="esquiva" id="btn-esquiva" data-acao="esquiva" type="button"><span class="recarga"></span><span class="nome">Esquiva</span></button>
+    </div>
+  </div>
+
+  <div id="joystick" hidden><div class="base"><div class="manete"></div></div></div>
+
+  <div id="painel-equipe" hidden>
+    <div class="painel-caixa">
+      <div class="painel-cabeca"><h2>Equipe</h2><button id="fechar-equipe" class="btn-hud" type="button">Fechar</button></div>
+      <div id="lista-equipe" class="grade-fichas"></div>
+      <h3>Reserva</h3>
+      <div id="lista-reserva" class="grade-fichas"></div>
+      <p id="info-colecao"></p>
+    </div>
+  </div>
+
+  <div id="avisos"></div>
+</div>
+
+<script type="importmap">{ "imports": { "three": "./lib/three.module.min.js" } }</script>
+<script type="module" src="./js/main.js"></script>
