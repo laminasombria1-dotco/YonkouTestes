@@ -11,6 +11,7 @@ import { Plataforma, CenaEvolucao } from './plataforma.js';
 import {
   ESPECIES, ELEMENTOS, GOLPES, ORDEM_ELEMENTOS, RAROS, NOMES_ESTAGIO, NIVEIS_EVOLUCAO,
   criarMonstro, statsDe, xpParaProximo, xpDaVitoria, verificarEvolucao, formasDaLinha, fracoContra,
+  textosMelhoria, novidadesDaEvolucao, melhoriaDe, EFEITOS, EFEITO_DO_ELEMENTO,
 } from './dados.js';
 
 const CHAVE_SAVE = 'cristalia-save-v1';
@@ -49,6 +50,7 @@ class Jogo {
     this.ui = {
       bjNome: $('#bj-nome'), bjNivel: $('#bj-nivel'), bjEl: $('#bj-el'), bjVida: $('#bj-vida b'), bjHp: $('#bj-hp'), bjEquipe: $('#bj-equipe'),
       biNome: $('#bi-nome'), biNivel: $('#bi-nivel'), biEl: $('#bi-el'), biVida: $('#bi-vida b'), biHp: $('#bi-hp'),
+      bjStatus: $('#bj-status'), biStatus: $('#bi-status'),
       golpes: [...document.querySelectorAll('#hud-batalha .golpe')],
       esquiva: $('#btn-esquiva'), qtdCristal: $('#qtd-cristal'), chanceCristal: $('#chance-cristal'),
       rotulo: $('#rotulo'), numeros: $('#numeros'), avisos: $('#avisos'),
@@ -209,9 +211,23 @@ class Jogo {
     const barra = (k, nome, txt) => `<div class="stat"><span>${nome}</span><i><b style="width:${Math.round((e.base[k] / MAXIMOS[k]) * 100)}%"></b></i><em>${txt}</em></div>`;
     let evo;
     if (e.raro) evo = 'Monstro raro: não evolui.';
-    else if (e.evoluiPara) evo = `Evolui no <b>Nv.${e.nivelEvolucao}</b> para <b>${ESPECIES[e.evoluiPara].nome}</b>.`;
-    else evo = 'Forma final da linha.';
-    const golpes = e.golpes.map((g) => `<span style="--cor:${ELEMENTOS[GOLPES[g].elemento].cor}">${GOLPES[g].nome} <small>${TIPOS[GOLPES[g].tipo]}</small></span>`).join('');
+    else if (e.evoluiPara) {
+      const prox = novidadesDaEvolucao(id, e.evoluiPara);
+      evo = `Evolui no <b>Nv.${e.nivelEvolucao}</b> para <b>${ESPECIES[e.evoluiPara].nome}</b>${prox.length ? ': ' + prox.join(', ') : ''}.`;
+    } else evo = 'Forma final da linha.';
+    const mel = melhoriaDe(id);
+    const nomeEf = EFEITOS[EFEITO_DO_ELEMENTO[e.elemento]]?.nome;
+    const golpes = e.golpes.map((g) => {
+      const gp = GOLPES[g];
+      let extra = TIPOS[gp.tipo];
+      if (gp.tipo === 'projetil' && mel.disparos > 1) extra += ` ×${mel.disparos}`;
+      if ((gp.tipo === 'area' && mel.efeitoArea) || (gp.tipo === 'corpo' && mel.efeitoPerto && gp.elemento !== 'normal')) extra += ` · ${nomeEf}`;
+      return `<span style="--cor:${ELEMENTOS[gp.elemento].cor}">${gp.nome} <small>${extra}</small></span>`;
+    }).join('');
+    const textos = textosMelhoria(id);
+    const melhorias = textos.length
+      ? `<ul class="melhorias">${textos.map((t) => `<li>${t}</li>`).join('')}</ul>`
+      : '<ul class="melhorias vazio"><li>Sem melhorias ainda: elas chegam com as evoluções.</li></ul>';
     const forte = el.forteContra.map((x) => ELEMENTOS[x].nome).join(', ') || 'nenhum';
     const fraco = fracoContra(e.elemento).map((x) => ELEMENTOS[x].nome).join(', ') || 'nenhum';
     let status = '';
@@ -231,6 +247,7 @@ class Jogo {
         ${barra('def', 'Defesa', Math.round(e.base.def))}${barra('vel', 'Veloc.', e.base.vel.toFixed(1))}
       </div>
       <div class="golpes-lista">${golpes}</div>
+      ${melhorias}
       <p class="vant">Forte contra: <b>${forte}</b><br>Fraco contra: <b>${fraco}</b></p>
       ${status}`;
   }
@@ -299,6 +316,7 @@ class Jogo {
     this.evoAtual = ev;
     this.evoAnunciada = false;
     $('#evo-texto').textContent = `${ESPECIES[ev.de].nome} está evoluindo!`;
+    $('#evo-novidades').textContent = '';
     $('#evo-continuar').hidden = true;
     this.mostrarTela('evolucao');
   }
@@ -510,6 +528,8 @@ class Jogo {
       if (this.cenaEvo.trocou && !this.evoAnunciada) {
         this.evoAnunciada = true;
         $('#evo-texto').textContent = `${ESPECIES[this.evoAtual.de].nome} evoluiu para ${ESPECIES[this.evoAtual.para].nome}!`;
+        const nov = novidadesDaEvolucao(this.evoAtual.de, this.evoAtual.para);
+        $('#evo-novidades').textContent = nov.length ? 'Novo: ' + nov.join(' · ') : '';
       }
       if (this.cenaEvo.pronto) $('#evo-continuar').hidden = false;
       cena = this.cenaEvo.cena; camera = this.cenaEvo.camera;

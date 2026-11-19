@@ -49,6 +49,35 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
 
 Raros sem evolução: Vulcarapa (fogo), Aquaraia (água), Espinhal (planta).
 
+## Melhorias a cada evolução
+
+Cada evolução acrescenta algo às habilidades. Os monstros selvagens evoluídos usam essas melhorias contra você também.
+
+| Forma | O que ganha |
+|---|---|
+| Inicial (Nv.1) | Golpes básicos |
+| 1ª evolução (Nv.6) | O **disparo** atira **2 vezes** seguidas |
+| 2ª evolução (Nv.12) | A **área** passa a causar o **efeito do elemento** |
+| Forma final (Nv.30) | Disparo **3 vezes**, o golpe **perto** também causa o efeito e os efeitos duram 50% mais |
+
+Na batalha, o botão mostra "×2" ou "×3" no disparo e uma bolinha colorida nos golpes que causam efeito. Os efeitos ativos aparecem embaixo da barra de vida.
+
+### Efeito de cada elemento
+
+| Elemento | Efeito | O que faz | Duração |
+|---|---|---|---|
+| Fogo | Queimadura | Perde 4% da vida por segundo | 4 s |
+| Água | Encharcado | Fica 45% mais lento | 4 s |
+| Planta | Enraizado | Não consegue andar, mas ainda ataca | 1,8 s |
+| Terra | Soterrado | Defesa cai 30% | 5 s |
+| Raio | Paralisia | Não anda nem ataca | 1,4 s |
+| Sol | Ofuscado | 40% de chance de errar os golpes | 4 s |
+| Lua | Sono | Dorme até levar um golpe | 3 s |
+| Luz | Exposto | Recebe 30% a mais de dano | 5 s |
+| Trevas | Medo | Não consegue atacar | 2,2 s |
+
+Dica: trocar de monstro na batalha tira os efeitos negativos de quem saiu.
+
 ## Vantagens entre elementos
 
 Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.

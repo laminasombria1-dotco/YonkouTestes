@@ -178,6 +178,17 @@
   .golpe .tipo { font-size: 0.56rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--cor); position: relative; z-index: 1; }
   .recarga { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(rgba(5, 10, 24, 0.72) calc(var(--p, 0) * 1turn), transparent 0); pointer-events: none; }
   .carregando { border-color: rgba(255, 255, 255, 0.25); }
+  /* golpe que causa efeito: bolinha na cor do efeito */
+  .golpe.com-efeito::after { content: ""; position: absolute; top: 7px; right: 13px; width: 10px; height: 10px; border-radius: 50%;
+    background: var(--ef); box-shadow: 0 0 6px var(--ef); z-index: 2; }
+  .golpe.bloqueado, .esquiva.bloqueado { opacity: 0.4; }
+  .status-lista { display: flex; flex-wrap: wrap; gap: 4px; }
+  .status-lista:empty { display: none; }
+  .status-lista span { font-size: 0.66rem; font-weight: 800; padding: 1px 6px; border-radius: 6px; background: var(--cor); color: #10202e; font-variant-numeric: tabular-nums; }
+  .melhorias { margin: 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 3px; font-size: 0.78rem; line-height: 1.3; }
+  .melhorias li::marker { color: var(--sol); }
+  .melhorias.vazio { list-style: none; padding-left: 0; color: var(--creme-suave); }
+  #evo-novidades { margin: 0; font-size: 1rem; font-weight: 800; color: var(--sol); text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6); text-wrap: balance; min-height: 1.4em; }
   .apertado { transform: scale(0.92); }
 
   /* ---------- joystick ---------- */
@@ -246,7 +257,7 @@
   </section>
 
   <section id="tela-evolucao" class="tela" hidden>
-    <h2 id="evo-texto"></h2>
+    <div class="evo-topo"><h2 id="evo-texto"></h2><p id="evo-novidades"></p></div>
     <button id="evo-continuar" class="btn-grande" type="button" hidden>Continuar</button>
   </section>
 
@@ -266,11 +277,13 @@
       <div class="topo"><span class="tag" id="bj-el"></span><strong id="bj-nome"></strong><span id="bj-nivel"></span></div>
       <i class="vida" id="bj-vida"><b></b></i>
       <div class="pe"><span id="bj-hp"></span><span id="bj-equipe"></span></div>
+      <div class="status-lista" id="bj-status"></div>
     </div>
     <div class="barra-luta ini">
       <div class="topo"><span class="tag" id="bi-el"></span><strong id="bi-nome"></strong><span id="bi-nivel"></span></div>
       <i class="vida" id="bi-vida"><b></b></i>
       <div class="pe"><span id="bi-hp"></span><span>Selvagem</span></div>
+      <div class="status-lista" id="bi-status"></div>
     </div>
     <div class="acoes-topo">
       <button id="btn-cristal" class="btn-hud" data-acao="cristal" type="button"><span class="losango"></span>Cristal <b id="qtd-cristal">0</b> <span id="chance-cristal"></span></button>

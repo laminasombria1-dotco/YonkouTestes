@@ -133,6 +133,77 @@ function golpesDoEstagio(el, estagio) {
   ][estagio];
 }
 
+// =============================================================
+// EFEITOS NEGATIVOS (um por elemento)
+// duracao = segundos | as regras de cada efeito ficam em batalha.js
+// =============================================================
+export const EFEITOS = {
+  queimadura: { nome: 'Queimadura', cor: '#ff7a3d', duracao: 4,   descricao: 'perde vida a cada segundo' },
+  encharcado: { nome: 'Encharcado', cor: '#3db8ff', duracao: 4,   descricao: 'fica 45% mais lento' },
+  enraizado:  { nome: 'Enraizado',  cor: '#5fd35a', duracao: 1.8, descricao: 'não consegue andar, mas ainda ataca' },
+  soterrado:  { nome: 'Soterrado',  cor: '#c9a46a', duracao: 5,   descricao: 'a defesa cai 30%' },
+  paralisia:  { nome: 'Paralisia',  cor: '#f7e43a', duracao: 1.4, descricao: 'não anda nem ataca' },
+  ofuscado:   { nome: 'Ofuscado',   cor: '#ffab2e', duracao: 4,   descricao: '40% de chance de errar os golpes' },
+  sono:       { nome: 'Sono',       cor: '#b9b4ff', duracao: 3,   descricao: 'dorme até levar um golpe' },
+  exposto:    { nome: 'Exposto',    cor: '#fff6c8', duracao: 5,   descricao: 'recebe 30% a mais de dano' },
+  medo:       { nome: 'Medo',       cor: '#b57be8', duracao: 2.2, descricao: 'não consegue atacar' },
+};
+export const EFEITO_DO_ELEMENTO = {
+  fogo: 'queimadura', agua: 'encharcado', planta: 'enraizado', terra: 'soterrado', raio: 'paralisia',
+  sol: 'ofuscado', lua: 'sono', luz: 'exposto', trevas: 'medo',
+};
+
+// =============================================================
+// MELHORIAS POR EVOLUÇÃO
+// Cada evolução acrescenta algo às habilidades:
+//  disparos     = quantas vezes o golpe de disparo atira em sequência
+//  efeitoArea   = o golpe de área causa o efeito do elemento
+//  efeitoPerto  = o golpe de perto também causa o efeito (mais curto)
+//  forcaEfeito  = multiplica a duração dos efeitos
+// =============================================================
+export const MELHORIAS = [
+  { disparos: 1, efeitoArea: false, efeitoPerto: false, forcaEfeito: 1 },   // forma inicial
+  { disparos: 2, efeitoArea: false, efeitoPerto: false, forcaEfeito: 1 },   // 1ª evolução (Nv.6)
+  { disparos: 2, efeitoArea: true,  efeitoPerto: false, forcaEfeito: 1 },   // 2ª evolução (Nv.12)
+  { disparos: 3, efeitoArea: true,  efeitoPerto: true,  forcaEfeito: 1.5 }, // forma final (Nv.30)
+];
+export const PODER_DISPARO_EXTRA = 0.75; // cada disparo extra tem 75% da força
+export const DURACAO_EFEITO_PERTO = 0.6;  // efeito do golpe de perto dura 60% do normal
+
+export function melhoriaDe(especie) {
+  const e = ESPECIES[especie];
+  return e.raro ? MELHORIAS[0] : MELHORIAS[e.estagio];
+}
+
+function seg(n) { return n.toFixed(1).replace('.', ',').replace(',0', '') + 's'; }
+
+// Frases que explicam o que cada forma tem de especial
+export function textosMelhoria(especie) {
+  const e = ESPECIES[especie];
+  const m = melhoriaDe(especie);
+  const ef = EFEITOS[EFEITO_DO_ELEMENTO[e.elemento]];
+  const [perto, disparo, area] = e.golpes.map((g) => GOLPES[g].nome);
+  const lista = [];
+  if (m.disparos > 1) lista.push(`${disparo} dispara ${m.disparos} vezes seguidas.`);
+  if (m.efeitoArea && ef) lista.push(`${area} causa ${ef.nome}: ${ef.descricao} (${seg(ef.duracao * m.forcaEfeito)}).`);
+  if (m.efeitoPerto && ef) lista.push(`${perto} também causa ${ef.nome} (${seg(ef.duracao * m.forcaEfeito * DURACAO_EFEITO_PERTO)}).`);
+  return lista;
+}
+
+// O que muda ao evoluir de uma forma para a outra (mostrado na tela de evolução)
+export function novidadesDaEvolucao(de, para) {
+  const a = melhoriaDe(de), b = melhoriaDe(para);
+  const e = ESPECIES[para];
+  const ef = EFEITOS[EFEITO_DO_ELEMENTO[e.elemento]];
+  const [perto, disparo, area] = e.golpes.map((g) => GOLPES[g].nome);
+  const lista = [];
+  if (b.disparos > a.disparos) lista.push(`${disparo} agora dispara ${b.disparos} vezes`);
+  if (b.efeitoArea && !a.efeitoArea) lista.push(`${area} agora causa ${ef.nome}`);
+  if (b.efeitoPerto && !a.efeitoPerto) lista.push(`${perto} agora causa ${ef.nome}`);
+  if (b.forcaEfeito > a.forcaEfeito) lista.push('efeitos duram mais');
+  return lista;
+}
+
 // Níveis em que a forma atual evolui para a próxima
 export const NIVEIS_EVOLUCAO = [6, 12, 30];
 export const NOMES_ESTAGIO = ['Forma inicial', '1ª evolução', '2ª evolução', 'Forma final'];

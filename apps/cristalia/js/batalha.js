@@ -6,7 +6,10 @@
 // Golpe 1 = corpo a corpo | Golpe 2 = disparo | Golpe 3 = área
 // =============================================================
 import * as THREE from 'three';
-import { ESPECIES, GOLPES, ELEMENTOS, multiplicador, statsDe, chanceCaptura } from './dados.js';
+import {
+  ESPECIES, GOLPES, ELEMENTOS, EFEITOS, EFEITO_DO_ELEMENTO, PODER_DISPARO_EXTRA, DURACAO_EFEITO_PERTO,
+  multiplicador, chanceCaptura, melhoriaDe, statsDe,
+} from './dados.js';
 import { criarModelo, criarCristal, animarModelo, piscar, descartar } from './modelos.js';
 
 export const RAIO_ARENA = 12.5;
@@ -75,10 +78,19 @@ class Lutador {
     this.morto = dados.hp <= 0;
     this.movendo = false;
     this.brilhando = false;
+    this.melhoria = melhoriaDe(dados.especie);
+    this.status = {};     // efeitos negativos ativos: { paralisia: segundosRestantes, ... }
+    this.tickFogo = 0;
+    this.visT = 0;
+    this.rajada = null;   // disparos extras na fila
   }
   get raio() { return this.esp.raio; }
   get frac() { return this.dados.hp / this.stats.hpMax; }
   golpe(i) { return GOLPES[this.esp.golpes[i]]; }
+  tem(efeito) { return this.status[efeito] > 0; }
+  podeAndar() { return !this.tem('paralisia') && !this.tem('sono') && !this.tem('enraizado'); }
+  podeAtacar() { return !this.tem('paralisia') && !this.tem('sono') && !this.tem('medo'); }
+  get fatorVel() { return (this.lento > 0 ? 0.5 : 1) * (this.tem('encharcado') ? 0.55 : 1); }
 }
 
 export class Batalha {
@@ -217,8 +229,8 @@ export class Batalha {
     const mov = Math.hypot(v.x, v.z) > 0.05;
     for (let i = 0; i < 3; i++) if (ctrl.consumir('golpe' + i)) this.tentarGolpe(j, i, e);
     if (ctrl.consumir('esquiva')) this.esquivar(j, mov ? v : null, e);
-    if (!j.dash && j.stun <= 0) {
-      const vel = j.stats.vel * (j.lento > 0 ? 0.5 : 1) * (j.prep ? 0.35 : 1);
+    if (!j.dash && j.stun <= 0 && j.podeAndar()) {
+      const vel = j.stats.vel * j.fatorVel * (j.prep ? 0.35 : 1);
       j.pos.x += v.x * vel * dt;
       j.pos.z += v.z * vel * dt;
       j.movendo = mov;
@@ -234,7 +246,7 @@ export class Batalha {
     ia.troca -= dt;
     const d = dist(e, j);
     if (ia.troca <= 0) { ia.strafe = Math.random() < 0.5 ? -1 : 1; ia.troca = 1.5 + Math.random() * 2; }
-    if (ia.t <= 0 && !e.prep && !e.dash && e.stun <= 0) {
+    if (ia.t <= 0 && !e.prep && !e.dash && e.stun <= 0 && e.podeAtacar()) {
       ia.t = 0.3 + Math.random() * 0.4;
       const opcoes = [];
       for (let i = 0; i < 3; i++) {
@@ -246,7 +258,7 @@ export class Batalha {
       }
       if (opcoes.length && Math.random() < 0.75) this.tentarGolpe(e, opcoes[Math.floor(Math.random() * opcoes.length)], j);
     }
-    if (!e.dash && e.stun <= 0) {
+    if (!e.dash && e.stun <= 0 && e.podeAndar()) {
       const ax = (j.pos.x - e.pos.x) / (d || 1), az = (j.pos.z - e.pos.z) / (d || 1);
       // distância preferida depende de qual golpe está pronto
       const prefere = e.rec[0] <= 0.2 ? 1.8 : (e.rec[1] <= 0.3 ? 6 : 4.5);
@@ -255,7 +267,7 @@ export class Batalha {
       fx += -az * ia.strafe * 0.7;
       fz += ax * ia.strafe * 0.7;
       const l = Math.hypot(fx, fz) || 1;
-      const vel = e.stats.vel * 0.85 * (e.lento > 0 ? 0.5 : 1) * (e.prep ? 0.2 : 1);
+      const vel = e.stats.vel * 0.85 * e.fatorVel * (e.prep ? 0.2 : 1);
       e.pos.x += (fx / l) * vel * dt;
       e.pos.z += (fz / l) * vel * dt;
       e.movendo = true;
@@ -264,7 +276,16 @@ export class Batalha {
   }
 
   tentarGolpe(c, i, alvo) {
-    if (c.prep || c.rec[i] > 0 || c.stun > 0 || c.dash || c.morto) return;
+    if (c.prep || c.rec[i] > 0 || c.stun > 0 || c.dash || c.morto || c.rajada) return;
+    if (!c.podeAtacar()) {
+      // avisa o jogador por que o golpe não saiu
+      if (c.lado === 'jogador' && this.t - (this.avisoBloqueio || 0) > 0.8) {
+        this.avisoBloqueio = this.t;
+        const nome = c.tem('medo') ? 'Com medo!' : c.tem('sono') ? 'Dormindo!' : 'Paralisado!';
+        this.jogo.numero(nome, c.pos.clone().setY(c.esp.altura), '#ffffff', 'pequeno');
+      }
+      return;
+    }
     const gp = c.golpe(i);
     const inimigo = c.lado === 'inimigo';
     c.rec[i] = gp.recarga * (inimigo ? 1.4 : 1);
@@ -313,33 +334,61 @@ export class Batalha {
     c.brilhando = false;
   }
 
+  // Efeito que um golpe causa, conforme a evolução do monstro (ou null)
+  efeitoDoGolpe(c, gp) {
+    const nome = EFEITO_DO_ELEMENTO[c.esp.elemento];
+    const m = c.melhoria;
+    if (!nome || gp.elemento === 'normal') return null;
+    if (gp.tipo === 'area' && m.efeitoArea) return { nome, dur: EFEITOS[nome].duracao * m.forcaEfeito };
+    if (gp.tipo === 'corpo' && m.efeitoPerto) return { nome, dur: EFEITOS[nome].duracao * m.forcaEfeito * DURACAO_EFEITO_PERTO };
+    return null;
+  }
+
   executar(c, alvo, p) {
     const gp = p.gp, dir = p.dir;
     if (gp.tipo === 'corpo') {
-      c.dash = { dir: dir.clone(), t: 0.17, vel: 12, gp, acertou: false };
+      c.dash = { dir: dir.clone(), t: 0.17, vel: 12, gp, acertou: false, efeito: this.efeitoDoGolpe(c, gp) };
     } else if (gp.tipo === 'projetil') {
-      const n = gp.quantidade || 1;
-      const base = Math.atan2(dir.x, dir.z);
-      for (let k = 0; k < n; k++) this.criarProjetil(c, gp, base + (k - (n - 1) / 2) * 0.24);
+      this.disparar(c, gp, dir, 1);
+      // Evoluções disparam de novo em sequência (rajada)
+      if (c.melhoria.disparos > 1) c.rajada = { gp, dir: dir.clone(), restantes: c.melhoria.disparos - 1, t: 0.16 };
     } else {
-      this.efeitoAnel(c.pos, gp.raio, ELEMENTOS[gp.elemento].cor);
-      this.particulas(c.pos, ELEMENTOS[gp.elemento].cor, 14, 1.2);
+      const cor = ELEMENTOS[gp.elemento].cor;
+      const efeito = this.efeitoDoGolpe(c, gp);
+      this.efeitoAnel(c.pos, gp.raio, cor);
+      if (efeito) this.efeitoAnel(c.pos, gp.raio * 0.7, EFEITOS[efeito.nome].cor);
+      this.particulas(c.pos, cor, 14, 1.2);
       if (!alvo.morto && dist(c, alvo) <= gp.raio + alvo.raio * 0.5) {
-        this.aplicarDano(c, alvo, gp, new THREE.Vector3(alvo.pos.x - c.pos.x, 0, alvo.pos.z - c.pos.z).normalize());
+        this.aplicarDano(c, alvo, gp, new THREE.Vector3(alvo.pos.x - c.pos.x, 0, alvo.pos.z - c.pos.z).normalize(), { efeito });
       }
     }
   }
 
-  aplicarDano(at, alvo, gp, dir) {
-    if (alvo.morto || this.captura || !alvo.modelo.visible) return;
+  disparar(c, gp, dir, fator) {
+    const n = gp.quantidade || 1;
+    const base = Math.atan2(dir.x, dir.z);
+    for (let k = 0; k < n; k++) this.criarProjetil(c, gp, base + (k - (n - 1) / 2) * 0.24, fator);
+  }
+
+  // opcoes.fator = multiplica a força | opcoes.efeito = { nome, dur } | opcoes.queimadura = dano fixo do fogo
+  aplicarDano(at, alvo, gp, dir, opcoes = {}) {
+    if (alvo.morto || this.captura || !alvo.modelo.visible) return false;
     const topo = alvo.pos.clone().setY(alvo.esp.altura);
     if (alvo.invul > 0) {
       this.jogo.numero('Esquivou!', topo, '#ffffff', 'pequeno');
-      return;
+      return false;
+    }
+    // Ofuscado: quem ataca pode errar
+    if (at.tem('ofuscado') && Math.random() < 0.4) {
+      this.jogo.numero('Errou!', topo, '#ffab2e', 'pequeno');
+      return false;
     }
     const mult = multiplicador(gp.elemento, alvo.esp.elemento);
-    const dano = Math.max(1, Math.round(gp.poder * (at.stats.atk / alvo.stats.def) * mult * (0.9 + Math.random() * 0.2)));
+    const def = alvo.stats.def * (alvo.tem('soterrado') ? 0.7 : 1);
+    const exposto = alvo.tem('exposto') ? 1.3 : 1;
+    const dano = Math.max(1, Math.round(gp.poder * (opcoes.fator ?? 1) * (at.stats.atk / def) * mult * exposto * (0.9 + Math.random() * 0.2)));
     alvo.dados.hp = Math.max(0, alvo.dados.hp - dano);
+    if (alvo.tem('sono')) { alvo.status.sono = 0; this.jogo.numero('Acordou!', topo.clone().setY(topo.y + 0.5), '#b9b4ff', 'pequeno'); }
     alvo.flash = 0.18;
     alvo.stun = 0.18;
     alvo.emp.set(dir.x * 7, 0, dir.z * 7);
@@ -349,7 +398,52 @@ export class Batalha {
     if (mult > 1) this.jogo.numero('Super efetivo!', topo.clone().setY(topo.y + 0.9), '#ffd23f', 'pequeno');
     else if (mult < 1) this.jogo.numero('Pouco efetivo', topo.clone().setY(topo.y + 0.9), '#c9d6e8', 'pequeno');
     this.particulas(alvo.pos, ELEMENTOS[gp.elemento].cor, 8, 0.9);
-    if (alvo.dados.hp <= 0) this.desmaiar(alvo);
+    if (alvo.dados.hp <= 0) { this.desmaiar(alvo); return true; }
+    if (opcoes.efeito) this.aplicarEfeito(alvo, opcoes.efeito.nome, opcoes.efeito.dur, at);
+    return true;
+  }
+
+  aplicarEfeito(alvo, nome, dur, causador) {
+    if (alvo.morto) return;
+    const ef = EFEITOS[nome];
+    const novo = !alvo.tem(nome);
+    alvo.status[nome] = Math.max(alvo.status[nome] || 0, dur);
+    if (nome === 'queimadura') { alvo.fonteFogo = causador; alvo.tickFogo = 0.5; }
+    if ((nome === 'paralisia' || nome === 'sono') && alvo.prep) this.cancelarPreparo(alvo);
+    if (novo) {
+      this.jogo.numero(ef.nome + '!', alvo.pos.clone().setY(alvo.esp.altura + 0.7), ef.cor, 'pequeno');
+      this.particulas(alvo.pos, ef.cor, 12, 1);
+    }
+  }
+
+  // Efeitos negativos passando com o tempo
+  atualizarStatus(c, dt) {
+    for (const k in c.status) {
+      c.status[k] = Math.max(0, c.status[k] - dt);
+      if (c.status[k] <= 0) delete c.status[k];
+    }
+    if (c.morto) { c.status = {}; return; }
+    if (c.tem('queimadura')) {
+      c.tickFogo -= dt;
+      if (c.tickFogo <= 0) {
+        c.tickFogo = 0.5;
+        const dano = Math.max(1, Math.round(c.stats.hpMax * 0.02));
+        c.dados.hp = Math.max(0, c.dados.hp - dano);
+        this.jogo.numero(String(dano), c.pos.clone().setY(c.esp.altura * 0.8), '#ff9a4a', 'pequeno');
+        if (c.dados.hp <= 0) { this.desmaiar(c); return; }
+      }
+    }
+    // partículas da cor do efeito saindo do monstro
+    const ativos = Object.keys(c.status);
+    if (ativos.length) {
+      c.visT -= dt;
+      if (c.visT <= 0) {
+        c.visT = 0.35;
+        const ef = EFEITOS[ativos[Math.floor(Math.random() * ativos.length)]];
+        this.particulas(c.pos, ef.cor, 2, 0.35);
+        if (c.tem('sono') && Math.random() < 0.5) this.jogo.numero('z', c.pos.clone().setY(c.esp.altura + 0.3), '#dcd6ff', 'pequeno');
+      }
+    }
   }
 
   desmaiar(l) {
@@ -367,7 +461,7 @@ export class Batalha {
   }
 
   esquivar(c, mv, outro) {
-    if (c.cdEsq > 0 || c.dash || c.stun > 0 || c.morto) return;
+    if (c.cdEsq > 0 || c.dash || c.stun > 0 || c.morto || !c.podeAndar()) return;
     const dir = mv ? new THREE.Vector3(mv.x, 0, mv.z) : new THREE.Vector3(c.pos.x - outro.pos.x, 0, c.pos.z - outro.pos.z);
     if (dir.lengthSq() < 1e-4) dir.set(1, 0, 0);
     dir.normalize();
@@ -384,6 +478,19 @@ export class Batalha {
     c.lento = Math.max(0, c.lento - dt);
     c.stun = Math.max(0, c.stun - dt);
     c.flash = Math.max(0, c.flash - dt);
+    this.atualizarStatus(c, dt);
+
+    // disparos extras da rajada (evoluções)
+    if (c.rajada) {
+      c.rajada.t -= dt;
+      if (c.morto || !c.podeAtacar() || this.captura) c.rajada = null;
+      else if (c.rajada.t <= 0) {
+        this.disparar(c, c.rajada.gp, c.rajada.dir, PODER_DISPARO_EXTRA);
+        c.rajada.restantes--;
+        c.rajada.t = 0.16;
+        if (c.rajada.restantes <= 0) c.rajada = null;
+      }
+    }
 
     if (c.prep) {
       const p = c.prep;
@@ -413,13 +520,13 @@ export class Batalha {
       ds.t -= dt;
       if (ds.gp && !ds.acertou && !outro.morto && dist(c, outro) < c.raio + outro.raio + 0.5) {
         ds.acertou = true;
-        this.aplicarDano(c, outro, ds.gp, ds.dir);
+        this.aplicarDano(c, outro, ds.gp, ds.dir, { efeito: ds.efeito });
         ds.t = 0;
       }
       if (ds.t <= 0) {
         if (ds.gp && !ds.acertou && !outro.morto) {
           const tx = outro.pos.x - c.pos.x, tz = outro.pos.z - c.pos.z, d = Math.hypot(tx, tz);
-          if (d <= ds.gp.alcance + outro.raio * 0.5 && (tx * ds.dir.x + tz * ds.dir.z) / (d || 1) > 0.5) this.aplicarDano(c, outro, ds.gp, ds.dir);
+          if (d <= ds.gp.alcance + outro.raio * 0.5 && (tx * ds.dir.x + tz * ds.dir.z) / (d || 1) > 0.5) this.aplicarDano(c, outro, ds.gp, ds.dir, { efeito: ds.efeito });
         }
         c.dash = null;
       }
@@ -437,8 +544,13 @@ export class Batalha {
     if (c.morto) {
       m.rotation.z = THREE.MathUtils.lerp(m.rotation.z, 1.5, 1 - Math.exp(-6 * dt));
       m.userData.corpo.position.y = 0;
+    } else if (c.tem('sono')) {
+      m.rotation.z = THREE.MathUtils.lerp(m.rotation.z, 0.35, 1 - Math.exp(-6 * dt)); // tomba de lado, dormindo
+      animarModelo(m, this.t * 0.3, false);
     } else {
+      m.rotation.z = THREE.MathUtils.lerp(m.rotation.z, 0, 1 - Math.exp(-10 * dt));
       animarModelo(m, this.t, c.movendo);
+      if (c.tem('paralisia')) m.position.x += (Math.random() - 0.5) * 0.12; // treme com o choque
     }
     // piscar vermelho ao levar dano / transparente durante a esquiva
     if (c.flash > 0) { piscar(m, c.flash / 0.18, '#ff3d5e'); c.brilhando = true; }
@@ -448,7 +560,7 @@ export class Batalha {
   }
 
   // ---------- projéteis e efeitos ----------
-  criarProjetil(c, gp, ang) {
+  criarProjetil(c, gp, ang, fator = 1) {
     const cor = ELEMENTOS[gp.elemento].cor;
     const mesh = new THREE.Mesh(GEO_PROJ[gp.elemento] || GEO_PROJ.normal, new THREE.MeshLambertMaterial({ color: gp.elemento === 'trevas' ? '#3a1a5a' : cor, emissive: cor, emissiveIntensity: 0.6, flatShading: true, transparent: gp.elemento === 'agua', opacity: 0.85 }));
     if (gp.elemento === 'planta') mesh.scale.set(1, 0.3, 1.7);
@@ -458,7 +570,8 @@ export class Batalha {
     mesh.position.copy(pos);
     mesh.rotation.y = ang;
     this.cena.add(mesh);
-    this.projeteis.push({ mesh, pos, dir, gp, dono: c, lado: c.lado, vida: 1.4 });
+    if (fator < 1) mesh.scale.multiplyScalar(0.8);
+    this.projeteis.push({ mesh, pos, dir, gp, dono: c, lado: c.lado, vida: 1.4, fator });
   }
 
   atualizarProjeteis(dt) {
@@ -472,7 +585,7 @@ export class Batalha {
       const alvo = p.lado === 'jogador' ? this.ini : this.jog;
       let acabou = p.vida <= 0 || Math.hypot(p.pos.x, p.pos.z) > RAIO_ARENA + 1;
       if (!acabou && !alvo.morto && alvo.modelo.visible && Math.hypot(p.pos.x - alvo.pos.x, p.pos.z - alvo.pos.z) < p.gp.raio + alvo.raio) {
-        this.aplicarDano(p.dono, alvo, p.gp, p.dir);
+        this.aplicarDano(p.dono, alvo, p.gp, p.dir, { fator: p.fator });
         acabou = true;
       }
       if (acabou) {
@@ -651,9 +764,19 @@ export class Batalha {
     ui.golpes.forEach((b, i) => {
       const gp = j.golpe(i);
       b.querySelector('.nome').textContent = gp.nome;
-      b.querySelector('.tipo').textContent = tipos[gp.tipo];
+      const extra = gp.tipo === 'projetil' && j.melhoria.disparos > 1 ? ` ×${j.melhoria.disparos}` : '';
+      b.querySelector('.tipo').textContent = tipos[gp.tipo] + extra;
       b.style.setProperty('--cor', ELEMENTOS[gp.elemento].cor);
+      // bolinha na cor do efeito quando o golpe causa um efeito negativo
+      const ef = this.efeitoDoGolpe(j, gp);
+      b.classList.toggle('com-efeito', !!ef);
+      if (ef) { b.style.setProperty('--ef', EFEITOS[ef.nome].cor); b.title = `Causa ${EFEITOS[ef.nome].nome}`; }
+      else b.removeAttribute('title');
     });
+  }
+
+  htmlStatus(l) {
+    return Object.entries(l.status).map(([k, v]) => `<span style="--cor:${EFEITOS[k].cor}">${EFEITOS[k].nome} ${v.toFixed(1)}s</span>`).join('');
   }
 
   atualizarHud() {
@@ -671,7 +794,12 @@ export class Batalha {
       const f = j.rec[i] / gp.recarga;
       b.style.setProperty('--p', f.toFixed(3));
       b.classList.toggle('carregando', f > 0);
+      b.classList.toggle('bloqueado', !j.podeAtacar());
     });
+    ui.esquiva.classList.toggle('bloqueado', !j.podeAndar());
+    const sj = this.htmlStatus(j), si = this.htmlStatus(e);
+    if (ui.bjStatus.innerHTML !== sj) ui.bjStatus.innerHTML = sj;
+    if (ui.biStatus.innerHTML !== si) ui.biStatus.innerHTML = si;
     ui.esquiva.style.setProperty('--p', (j.cdEsq / 1.0).toFixed(3));
     ui.esquiva.classList.toggle('carregando', j.cdEsq > 0);
     ui.qtdCristal.textContent = this.jogo.estado.cristais;
