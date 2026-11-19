@@ -915,6 +915,77 @@ function silvarion(c, u) {
 
 const RAROS_MODELO = { vulcarapa, aquaraia, espinhal, ignarion, silvarion };
 
+// =============================================================
+// JUNTAR PEÇAS (deixa o jogo leve no celular)
+// Cada monstro é feito de umas 30 peças. Desenhar cada uma separada custa caro:
+// é um "pedido de desenho" por peça, todo quadro. Aqui as peças PARADAS que têm
+// a mesma aparência (mesma cor, brilho e transparência) viram uma peça só.
+// As que se mexem sozinhas (caudas, asas, pernas, peças que pulsam, giram ou
+// soltam fumaça) ficam separadas, então as animações continuam iguais.
+// Peças dentro de um grupo que se mexe (ex.: as partes de uma asa) são juntadas
+// dentro do próprio grupo, e o grupo continua se mexendo inteiro.
+// =============================================================
+const SEM_INDICE = new WeakMap();
+const _m3 = new THREE.Matrix3(), _v3 = new THREE.Vector3();
+function chaveMaterial(m) {
+  return [m.type, m.color?.getHexString(), m.emissive?.getHexString(), m.emissiveIntensity, m.transparent, m.opacity, m.side, m.flatShading].join('|');
+}
+function semIndice(geo) {
+  if (!SEM_INDICE.has(geo)) SEM_INDICE.set(geo, geo.index ? geo.toNonIndexed() : geo);
+  return SEM_INDICE.get(geo);
+}
+function pecasQueMexem(u) {
+  const fixos = new Set([u.sombra, ...u.caudas, ...(u.pernas || []), ...(u.bracos || [])]);
+  for (const lista of [u.asas, u.giros, u.orbitas, u.pulsos, u.fumacas]) for (const x of lista || []) fixos.add(x.obj);
+  return fixos;
+}
+export function juntarPecas(raiz, fixos = new Set()) {
+  const visitar = (g) => {
+    const grupos = new Map();
+    for (const o of g.children) {
+      if (o.isMesh && !o.isInstancedMesh && !fixos.has(o) && !o.children.length) {
+        const k = chaveMaterial(o.material);
+        if (!grupos.has(k)) grupos.set(k, []);
+        grupos.get(k).push(o);
+      } else if (o.children.length) visitar(o);
+    }
+    for (const lista of grupos.values()) {
+      if (lista.length < 2) continue;
+      let total = 0;
+      const geos = lista.map((o) => { const geo = semIndice(o.geometry); total += geo.attributes.position.count; return geo; });
+      const pos = new Float32Array(total * 3), nor = new Float32Array(total * 3);
+      let k = 0;
+      lista.forEach((o, i) => {
+        o.updateMatrix();
+        _m3.getNormalMatrix(o.matrix);
+        const espelho = o.matrix.determinant() < 0; // escala negativa: inverte a ordem dos vértices
+        const P = geos[i].attributes.position, N = geos[i].attributes.normal;
+        for (let t = 0; t < P.count; t += 3) {
+          const ordem = espelho ? [0, 2, 1] : [0, 1, 2];
+          for (const d of ordem) {
+            const j = t + d;
+            _v3.fromBufferAttribute(P, j).applyMatrix4(o.matrix);
+            pos[k] = _v3.x; pos[k + 1] = _v3.y; pos[k + 2] = _v3.z;
+            if (N) _v3.fromBufferAttribute(N, j).applyMatrix3(_m3).normalize(); else _v3.set(0, 1, 0);
+            nor[k] = _v3.x; nor[k + 1] = _v3.y; nor[k + 2] = _v3.z;
+            k += 3;
+          }
+        }
+        g.remove(o);
+      });
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+      geo.computeBoundingSphere();
+      const junto = new THREE.Mesh(geo, lista[0].material);
+      junto.userData.geometriaPropria = true; // é só deste modelo: some junto com ele
+      g.add(junto);
+    }
+  };
+  visitar(raiz);
+  return raiz;
+}
+
 export function criarModelo(especie) {
   const esp = ESPECIES[especie];
   const m = base(esp.tamanho, esp.estagio);
@@ -922,6 +993,7 @@ export function criarModelo(especie) {
   if (esp.linha) LINHAS_MODELO[esp.linha](u.corpo, u, esp.estagio);
   else RAROS_MODELO[especie](u.corpo, u);
   u.especie = especie;
+  juntarPecas(m, pecasQueMexem(u));
   return m;
 }
 
@@ -951,6 +1023,7 @@ export function criarTreinador() {
   olhos(c, 1.3, 0.21, 0.09, 0.05);
   r.userData.pernas = pernas;
   r.userData.bracos = bracos;
+  juntarPecas(r, pecasQueMexem(r.userData));
   return r;
 }
 
@@ -966,6 +1039,7 @@ export function criarCoroa(escala = 1) {
   p(g, G.octa(0.08), brilho('#ff4f8a', 0.8), [0, 0.05, 0.3]);
   g.scale.setScalar(escala);
   g.userData.coroa = true;
+  juntarPecas(g);
   return g;
 }
 
@@ -1111,5 +1185,6 @@ export function descartar(obj) {
       if (Array.isArray(o.material)) o.material.forEach((m) => m.dispose());
       else o.material.dispose();
     }
+    if (o.userData.geometriaPropria) o.geometry.dispose();
   });
 }

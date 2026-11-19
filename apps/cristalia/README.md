@@ -247,7 +247,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 |---|---|
 | `index.html` | A página: visual da interface (HUD, botões, telas) |
 | `js/dados.js` | **Tabelas do jogo**: elementos, golpes, linhas evolutivas, níveis de evolução, onde cada monstro aparece. Para balancear, mexa aqui. |
-| `js/modelos.js` | Os modelos 3D: um construtor por linha que acrescenta peças a cada evolução |
+| `js/modelos.js` | Os modelos 3D: um construtor por linha que acrescenta peças a cada evolução. No fim, `juntarPecas` une as peças paradas de mesma aparência numa só (de ~24 para ~11 peças por monstro), deixando caudas, asas, pernas e peças animadas separadas |
 | `js/plataforma.js` | A vitrine 3D do Monstruário e a animação de evolução |
 | `js/mundo.js` | Mapa aberto, regiões, dia e noite, monstros selvagens, cristais e fonte |
 | `js/batalha.js` | Batalha em tempo real: movimento, golpes, efeitos, IA do inimigo e captura |
@@ -276,5 +276,4 @@ Depois abra `http://localhost:8000` no navegador.
 - Sons e música
 - Treinadores rivais
 - Dungeons abertas nas outras regiões (Lago, Pedreira, Planalto) usando a mesma base de `dungeon.js`
-- Juntar as peças de cada monstro numa malha só, para pesar menos no celular
 - Levar as regras (`dados.js`) para o Unreal Engine
