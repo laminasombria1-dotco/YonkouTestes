@@ -84,7 +84,9 @@
   .col-detalhe .status { font-size: 0.78rem; font-weight: 800; color: var(--creme-suave); }
   .col-detalhe .status.sim { color: var(--vida-alta); }
   .stats { display: flex; flex-direction: column; gap: 3px; }
-  .stat { display: grid; grid-template-columns: 4.2em 1fr 2.4em; align-items: center; gap: 6px; width: 100%; font-size: 0.72rem; color: var(--creme-suave); }
+  .nivel-stats { font-size: 0.68rem; color: var(--creme-suave); font-weight: 700; letter-spacing: 0.04em; }
+  .stat em { min-width: 2.4em; }
+  .stat { display: grid; grid-template-columns: 4.2em 1fr 3em; align-items: center; gap: 6px; width: 100%; font-size: 0.72rem; color: var(--creme-suave); }
   .stat i { height: 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
   .stat b { display: block; height: 100%; background: var(--cor); }
   .stat em { font-style: normal; text-align: right; font-variant-numeric: tabular-nums; color: var(--creme); }
@@ -156,7 +158,9 @@
   /* ---------- HUD da batalha ---------- */
   .barra-luta { position: absolute; top: 10px; width: min(40vw, 260px); padding: 7px 10px; border-radius: 12px; background: var(--painel); display: flex; flex-direction: column; gap: 4px; }
   .barra-luta.jog { left: max(10px, env(safe-area-inset-left, 0px)); }
-  .barra-luta.ini { right: max(10px, env(safe-area-inset-right, 0px)); }
+  .coluna-dir { position: absolute; top: 10px; right: max(10px, env(safe-area-inset-right, 0px)); width: min(40vw, 260px);
+    display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .coluna-dir .barra-luta.ini { position: static; width: 100%; }
   .barra-luta .topo { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; min-width: 0; }
   .barra-luta .topo strong { font-family: var(--f-titulo); font-weight: 600; font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .barra-luta .topo span:last-child { margin-left: auto; color: var(--sol); font-weight: 800; }
@@ -166,7 +170,8 @@
   #bj-equipe i { width: 9px; height: 9px; border-radius: 50%; background: var(--vida-alta); }
   #bj-equipe i.fora { background: #55627a; }
   #bj-equipe i.atual { box-shadow: 0 0 0 2px var(--creme); }
-  .acoes-topo { position: absolute; top: 74px; right: max(10px, env(safe-area-inset-right, 0px)); display: flex; gap: 6px; }
+  .acoes-topo { display: flex; flex-wrap: nowrap; width: max-content; justify-content: flex-end; gap: 6px; }
+  .acoes-topo .btn-hud { pointer-events: auto; }
   #btn-cristal { display: inline-flex; align-items: center; gap: 6px; border-color: var(--cristal); }
   #chance-cristal { color: var(--cristal); font-size: 0.75rem; }
   .golpes { position: absolute; right: max(14px, calc(env(safe-area-inset-right, 0px) + 8px)); bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) + 8px));
@@ -184,6 +189,12 @@
   .golpe.bloqueado, .esquiva.bloqueado { opacity: 0.4; }
   .status-lista { display: flex; flex-wrap: wrap; gap: 4px; }
   .status-lista:empty { display: none; }
+  .status-lista .mod { background: rgba(255, 255, 255, 0.12); color: var(--creme); }
+  .status-lista .mod.bom { background: #2f8a4f; }
+  .status-lista .mod.ruim { background: #9a3348; }
+  #arena-info { width: 100%;
+    padding: 4px 10px; border-radius: 8px; background: var(--painel); font-size: 0.7rem; text-align: center; color: var(--creme-suave); pointer-events: none; }
+  #arena-info strong { color: var(--creme); }
   .status-lista span { font-size: 0.66rem; font-weight: 800; padding: 1px 6px; border-radius: 6px; background: var(--cor); color: #10202e; font-variant-numeric: tabular-nums; }
   .melhorias { margin: 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 3px; font-size: 0.78rem; line-height: 1.3; }
   .melhorias li::marker { color: var(--sol); }
@@ -214,7 +225,9 @@
     #tela-colecao { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(180px, 36%) minmax(0, 1fr);
       grid-template-areas: "topo" "abas" "palco" "info"; }
     .barra-luta { width: calc(50% - 16px); }
-    .acoes-topo { left: max(10px, env(safe-area-inset-left, 0px)); right: auto; top: 82px; }
+    .coluna-dir { width: calc(50% - 16px); }
+    .coluna-dir .btn-hud { padding: 6px 10px; font-size: 0.78rem; }
+    .acoes-topo { flex-wrap: wrap; width: auto; }
     #avisos { width: calc(100% - 32px); bottom: 190px; }
   }
   @media (max-height: 430px) and (orientation: landscape) {
@@ -279,16 +292,20 @@
       <div class="pe"><span id="bj-hp"></span><span id="bj-equipe"></span></div>
       <div class="status-lista" id="bj-status"></div>
     </div>
-    <div class="barra-luta ini">
-      <div class="topo"><span class="tag" id="bi-el"></span><strong id="bi-nome"></strong><span id="bi-nivel"></span></div>
-      <i class="vida" id="bi-vida"><b></b></i>
-      <div class="pe"><span id="bi-hp"></span><span>Selvagem</span></div>
-      <div class="status-lista" id="bi-status"></div>
-    </div>
-    <div class="acoes-topo">
-      <button id="btn-cristal" class="btn-hud" data-acao="cristal" type="button"><span class="losango"></span>Cristal <b id="qtd-cristal">0</b> <span id="chance-cristal"></span></button>
-      <button class="btn-hud" data-acao="trocar" type="button">Trocar</button>
-      <button class="btn-hud" data-acao="fugir" type="button">Fugir</button>
+    <!-- coluna da direita: barra do inimigo, botões e faixa da arena empilhados (um empurra o outro) -->
+    <div class="coluna-dir">
+      <div class="barra-luta ini">
+        <div class="topo"><span class="tag" id="bi-el"></span><strong id="bi-nome"></strong><span id="bi-nivel"></span></div>
+        <i class="vida" id="bi-vida"><b></b></i>
+        <div class="pe"><span id="bi-hp"></span><span>Selvagem</span></div>
+        <div class="status-lista" id="bi-status"></div>
+      </div>
+      <div class="acoes-topo">
+        <button id="btn-cristal" class="btn-hud" data-acao="cristal" type="button"><span class="losango"></span>Cristal <b id="qtd-cristal">0</b> <span id="chance-cristal"></span></button>
+        <button class="btn-hud" data-acao="trocar" type="button">Trocar</button>
+        <button class="btn-hud" data-acao="fugir" type="button">Fugir</button>
+      </div>
+      <div id="arena-info"></div>
     </div>
     <div class="golpes">
       <button class="golpe" data-acao="golpe0" type="button"><span class="recarga"></span><span class="nome"></span><span class="tipo"></span></button>

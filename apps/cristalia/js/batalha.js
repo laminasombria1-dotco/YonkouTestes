@@ -8,21 +8,12 @@
 import * as THREE from 'three';
 import {
   ESPECIES, GOLPES, ELEMENTOS, EFEITOS, EFEITO_DO_ELEMENTO, PODER_DISPARO_EXTRA, DURACAO_EFEITO_PERTO,
-  multiplicador, chanceCaptura, melhoriaDe, statsDe,
+  multiplicador, chanceCaptura, melhoriaDe, statsDe, modificadorArena, fatorDanoNivel,
 } from './dados.js';
 import { criarModelo, criarCristal, animarModelo, piscar, descartar } from './modelos.js';
+import { Arena, RAIO_ARENA } from './arena.js';
 
-export const RAIO_ARENA = 12.5;
-
-const CORES_ZONA = {
-  campo:  { chao: '#8bd65e', fora: '#6fbf4a', ceu: '#a8e0ff', decor: 'arvore', copa: ['#5fbf4a', '#6fcf5a', '#ffb3d1'] },
-  planta: { chao: '#5cb553', fora: '#3f8f3a', ceu: '#bdeccf', decor: 'arvore', copa: ['#2f7a3a', '#3f8f3a', '#4ea64a'] },
-  fogo:   { chao: '#d39a66', fora: '#a8693f', ceu: '#ffd6b0', decor: 'pedra',  copa: ['#6b4a3f', '#7d5545', '#5a3328'] },
-  agua:   { chao: '#ecd9a0', fora: '#4fc3f7', ceu: '#b0e4ff', decor: 'pedra',  copa: ['#a8a8b4', '#b9b5aa', '#9aa3ad'] },
-  terra:  { chao: '#c9a46a', fora: '#9a7a4a', ceu: '#f0dcb0', decor: 'pedra',  copa: ['#9c8a72', '#b5a083', '#8a7a64'] },
-  raio:   { chao: '#7a7a9a', fora: '#4a4a6a', ceu: '#8a8fb5', decor: 'pedra',  copa: ['#55557a', '#64648a', '#fff07a'] },
-};
-const CEU_NOITE = new THREE.Color('#1b2550');
+export { RAIO_ARENA };
 
 const GEO_PARTICULA = new THREE.IcosahedronGeometry(0.12, 0);
 const GEO_PROJ = {
@@ -90,7 +81,7 @@ class Lutador {
   tem(efeito) { return this.status[efeito] > 0; }
   podeAndar() { return !this.tem('paralisia') && !this.tem('sono') && !this.tem('enraizado'); }
   podeAtacar() { return !this.tem('paralisia') && !this.tem('sono') && !this.tem('medo'); }
-  get fatorVel() { return (this.lento > 0 ? 0.5 : 1) * (this.tem('encharcado') ? 0.55 : 1); }
+  get fatorVel() { return (this.lento > 0 ? 0.5 : 1) * (this.tem('encharcado') ? 0.55 : 1) * (this.mod?.vel ?? 1); }
 }
 
 export class Batalha {
@@ -100,7 +91,9 @@ export class Batalha {
     this.zona = selvagem.zona;
     this.cena = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(50, jogo.aspecto, 0.1, 200);
-    this.criarArena();
+    this.efeitos = [];
+    this.arena = new Arena(this);
+    this.periodo = jogo.mundo.periodo;
 
     this.idx = idxInicial;
     this.jog = new Lutador(jogo.estado.equipe[idxInicial], 'jogador');
@@ -109,9 +102,10 @@ export class Batalha {
     this.jog.ang = this.jog.angAlvo = Math.PI;
     this.ini.pos.set(0, 0, -5);
     this.cena.add(this.jog.modelo, this.ini.modelo);
+    this.aplicarModArena(this.jog);
+    this.aplicarModArena(this.ini);
 
     this.projeteis = [];
-    this.efeitos = [];
     this.captura = null;
     this.fim = null;
     this.t = 0;
@@ -121,52 +115,31 @@ export class Batalha {
     this.posicionarCamera(1);
     this.montarHud();
     jogo.aviso(`Um ${this.ini.esp.nome} selvagem apareceu!`);
+    if (this.arena.cfg.descricaoPerigo) jogo.aviso(this.arena.cfg.descricaoPerigo);
   }
 
-  // ---------- cenário ----------
-  criarArena() {
-    const cz = CORES_ZONA[this.zona] || CORES_ZONA.campo;
-    // À noite a arena fica escura e azulada, como o mundo
-    const noite = this.jogo.mundo.fatorNoite;
-    const ceu = new THREE.Color(cz.ceu).lerp(CEU_NOITE, noite * 0.85);
-    this.cena.background = ceu;
-    this.cena.fog = new THREE.Fog(ceu, 32, 75);
-    this.cena.add(new THREE.HemisphereLight(new THREE.Color('#d6f0ff').lerp(new THREE.Color('#8f9fe0'), noite), '#5d7a3e', THREE.MathUtils.lerp(1.7, 0.85, noite)));
-    const sol = new THREE.DirectionalLight(new THREE.Color('#fff1d6').lerp(new THREE.Color('#a8b8ff'), noite), THREE.MathUtils.lerp(1.9, 0.6, noite));
-    sol.position.set(20, 40, 25);
-    this.cena.add(sol);
+  // Bônus ou penalidade que a arena (e o dia/noite) dão ao monstro
+  aplicarModArena(l) {
+    l.mod = modificadorArena(this.arena.zona, l.esp.elemento, this.periodo);
+  }
 
-    const fora = new THREE.Mesh(new THREE.CircleGeometry(70, 24).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: cz.fora, flatShading: true }));
-    fora.position.y = -0.05;
-    const chao = new THREE.Mesh(new THREE.CircleGeometry(RAIO_ARENA + 0.6, 36).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: cz.chao, flatShading: true }));
-    const borda = new THREE.Mesh(new THREE.RingGeometry(RAIO_ARENA + 0.1, RAIO_ARENA + 0.5, 56).rotateX(-Math.PI / 2), matBrilho('#ffffff', 0.55));
-    borda.position.y = 0.03;
-    this.cena.add(fora, chao, borda);
+  // Dano do cenário (pedras, raios): uma fração da vida máxima
+  danoAmbiente(l, fracao, cor) {
+    if (l.morto || l.invul > 0) return;
+    const dano = Math.max(1, Math.round(l.stats.hpMax * fracao));
+    l.dados.hp = Math.max(0, l.dados.hp - dano);
+    l.flash = 0.18;
+    l.stun = 0.25;
+    if (l.tem('sono')) l.status.sono = 0;
+    this.jogo.numero(String(dano), l.pos.clone().setY(l.esp.altura), cor, '');
+    if (l.dados.hp <= 0) this.desmaiar(l);
+  }
 
-    const n = 26;
-    const geoTronco = new THREE.CylinderGeometry(0.2, 0.28, 1.4, 5);
-    const geoCopa = new THREE.IcosahedronGeometry(1.2, 0);
-    const geoPedra = new THREE.DodecahedronGeometry(1, 0);
-    const matTronco = new THREE.MeshLambertMaterial({ color: '#8a5a3a', flatShading: true });
-    for (let i = 0; i < n; i++) {
-      const a = (i / n) * Math.PI * 2 + Math.random() * 0.15;
-      const r = RAIO_ARENA + 3 + Math.random() * 6;
-      const x = Math.cos(a) * r, z = Math.sin(a) * r;
-      const esc = 0.8 + Math.random() * 0.8;
-      const cor = cz.copa[Math.floor(Math.random() * cz.copa.length)];
-      if (cz.decor === 'arvore') {
-        const t = new THREE.Mesh(geoTronco, matTronco);
-        t.position.set(x, 0.7 * esc, z); t.scale.setScalar(esc);
-        const c = new THREE.Mesh(geoCopa, new THREE.MeshLambertMaterial({ color: cor, flatShading: true }));
-        c.position.set(x, 2 * esc, z); c.scale.set(esc, esc * 1.15, esc);
-        this.cena.add(t, c);
-      } else {
-        const brilha = (this.zona === 'fogo' && i % 3 === 0) ? '#ff5a1f' : (this.zona === 'raio' && cor === '#fff07a') ? '#f7c81a' : '#000000';
-        const p = new THREE.Mesh(geoPedra, new THREE.MeshLambertMaterial({ color: cor, flatShading: true, emissive: brilha, emissiveIntensity: 0.5 }));
-        p.position.set(x, 0.3 * esc, z); p.scale.set(esc * 1.3, esc, esc * 1.2); p.rotation.set(Math.random(), Math.random() * 6, 0);
-        this.cena.add(p);
-      }
-    }
+  curar(l, fracao) {
+    if (l.morto || l.dados.hp >= l.stats.hpMax) return;
+    const cura = Math.max(1, Math.round(l.stats.hpMax * fracao));
+    l.dados.hp = Math.min(l.stats.hpMax, l.dados.hp + cura);
+    this.jogo.numero('+' + cura, l.pos.clone().setY(l.esp.altura), '#5fe08a', 'pequeno');
   }
 
   posicionarCamera(k) {
@@ -206,6 +179,7 @@ export class Batalha {
     }
 
     this.atualizarProjeteis(dt);
+    this.arena.atualizar(dt, this.t);
     this.atualizarEfeitos(dt);
     if (this.captura) this.atualizarCaptura(dt);
 
@@ -266,7 +240,13 @@ export class Batalha {
       if (d > prefere + 0.5) { fx += ax; fz += az; } else if (d < prefere - 0.5) { fx -= ax; fz -= az; }
       fx += -az * ia.strafe * 0.7;
       fz += ax * ia.strafe * 0.7;
-      const l = Math.hypot(fx, fz) || 1;
+      let l = Math.hypot(fx, fz) || 1;
+      // se há um obstáculo logo à frente, desvia para o lado
+      if (this.arena.bloqueia({ x: e.pos.x + (fx / l) * 1.8, z: e.pos.z + (fz / l) * 1.8 }, e.raio)) {
+        const ang = ia.strafe * 1.2, cs = Math.cos(ang), sn = Math.sin(ang);
+        [fx, fz] = [fx * cs - fz * sn, fx * sn + fz * cs];
+        l = Math.hypot(fx, fz) || 1;
+      }
       const vel = e.stats.vel * 0.85 * e.fatorVel * (e.prep ? 0.2 : 1);
       e.pos.x += (fx / l) * vel * dt;
       e.pos.z += (fz / l) * vel * dt;
@@ -386,7 +366,9 @@ export class Batalha {
     const mult = multiplicador(gp.elemento, alvo.esp.elemento);
     const def = alvo.stats.def * (alvo.tem('soterrado') ? 0.7 : 1);
     const exposto = alvo.tem('exposto') ? 1.3 : 1;
-    const dano = Math.max(1, Math.round(gp.poder * (opcoes.fator ?? 1) * (at.stats.atk / def) * mult * exposto * (0.9 + Math.random() * 0.2)));
+    const nivel = fatorDanoNivel(at.dados.nivel);  // dano cresce com o nível de quem ataca
+    const arena = at.mod?.dano ?? 1;               // bônus/penalidade da arena
+    const dano = Math.max(1, Math.round(gp.poder * (opcoes.fator ?? 1) * (at.stats.atk / def) * mult * exposto * nivel * arena * (0.9 + Math.random() * 0.2)));
     alvo.dados.hp = Math.max(0, alvo.dados.hp - dano);
     if (alvo.tem('sono')) { alvo.status.sono = 0; this.jogo.numero('Acordou!', topo.clone().setY(topo.y + 0.5), '#b9b4ff', 'pequeno'); }
     alvo.flash = 0.18;
@@ -534,8 +516,7 @@ export class Batalha {
 
     c.pos.addScaledVector(c.emp, dt);
     c.emp.multiplyScalar(Math.exp(-8 * dt));
-    const dc = Math.hypot(c.pos.x, c.pos.z), lim = RAIO_ARENA - c.raio;
-    if (dc > lim) { c.pos.x *= lim / dc; c.pos.z *= lim / dc; }
+    this.arena.colidir(c.pos, c.raio); // obstáculos e borda da arena
 
     c.ang = lerpAngulo(c.ang, c.angAlvo, 1 - Math.exp(-14 * dt));
     const m = c.modelo;
@@ -584,6 +565,11 @@ export class Batalha {
       else if (p.gp.elemento !== 'planta' && p.gp.elemento !== 'raio') p.mesh.rotation.x += dt * 8;
       const alvo = p.lado === 'jogador' ? this.ini : this.jog;
       let acabou = p.vida <= 0 || Math.hypot(p.pos.x, p.pos.z) > RAIO_ARENA + 1;
+      // obstáculos seguram os disparos: dá para se esconder atrás deles
+      if (!acabou && this.arena.bloqueia(p.pos, p.gp.raio * 0.6)) {
+        acabou = true;
+        this.particulas(p.pos, ELEMENTOS[p.gp.elemento].cor, 5, 0.6);
+      }
       if (!acabou && !alvo.morto && alvo.modelo.visible && Math.hypot(p.pos.x - alvo.pos.x, p.pos.z - alvo.pos.z) < p.gp.raio + alvo.raio) {
         this.aplicarDano(p.dono, alvo, p.gp, p.dir, { fator: p.fator });
         acabou = true;
@@ -730,6 +716,7 @@ export class Batalha {
     novo.ang = novo.angAlvo = Math.atan2(this.ini.pos.x - novo.pos.x, this.ini.pos.z - novo.pos.z);
     novo.stun = 0.4;
     this.cena.add(novo.modelo);
+    this.aplicarModArena(novo);
     this.jog = novo;
     this.idx = prox;
     this.trocaCd = 1.5;
@@ -751,6 +738,11 @@ export class Batalha {
     ui.biNivel.textContent = 'Nv.' + e.dados.nivel;
     ui.biEl.textContent = ELEMENTOS[e.esp.elemento].nome;
     ui.biEl.style.setProperty('--cor', ELEMENTOS[e.esp.elemento].cor);
+    // faixa no topo com o nome da arena e quem ela favorece
+    const a = this.arena.cfg;
+    const fav = a.favorece ? `<b style="color:${ELEMENTOS[a.favorece].cor}">${ELEMENTOS[a.favorece].nome} +25%</b>` : 'sem bônus de elemento';
+    const per = this.periodo === 'dia' ? 'Sol e Luz +15%' : 'Lua e Trevas +15%';
+    ui.arenaInfo.innerHTML = `<strong>${a.nome}</strong> · ${a.clima} · ${fav} · ${per}`;
     this.montarBotoes();
   }
 
@@ -776,7 +768,8 @@ export class Batalha {
   }
 
   htmlStatus(l) {
-    return Object.entries(l.status).map(([k, v]) => `<span style="--cor:${EFEITOS[k].cor}">${EFEITOS[k].nome} ${v.toFixed(1)}s</span>`).join('');
+    const mods = (l.mod?.textos || []).map((m) => `<span class="mod ${m.bom ? 'bom' : 'ruim'}">${m.t}</span>`).join('');
+    return mods + Object.entries(l.status).map(([k, v]) => `<span style="--cor:${EFEITOS[k].cor}">${EFEITOS[k].nome} ${v.toFixed(1)}s</span>`).join('');
   }
 
   atualizarHud() {

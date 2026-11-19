@@ -49,6 +49,31 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
 
 Raros sem evolução: Vulcarapa (fogo), Aquaraia (água), Espinhal (planta).
 
+## Vida e dano
+
+- A vida começa em **2,2×** o valor base da espécie e cresce **20% por nível**.
+- O dano cresce **15% por nível** de quem ataca, um pouco menos que a vida. Por isso as batalhas de nível alto duram um pouco mais.
+- Num confronto neutro, são necessários uns **7 disparos** no começo e uns **12** no nível 30. Vantagem e desvantagem de elemento mudam bastante esse número.
+- Esses valores ficam em `dados.js`: `VIDA_BASE`, `VIDA_POR_NIVEL` e `DANO_POR_NIVEL`.
+
+## Arenas de batalha
+
+Cada região tem a sua arena, com raio de 22 m e obstáculos que **bloqueiam o movimento e os disparos** (dá para se esconder atrás deles). A posição dos obstáculos muda a cada batalha.
+
+| Região | Arena | Clima | Favorece (+25% dano, +10% velocidade) | Atrapalha (−20% dano) | Perigo |
+|---|---|---|---|---|---|
+| Campo | Campo Aberto | Pólen | Ninguém | Ninguém | Nenhum |
+| Floresta | Coração da Floresta | Vento de folhas | Planta | Água, Terra | O vento empurra quem não é Planta |
+| Vulcão | Cratera do Vulcão | Brasas | Fogo | Planta | Lava queima, mas cura Fogo |
+| Lago | Margem do Lago | Chuva | Água | Fogo, Terra | Poças encharcam, mas curam Água |
+| Pedreira | Fundo da Pedreira | Poeira | Terra | Fogo, Raio | Pedras caem (Terra não sente) |
+| Planalto | Topo da Tempestade | Relâmpagos | Raio | Água, Sol | Raios caem e paralisam (Raio não sente) |
+
+- **Atrapalha:** o lugar enfraquece quem é fraco contra o elemento dele.
+- **Pedras e raios:** um círculo no chão avisa onde vão cair.
+- **Dia e noite:** de dia, Sol e Luz ganham +15%; à noite, Lua e Trevas.
+- **Na tela:** os bônus aparecem embaixo da barra de vida de cada monstro, e a faixa da arena fica abaixo dos botões Cristal, Trocar e Fugir.
+
 ## Melhorias a cada evolução
 
 Cada evolução acrescenta algo às habilidades. Os monstros selvagens evoluídos usam essas melhorias contra você também.
@@ -103,7 +128,8 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/modelos.js` | Os modelos 3D: um construtor por linha que acrescenta peças a cada evolução |
 | `js/plataforma.js` | A vitrine 3D do Monstruário e a animação de evolução |
 | `js/mundo.js` | Mapa aberto, regiões, dia e noite, monstros selvagens, cristais e fonte |
-| `js/batalha.js` | Batalha em tempo real: movimento, golpes, IA do inimigo e captura |
+| `js/batalha.js` | Batalha em tempo real: movimento, golpes, efeitos, IA do inimigo e captura |
+| `js/arena.js` | Arenas: chão, obstáculos, clima animado e perigos de cada região |
 | `js/controles.js` | Joystick de toque, botões e teclado |
 | `js/main.js` | Liga tudo: telas, equipe, experiência, evolução, salvamento |
 | `lib/three.module.min.js` | Biblioteca Three.js 0.170 (licença MIT, em `lib/THREE-LICENSE.txt`) |

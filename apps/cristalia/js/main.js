@@ -29,6 +29,8 @@ function lerSave() {
     s.estado.equipe = s.estado.equipe.filter((m) => ESPECIES[m.especie]);
     s.estado.reserva = (s.estado.reserva || []).filter((m) => ESPECIES[m.especie]);
     s.estado.capturados = (s.estado.capturados || []).filter((id) => ESPECIES[id]);
+    // saves de antes da mudança da vida (v < 3): todos voltam curados com a vida nova
+    if (!(s.v >= 3)) for (const m of [...s.estado.equipe, ...s.estado.reserva]) m.hp = statsDe(m.especie, m.nivel).hpMax;
     return s.estado.equipe.length ? s : null;
   } catch { return null; }
 }
@@ -50,7 +52,7 @@ class Jogo {
     this.ui = {
       bjNome: $('#bj-nome'), bjNivel: $('#bj-nivel'), bjEl: $('#bj-el'), bjVida: $('#bj-vida b'), bjHp: $('#bj-hp'), bjEquipe: $('#bj-equipe'),
       biNome: $('#bi-nome'), biNivel: $('#bi-nivel'), biEl: $('#bi-el'), biVida: $('#bi-vida b'), biHp: $('#bi-hp'),
-      bjStatus: $('#bj-status'), biStatus: $('#bi-status'),
+      bjStatus: $('#bj-status'), biStatus: $('#bi-status'), arenaInfo: $('#arena-info'),
       golpes: [...document.querySelectorAll('#hud-batalha .golpe')],
       esquiva: $('#btn-esquiva'), qtdCristal: $('#qtd-cristal'), chanceCristal: $('#chance-cristal'),
       rotulo: $('#rotulo'), numeros: $('#numeros'), avisos: $('#avisos'),
@@ -209,6 +211,9 @@ class Jogo {
     document.querySelectorAll('#col-formas [data-forma]').forEach((b) => b.classList.toggle('ativa', Number(b.dataset.forma) === i));
     const e = ESPECIES[id], el = ELEMENTOS[e.elemento];
     const barra = (k, nome, txt) => `<div class="stat"><span>${nome}</span><i><b style="width:${Math.round((e.base[k] / MAXIMOS[k]) * 100)}%"></b></i><em>${txt}</em></div>`;
+    // atributos mostrados no nível em que a forma aparece
+    const nivelForma = e.raro ? 1 : [1, ...NIVEIS_EVOLUCAO][e.estagio];
+    const st = statsDe(id, nivelForma);
     let evo;
     if (e.raro) evo = 'Monstro raro: não evolui.';
     else if (e.evoluiPara) {
@@ -243,8 +248,9 @@ class Jogo {
       <p class="desc">${e.descricao}</p>
       <p class="evo">${evo}</p>
       <div class="stats" style="--cor:${el.cor}">
-        ${barra('hp', 'Vida', Math.round(e.base.hp))}${barra('atk', 'Ataque', Math.round(e.base.atk))}
-        ${barra('def', 'Defesa', Math.round(e.base.def))}${barra('vel', 'Veloc.', e.base.vel.toFixed(1))}
+        <small class="nivel-stats">Atributos no Nv.${nivelForma}</small>
+        ${barra('hp', 'Vida', st.hpMax)}${barra('atk', 'Ataque', Math.round(st.atk))}
+        ${barra('def', 'Defesa', Math.round(st.def))}${barra('vel', 'Veloc.', st.vel.toFixed(1))}
       </div>
       <div class="golpes-lista">${golpes}</div>
       ${melhorias}
@@ -507,7 +513,7 @@ class Jogo {
   salvar() {
     if (!this.estado) return;
     try {
-      localStorage.setItem(CHAVE_SAVE, JSON.stringify({ v: 2, estado: this.estado, pos: { x: this.mundo.pos.x, z: this.mundo.pos.z }, hora: this.mundo.hora }));
+      localStorage.setItem(CHAVE_SAVE, JSON.stringify({ v: 3, estado: this.estado, pos: { x: this.mundo.pos.x, z: this.mundo.pos.z }, hora: this.mundo.hora }));
     } catch { /* sem armazenamento: o jogo continua sem salvar */ }
   }
 

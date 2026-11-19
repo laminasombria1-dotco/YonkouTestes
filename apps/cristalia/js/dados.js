@@ -337,15 +337,61 @@ export const APARICOES = {
             noite: [['L:raio', 7], ['L:trevas', 1]] },
 };
 
+// =============================================================
+// ARENAS DE BATALHA (uma por região)
+// favorece = elemento que ganha +25% de dano e +10% de velocidade ali
+// Quem é fraco contra esse elemento perde 20% de dano.
+// perigo = armadilha do mapa (as regras ficam em batalha.js)
+// =============================================================
+export const ARENAS = {
+  campo:  { nome: 'Campo Aberto',        clima: 'Pólen no ar',      favorece: null,     perigo: null,
+            descricaoPerigo: '' },
+  planta: { nome: 'Coração da Floresta', clima: 'Vento de folhas',  favorece: 'planta', perigo: 'vento',
+            descricaoPerigo: 'O vento empurra quem não é de Planta.' },
+  fogo:   { nome: 'Cratera do Vulcão',   clima: 'Brasas no ar',     favorece: 'fogo',   perigo: 'lava',
+            descricaoPerigo: 'Lava queima quem pisa, mas cura monstros de Fogo.' },
+  agua:   { nome: 'Margem do Lago',      clima: 'Chuva',            favorece: 'agua',   perigo: 'pocas',
+            descricaoPerigo: 'Poças encharcam quem pisa, mas curam monstros de Água.' },
+  terra:  { nome: 'Fundo da Pedreira',   clima: 'Poeira',           favorece: 'terra',  perigo: 'pedras',
+            descricaoPerigo: 'Pedras caem do alto. Terra não sente.' },
+  raio:   { nome: 'Topo da Tempestade',  clima: 'Relâmpagos',       favorece: 'raio',   perigo: 'raios',
+            descricaoPerigo: 'Raios caem e paralisam. Raio não sente.' },
+};
+export const BONUS_ARENA = { favorecido: 1.25, velFavorecido: 1.1, prejudicado: 0.8, periodo: 1.15 };
+
+// Modificadores que a arena (e o dia/noite) dão a um elemento
+export function modificadorArena(zona, elemento, periodo) {
+  const a = ARENAS[zona] || ARENAS.campo;
+  let dano = 1, vel = 1;
+  const textos = [];
+  if (a.favorece === elemento) { dano *= BONUS_ARENA.favorecido; vel *= BONUS_ARENA.velFavorecido; textos.push({ t: 'Arena +25%', bom: true }); }
+  else if (a.favorece && ELEMENTOS[a.favorece].forteContra.includes(elemento)) { dano *= BONUS_ARENA.prejudicado; textos.push({ t: 'Arena −20%', bom: false }); }
+  const doPeriodo = periodo === 'dia' ? ['sol', 'luz'] : ['lua', 'trevas'];
+  if (doPeriodo.includes(elemento)) { dano *= BONUS_ARENA.periodo; textos.push({ t: (periodo === 'dia' ? 'Dia' : 'Noite') + ' +15%', bom: true }); }
+  return { dano, vel, textos };
+}
+
 // Linhas que só existem de dia ou de noite
 export const PERIODO_DA_LINHA = { sol: 'dia', luz: 'dia', lua: 'noite', trevas: 'noite' };
 
-// Atributos crescem 12% por nível
+// VIDA: multiplicador inicial e quanto cresce por nível.
+// Ex.: Brasito Nv.1 = 44 × 2,2 = 97 de vida; no Nv.10 = 97 × 2,8 = 271.
+export const VIDA_BASE = 2.2;
+export const VIDA_POR_NIVEL = 0.2;
+// DANO: quanto o dano cresce por nível de quem ataca (menos que a vida,
+// para as batalhas de nível alto durarem um pouco mais)
+export const DANO_POR_NIVEL = 0.15;
+
+export function fatorDanoNivel(nivel) {
+  return 1 + (nivel - 1) * DANO_POR_NIVEL;
+}
+
+// Ataque e defesa crescem 12% por nível; a vida cresce 20%
 export function statsDe(especie, nivel) {
   const b = ESPECIES[especie].base;
   const f = 1 + (nivel - 1) * 0.12;
   return {
-    hpMax: Math.round(b.hp * f),
+    hpMax: Math.round(b.hp * VIDA_BASE * (1 + (nivel - 1) * VIDA_POR_NIVEL)),
     atk: b.atk * f,
     def: b.def * f,
     vel: b.vel * (1 + (nivel - 1) * 0.015),
