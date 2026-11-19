@@ -43,8 +43,9 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
 - **Níveis:** acompanham a sua equipe. Comuns ficam em ~1,1× o seu nível médio + 2; o líder em ~1,4× + 8. No começo do jogo (equipe Nv.3), os comuns ficam no Nv.5 e o líder no Nv.12.
 - **Quantidade:** 1 grupo no começo e mais 1 a cada 5 níveis da equipe, até 5 grupos.
 - **Na batalha:**
-  - até **3 inimigos lutam ao mesmo tempo**, e quando um cai, o próximo entra pela borda;
-  - o **líder entra por último**;
+  - lutam em **ondas de no máximo 2**: a próxima onda só entra quando **os dois** da onda atual caírem (ou forem capturados);
+  - nos grupos do mapa, os comuns vêm de 2 em 2 e o **líder entra por último, sozinho**;
+  - nos **acampamentos das dungeons**, a ordem é por força: **2 fracos → 2 médios → 1 forte → o líder**;
   - seus golpes miram no inimigo mais perto (com um anel branco embaixo dele) e a área acerta todos dentro dela;
   - dá para capturar qualquer um no meio da luta, e a batalha continua com os outros.
 - **Recompensa:** experiência de todos os vencidos (60% de cada), **2 cristais comuns + 1 Cristal Forte garantidos pelo líder** e chance de cristal pelos outros.
@@ -92,6 +93,7 @@ Sai da borda nordeste do mapa, depois do Vulcão, seguindo a estrada de braseiro
 | 4 | Escadaria de Obsidiana | Nv.14 | Nv.21 | Espinhos de obsidiana e estátuas de lobos |
 
 - Os níveis acompanham a sua equipe (os números acima são para uma equipe de Nv.3).
+- **Ordem da luta nos acampamentos:** 2 fracos (comum −2 níveis) → 2 médios (comum +1) → 1 forte (entre o comum e o líder) → o líder. Cada onda só entra quando a anterior inteira cai.
 - Também aparecem monstros soltos lá dentro, já evoluídos (Brasalobo, Fornalobo, Vulcarapa, Cascalhão, Umbrafel...). Nenhum monstro novo além do chefe.
 - Um acampamento vencido ganha outro grupo depois de 2 minutos.
 - Não dá para montar a casa lá dentro (calor demais). Monte antes da entrada.
@@ -173,8 +175,8 @@ Super raros (chefes): Ignárion (Ígneo, Caminho das Brasas) e Silvárion (Silve
 
 - A vida começa em **2,2×** o valor base da espécie e cresce **20% por nível**.
 - O dano cresce **15% por nível** de quem ataca, um pouco menos que a vida. Por isso as batalhas de nível alto duram um pouco mais.
-- Num confronto neutro, são necessários uns **7 disparos** no começo e uns **12** no nível 30. Vantagem e desvantagem de elemento mudam bastante esse número.
-- Esses valores ficam em `dados.js`: `VIDA_BASE`, `VIDA_POR_NIVEL` e `DANO_POR_NIVEL`.
+- Todo dano de golpe (o seu e o dos inimigos) passa por `DANO_GERAL` (0,7 = 30% menos). Num confronto neutro, são necessários uns **10 disparos** no começo e uns **17** no nível 30. Vantagem e desvantagem de elemento mudam bastante esse número.
+- Esses valores ficam em `dados.js`: `VIDA_BASE`, `VIDA_POR_NIVEL`, `DANO_POR_NIVEL` e `DANO_GERAL`.
 
 ## Arenas de batalha
 

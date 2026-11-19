@@ -506,16 +506,21 @@ export class Mundo {
       }
       const zona = opcoes?.zona || zonaEm(x, z);
       const nv = opcoes?.niveis || niveisDoGrupo(this.mediaEquipe());
+      // Grupos de dungeon: 2 fracos, 2 médios, 1 forte e o líder (a ordem em que entram na luta)
+      const FORCA = [null, ['fraco', 1, -2], ['fraco', 1, -2], ['medio', 2, 1], ['medio', 2, 1], ['forte', 3, 0]];
       const membros = [];
       for (let i = 0; i < TAMANHO_GRUPO; i++) {
         const lider = i === 0;
         let escolha = opcoes?.lista ? sortearLista(opcoes.lista) : this.sortearAparicao(zona);
         // o líder é sempre de uma linha evolutiva (assim ele aparece evoluído)
-        if (lider && !escolha.startsWith('L:')) escolha = 'L:' + ESPECIES[escolha].elemento;
-        const nivel = lider ? nv.lider : Math.max(1, nv.comum + Math.round(Math.random() * 2 - 1));
+        const forca = opcoes?.escalonado && !lider ? FORCA[i] : null;
+        if ((lider || forca?.[0] === 'forte') && !escolha.startsWith('L:')) escolha = 'L:' + ESPECIES[escolha].elemento;
+        let nivel = lider ? nv.lider : Math.max(1, nv.comum + Math.round(Math.random() * 2 - 1));
+        if (forca) nivel = forca[0] === 'forte' ? Math.round(nv.comum + (nv.lider - nv.comum) * 0.6) : Math.max(1, nv.comum + forca[2]);
         const { especie, nivel: nivelFinal } = this.especieDe(escolha, nivel);
         const dados = criarMonstro(especie, nivelFinal);
         if (lider) dados.lider = true;
+        if (opcoes?.escalonado) { dados.onda = lider ? 4 : forca[1]; dados.forca = lider ? 'lider' : forca[0]; }
         const modelo = criarModelo(especie);
         if (lider) {
           modelo.scale.setScalar(1.3);

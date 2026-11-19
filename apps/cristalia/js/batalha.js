@@ -8,12 +8,12 @@
 import * as THREE from 'three';
 import {
   ESPECIES, GOLPES, ELEMENTOS, EFEITOS, EFEITO_DO_ELEMENTO, PODER_DISPARO_EXTRA, DURACAO_EFEITO_PERTO, DURACAO_EFEITO_DISPARO,
-  multiplicadorContra, chanceCaptura, melhoriaDe, statsDe, modificadorArena, fatorDanoNivel, CRISTAIS, nomeTipo, fundoTipo,
+  multiplicadorContra, chanceCaptura, melhoriaDe, statsDe, modificadorArena, fatorDanoNivel, CRISTAIS, nomeTipo, fundoTipo, DANO_GERAL,
   fracoContraEspecie,
 } from './dados.js';
 import { criarModelo, criarCristal, criarCoroa, animarModelo, piscar, descartar } from './modelos.js';
 
-const MAX_ATIVOS = 3;      // quantos inimigos de um grupo lutam ao mesmo tempo
+const MAX_ATIVOS = 2;      // quantos inimigos de um grupo lutam ao mesmo tempo (o próximo par só entra quando estes caírem)
 const ESCALA_LIDER = 1.3;  // o líder do grupo é maior
 import { Arena, RAIO_ARENA } from './arena.js';
 
@@ -114,13 +114,26 @@ export class Batalha {
     const membros = selvagem.membros ? selvagem.membros.map((m) => m.dados) : [selvagem.dados];
     this.grupo = membros.length > 1;
     this.chefe = !!selvagem.chefe;
-    this.fila = [...membros].sort((a, b) => (a.lider ? 1 : 0) - (b.lider ? 1 : 0));
+    // Ondas: entram 2 de cada vez, e a próxima onda só entra quando a anterior inteira cair.
+    // Grupos de dungeon vêm em ordem de força (onda 1: 2 fracos, 2: 2 médios, 3: o forte, 4: o líder).
+    // Os outros grupos: os comuns de 2 em 2 e o líder sozinho no fim.
+    const ordem = (d) => d.onda ?? (d.lider ? 99 : 1);
+    const fila = [...membros].sort((a, b) => ordem(a) - ordem(b));
+    this.ondas = [];
+    for (const d of fila) {
+      const ult = this.ondas[this.ondas.length - 1];
+      if (ult && ordem(ult[0]) === ordem(d) && ult.length < MAX_ATIVOS && !d.lider) ult.push(d);
+      else this.ondas.push([d]);
+    }
+    this.fila = this.ondas.flat();
     this.total = membros.length;
     this.inimigos = [];
     this.derrotados = [];
     this.capturados = [];
     this.liderDerrotado = false;
-    for (let i = 0; i < Math.min(MAX_ATIVOS, this.fila.length); i++) this.entrarInimigo(i);
+    const primeira = this.ondas.shift() || [];
+    this.tamOnda = primeira.length;
+    primeira.forEach((_, i) => this.entrarInimigo(i));
     this.alvo = this.inimigos[0];
     this.marcaAlvo = new THREE.Mesh(GEO_ANEL, matBrilho('#ffffff', 0.7));
     this.marcaAlvo.visible = this.grupo;
@@ -167,14 +180,14 @@ export class Batalha {
       l.coroa = coroa;
     }
     if (posicaoInicial != null) {
-      l.pos.set((posicaoInicial - (Math.min(MAX_ATIVOS, this.total) - 1) / 2) * 4.5, 0, -5 - (posicaoInicial % 2) * 2);
+      l.pos.set((posicaoInicial - (this.tamOnda - 1) / 2) * 4.5, 0, -5 - (posicaoInicial % 2) * 2);
     } else {
       // reforço: entra pela borda do lado de lá da arena
       const a = -Math.PI / 2 + (Math.random() - 0.5) * 1.6;
       l.pos.set(Math.cos(a) * (RAIO_ARENA - 3), 0, Math.sin(a) * (RAIO_ARENA - 3));
       l.stun = 0.8;
       this.particulas(l.pos, '#ffffff', 14, 1.2);
-      this.jogo.aviso(dados.lider ? `O líder ${l.esp.nome} entrou na luta!` : `Mais um ${l.esp.nome} entrou na luta!`);
+      if (dados.lider) this.jogo.aviso(`O líder ${l.esp.nome} entrou na luta!`);
     }
     l.ia.t = 0.8 + this.inimigos.length * 0.6;
     l.angAlvo = l.ang = Math.atan2(this.jog.pos.x - l.pos.x, this.jog.pos.z - l.pos.z);
@@ -281,9 +294,15 @@ export class Batalha {
         this.inimigos.splice(i, 1);
       }
     }
-    if (!this.fim && !this.captura && this.vivos().length < MAX_ATIVOS && this.fila.length && this.t > 1) {
+    // próxima onda: só quando todos os da onda atual caíram (ou foram capturados)
+    if (!this.fim && !this.captura && this.vivos().length === 0 && this.ondas.length && this.t > 1) {
       this.reforcoT = (this.reforcoT || 0) + dt;
-      if (this.reforcoT > 1.2) { this.reforcoT = 0; this.entrarInimigo(null); }
+      if (this.reforcoT > 1.2) {
+        this.reforcoT = 0;
+        const onda = this.ondas.shift();
+        if (!onda[0].lider) this.jogo.aviso(onda.length > 1 ? `Mais ${onda.length} entraram na luta!` : `Mais um ${ESPECIES[onda[0].especie].nome} entrou na luta!`);
+        for (const _ of onda) this.entrarInimigo(null);
+      }
     }
     // marca no chão embaixo do inimigo que você está mirando
     if (this.grupo && this.ini && !this.ini.morto) {
@@ -488,7 +507,7 @@ export class Batalha {
     const exposto = alvo.tem('exposto') ? 1.3 : 1;
     const nivel = fatorDanoNivel(at.dados.nivel);  // dano cresce com o nível de quem ataca
     const arena = at.mod?.dano ?? 1;               // bônus/penalidade da arena
-    const dano = Math.max(1, Math.round(gp.poder * (opcoes.fator ?? 1) * (at.stats.atk / def) * mult * exposto * nivel * arena * (0.9 + Math.random() * 0.2)));
+    const dano = Math.max(1, Math.round(DANO_GERAL * gp.poder * (opcoes.fator ?? 1) * (at.stats.atk / def) * mult * exposto * nivel * arena * (0.9 + Math.random() * 0.2)));
     alvo.dados.hp = Math.max(0, alvo.dados.hp - dano);
     if (alvo.tem('sono')) { alvo.status.sono = 0; this.jogo.numero('Acordou!', topo.clone().setY(topo.y + 0.5), '#b9b4ff', 'pequeno'); }
     alvo.flash = 0.18;

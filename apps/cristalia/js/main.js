@@ -479,7 +479,7 @@ class Jogo {
     this.ganharCristais(ganho);
     for (const novo of b.capturados) {
       novo.hp = Math.max(1, novo.hp);
-      delete novo.lider;
+      delete novo.lider; delete novo.onda; delete novo.forca;
       if (!this.estado.capturados.includes(novo.especie)) this.estado.capturados.push(novo.especie);
       if (this.estado.equipe.length < MAX_EQUIPE) {
         this.estado.equipe.push(novo);

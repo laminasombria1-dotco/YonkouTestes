@@ -576,6 +576,9 @@ export const VIDA_POR_NIVEL = 0.2;
 // DANO: quanto o dano cresce por nível de quem ataca (menos que a vida,
 // para as batalhas de nível alto durarem um pouco mais)
 export const DANO_POR_NIVEL = 0.15;
+// DANO GERAL: multiplica o dano de todos os golpes (seus e dos inimigos).
+// 0,7 = 30% menos que antes. Para deixar as lutas mais rápidas, suba; mais longas, desça.
+export const DANO_GERAL = 0.7;
 
 export function fatorDanoNivel(nivel) {
   return 1 + (nivel - 1) * DANO_POR_NIVEL;

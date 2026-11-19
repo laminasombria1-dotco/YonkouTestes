@@ -400,7 +400,7 @@ export class DungeonAberta {
       if (a.grupo && !m.grupos.includes(a.grupo)) { a.grupo = null; a.espera = RESPAWN_ACAMPAMENTO; }
       if (a.espera > 0) { a.espera -= dt; continue; }
       if (!a.grupo && d < 42 && d > 16) {
-        a.grupo = m.spawnarGrupo({ x: a.x, z: a.z, zona: this.cfg.zonaSoltos, niveis: niveisDaEtapa(m.mediaEquipe(), a.etapa, this.id), lista: this.cfg.aparicoes, acampamento: a });
+        a.grupo = m.spawnarGrupo({ x: a.x, z: a.z, zona: this.cfg.zonaSoltos, niveis: niveisDaEtapa(m.mediaEquipe(), a.etapa, this.id), lista: this.cfg.aparicoes, acampamento: a, escalonado: true });
       } else if (a.grupo && d > 60) {
         m.removerGrupo(a.grupo, true);
         a.grupo = null;
