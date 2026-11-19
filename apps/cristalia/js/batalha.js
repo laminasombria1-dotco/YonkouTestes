@@ -16,7 +16,10 @@ const CORES_ZONA = {
   planta: { chao: '#5cb553', fora: '#3f8f3a', ceu: '#bdeccf', decor: 'arvore', copa: ['#2f7a3a', '#3f8f3a', '#4ea64a'] },
   fogo:   { chao: '#d39a66', fora: '#a8693f', ceu: '#ffd6b0', decor: 'pedra',  copa: ['#6b4a3f', '#7d5545', '#5a3328'] },
   agua:   { chao: '#ecd9a0', fora: '#4fc3f7', ceu: '#b0e4ff', decor: 'pedra',  copa: ['#a8a8b4', '#b9b5aa', '#9aa3ad'] },
+  terra:  { chao: '#c9a46a', fora: '#9a7a4a', ceu: '#f0dcb0', decor: 'pedra',  copa: ['#9c8a72', '#b5a083', '#8a7a64'] },
+  raio:   { chao: '#7a7a9a', fora: '#4a4a6a', ceu: '#8a8fb5', decor: 'pedra',  copa: ['#55557a', '#64648a', '#fff07a'] },
 };
+const CEU_NOITE = new THREE.Color('#1b2550');
 
 const GEO_PARTICULA = new THREE.IcosahedronGeometry(0.12, 0);
 const GEO_PROJ = {
@@ -24,6 +27,12 @@ const GEO_PROJ = {
   agua: new THREE.SphereGeometry(0.3, 8, 6),
   planta: new THREE.OctahedronGeometry(0.25, 0),
   normal: new THREE.IcosahedronGeometry(0.28, 0),
+  terra: new THREE.DodecahedronGeometry(0.32, 0),
+  raio: new THREE.OctahedronGeometry(0.22, 0),
+  sol: new THREE.IcosahedronGeometry(0.34, 1),
+  lua: new THREE.TorusGeometry(0.26, 0.07, 4, 10, Math.PI * 1.2),
+  luz: new THREE.OctahedronGeometry(0.26, 0),
+  trevas: new THREE.SphereGeometry(0.32, 8, 6),
 };
 const GEO_FAIXA = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2).translate(0, 0, 0.5);
 const GEO_DISCO = new THREE.CircleGeometry(1, 32).rotateX(-Math.PI / 2);
@@ -67,7 +76,7 @@ class Lutador {
     this.movendo = false;
     this.brilhando = false;
   }
-  get raio() { return 0.65 * this.esp.tamanho; }
+  get raio() { return this.esp.raio; }
   get frac() { return this.dados.hp / this.stats.hpMax; }
   golpe(i) { return GOLPES[this.esp.golpes[i]]; }
 }
@@ -105,10 +114,13 @@ export class Batalha {
   // ---------- cenário ----------
   criarArena() {
     const cz = CORES_ZONA[this.zona] || CORES_ZONA.campo;
-    this.cena.background = new THREE.Color(cz.ceu);
-    this.cena.fog = new THREE.Fog(cz.ceu, 32, 75);
-    this.cena.add(new THREE.HemisphereLight('#d6f0ff', '#5d7a3e', 1.7));
-    const sol = new THREE.DirectionalLight('#fff1d6', 1.9);
+    // À noite a arena fica escura e azulada, como o mundo
+    const noite = this.jogo.mundo.fatorNoite;
+    const ceu = new THREE.Color(cz.ceu).lerp(CEU_NOITE, noite * 0.85);
+    this.cena.background = ceu;
+    this.cena.fog = new THREE.Fog(ceu, 32, 75);
+    this.cena.add(new THREE.HemisphereLight(new THREE.Color('#d6f0ff').lerp(new THREE.Color('#8f9fe0'), noite), '#5d7a3e', THREE.MathUtils.lerp(1.7, 0.85, noite)));
+    const sol = new THREE.DirectionalLight(new THREE.Color('#fff1d6').lerp(new THREE.Color('#a8b8ff'), noite), THREE.MathUtils.lerp(1.9, 0.6, noite));
     sol.position.set(20, 40, 25);
     this.cena.add(sol);
 
@@ -137,7 +149,8 @@ export class Batalha {
         c.position.set(x, 2 * esc, z); c.scale.set(esc, esc * 1.15, esc);
         this.cena.add(t, c);
       } else {
-        const p = new THREE.Mesh(geoPedra, new THREE.MeshLambertMaterial({ color: cor, flatShading: true, emissive: this.zona === 'fogo' && i % 3 === 0 ? '#ff5a1f' : '#000000', emissiveIntensity: 0.35 }));
+        const brilha = (this.zona === 'fogo' && i % 3 === 0) ? '#ff5a1f' : (this.zona === 'raio' && cor === '#fff07a') ? '#f7c81a' : '#000000';
+        const p = new THREE.Mesh(geoPedra, new THREE.MeshLambertMaterial({ color: cor, flatShading: true, emissive: brilha, emissiveIntensity: 0.5 }));
         p.position.set(x, 0.3 * esc, z); p.scale.set(esc * 1.3, esc, esc * 1.2); p.rotation.set(Math.random(), Math.random() * 6, 0);
         this.cena.add(p);
       }
@@ -319,7 +332,7 @@ export class Batalha {
 
   aplicarDano(at, alvo, gp, dir) {
     if (alvo.morto || this.captura || !alvo.modelo.visible) return;
-    const topo = alvo.pos.clone().setY(2 * alvo.esp.tamanho);
+    const topo = alvo.pos.clone().setY(alvo.esp.altura);
     if (alvo.invul > 0) {
       this.jogo.numero('Esquivou!', topo, '#ffffff', 'pequeno');
       return;
@@ -437,8 +450,9 @@ export class Batalha {
   // ---------- projéteis e efeitos ----------
   criarProjetil(c, gp, ang) {
     const cor = ELEMENTOS[gp.elemento].cor;
-    const mesh = new THREE.Mesh(GEO_PROJ[gp.elemento] || GEO_PROJ.normal, new THREE.MeshLambertMaterial({ color: cor, emissive: cor, emissiveIntensity: 0.6, flatShading: true, transparent: gp.elemento === 'agua', opacity: 0.85 }));
+    const mesh = new THREE.Mesh(GEO_PROJ[gp.elemento] || GEO_PROJ.normal, new THREE.MeshLambertMaterial({ color: gp.elemento === 'trevas' ? '#3a1a5a' : cor, emissive: cor, emissiveIntensity: 0.6, flatShading: true, transparent: gp.elemento === 'agua', opacity: 0.85 }));
     if (gp.elemento === 'planta') mesh.scale.set(1, 0.3, 1.7);
+    if (gp.elemento === 'raio') mesh.scale.set(0.7, 0.7, 2.4);
     const dir = new THREE.Vector3(Math.sin(ang), 0, Math.cos(ang));
     const pos = c.pos.clone().addScaledVector(dir, c.raio + 0.3).setY(0.8 * c.esp.tamanho);
     mesh.position.copy(pos);
@@ -453,7 +467,8 @@ export class Batalha {
       p.pos.addScaledVector(p.dir, p.gp.velocidade * dt);
       p.vida -= dt;
       p.mesh.position.copy(p.pos);
-      if (p.gp.elemento !== 'planta') p.mesh.rotation.x += dt * 8;
+      if (p.gp.elemento === 'lua') p.mesh.rotation.y += dt * 14;
+      else if (p.gp.elemento !== 'planta' && p.gp.elemento !== 'raio') p.mesh.rotation.x += dt * 8;
       const alvo = p.lado === 'jogador' ? this.ini : this.jog;
       let acabou = p.vida <= 0 || Math.hypot(p.pos.x, p.pos.z) > RAIO_ARENA + 1;
       if (!acabou && !alvo.morto && alvo.modelo.visible && Math.hypot(p.pos.x - alvo.pos.x, p.pos.z - alvo.pos.z) < p.gp.raio + alvo.raio) {
