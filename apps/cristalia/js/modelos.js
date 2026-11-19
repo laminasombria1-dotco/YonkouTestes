@@ -770,7 +770,76 @@ function espinhal(c) {
   olhos(c, 0.72, 0.6, 0.14, 0.09);
 }
 
-const RAROS_MODELO = { vulcarapa, aquaraia, espinhal };
+// ---------- SUPER RARO: Ignárion, o chefe do Trono de Magma ----------
+// Fera de obsidiana com rachaduras de fogo ígneo, chifres, asas de brasa e cauda de chamas
+function ignarion(c, u) {
+  const obs = mat('#2a1a22'), obs2 = mat('#3a2430');
+  const igneo = brilho('#ff3d6a', 0.9), fogoM = brilho('#ffb030', 0.9), lava = brilho('#ff6a1f', 0.85);
+  const yT = 0.95;
+  // corpo e peito
+  p(c, G.ico(0.75, 1), obs, [0, yT, 0], null, [1, 0.85, 1.45]);
+  p(c, G.ico(0.5, 1), obs2, [0, yT - 0.05, 0.75], null, [1, 0.95, 0.9]);
+  // rachaduras brilhando no corpo
+  for (let i = 0; i < 7; i++) {
+    const a = (i / 7) * Math.PI * 2;
+    p(c, G.caixa(0.05, 0.45, 0.05), igneo, [Math.cos(a) * 0.72, yT + Math.sin(a * 2) * 0.12, Math.sin(a) * 0.9], [0, a, 0.4]);
+  }
+  // espinhos de fogo nas costas
+  for (let i = 0; i < 6; i++) {
+    const z = 0.55 - i * 0.32;
+    p(c, G.cone(0.13, 0.55 - Math.abs(i - 2) * 0.05, 4), obs2, [0, yT + 0.58, z], [-0.3, 0, 0]);
+    const ch = p(c, G.cone(0.08, 0.35, 4), igneo, [0, yT + 0.9, z - 0.08], [-0.3, 0, 0]);
+    u.pulsos.push({ obj: ch, base: 1, amp: 0.25, vel: 6 + i });
+  }
+  // pescoço e cabeça
+  const zC = 1.45, yC = yT + 0.75;
+  p(c, G.cil(0.28, 0.38, 0.7, 6), obs, [0, yT + 0.4, 1.05], [0.9, 0, 0]);
+  p(c, G.ico(0.42, 1), obs, [0, yC, zC], null, [1, 0.9, 1.15]);
+  p(c, G.caixa(0.5, 0.22, 0.55), obs2, [0, yC - 0.2, zC + 0.42]);
+  p(c, G.caixa(0.42, 0.06, 0.5), lava, [0, yC - 0.32, zC + 0.42]); // boca acesa
+  for (const s of [-1, 1]) {
+    // chifres
+    apontar(p(c, G.cone(0.1, 0.75, 5), mat('#e8dcc0'), [s * 0.25, yC + 0.4, zC - 0.15]), V(s * 0.5, 1, -0.7));
+    apontar(p(c, G.cone(0.07, 0.45, 5), mat('#e8dcc0'), [s * 0.36, yC + 0.12, zC - 0.2]), V(s, 0.3, -0.6));
+    // patas com garras
+    for (const z of [0.55, -0.6]) {
+      p(c, G.cil(0.17, 0.22, 0.7, 6), obs, [s * 0.5, 0.35, z]);
+      p(c, G.caixa(0.32, 0.12, 0.36), obs2, [s * 0.5, 0.06, z + 0.08]);
+      for (const k of [-1, 0, 1]) p(c, G.cone(0.04, 0.16, 4), mat('#e8dcc0'), [s * 0.5 + k * 0.09, 0.06, z + 0.3], [Math.PI / 2, 0, 0]);
+      p(c, G.caixa(0.04, 0.35, 0.04), igneo, [s * 0.66, 0.4, z]);
+    }
+    // asas de brasa (membrana em leque)
+    const asa = new THREE.Group();
+    asa.position.set(s * 0.55, yT + 0.5, 0.05);
+    for (let k = 0; k < 4; k++) {
+      const osso = p(asa, G.cil(0.03, 0.05, 1.3 - k * 0.15, 4), obs2, [0, 0, 0]);
+      apontar(osso, V(s * 1, 0.6 - k * 0.32, -0.4 - k * 0.1));
+      osso.position.set(s * (0.55 - k * 0.04), 0.35 - k * 0.2, -0.3 - k * 0.12);
+      p(asa, G.cone(0.22, 1.15 - k * 0.12, 3), k % 2 ? lava : igneo, [s * (0.6 - k * 0.04), 0.3 - k * 0.2, -0.32 - k * 0.12], [0, 0, -s * (1.0 - k * 0.3)], [1, 1, 0.25]);
+    }
+    c.add(asa);
+    u.asas.push({ obj: asa, base: s * 0.2, lado: s });
+  }
+  // cauda em segmentos com chama na ponta
+  const cauda = new THREE.Group();
+  cauda.position.set(0, yT, -1.0);
+  for (let i = 0; i < 5; i++) {
+    p(cauda, G.ico(0.27 - i * 0.04, 0), obs, [0, 0.02 - i * 0.1, -0.2 - i * 0.24], null, [1, 0.9, 1.5]);
+    p(cauda, G.cone(0.05, 0.2, 4), igneo, [0, 0.22 - i * 0.12, -0.2 - i * 0.24], [-0.4, 0, 0]);
+  }
+  const chamaCauda = p(cauda, G.cone(0.2, 0.7, 5), fogoM, [0, -0.45, -1.55], [-1.8, 0, 0]);
+  u.pulsos.push({ obj: chamaCauda, base: 1, amp: 0.3, vel: 8 });
+  c.add(cauda);
+  u.caudas.push(cauda);
+  // brasas ígneas girando em volta
+  for (let i = 0; i < 6; i++) {
+    const o = p(c, G.octa(0.1), i % 2 ? igneo : fogoM, [0, 0, 0], null, [1, 1.8, 1]);
+    u.orbitas.push({ obj: o, raio: 1.6, vel: 1.4, y: yT + 0.6 + (i % 3) * 0.3, fase: (i / 6) * Math.PI * 2 });
+  }
+  olhos(c, yC + 0.1, zC + 0.38, 0.17, 0.1, '#ff3d6a');
+}
+
+const RAROS_MODELO = { vulcarapa, aquaraia, espinhal, ignarion };
 
 export function criarModelo(especie) {
   const esp = ESPECIES[especie];

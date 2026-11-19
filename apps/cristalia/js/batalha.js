@@ -112,6 +112,7 @@ export class Batalha {
     // Inimigos: um selvagem sozinho ou um grupo (o líder entra por último)
     const membros = selvagem.membros ? selvagem.membros.map((m) => m.dados) : [selvagem.dados];
     this.grupo = membros.length > 1;
+    this.chefe = !!selvagem.chefe;
     this.fila = [...membros].sort((a, b) => (a.lider ? 1 : 0) - (b.lider ? 1 : 0));
     this.total = membros.length;
     this.inimigos = [];
@@ -138,6 +139,9 @@ export class Batalha {
       const lider = membros.find((m) => m.lider);
       jogo.aviso(`Um grupo de ${this.total} monstros atacou!`);
       if (lider) jogo.aviso(`O líder é um ${ESPECIES[lider.especie].nome} Nv.${lider.nivel}. Ele entra por último.`);
+    } else if (this.chefe) {
+      jogo.aviso(`O chefe ${this.ini.esp.nome} Nv.${this.ini.dados.nivel} acordou!`);
+      jogo.aviso('Golpes de Água são super efetivos contra Ígneo.');
     } else jogo.aviso(`Um ${this.ini.esp.nome} selvagem apareceu!`);
     if (this.arena.cfg.descricaoPerigo) jogo.aviso(this.arena.cfg.descricaoPerigo);
   }
@@ -210,7 +214,7 @@ export class Batalha {
   }
 
   curar(l, fracao) {
-    if (l.morto || l.dados.hp >= l.stats.hpMax) return;
+    if (l.morto || l.dados.hp >= l.stats.hpMax || l.tem('combustao')) return;
     const cura = Math.max(1, Math.round(l.stats.hpMax * fracao));
     l.dados.hp = Math.min(l.stats.hpMax, l.dados.hp + cura);
     this.jogo.numero('+' + cura, l.pos.clone().setY(l.altura), '#5fe08a', 'pequeno');
@@ -220,7 +224,7 @@ export class Batalha {
     const alvo = this.ini || this.jog;
     const meio = new THREE.Vector3().addVectors(this.jog.pos, alvo.pos).multiplyScalar(0.5);
     // A câmera se afasta quando os monstros ficam longe um do outro (e um pouco mais em grupo)
-    const afast = Math.min(10, Math.max(0, dist(this.jog, alvo) - 4)) * 0.07 + (this.grupo ? 1.15 : 1);
+    const afast = Math.min(10, Math.max(0, dist(this.jog, alvo) - 4)) * 0.07 + (this.grupo ? 1.15 : 1) + (this.chefe ? 0.35 : 0);
     const off = this.jogo.aspecto < 1 ? new THREE.Vector3(0, 12.5, 11.5) : new THREE.Vector3(0, 7.5, 8.5);
     off.multiplyScalar(afast);
     this.camera.position.lerp(meio.clone().add(off), k);
@@ -326,7 +330,7 @@ export class Batalha {
     if (ia.troca <= 0) { ia.strafe = Math.random() < 0.5 ? -1 : 1; ia.troca = 1.5 + Math.random() * 2; }
     if (ia.t <= 0 && !e.prep && !e.dash && e.stun <= 0 && e.podeAtacar()) {
       // com vários inimigos ao mesmo tempo, cada um ataca com menos frequência
-      ia.t = (0.3 + Math.random() * 0.4) * (1 + 0.6 * (ativos - 1));
+      ia.t = (0.3 + Math.random() * 0.4) * (1 + 0.6 * (ativos - 1)) * (e.furia ? 0.6 : 1);
       const opcoes = [];
       for (let i = 0; i < 3; i++) {
         if (e.rec[i] > 0) continue;
@@ -373,7 +377,7 @@ export class Batalha {
     }
     const gp = c.golpe(i);
     const inimigo = c.lado === 'inimigo';
-    c.rec[i] = gp.recarga * (inimigo ? 1.4 : 1);
+    c.rec[i] = gp.recarga * (inimigo ? (c.furia ? 0.95 : 1.4) : 1);
     let prep = gp.tipo === 'area' ? 0.35 : gp.tipo === 'corpo' ? 0.1 : 0.06;
     if (inimigo) prep = prep * 2 + 0.35; // o inimigo demora mais: tempo para você reagir
     const dir = new THREE.Vector3(alvo.pos.x - c.pos.x, 0, alvo.pos.z - c.pos.z);
@@ -491,6 +495,12 @@ export class Batalha {
     else if (mult < 1) this.jogo.numero('Pouco efetivo', topo.clone().setY(topo.y + 0.9), '#c9d6e8', 'pequeno');
     this.particulas(alvo.pos, ELEMENTOS[gp.elemento].cor, 8, 0.9);
     if (alvo.dados.hp <= 0) { this.desmaiar(alvo); return true; }
+    if (alvo.esp.chefe && !alvo.furia && alvo.frac < 0.5) {
+      alvo.furia = true;
+      piscar(alvo.modelo, 0.6, '#ff3d6a');
+      this.particulas(alvo.pos, '#ff3d6a', 30, 2);
+      this.jogo.aviso(`${alvo.esp.nome} entrou em FÚRIA! Ataca mais rápido.`);
+    }
     if (opcoes.efeito) this.aplicarEfeito(alvo, opcoes.efeito.nome, opcoes.efeito.dur, at);
     return true;
   }
@@ -500,7 +510,7 @@ export class Batalha {
     const ef = EFEITOS[nome];
     const novo = !alvo.tem(nome);
     alvo.status[nome] = Math.max(alvo.status[nome] || 0, dur);
-    if (nome === 'queimadura') { alvo.fonteFogo = causador; alvo.tickFogo = 0.5; }
+    if (nome === 'queimadura' || nome === 'combustao') { alvo.fonteFogo = causador; alvo.tickFogo = 0.5; }
     if ((nome === 'paralisia' || nome === 'sono') && alvo.prep) this.cancelarPreparo(alvo);
     if (novo) {
       this.jogo.numero(ef.nome + '!', alvo.pos.clone().setY(alvo.altura + 0.7), ef.cor, 'pequeno');
@@ -515,11 +525,12 @@ export class Batalha {
       if (c.status[k] <= 0) delete c.status[k];
     }
     if (c.morto) { c.status = {}; return; }
-    if (c.tem('queimadura')) {
+    if (c.tem('queimadura') || c.tem('combustao')) {
       c.tickFogo -= dt;
       if (c.tickFogo <= 0) {
         c.tickFogo = 0.5;
-        const dano = Math.max(1, Math.round(c.stats.hpMax * 0.02));
+        // Combustão (Ígneo) queima 3% a cada meio segundo; queimadura comum, 2%
+        const dano = Math.max(1, Math.round(c.stats.hpMax * (c.tem('combustao') ? 0.03 : 0.02)));
         c.dados.hp = Math.max(0, c.dados.hp - dano);
         this.jogo.numero(String(dano), c.pos.clone().setY(c.altura * 0.8), '#ff9a4a', 'pequeno');
         if (c.dados.hp <= 0) { this.desmaiar(c); return; }
@@ -957,9 +968,9 @@ export class Batalha {
     const ui = this.jogo.ui, j = this.jog, e = this.ini;
     if (!e) return;
     if (this.alvoHud !== e) this.montarHudInimigo();
-    const tipo = this.grupo ? `${e.dados.lider ? 'Líder' : 'Grupo'} · restam ${this.restantes()}` : 'Selvagem';
+    const tipo = this.chefe ? (e.furia ? 'Chefe · FÚRIA' : 'Chefe · super raro') : this.grupo ? `${e.dados.lider ? 'Líder' : 'Grupo'} · restam ${this.restantes()}` : 'Selvagem';
     if (ui.biTipo.textContent !== tipo) ui.biTipo.textContent = tipo;
-    ui.biTipo.classList.toggle('lider', !!e.dados.lider);
+    ui.biTipo.classList.toggle('lider', !!e.dados.lider || this.chefe);
     const barra = (el, txt, l) => {
       const f = Math.max(0, l.frac);
       el.style.width = (f * 100).toFixed(1) + '%';

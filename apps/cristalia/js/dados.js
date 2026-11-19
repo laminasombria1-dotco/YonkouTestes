@@ -11,7 +11,7 @@ export const ORDEM_ELEMENTOS = ['fogo', 'agua', 'planta', 'terra', 'raio', 'sol'
 // forteContra = elementos que recebem 1,5× de dano dos golpes deste elemento
 export const ELEMENTOS = {
   fogo:   { nome: 'Fogo',   cor: '#ff7a3d', forteContra: ['planta'] },
-  agua:   { nome: 'Água',   cor: '#3db8ff', forteContra: ['fogo', 'terra'] },
+  agua:   { nome: 'Água',   cor: '#3db8ff', forteContra: ['fogo', 'terra', 'igneo'] },
   planta: { nome: 'Planta', cor: '#5fd35a', forteContra: ['agua', 'terra'] },
   terra:  { nome: 'Terra',  cor: '#c9a46a', forteContra: ['fogo', 'raio'] },
   raio:   { nome: 'Raio',   cor: '#f7e43a', forteContra: ['agua', 'sol'] },
@@ -19,8 +19,12 @@ export const ELEMENTOS = {
   lua:    { nome: 'Lua',    cor: '#b9b4ff', forteContra: ['sol', 'fogo'] },
   luz:    { nome: 'Luz',    cor: '#fff6c8', forteContra: ['trevas', 'lua'] },
   trevas: { nome: 'Trevas', cor: '#b57be8', forteContra: ['luz', 'planta'] },
+  // Ígneo: um fogo mais forte, que queima até o próprio fogo. Só o chefe da cratera tem.
+  igneo:  { nome: 'Ígneo',  cor: '#ff3d6a', forteContra: ['planta', 'fogo', 'terra'] },
   normal: { nome: 'Normal', cor: '#d9d2c3', forteContra: [] },
 };
+// Todos os elementos que existem (Ígneo fica fora das abas porque não tem linha evolutiva)
+export const TODOS_ELEMENTOS = [...ORDEM_ELEMENTOS, 'igneo'];
 
 // Multiplicador de dano: 1.5 se o golpe é forte contra o alvo, 0.6 se é fraco.
 export function multiplicador(elementoGolpe, elementoAlvo) {
@@ -30,7 +34,7 @@ export function multiplicador(elementoGolpe, elementoAlvo) {
 }
 
 export function fracoContra(elemento) {
-  return ORDEM_ELEMENTOS.filter((e) => ELEMENTOS[e].forteContra.includes(elemento));
+  return TODOS_ELEMENTOS.filter((e) => ELEMENTOS[e].forteContra.includes(elemento));
 }
 
 // Tipo duplo: o golpe é comparado com os DOIS elementos do alvo e os efeitos se somam.
@@ -43,12 +47,12 @@ export function multiplicadorContra(elementoGolpe, elementosAlvo) {
 
 // Fraquezas e forças de uma espécie (funciona para tipo simples e duplo)
 export function fracoContraEspecie(esp) {
-  return ORDEM_ELEMENTOS.filter((x) => multiplicadorContra(x, esp.elementos) > 1);
+  return TODOS_ELEMENTOS.filter((x) => multiplicadorContra(x, esp.elementos) > 1);
 }
 export function forteContraEspecie(esp) {
   const lista = new Set();
   for (const el of esp.elementos) for (const x of ELEMENTOS[el].forteContra) lista.add(x);
-  return ORDEM_ELEMENTOS.filter((x) => lista.has(x));
+  return TODOS_ELEMENTOS.filter((x) => lista.has(x));
 }
 export function temElemento(esp, el) { return esp.elementos.includes(el); }
 
@@ -131,6 +135,10 @@ export const GOLPES = {
   vazio:            { nome: 'Vazio',            elemento: 'trevas', tipo: 'area',     poder: 18, recarga: 5,   raio: 3.6, lentidao: 2.5 },
   garraAbissal:     { nome: 'Garra Abissal',    elemento: 'trevas', tipo: 'corpo',    poder: 19, recarga: 1.2, alcance: 2.7 },
   sombras:          { nome: 'Sombras',          elemento: 'trevas', tipo: 'projetil', poder: 10, recarga: 1.8, velocidade: 14, raio: 0.5, quantidade: 3 },
+  // Ígneo (só o chefe)
+  mordidaMagma:     { nome: 'Mordida de Magma', elemento: 'igneo',  tipo: 'corpo',    poder: 24, recarga: 1.2, alcance: 3.4 },
+  cometaIgneo:      { nome: 'Cometa Ígneo',     elemento: 'igneo',  tipo: 'projetil', poder: 14, recarga: 1.9, velocidade: 17, raio: 0.6, quantidade: 3 },
+  cataclismo:       { nome: 'Cataclismo',       elemento: 'igneo',  tipo: 'area',     poder: 36, recarga: 6.5, raio: 6 },
   abismo:           { nome: 'Abismo',           elemento: 'trevas', tipo: 'area',     poder: 31, recarga: 7,   raio: 4.8, lentidao: 2 },
 };
 
@@ -173,10 +181,11 @@ export const EFEITOS = {
   sono:       { nome: 'Sono',       cor: '#b9b4ff', duracao: 3,   descricao: 'dorme até levar um golpe' },
   exposto:    { nome: 'Exposto',    cor: '#fff6c8', duracao: 5,   descricao: 'recebe 30% a mais de dano' },
   medo:       { nome: 'Medo',       cor: '#b57be8', duracao: 2.2, descricao: 'não consegue atacar' },
+  combustao:  { nome: 'Combustão',  cor: '#ff3d6a', duracao: 3,   descricao: 'perde vida a cada segundo e não pode ser curado' },
 };
 export const EFEITO_DO_ELEMENTO = {
   fogo: 'queimadura', agua: 'encharcado', planta: 'enraizado', terra: 'soterrado', raio: 'paralisia',
-  sol: 'ofuscado', lua: 'sono', luz: 'exposto', trevas: 'medo',
+  sol: 'ofuscado', lua: 'sono', luz: 'exposto', trevas: 'medo', igneo: 'combustao',
 };
 
 // =============================================================
@@ -200,6 +209,7 @@ export const DURACAO_EFEITO_PERTO = 0.6;  // efeito do golpe de perto dura 60% d
 export const DURACAO_EFEITO_DISPARO = 0.5;
 export function melhoriaDe(especie) {
   const e = ESPECIES[especie];
+  if (e.chefe) return MELHORIAS[3]; // o chefe já luta com todas as melhorias
   if (e.raro) return MELHORIAS[0];
   const m = MELHORIAS[e.estagio];
   return e.dupla ? { ...m, efeitoDisparo: e.estagio >= 2 } : m;
@@ -405,8 +415,15 @@ Object.assign(ESPECIES, {
     base: { hp: 50, atk: 15, def: 11, vel: 5.6 }, golpes: ['chicote', 'folhas', 'raizes'], evoluiPara: null, nivelEvolucao: null,
   },
 });
-export const RAROS = ['vulcarapa', 'aquaraia', 'espinhal'];
-for (const id of RAROS) Object.assign(ESPECIES[id], { elementos: [ESPECIES[id].elemento], cristalMin: 0 });
+// SUPER RARO: o chefe do Trono de Magma, no fim do Caminho das Brasas
+ESPECIES.ignarion = {
+  nome: 'Ignárion', elemento: 'igneo', elementos: ['igneo'], linha: null, estagio: 3, raro: true, superRaro: true, chefe: true,
+  tamanho: 1.9, captura: 0.04, cristalMin: 2, raio: 1.7, altura: 3.6,
+  descricao: 'Senhor da cratera. Dorme no Trono de Magma e acorda a cada amanhecer. Seu fogo ígneo queima até monstros de fogo.',
+  base: { hp: 95, atk: 18, def: 16, vel: 6.2 }, golpes: ['mordidaMagma', 'cometaIgneo', 'cataclismo'], evoluiPara: null, nivelEvolucao: null,
+};
+export const RAROS = ['vulcarapa', 'aquaraia', 'espinhal', 'ignarion'];
+for (const id of RAROS) Object.assign(ESPECIES[id], { elementos: ESPECIES[id].elementos || [ESPECIES[id].elemento], cristalMin: ESPECIES[id].cristalMin || 0 });
 
 // Monstros iniciais: a primeira forma de cada linha
 export const INICIAIS = ORDEM_ELEMENTOS.map((el) => LINHAS[el].formas[0][0]);
@@ -446,6 +463,10 @@ export const APARICOES = {
 // perigo = armadilha do mapa (as regras ficam em batalha.js)
 // =============================================================
 export const ARENAS = {
+  cratera: { nome: 'Trono de Magma',     clima: 'Chuva de cinzas',  favorece: 'igneo',  perigo: 'lava',
+            descricaoPerigo: 'Lava por todo lado: queima quem pisa, mas cura Fogo e Ígneo.' },
+  brasas: { nome: 'Caminho das Brasas',  clima: 'Brasas no ar',     favorece: 'fogo',   perigo: 'lava',
+            descricaoPerigo: 'Lava queima quem pisa, mas cura monstros de Fogo.' },
   campo:  { nome: 'Campo Aberto',        clima: 'Pólen no ar',      favorece: null,     perigo: null,
             descricaoPerigo: '' },
   planta: { nome: 'Coração da Floresta', clima: 'Vento de folhas',  favorece: 'planta', perigo: 'vento',
@@ -474,6 +495,29 @@ export function modificadorArena(zona, elementos, periodo) {
   if (elementos.some((el) => doPeriodo.includes(el))) { dano *= BONUS_ARENA.periodo; textos.push({ t: (periodo === 'dia' ? 'Dia' : 'Noite') + ' +15%', bom: true }); }
   return { dano, vel, textos };
 }
+
+// =============================================================
+// CAMINHO DAS BRASAS (dungeon aberta da região de fogo)
+// 4 etapas: quanto mais fundo, mais fortes os grupos. No fim, o chefe.
+// extra = níveis somados aos grupos normais em cada etapa
+// =============================================================
+export const ETAPAS = [
+  { nome: 'Etapa 1 · Portão de Cinzas',     extraComum: 0,  extraLider: 0 },
+  { nome: 'Etapa 2 · Ruínas da Forja',      extraComum: 3,  extraLider: 3 },
+  { nome: 'Etapa 3 · Rio de Lava',          extraComum: 6,  extraLider: 6 },
+  { nome: 'Etapa 4 · Escadaria de Obsidiana', extraComum: 9, extraLider: 9 },
+];
+export function niveisDaEtapa(media, etapa) {
+  const e = ETAPAS[etapa];
+  return {
+    comum: Math.min(48, Math.round(media * 1.1 + 2 + e.extraComum)),
+    lider: Math.min(50, Math.round(media * 1.4 + 8 + e.extraLider)),
+  };
+}
+// O chefe fica sempre acima do líder da última etapa
+export function nivelDoChefe(media) { return Math.min(50, Math.round(media * 1.4 + 22)); }
+// Quem aparece na dungeon: as linhas de fogo vêm evoluídas por causa do nível alto
+export const APARICOES_DUNGEON = [['L:fogo', 7], ['vulcarapa', 2], ['L:terra', 2], ['L:sol', 1], ['L:trevas', 1]];
 
 // Linhas que só existem de dia ou de noite
 export const PERIODO_DA_LINHA = { sol: 'dia', luz: 'dia', lua: 'noite', trevas: 'noite' };

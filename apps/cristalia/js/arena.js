@@ -16,9 +16,11 @@ const CORES = {
   fogo:   { chao: ['#c98b5b', '#b87048', '#d9a066'], mancha: '#7a4e33', fora: '#8a5a3a', ceu: '#ffc9a0', obst: 'lava',   copa: ['#6b4a3f', '#5a3328', '#7d5545'] },
   agua:   { chao: ['#ecd9a0', '#e2cd90', '#d9c487'], mancha: '#9fdc7a', fora: '#4fc3f7', ceu: '#b0e4ff', obst: 'pedra',  copa: ['#a8a8b4', '#b9b5aa', '#9aa3ad'] },
   terra:  { chao: ['#c9a46a', '#b8935a', '#d4b27a'], mancha: '#a8875a', fora: '#9a7a4a', ceu: '#f0dcb0', obst: 'pilar',  copa: ['#9c8a72', '#b5a083', '#8a7a64'] },
+  brasas: { chao: ['#5a3a30', '#6b4535', '#4d3229'], mancha: '#2a1a16', fora: '#3a2420', ceu: '#d98a6a', obst: 'lava',   copa: ['#3a2420', '#2a1a16', '#4d3229'] },
+  cratera:{ chao: ['#3a2420', '#2a1a16', '#4a2a22'], mancha: '#ff5a1f', fora: '#1f1210', ceu: '#a04a3a', obst: 'lava',   copa: ['#1f1210', '#2a1a16', '#3a2420'] },
   raio:   { chao: ['#7a7a9a', '#6c6c8c', '#86869f'], mancha: '#5a5a7a', fora: '#4a4a6a', ceu: '#6a6f95', obst: 'cristal', copa: ['#55557a', '#64648a', '#5a5a7a'] },
 };
-const QTD_OBST = { campo: 7, planta: 12, fogo: 7, agua: 6, terra: 9, raio: 7 };
+const QTD_OBST = { campo: 7, planta: 12, fogo: 7, agua: 6, terra: 9, raio: 7, brasas: 9, cratera: 6 };
 const CEU_NOITE = new THREE.Color('#1b2550');
 const GEO_DISCO = new THREE.CircleGeometry(1, 32).rotateX(-Math.PI / 2);
 const GEO_ANEL = new THREE.RingGeometry(0.9, 1, 40).rotateX(-Math.PI / 2);
@@ -177,7 +179,8 @@ export class Arena {
     const mat = lava
       ? lambert('#ff6a1f', { emissive: '#ff3a00', emissiveIntensity: 0.9 })
       : new THREE.MeshLambertMaterial({ color: '#4fc3f7', transparent: true, opacity: 0.8, emissive: '#1a6a9a', emissiveIntensity: 0.3 });
-    for (let tent = 0; tent < 300 && this.pocas.length < 5; tent++) {
+    const maxPocas = this.zona === 'cratera' ? 8 : this.zona === 'brasas' ? 6 : 5;
+    for (let tent = 0; tent < 300 && this.pocas.length < maxPocas; tent++) {
       const a = Math.random() * Math.PI * 2, d = 4 + Math.random() * (RAIO_ARENA - 7);
       const x = Math.cos(a) * d, z = Math.sin(a) * d, r = 1.8 + Math.random() * 1.4;
       if (!this.lugarLivre(x, z, r, 3)) continue;
@@ -194,6 +197,7 @@ export class Arena {
     const paletas = {
       campo: ['#ffffff', '#fff3a0'], planta: ['#5fbf4a', '#9fd35a', '#e0a040'], fogo: ['#ffb030', '#ff6a1f', '#ffe14a'],
       agua: ['#cfefff', '#9fd8ff'], terra: ['#e8d4a8', '#c9a46a'], raio: ['#fff07a', '#ffffff'],
+      brasas: ['#ffb030', '#ff6a1f', '#ffe14a'], cratera: ['#ff3d6a', '#ff6a1f', '#6a5a5a', '#8a7a7a'],
     };
     const c = new THREE.Color();
     for (let i = 0; i < n; i++) {
@@ -206,7 +210,7 @@ export class Arena {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     g.setAttribute('color', new THREE.BufferAttribute(cor, 3));
-    const tam = { campo: 0.18, planta: 0.32, fogo: 0.2, agua: 0.12, terra: 0.25, raio: 0.16 }[this.zona];
+    const tam = { campo: 0.18, planta: 0.32, fogo: 0.2, agua: 0.12, terra: 0.25, raio: 0.16, brasas: 0.22, cratera: 0.26 }[this.zona];
     this.clima = new THREE.Points(g, new THREE.PointsMaterial({ size: tam, vertexColors: true, transparent: true, opacity: this.zona === 'terra' ? 0.55 : 0.9, depthWrite: false }));
     this.cena.add(this.clima);
   }
@@ -257,6 +261,8 @@ export class Arena {
       const k = i * 3;
       switch (this.zona) {
         case 'planta': a[k] += vx * 6 * dt; a[k + 2] += vz * 6 * dt; a[k + 1] -= (1 + Math.sin(t * 3 + i)) * dt; break;
+        case 'cratera': a[k + 1] += (i % 2 ? -1.2 : 2) * dt; a[k] += Math.sin(t * 2 + i) * 0.8 * dt; break;
+        case 'brasas':
         case 'fogo': a[k + 1] += (1.5 + (i % 5) * 0.3) * dt; a[k] += Math.sin(t * 2 + i) * 0.8 * dt; break;
         case 'agua': a[k + 1] -= 22 * dt; a[k] += 1.5 * dt; break;
         case 'terra': a[k] += Math.cos(t * 0.3) * 2 * dt; a[k + 2] += Math.sin(t * 0.25) * 2 * dt; a[k + 1] += Math.sin(t + i) * 0.3 * dt; break;
@@ -287,7 +293,7 @@ export class Arena {
       if (tick) this.tickPoca = 0.5;
       for (const l of lutadores) {
         if (!this.pocaEm(l.pos)) continue;
-        if (l.esp.elementos.includes(elementoCasa)) { if (tick) b.curar(l, 0.015); }
+        if (l.esp.elementos.includes(elementoCasa) || (perigo === 'lava' && l.esp.elementos.includes('igneo'))) { if (tick) b.curar(l, 0.015); }
         else if (perigo === 'lava') b.aplicarEfeito(l, 'queimadura', 1.5, null);
         else b.aplicarEfeito(l, 'encharcado', 1.2, null);
       }

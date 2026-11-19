@@ -74,6 +74,35 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
 - Na batalha, o jogo escolhe sozinho o cristal mais fraco que funciona no alvo; o botão **Tipo** troca na mão.
 - Os cristais do chão reaparecem 1 minuto depois, com a cor sorteada de novo.
 
+## Caminho das Brasas (dungeon aberta da região de fogo)
+
+Sai da borda nordeste do mapa, depois do Vulcão, seguindo a estrada de braseiros. Não tem tela de carregamento: você entra andando.
+
+- **4 etapas**, separadas por portões. Cada etapa tem 2 acampamentos com grupos (5 comuns + 1 líder). Quanto mais fundo, mais fortes:
+
+| Etapa | Nome | Comuns (equipe Nv.3) | Líder (equipe Nv.3) | O que tem lá |
+|---|---|---|---|---|
+| 1 | Portão de Cinzas | Nv.5 | Nv.12 | Árvores mortas, ossadas, pedras de lava |
+| 2 | Ruínas da Forja | Nv.8 | Nv.15 | Muros quebrados, colunas, fornalhas e bigornas |
+| 3 | Rio de Lava | Nv.11 | Nv.18 | Um rio de lava que só se atravessa pela ponte |
+| 4 | Escadaria de Obsidiana | Nv.14 | Nv.21 | Espinhos de obsidiana e estátuas de lobos |
+
+- Os níveis acompanham a sua equipe (os números acima são para uma equipe de Nv.3).
+- Também aparecem monstros soltos lá dentro, já evoluídos (Brasalobo, Fornalobo, Vulcarapa, Cascalhão, Umbrafel...). Nenhum monstro novo além do chefe.
+- Um acampamento vencido ganha outro grupo depois de 2 minutos.
+- Não dá para montar a casa lá dentro (calor demais). Monte antes da entrada.
+- Quanto mais fundo, mais escuro fica o céu, com cinzas caindo e brasas subindo.
+
+### Chefe: Ignárion (super raro)
+
+- Fica no **Trono de Magma**, no fim do caminho, aos pés de um vulcão gigante.
+- Tipo **Ígneo**, um elemento novo: um fogo mais forte, que é super efetivo contra Planta, Terra e até Fogo. Só a **Água** é forte contra ele.
+- Efeito do Ígneo: **Combustão**, que tira 6% da vida por segundo e impede cura.
+- Nível: 1,4× o nível da equipe + 22 (Nv.26 com equipe Nv.3).
+- Com menos da metade da vida, entra em **fúria** e ataca bem mais rápido.
+- Só é capturado com **Cristal Supremo**, e a chance é bem baixa.
+- Vencido ou capturado, deixa 3 Cristais Fortes e 2 Supremos, e vale o dobro de experiência. Ele volta no próximo amanhecer.
+
 ## Regiões
 
 | Região | Onde fica | Quem aparece |
@@ -81,7 +110,7 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
 | Campo | Centro | Um pouco de tudo; Sol e Luz de dia, Lua e Trevas à noite |
 | Floresta | Noroeste | Planta (Musguinho), Espinhal (raro); Luz de dia, Trevas à noite |
 | Lago | Sudoeste | Água (Gotinho), Aquaraia (raro); Lua à noite |
-| Vulcão | Nordeste | Fogo (Brasito), Vulcarapa (raro) |
+| Vulcão | Nordeste | Fogo (Brasito), Vulcarapa (raro). Daqui sai o Caminho das Brasas |
 | Pedreira | Sudeste | Terra (Pedrisco) |
 | Planalto da Tempestade | Extremo norte | Raio (Faisquinho), com relâmpagos |
 
@@ -181,6 +210,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/plataforma.js` | A vitrine 3D do Monstruário e a animação de evolução |
 | `js/mundo.js` | Mapa aberto, regiões, dia e noite, monstros selvagens, cristais e fonte |
 | `js/batalha.js` | Batalha em tempo real: movimento, golpes, efeitos, IA do inimigo e captura |
+| `js/dungeon.js` | Caminho das Brasas: corredor, portões, estruturas, acampamentos, chefe e clima de cinzas |
 | `js/arena.js` | Arenas: chão, obstáculos, clima animado e perigos de cada região |
 | `js/controles.js` | Joystick de toque, botões e teclado |
 | `js/main.js` | Liga tudo: telas, equipe, experiência, evolução, salvamento |

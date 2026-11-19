@@ -212,7 +212,7 @@ class Jogo {
     $(`#col-abas [data-aba="${aba}"]`)?.scrollIntoView({ block: 'nearest', inline: 'center' });
     $('#col-formas').innerHTML = ids.map((id, i) => {
       const e = ESPECIES[id];
-      const nv = e.raro ? 'Raro' : `Nv.${i === 0 ? 1 : NIVEIS_EVOLUCAO[i - 1]}`;
+      const nv = e.superRaro ? 'Super raro' : e.raro ? 'Raro' : `Nv.${i === 0 ? 1 : NIVEIS_EVOLUCAO[i - 1]}`;
       return `<button type="button" data-forma="${i}" style="--cor:${ELEMENTOS[e.elemento].cor}"><small>${nv}</small>${e.nome}</button>`;
     }).join('');
     $('#col-escolher').textContent = aba !== 'raros' ? `Escolher ${ESPECIES[ids[0]].nome}` : '';
@@ -228,10 +228,11 @@ class Jogo {
     const e = ESPECIES[id], el = ELEMENTOS[e.elemento];
     const barra = (k, nome, txt) => `<div class="stat"><span>${nome}</span><i><b style="width:${Math.round((e.base[k] / MAXIMOS[k]) * 100)}%"></b></i><em>${txt}</em></div>`;
     // atributos mostrados no nível em que a forma aparece
-    const nivelForma = e.raro ? 1 : [1, ...NIVEIS_EVOLUCAO][e.estagio];
+    const nivelForma = e.chefe ? 25 : e.raro ? 1 : [1, ...NIVEIS_EVOLUCAO][e.estagio];
     const st = statsDe(id, nivelForma);
     let evo;
-    if (e.raro) evo = 'Monstro raro: não evolui.';
+    if (e.chefe) evo = 'Super raro: é o chefe do Caminho das Brasas, no Trono de Magma. Não evolui. Só um <b>Cristal Supremo</b> segura ele.';
+    else if (e.raro) evo = 'Monstro raro: não evolui.';
     else if (e.evoluiPara) {
       const prox = novidadesDaEvolucao(id, e.evoluiPara);
       evo = `Evolui no <b>Nv.${e.nivelEvolucao}</b> para <b>${ESPECIES[e.evoluiPara].nome}</b>${prox.length ? ': ' + prox.join(', ') : ''}.`;
@@ -263,7 +264,7 @@ class Jogo {
       status = `<p class="status">Você começa com ${ESPECIES[this.colecao.ids[0]].nome}. Esta forma vem com a evolução.</p>`;
     }
     $('#col-detalhe').innerHTML = `
-      <div class="cab"><span class="tag" style="--cor:${fundoTipo(e)}">${nomeTipo(e)}</span><span class="estagio">${e.raro ? 'Raro' : NOMES_ESTAGIO[e.estagio]}</span></div>
+      <div class="cab"><span class="tag" style="--cor:${fundoTipo(e)}">${nomeTipo(e)}</span><span class="estagio">${e.superRaro ? 'Super raro · Chefe' : e.raro ? 'Raro' : NOMES_ESTAGIO[e.estagio]}</span></div>
       <h3>${e.nome}</h3>
       <p class="desc">${e.descricao}</p>
       <p class="evo">${evo}</p>
@@ -315,6 +316,10 @@ class Jogo {
       this.aviso('Casa guardada na mochila.');
     } else {
       const lugar = m.acharLugarCasa();
+      if (!lugar && m.dungeon && (m.dungeon.etapaAtual >= 0 || m.pos.x * Math.SQRT1_2 - m.pos.z * Math.SQRT1_2 > 76)) {
+        this.aviso('Calor demais aqui no Caminho das Brasas. Monte a casa antes da entrada.');
+        return;
+      }
       if (!lugar) {
         this.aviso('Não há espaço aqui. Procure um lugar mais aberto, longe de árvores, pedras e água.');
         return;
@@ -404,7 +409,8 @@ class Jogo {
     // Experiência: soma de todos os derrotados/capturados (em grupo, 60% de cada)
     if (vencidos.length && ativo.hp > 0) {
       // tipo duplo vale 50% a mais
-      const xp = Math.round(vencidos.reduce((s, d) => s + xpDaVitoria(d.nivel) * (ESPECIES[d.especie].dupla ? 1.5 : 1), 0) * (b.grupo ? 0.6 : 1));
+      const bonus = (d) => (ESPECIES[d.especie].chefe ? 2 : ESPECIES[d.especie].dupla ? 1.5 : 1);
+      const xp = Math.round(vencidos.reduce((s, d) => s + xpDaVitoria(d.nivel) * bonus(d), 0) * (b.grupo ? 0.6 : 1));
       const subiu = this.ganharXp(ativo, xp);
       this.aviso(`${nomeAtivo} ganhou ${xp} de experiência.`);
       if (subiu) this.aviso(`${nomeAtivo} subiu para o nível ${ativo.nivel}!`);
@@ -413,6 +419,11 @@ class Jogo {
     // Vencer um tipo duplo dá 1 forte (e as formas evoluídas às vezes dão 1 supremo).
     const ganho = { comum: 0, forte: 0, supremo: 0 };
     if (b.grupo && b.liderDerrotado) { ganho.comum += 2; ganho.forte += 1; }
+    // o chefe deixa um tesouro, vencido ou capturado
+    if (b.chefe && vencidos.length) {
+      ganho.forte += 3; ganho.supremo += 2;
+      this.aviso(b.capturados.length ? 'Você capturou o chefe do Trono de Magma!' : 'Você venceu Ignárion! Ele volta no próximo amanhecer.');
+    }
     for (const d of b.derrotados) {
       const esp = ESPECIES[d.especie];
       if (esp.dupla) { ganho.forte++; if (esp.estagio >= 2 && Math.random() < 0.35) ganho.supremo++; }
