@@ -150,6 +150,14 @@
   .painel-cabeca { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
   .painel-caixa h2, .painel-caixa h3 { margin: 0; font-family: var(--f-titulo); font-weight: 600; }
   .painel-caixa h3 { font-size: 1rem; color: var(--creme-suave); }
+  .abas-painel { display: flex; gap: 6px; }
+  .abas-painel button { border: 2px solid transparent; border-radius: 999px; padding: 6px 16px; background: var(--painel); font-family: var(--f-titulo); font-weight: 600; font-size: 1.05rem; }
+  .abas-painel button.ativa { border-color: var(--cristal); background: #23406e; }
+  .abas-painel b { font-size: 0.8rem; color: var(--cristal); }
+  .ficha .onde { margin-left: auto; font-size: 0.68rem; font-weight: 800; padding: 1px 7px; border-radius: 6px; background: rgba(255, 255, 255, 0.1); }
+  .ficha .onde.eq { background: #2f8a4f; }
+  .ficha.desmaiado { opacity: 0.75; }
+  .cab-onde { display: flex; margin-bottom: -2px; }
   #painel-cristais { display: flex; flex-direction: column; gap: 8px; }
   #painel-cristais .linha-cr { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
   #painel-cristais .cr { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,0.08); border: 2px solid var(--c); font-weight: 800; }
@@ -385,12 +393,22 @@
 
   <div id="painel-equipe" hidden>
     <div class="painel-caixa">
-      <div class="painel-cabeca"><h2>Equipe</h2><button id="fechar-equipe" class="btn-hud" type="button">Fechar</button></div>
-      <div id="lista-equipe" class="grade-fichas"></div>
-      <h3>Cristais</h3>
-      <div id="painel-cristais"></div>
-      <h3>Reserva</h3>
-      <div id="lista-reserva" class="grade-fichas"></div>
+      <div class="painel-cabeca">
+        <div class="abas-painel">
+          <button type="button" data-aba-painel="equipe" class="ativa">Equipe</button>
+          <button type="button" data-aba-painel="reserva">Reserva <b id="n-todos"></b></button>
+        </div>
+        <button id="fechar-equipe" class="btn-hud" type="button">Fechar</button>
+      </div>
+      <div id="vista-equipe">
+        <div id="lista-equipe" class="grade-fichas"></div>
+        <h3>Cristais</h3>
+        <div id="painel-cristais"></div>
+      </div>
+      <div id="vista-reserva" hidden>
+        <p class="vazio">Todos os monstros que você tem: os da equipe e os guardados. Perder uma batalha nunca apaga nenhum deles.</p>
+        <div id="lista-todos" class="grade-fichas"></div>
+      </div>
       <p id="info-colecao"></p>
     </div>
   </div>

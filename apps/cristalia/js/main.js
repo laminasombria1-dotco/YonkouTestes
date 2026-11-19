@@ -29,6 +29,24 @@ function migrarEstado(e) {
   return e;
 }
 
+// Proteção da coleção: o jogo guarda uma cópia de cada monstro que você já teve.
+// Se algum sumir da equipe e da reserva (por qualquer motivo), ele volta para a reserva.
+// Devolve os nomes de quem foi recuperado.
+function protegerColecao(e) {
+  e.guardados ||= {};
+  const todos = [...e.equipe, ...e.reserva];
+  for (const m of todos) m.uid ||= Date.now().toString(36) + '-' + Math.floor(Math.random() * 1e9).toString(36);
+  const presentes = new Set(todos.map((m) => m.uid)), voltaram = [];
+  for (const [uid, copia] of Object.entries(e.guardados)) {
+    if (presentes.has(uid) || !ESPECIES[copia.especie]) continue;
+    const m = { ...copia, hp: Math.max(1, copia.hp) };
+    if (!e.equipe.length) e.equipe.push(m); else e.reserva.push(m);
+    voltaram.push(ESPECIES[m.especie].nome);
+  }
+  for (const m of [...e.equipe, ...e.reserva]) e.guardados[m.uid] = { ...m };
+  return voltaram;
+}
+
 function lerSave() {
   try {
     const bruto = localStorage.getItem(CHAVE_SAVE);
@@ -41,6 +59,7 @@ function lerSave() {
     s.estado.capturados = (s.estado.capturados || []).filter((id) => ESPECIES[id]);
     // saves de antes da mudança da vida (v < 3): todos voltam curados com a vida nova
     migrarEstado(s.estado);
+    s.voltaram = protegerColecao(s.estado);
     if (!(s.v >= 3)) for (const m of [...s.estado.equipe, ...s.estado.reserva]) m.hp = statsDe(m.especie, m.nivel).hpMax;
     return s.estado.equipe.length ? s : null;
   } catch { return null; }
@@ -89,6 +108,7 @@ class Jogo {
     // Se a página foi atualizada com o jogo aberto, continua de onde estava
     if (dadosQuentes?.estado) {
       this.estado = migrarEstado(dadosQuentes.estado);
+      protegerColecao(this.estado);
       this.entrarNoMundo();
       if (dadosQuentes.pos) this.mundo.pos.set(dadosQuentes.pos.x, 0, dadosQuentes.pos.z);
       if (dadosQuentes.hora != null) this.mundo.hora = dadosQuentes.hora;
@@ -139,6 +159,7 @@ class Jogo {
       const s = lerSave();
       if (!s) return;
       this.estado = s.estado;
+      if (s.voltaram?.length) setTimeout(() => this.aviso(`Recuperados para a reserva: ${s.voltaram.join(', ')}.`), 600);
       if (s.hora != null) this.mundo.hora = s.hora;
       this.entrarNoMundo();
       if (s.pos) { this.mundo.pos.set(s.pos.x, 0, s.pos.z); this.mundo.posicionarCamera(1); }
@@ -175,6 +196,11 @@ class Jogo {
     document.addEventListener('fullscreenchange', () => { marcarTela(); this.medir(); });
     document.addEventListener('webkitfullscreenchange', () => { marcarTela(); this.medir(); });
     $('#fechar-equipe').addEventListener('click', () => this.fecharEquipe());
+    document.querySelectorAll('[data-aba-painel]').forEach((b) => b.addEventListener('click', () => {
+      this.abaPainel = b.dataset.abaPainel;
+      this.renderizarEquipe();
+      $('#painel-equipe').scrollTop = 0;
+    }));
     $('#painel-equipe').addEventListener('click', (e) => {
       const b = e.target.closest('[data-cmd]');
       if (b) this.comandoEquipe(b.dataset.cmd, Number(b.dataset.i));
@@ -472,6 +498,7 @@ class Jogo {
       this.curarEquipe();
       this.mundo.irParaBase();
       this.aviso(this.mundo.casaPos ? 'Sua equipe desmaiou. Vocês acordaram em casa, curados.' : 'Sua equipe desmaiou. Vocês acordaram na fonte, curados.');
+      this.aviso('Ninguém foi perdido: todos os seus monstros estão em Equipe → Reserva.');
     } else {
       this.mundo.graca = 2.5;
     }
@@ -518,8 +545,9 @@ class Jogo {
   }
 
   // ---------- painel da equipe ----------
-  abrirEquipe() {
+  abrirEquipe(aba = 'equipe') {
     this.painelAberto = true;
+    this.abaPainel = aba;
     this.renderizarEquipe();
     $('#painel-equipe').hidden = false;
     $('#painel-equipe').scrollTop = 0; // abre sempre no topo, com a equipe à vista
@@ -530,14 +558,16 @@ class Jogo {
     $('#painel-equipe').hidden = true;
   }
 
-  cartaoMonstro(m, botoes) {
+  cartaoMonstro(m, botoes, onde = '') {
     const e = ESPECIES[m.especie], el = ELEMENTOS[e.elemento], s = statsDe(m.especie, m.nivel);
     const tagEstilo = `style="--cor:${fundoTipo(e)}"`;
     const fVida = m.hp / s.hpMax, fXp = m.xp / xpParaProximo(m.nivel);
     const nivelVida = fVida > 0.5 ? 'alto' : fVida > 0.2 ? 'medio' : 'baixo';
     const golpes = e.golpes.map((g) => `<span style="--cor:${ELEMENTOS[GOLPES[g].elemento].cor}">${GOLPES[g].nome}</span>`).join('');
     const evo = e.evoluiPara ? `Evolui no Nv.${e.nivelEvolucao}` : e.raro ? 'Raro' : 'Forma final';
-    return `<article class="ficha" style="--cor:${el.cor}">
+    const marca = onde ? `<span class="onde ${onde === 'Na equipe' ? 'eq' : ''}">${onde}</span>` : '';
+    return `<article class="ficha${m.hp <= 0 ? ' desmaiado' : ''}" style="--cor:${el.cor}">
+      ${marca ? `<div class="cab-onde">${marca}</div>` : ''}
       <header><span class="tag" ${tagEstilo}>${nomeTipo(e)}</span><strong>${e.nome}</strong><em>Nv.${m.nivel}</em></header>
       <div class="linha"><span>Vida</span><i class="vida"><b style="width:${(fVida * 100).toFixed(0)}%" data-nivel="${nivelVida}"></b></i><small>${m.hp}/${s.hpMax}</small></div>
       <div class="linha"><span>Exp.</span><i class="xp"><b style="width:${(fXp * 100).toFixed(0)}%"></b></i><small>${m.xp}/${xpParaProximo(m.nivel)}</small></div>
@@ -548,15 +578,22 @@ class Jogo {
   }
 
   renderizarEquipe() {
-    const est = this.estado;
+    const est = this.estado, aba = this.abaPainel || 'equipe';
+    document.querySelectorAll('[data-aba-painel]').forEach((b) => b.classList.toggle('ativa', b.dataset.abaPainel === aba));
+    $('#vista-equipe').hidden = aba !== 'equipe';
+    $('#vista-reserva').hidden = aba !== 'reserva';
+    $('#n-todos').textContent = est.equipe.length + est.reserva.length;
     $('#lista-equipe').innerHTML = est.equipe.map((m, i) => this.cartaoMonstro(m,
       (i > 0 ? `<button data-cmd="lider" data-i="${i}" type="button">Pôr na frente</button>` : '<span class="lider">Entra primeiro na batalha</span>') +
       (est.equipe.length > 1 ? `<button data-cmd="guardar" data-i="${i}" type="button">Mandar para reserva</button>` : ''))).join('');
-    $('#lista-reserva').innerHTML = est.reserva.length
-      ? est.reserva.map((m, i) => this.cartaoMonstro(m, `<button data-cmd="usar" data-i="${i}" type="button">${est.equipe.length < MAX_EQUIPE ? 'Levar na equipe' : 'Trocar pelo 3º da equipe'}</button>`)).join('')
-      : '<p class="vazio">Monstros capturados com a equipe cheia aparecem aqui.</p>';
+    // Reserva: TODOS os monstros que você tem (os da equipe aparecem primeiro, marcados)
+    const daEquipe = est.equipe.map((m, i) => this.cartaoMonstro(m,
+      est.equipe.length > 1 ? `<button data-cmd="guardar" data-i="${i}" type="button">Mandar para reserva</button>` : '<span class="lider">Precisa ficar pelo menos 1 na equipe</span>', 'Na equipe'));
+    const guardados = est.reserva.map((m, i) => this.cartaoMonstro(m,
+      `<button data-cmd="usar" data-i="${i}" type="button">${est.equipe.length < MAX_EQUIPE ? 'Levar na equipe' : 'Trocar pelo 3º da equipe'}</button>`, 'Na reserva'));
+    $('#lista-todos').innerHTML = [...daEquipe, ...guardados].join('');
     $('#painel-cristais').innerHTML = this.htmlCristais();
-    $('#info-colecao').textContent = `Espécies obtidas: ${est.capturados.length} de ${Object.keys(ESPECIES).length}`;
+    $('#info-colecao').textContent = `Você tem ${est.equipe.length + est.reserva.length} monstros · Espécies obtidas: ${est.capturados.length} de ${Object.keys(ESPECIES).length}`;
   }
 
   comandoEquipe(cmd, i) {
@@ -655,6 +692,8 @@ class Jogo {
   // ---------- salvar ----------
   salvar() {
     if (!this.estado) return;
+    const voltaram = protegerColecao(this.estado);
+    if (voltaram.length) { this.aviso(`Recuperados para a reserva: ${voltaram.join(', ')}.`); this.atualizarHudMundo?.(); }
     try {
       localStorage.setItem(CHAVE_SAVE, JSON.stringify({ v: 3, estado: this.estado, pos: { x: this.mundo.pos.x, z: this.mundo.pos.z }, hora: this.mundo.hora }));
     } catch { /* sem armazenamento: o jogo continua sem salvar */ }
