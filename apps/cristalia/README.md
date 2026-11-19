@@ -26,6 +26,24 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
 - O progresso é salvo automaticamente no navegador.
 - **Tela cheia:** botão na tela inicial, no mapa e na batalha. Alguns navegadores não deixam (o iPhone, por exemplo); nesse caso, use "Adicionar à tela inicial".
 
+## Instalar no celular (app que se atualiza sozinho)
+
+O jogo é um **PWA** (aplicativo web instalável). Ele fica no site **https://laminasombria1-dotco.github.io/yonkoutestes/** e, depois de instalado, abre como um app normal.
+
+**No Android (Chrome):**
+1. Abra o endereço acima no **Chrome**.
+2. Toque em **Instalar app**, na tela inicial do jogo. Se o botão não aparecer, use o menu **⋮ → Instalar app** (ou "Adicionar à tela inicial").
+3. O Cristalia aparece na gaveta de apps, com ícone próprio, e abre em tela cheia.
+
+**Atualizações:**
+- Toda vez que uma mudança no jogo entra na branch **main**, o GitHub publica o site sozinho em cerca de 1 minuto (`.github/workflows/cristalia-site.yml`).
+- O app instalado baixa a versão nova ao ser aberto com internet. Se a rede estiver lenta, ele abre a versão guardada e pega a nova na próxima vez.
+- A data e o código da versão aparecem embaixo, na tela inicial do jogo.
+- **Sem internet**, o app abre a última versão baixada.
+- O progresso salvo fica no celular e não se perde com as atualizações.
+
+**Arquivos do app:** `manifest.webmanifest` (nome, ícone e cores do app), `sw.js` (o "ajudante" que guarda o jogo e busca as atualizações) e `icones/`.
+
 ## Casa (base portátil)
 
 - Você começa com a casa **na mochila**. O botão no canto inferior direito muda conforme a situação:
@@ -279,7 +297,8 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 
 | Arquivo | O que faz |
 |---|---|
-| `index.html` | A página: visual da interface (HUD, botões, telas) |
+| `index.html` | A página: visual da interface (HUD, botões, telas), o botão Instalar app e a versão |
+| `manifest.webmanifest`, `sw.js`, `icones/` | O app instalável: nome e ícone, o "ajudante" que guarda o jogo e busca atualizações |
 | `js/dados.js` | **Tabelas do jogo**: elementos, golpes, linhas evolutivas, níveis de evolução, onde cada monstro aparece. Para balancear, mexa aqui. |
 | `js/modelos.js` | Os modelos 3D: um construtor por linha que acrescenta peças a cada evolução. No fim, `juntarPecas` une as peças paradas de mesma aparência numa só (de ~24 para ~11 peças por monstro), deixando caudas, asas, pernas e peças animadas separadas |
 | `js/plataforma.js` | A vitrine 3D do Monstruário e a animação de evolução |

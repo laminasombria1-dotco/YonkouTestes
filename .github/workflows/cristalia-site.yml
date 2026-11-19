@@ -1,0 +1,38 @@
+# Publica o jogo Cristalia (apps/cristalia) no GitHub Pages.
+# Roda sozinho toda vez que algo dentro de apps/cristalia muda na branch main.
+# O app instalado no celular pega a versão nova na próxima vez que for aberto.
+name: Publicar Cristalia
+
+on:
+  push:
+    branches: [main]
+    paths: ['apps/cristalia/**', '.github/workflows/cristalia-site.yml']
+  workflow_dispatch: # botão "Run workflow" na aba Actions, para publicar na mão
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Gravar o número da versão (aparece na tela inicial do jogo)
+        run: |
+          echo "{\"versao\": \"$(TZ=America/Sao_Paulo date +'%d/%m/%Y %H:%M') ($(git rev-parse --short HEAD))\"}" > apps/cristalia/versao.json
+          cat apps/cristalia/versao.json
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/cristalia
+      - id: deploy
+        uses: actions/deploy-pages@v4

@@ -1,4 +1,16 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>Cristalia</title>
+<!-- App instalável (PWA): ícone, nome e cor do app no celular -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#14233f">
+<link rel="icon" type="image/png" sizes="192x192" href="icones/icone-192.png">
+<link rel="apple-touch-icon" href="icones/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap">
@@ -22,6 +34,7 @@
     color-scheme: dark;
   }
   [hidden] { display: none !important; }
+  .versao { font-size: 0.7rem; opacity: 0.7; }
   html { height: 100%; box-sizing: border-box; }
   *, *::before, *::after { box-sizing: inherit; }
   body { height: 100%; margin: 0; overflow: hidden; background: var(--noite); color: var(--creme); font-family: var(--f-corpo); }
@@ -302,6 +315,8 @@
     .aviso { animation: none; }
   }
 </style>
+</head>
+<body>
 
 <div id="app">
   <div id="palco"></div>
@@ -316,8 +331,10 @@
       <button id="btn-continuar" class="btn-grande sec" type="button" hidden>Continuar</button>
       <button id="btn-monstruario" class="btn-grande sec" type="button">Monstruário</button>
       <button class="btn-grande sec btn-tela-cheia" type="button">Tela cheia</button>
+      <button id="btn-instalar" class="btn-grande" type="button" hidden>Instalar app</button>
     </div>
     <p class="dica">Melhor com o celular deitado. Arraste o dedo em qualquer lugar da tela para andar.<br>No PC: WASD anda, J K L golpes, Espaço esquiva, C cristal, Q troca.</p>
+    <p id="versao" class="dica versao"></p>
   </section>
 
   <section id="tela-colecao" hidden>
@@ -418,3 +435,28 @@
 
 <script type="importmap">{ "imports": { "three": "./lib/three.module.min.js" } }</script>
 <script type="module" src="./js/main.js"></script>
+<script>
+  // App instalável: liga o "ajudante" (sw.js) que guarda o jogo no celular e busca as atualizações.
+  // Não funciona dentro do artifact do Claude (página dentro de outra), só no site próprio.
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost') && window.top === window.self) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+  // Botão "Instalar app": o Chrome do Android avisa quando dá para instalar
+  let pedidoInstalar = null;
+  const btnInstalar = document.getElementById('btn-instalar');
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); pedidoInstalar = e; btnInstalar.hidden = false; });
+  btnInstalar.addEventListener('click', async () => {
+    if (!pedidoInstalar) return;
+    pedidoInstalar.prompt();
+    await pedidoInstalar.userChoice;
+    pedidoInstalar = null;
+    btnInstalar.hidden = true;
+  });
+  window.addEventListener('appinstalled', () => { btnInstalar.hidden = true; });
+  // Versão (o site grava versao.json a cada atualização): aparece na tela inicial
+  fetch('versao.json', { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : null)).then((v) => {
+    if (v) document.getElementById('versao').textContent = 'Versão ' + v.versao;
+  }).catch(() => {});
+</script>
+</body>
+</html>
