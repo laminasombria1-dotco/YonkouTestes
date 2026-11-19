@@ -10,7 +10,7 @@ export const ORDEM_ELEMENTOS = ['fogo', 'agua', 'planta', 'terra', 'raio', 'sol'
 
 // forteContra = elementos que recebem 1,5× de dano dos golpes deste elemento
 export const ELEMENTOS = {
-  fogo:   { nome: 'Fogo',   cor: '#ff7a3d', forteContra: ['planta'] },
+  fogo:   { nome: 'Fogo',   cor: '#ff7a3d', forteContra: ['planta', 'silvestre'] },
   agua:   { nome: 'Água',   cor: '#3db8ff', forteContra: ['fogo', 'terra', 'igneo'] },
   planta: { nome: 'Planta', cor: '#5fd35a', forteContra: ['agua', 'terra'] },
   terra:  { nome: 'Terra',  cor: '#c9a46a', forteContra: ['fogo', 'raio'] },
@@ -20,11 +20,13 @@ export const ELEMENTOS = {
   luz:    { nome: 'Luz',    cor: '#fff6c8', forteContra: ['trevas', 'lua'] },
   trevas: { nome: 'Trevas', cor: '#b57be8', forteContra: ['luz', 'planta'] },
   // Ígneo: um fogo mais forte, que queima até o próprio fogo. Só o chefe da cratera tem.
-  igneo:  { nome: 'Ígneo',  cor: '#ff3d6a', forteContra: ['planta', 'fogo', 'terra'] },
+  igneo:  { nome: 'Ígneo',  cor: '#ff3d6a', forteContra: ['planta', 'fogo', 'terra', 'silvestre'] },
+  // Silvestre: uma planta mais forte, que vence até a própria planta. Só o chefe do Santuário tem.
+  silvestre: { nome: 'Silvestre', cor: '#1fe0a0', forteContra: ['agua', 'terra', 'planta'] },
   normal: { nome: 'Normal', cor: '#d9d2c3', forteContra: [] },
 };
-// Todos os elementos que existem (Ígneo fica fora das abas porque não tem linha evolutiva)
-export const TODOS_ELEMENTOS = [...ORDEM_ELEMENTOS, 'igneo'];
+// Todos os elementos que existem (Ígneo e Silvestre ficam fora das abas porque não têm linha evolutiva)
+export const TODOS_ELEMENTOS = [...ORDEM_ELEMENTOS, 'igneo', 'silvestre'];
 
 // Multiplicador de dano: 1.5 se o golpe é forte contra o alvo, 0.6 se é fraco.
 export function multiplicador(elementoGolpe, elementoAlvo) {
@@ -139,6 +141,10 @@ export const GOLPES = {
   mordidaMagma:     { nome: 'Mordida de Magma', elemento: 'igneo',  tipo: 'corpo',    poder: 24, recarga: 1.2, alcance: 3.4 },
   cometaIgneo:      { nome: 'Cometa Ígneo',     elemento: 'igneo',  tipo: 'projetil', poder: 14, recarga: 1.9, velocidade: 17, raio: 0.6, quantidade: 3 },
   cataclismo:       { nome: 'Cataclismo',       elemento: 'igneo',  tipo: 'area',     poder: 36, recarga: 6.5, raio: 6 },
+  // Silvestre (só o chefe do Santuário)
+  galhadaAncestral: { nome: 'Galhada Ancestral', elemento: 'silvestre', tipo: 'corpo',  poder: 24, recarga: 1.2, alcance: 3.6 },
+  sementeParasita:  { nome: 'Semente Parasita', elemento: 'silvestre', tipo: 'projetil', poder: 13, recarga: 1.9, velocidade: 15, raio: 0.55, quantidade: 3 },
+  selvaViva:        { nome: 'Selva Viva',       elemento: 'silvestre', tipo: 'area',    poder: 34, recarga: 6.5, raio: 6, lentidao: 2 },
   abismo:           { nome: 'Abismo',           elemento: 'trevas', tipo: 'area',     poder: 31, recarga: 7,   raio: 4.8, lentidao: 2 },
 };
 
@@ -182,10 +188,11 @@ export const EFEITOS = {
   exposto:    { nome: 'Exposto',    cor: '#fff6c8', duracao: 5,   descricao: 'recebe 30% a mais de dano' },
   medo:       { nome: 'Medo',       cor: '#b57be8', duracao: 2.2, descricao: 'não consegue atacar' },
   combustao:  { nome: 'Combustão',  cor: '#ff3d6a', duracao: 3,   descricao: 'perde vida a cada segundo e não pode ser curado' },
+  parasita:   { nome: 'Parasita',   cor: '#1fe0a0', duracao: 3.5, descricao: 'uma semente suga a vida (quem causou se cura) e deixa 30% mais lento' },
 };
 export const EFEITO_DO_ELEMENTO = {
   fogo: 'queimadura', agua: 'encharcado', planta: 'enraizado', terra: 'soterrado', raio: 'paralisia',
-  sol: 'ofuscado', lua: 'sono', luz: 'exposto', trevas: 'medo', igneo: 'combustao',
+  sol: 'ofuscado', lua: 'sono', luz: 'exposto', trevas: 'medo', igneo: 'combustao', silvestre: 'parasita',
 };
 
 // =============================================================
@@ -209,7 +216,8 @@ export const DURACAO_EFEITO_PERTO = 0.6;  // efeito do golpe de perto dura 60% d
 export const DURACAO_EFEITO_DISPARO = 0.5;
 export function melhoriaDe(especie) {
   const e = ESPECIES[especie];
-  if (e.chefe) return MELHORIAS[3]; // o chefe já luta com todas as melhorias
+  // o chefe já luta com todas as melhorias (Silvárion também planta a semente com o disparo)
+  if (e.chefe) return e.efeitoDisparo ? { ...MELHORIAS[3], efeitoDisparo: true } : MELHORIAS[3];
   if (e.raro) return MELHORIAS[0];
   const m = MELHORIAS[e.estagio];
   return e.dupla ? { ...m, efeitoDisparo: e.estagio >= 2 } : m;
@@ -417,12 +425,21 @@ Object.assign(ESPECIES, {
 });
 // SUPER RARO: o chefe do Trono de Magma, no fim do Caminho das Brasas
 ESPECIES.ignarion = {
+  onde: 'do Caminho das Brasas, no Trono de Magma',
   nome: 'Ignárion', elemento: 'igneo', elementos: ['igneo'], linha: null, estagio: 3, raro: true, superRaro: true, chefe: true,
   tamanho: 1.9, captura: 0.04, cristalMin: 2, raio: 1.7, altura: 3.6,
   descricao: 'Senhor da cratera. Dorme no Trono de Magma e acorda a cada amanhecer. Seu fogo ígneo queima até monstros de fogo.',
   base: { hp: 95, atk: 18, def: 16, vel: 6.2 }, golpes: ['mordidaMagma', 'cometaIgneo', 'cataclismo'], evoluiPara: null, nivelEvolucao: null,
 };
-export const RAROS = ['vulcarapa', 'aquaraia', 'espinhal', 'ignarion'];
+// SUPER RARO: o chefe do Santuário da Árvore-Mãe, no fim da Trilha Ancestral (Floresta)
+ESPECIES.silvarion = {
+  onde: 'da Trilha Ancestral, no Santuário da Árvore-Mãe',
+  nome: 'Silvárion', elemento: 'silvestre', elementos: ['silvestre'], linha: null, estagio: 3, raro: true, superRaro: true, chefe: true,
+  tamanho: 1.9, captura: 0.04, cristalMin: 2, raio: 1.7, altura: 3.8, efeitoDisparo: true,
+  descricao: 'Cervo ancestral com uma floresta inteira na galhada. Guarda a Árvore-Mãe e acorda a cada amanhecer. Sua força silvestre vence até monstros de planta.',
+  base: { hp: 100, atk: 17, def: 17, vel: 6.0 }, golpes: ['galhadaAncestral', 'sementeParasita', 'selvaViva'], evoluiPara: null, nivelEvolucao: null,
+};
+export const RAROS = ['vulcarapa', 'aquaraia', 'espinhal', 'ignarion', 'silvarion'];
 for (const id of RAROS) Object.assign(ESPECIES[id], { elementos: ESPECIES[id].elementos || [ESPECIES[id].elemento], cristalMin: ESPECIES[id].cristalMin || 0 });
 
 // Monstros iniciais: a primeira forma de cada linha
@@ -467,6 +484,10 @@ export const ARENAS = {
             descricaoPerigo: 'Lava por todo lado: queima quem pisa, mas cura Fogo e Ígneo.' },
   brasas: { nome: 'Caminho das Brasas',  clima: 'Brasas no ar',     favorece: 'fogo',   perigo: 'lava',
             descricaoPerigo: 'Lava queima quem pisa, mas cura monstros de Fogo.' },
+  santuario: { nome: 'Santuário da Árvore-Mãe', clima: 'Esporos brilhantes', favorece: 'silvestre', perigo: 'raizes',
+            descricaoPerigo: 'Raízes saem do chão (um círculo verde avisa): machucam e prendem. Planta e Silvestre não sentem.' },
+  raizes: { nome: 'Trilha Ancestral',    clima: 'Vaga-lumes',       favorece: 'planta', perigo: 'espinhos',
+            descricaoPerigo: 'Moitas de espinhos machucam quem pisa, mas curam monstros de Planta.' },
   campo:  { nome: 'Campo Aberto',        clima: 'Pólen no ar',      favorece: null,     perigo: null,
             descricaoPerigo: '' },
   planta: { nome: 'Coração da Floresta', clima: 'Vento de folhas',  favorece: 'planta', perigo: 'vento',
@@ -501,14 +522,42 @@ export function modificadorArena(zona, elementos, periodo) {
 // 4 etapas: quanto mais fundo, mais fortes os grupos. No fim, o chefe.
 // extra = níveis somados aos grupos normais em cada etapa
 // =============================================================
-export const ETAPAS = [
-  { nome: 'Etapa 1 · Portão de Cinzas',     extraComum: 0,  extraLider: 0 },
-  { nome: 'Etapa 2 · Ruínas da Forja',      extraComum: 3,  extraLider: 3 },
-  { nome: 'Etapa 3 · Rio de Lava',          extraComum: 6,  extraLider: 6 },
-  { nome: 'Etapa 4 · Escadaria de Obsidiana', extraComum: 9, extraLider: 9 },
-];
-export function niveisDaEtapa(media, etapa) {
-  const e = ETAPAS[etapa];
+// Cada dungeon aberta: etapas, quem aparece, o chefe e as arenas.
+//  zonaSoltos = arena de quem aparece no caminho | zonaChefe = arena do chefe
+//  aparicoes  = quem aparece nos grupos e soltos ("L:planta" = a forma depende do nível)
+export const DUNGEONS = {
+  brasas: {
+    nome: 'Caminho das Brasas', regiao: 'Vulcão', chefe: 'ignarion', fim: 'Trono de Magma',
+    zonaSoltos: 'brasas', zonaChefe: 'cratera',
+    semCasa: 'Calor demais aqui no Caminho das Brasas. Monte a casa antes da entrada.',
+    etapas: [
+      { nome: 'Etapa 1 · Portão de Cinzas',       extraComum: 0, extraLider: 0 },
+      { nome: 'Etapa 2 · Ruínas da Forja',        extraComum: 3, extraLider: 3 },
+      { nome: 'Etapa 3 · Rio de Lava',            extraComum: 6, extraLider: 6 },
+      { nome: 'Etapa 4 · Escadaria de Obsidiana', extraComum: 9, extraLider: 9 },
+    ],
+    // as linhas de fogo vêm evoluídas por causa do nível alto
+    aparicoes: [['L:fogo', 7], ['vulcarapa', 2], ['L:terra', 2], ['L:sol', 1], ['L:trevas', 1]],
+  },
+  raizes: {
+    nome: 'Trilha Ancestral', regiao: 'Floresta', chefe: 'silvarion', fim: 'Santuário da Árvore-Mãe',
+    zonaSoltos: 'raizes', zonaChefe: 'santuario',
+    semCasa: 'As raízes da Trilha Ancestral não deixam montar a casa. Monte antes da entrada.',
+    etapas: [
+      { nome: 'Etapa 1 · Bosque dos Cogumelos', extraComum: 0, extraLider: 0 },
+      { nome: 'Etapa 2 · Ruínas de Musgo',      extraComum: 3, extraLider: 3 },
+      { nome: 'Etapa 3 · Lago Escondido',       extraComum: 6, extraLider: 6 },
+      { nome: 'Etapa 4 · Raízes Gigantes',      extraComum: 9, extraLider: 9 },
+    ],
+    // Nenhum monstro novo: Planta evoluída, Espinhal, Fogo+Planta (tipo duplo) e visitantes
+    aparicoes: [['L:planta', 8], ['espinhal', 2], ['L:fogoPlanta', 1], ['L:agua', 1], ['L:terra', 1], ['L:luz', 1], ['L:trevas', 1]],
+  },
+};
+// Mantido para o código antigo: etapas e aparições do Caminho das Brasas
+export const ETAPAS = DUNGEONS.brasas.etapas;
+export const APARICOES_DUNGEON = DUNGEONS.brasas.aparicoes;
+export function niveisDaEtapa(media, etapa, dungeon = 'brasas') {
+  const e = DUNGEONS[dungeon].etapas[etapa];
   return {
     comum: Math.min(48, Math.round(media * 1.1 + 2 + e.extraComum)),
     lider: Math.min(50, Math.round(media * 1.4 + 8 + e.extraLider)),
@@ -516,8 +565,6 @@ export function niveisDaEtapa(media, etapa) {
 }
 // O chefe fica sempre acima do líder da última etapa
 export function nivelDoChefe(media) { return Math.min(50, Math.round(media * 1.4 + 22)); }
-// Quem aparece na dungeon: as linhas de fogo vêm evoluídas por causa do nível alto
-export const APARICOES_DUNGEON = [['L:fogo', 7], ['vulcarapa', 2], ['L:terra', 2], ['L:sol', 1], ['L:trevas', 1]];
 
 // Linhas que só existem de dia ou de noite
 export const PERIODO_DA_LINHA = { sol: 'dia', luz: 'dia', lua: 'noite', trevas: 'noite' };

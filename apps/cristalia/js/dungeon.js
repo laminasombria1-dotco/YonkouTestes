@@ -1,126 +1,190 @@
 // =============================================================
-// CAMINHO DAS BRASAS (dungeon aberta da região de fogo)
-// Um corredor que sai da borda nordeste do mapa e sobe até a cratera.
+// DUNGEONS ABERTAS (base comum)
+// Uma dungeon aberta é um corredor que sai da borda do mapa redondo.
 // Não é "instanciada": é parte do mapa, você entra andando.
 //  - 4 etapas, separadas por portões. Cada etapa tem 2 acampamentos
 //    com grupos (5 comuns + 1 líder), cada vez mais fortes.
 //  - Monstros soltos também aparecem lá dentro, já evoluídos.
-//  - No fim, o Trono de Magma com o chefe super raro: Ignárion.
+//  - No fim, uma arena redonda com um chefe super raro.
+// Este arquivo tem:
+//  1) Tracado: a forma do corredor (onde fica, largura, altura do chão).
+//     Os dois traçados ficam aqui embaixo (BRASAS e RAIZES).
+//  2) DungeonAberta: tudo que as dungeons fazem igual (portões que ficam
+//     transparentes, acampamentos, monstros soltos, chefe, clima).
+//     O cenário de cada uma fica em brasas.js e raizes.js.
 // As medidas usam duas coordenadas:
 //  s   = distância ao longo do caminho (a partir do centro do mapa)
 //  lat = distância para o lado do caminho (0 = meio)
 // =============================================================
 import * as THREE from 'three';
-import { criarModelo, criarCoroa, animarModelo } from './modelos.js';
-import { ESPECIES, ETAPAS, APARICOES_DUNGEON, niveisDaEtapa, nivelDoChefe, criarMonstro, statsDe, formaPorNivel } from './dados.js';
+import { criarModelo, criarCoroa, animarModelo, criarAuraDupla } from './modelos.js';
+import { ESPECIES, ELEMENTOS, DUNGEONS, niveisDaEtapa, nivelDoChefe, criarMonstro, statsDe, formaPorNivel } from './dados.js';
 
-const DIR = { x: Math.SQRT1_2, z: -Math.SQRT1_2 };  // para o nordeste
-const PERP = { x: Math.SQRT1_2, z: Math.SQRT1_2 };  // de lado
-export const S_INICIO = 84;      // portão de entrada
-const S_ETAPA = 20;              // comprimento de cada etapa
-export const S_FIM = S_INICIO + S_ETAPA * ETAPAS.length; // portão do chefe (164)
-const S_MIN = 66;                // o corredor começa dentro do mapa principal
-export const S_CHEFE = 182;      // centro do Trono de Magma
-export const R_CHEFE = 17;       // raio do Trono de Magma
-export const LARGURA = 14;       // meia largura do corredor
-const S_VULCAO = 212;
-const MAX_SOLTOS = 7;            // monstros soltos dentro da dungeon
+const RAIZ2 = Math.SQRT1_2;
+const MAX_SOLTOS = 7;            // monstros soltos dentro de cada dungeon
 const RESPAWN_ACAMPAMENTO = 120; // segundos até um acampamento vencido ter outro grupo
 
-// O caminho faz uma curva suave
-function curva(s) { return 7 * Math.sin(((s - S_INICIO) / 80) * Math.PI * 1.3); }
-export function local(x, z) {
-  const s = x * DIR.x + z * DIR.z;
-  return { s, lat: x * PERP.x + z * PERP.z - curva(s) };
+// ---------- 1) o traçado do corredor ----------
+export class Tracado {
+  // cfg: { id, zona, dir, perp, curvaAmp, curvaFreq, sobe, ajusteAltura }
+  constructor(cfg) {
+    Object.assign(this, {
+      sInicio: 84,   // portão de entrada
+      sEtapa: 20,    // comprimento de cada etapa
+      nEtapas: 4,
+      sMin: 66,      // o corredor começa dentro do mapa principal
+      sChefe: 182,   // centro da arena do chefe
+      rChefe: 17,    // raio da arena do chefe
+      largura: 14,   // meia largura do corredor
+      curvaAmp: 7, curvaFreq: 1.3, sobe: 0.055, ajusteAltura: null,
+    }, cfg);
+    this.sFim = this.sInicio + this.sEtapa * this.nEtapas; // portão do chefe
+    this.centroChefe = this.ponto(this.sChefe, 0);
+    this.angulo = Math.atan2(this.dir.z, this.dir.x);       // direção da boca no mapa redondo
+  }
+  // O caminho faz uma curva suave
+  curva(s) { return this.curvaAmp * Math.sin(((s - this.sInicio) / 80) * Math.PI * this.curvaFreq); }
+  local(x, z) {
+    const s = x * this.dir.x + z * this.dir.z;
+    return { s, lat: x * this.perp.x + z * this.perp.z - this.curva(s) };
+  }
+  ponto(s, lat) {
+    const l = lat + this.curva(s);
+    return { x: this.dir.x * s + this.perp.x * l, z: this.dir.z * s + this.perp.z * l };
+  }
+  dChefe(x, z) { return Math.hypot(x - this.centroChefe.x, z - this.centroChefe.z); }
+  // Quanto um ponto está "para fora" (negativo = dentro).
+  // Conta a partir de 4 m antes da parede, onde o chão começa a subir.
+  fora(x, z) {
+    const { s, lat } = this.local(x, z);
+    const corredor = Math.max(Math.abs(lat) - (this.largura - 4), this.sMin - s, s - (this.sFim + 6));
+    return Math.min(corredor, this.dChefe(x, z) - (this.rChefe - 4));
+  }
+  // Dentro da parte jogável (do portão de entrada em diante)?
+  dentro(x, z) {
+    if (this.dChefe(x, z) < this.rChefe) return true;
+    const { s, lat } = this.local(x, z);
+    return s >= this.sInicio - 2 && s <= this.sFim + 6 && Math.abs(lat) < this.largura;
+  }
+  // Perto da boca ou dentro (o mapa conta como a região da dungeon)
+  perto(x, z) { return this.local(x, z).s > this.sMin + 4 && this.fora(x, z) < 6; }
+  // A dungeon se decora sozinha: o mapa principal não põe árvores e pedras aqui
+  reservado(x, z) { return this.local(x, z).s > this.sMin + 10 && this.fora(x, z) < 6; }
+  // Onde a casa não pode ser montada
+  semCasa(x, z) { return this.dentro(x, z) || this.local(x, z).s > this.sMin + 12; }
+  // 0 a 3 = etapas, 4 = arena do chefe, -1 = fora
+  etapaEm(x, z) {
+    if (!this.dentro(x, z)) return -1;
+    const { s } = this.local(x, z);
+    if (s >= this.sFim) return this.nEtapas;
+    return Math.max(0, Math.min(this.nEtapas - 1, Math.floor((s - this.sInicio) / this.sEtapa)));
+  }
+  // Altura do chão: o caminho sobe aos poucos; a arena do chefe é plana
+  altura(x, z, h) {
+    const { s, lat } = this.local(x, z);
+    if (s < this.sMin - 2) return h;
+    const k0 = Math.min(1, Math.max(0, (s - (this.sMin - 2)) / 10)); // emenda suave com o mapa
+    const sobe = Math.max(0, Math.min(110, s - (this.sInicio - 10))) * this.sobe;
+    let alvo = h * 0.4 + sobe;
+    if (this.ajusteAltura) alvo = this.ajusteAltura(s, lat, alvo);
+    const plano = (this.sChefe - this.sInicio + 10) * this.sobe;
+    const dT = this.dChefe(x, z);
+    if (dT < 12) alvo = plano;
+    else if (dT < this.rChefe) { const k = (dT - 12) / (this.rChefe - 12); alvo = plano * (1 - k) + alvo * k; }
+    return h * (1 - k0) + alvo * k0;
+  }
+  // Prende um ponto dentro do corredor ou da arena do chefe (o que estiver mais perto)
+  prender(p, raio) {
+    const { s, lat } = this.local(p.x, p.z);
+    const lim = this.largura - 2 - raio;
+    const a = this.ponto(Math.min(this.sFim + 6, Math.max(this.sMin, s)), Math.max(-lim, Math.min(lim, lat)));
+    const c = this.centroChefe, dx = p.x - c.x, dz = p.z - c.z, d = Math.hypot(dx, dz) || 1, rl = this.rChefe - 2 - raio;
+    const b = d > rl ? { x: c.x + (dx / d) * rl, z: c.z + (dz / d) * rl } : { x: p.x, z: p.z };
+    return Math.hypot(a.x - p.x, a.z - p.z) < Math.hypot(b.x - p.x, b.z - p.z) ? a : b;
+  }
+  livre(x, z, raio) {
+    const { s, lat } = this.local(x, z);
+    if (s >= this.sMin && s <= this.sFim + 6 && Math.abs(lat) < this.largura - 2 - raio) return true;
+    return this.dChefe(x, z) < this.rChefe - 2 - raio;
+  }
 }
-export function ponto(s, lat) {
-  const l = lat + curva(s);
-  return { x: DIR.x * s + PERP.x * l, z: DIR.z * s + PERP.z * l };
-}
-const CENTRO_CHEFE = ponto(S_CHEFE, 0);
-export { CENTRO_CHEFE };
 
-// Quanto um ponto está "para fora" da dungeon (negativo = dentro).
-// Conta a partir de 4 m antes da parede, onde o chão começa a subir.
-export function foraDungeon(x, z) {
-  const { s, lat } = local(x, z);
-  const corredor = Math.max(Math.abs(lat) - (LARGURA - 4), S_MIN - s, s - (S_FIM + 6));
-  const trono = Math.hypot(x - CENTRO_CHEFE.x, z - CENTRO_CHEFE.z) - (R_CHEFE - 4);
-  return Math.min(corredor, trono);
+// Caminho das Brasas: sai pela borda nordeste (depois do Vulcão)
+export const BRASAS = new Tracado({ id: 'brasas', zona: 'fogo', dir: { x: RAIZ2, z: -RAIZ2 }, perp: { x: RAIZ2, z: RAIZ2 } });
+
+// Trilha Ancestral: sai pela borda noroeste (depois da Floresta). Sobe menos
+// e, na etapa 3, o chão afunda num lago que só se atravessa pela ponte.
+export const S_LAGO = 84 + 2 * 20 + 10;  // meio do Lago Escondido
+export const LARG_LAGO = 3.2;           // meia largura do lago ao longo do caminho
+export const RAIZES = new Tracado({
+  id: 'raizes', zona: 'planta', dir: { x: -RAIZ2, z: -RAIZ2 }, perp: { x: -RAIZ2, z: RAIZ2 },
+  curvaAmp: 6, curvaFreq: 1.6, sobe: 0.03,
+  ajusteAltura(s, lat, h) {
+    const ds = Math.abs(s - S_LAGO);
+    if (ds > LARG_LAGO + 2.5) return h;
+    const kS = Math.min(1, (LARG_LAGO + 2.5 - ds) / 2.5);
+    const kL = Math.min(1, Math.max(0, (Math.abs(lat) - 2.2) / 1.6)); // a ponte fica em terra firme
+    return h - 1.7 * kS * kL;
+  },
+  // A água do lago: bloqueada, menos na ponte (|lat| < 1,7)
+  bloqueado(s, lat, folga = 0) { return Math.abs(s - S_LAGO) < LARG_LAGO + 0.3 + folga && Math.abs(lat) > 1.7; },
+  // Empurra para fora da água: para a margem ou para cima da ponte (o que for mais perto)
+  empurrar(p, raio) {
+    const { s, lat } = this.local(p.x, p.z), ds = s - S_LAGO, borda = LARG_LAGO + 0.3 + raio, ponte = 1.7 - raio;
+    if (Math.abs(ds) >= borda || Math.abs(lat) <= ponte) return;
+    const q = Math.abs(lat) - ponte < borda - Math.abs(ds)
+      ? this.ponto(s, Math.sign(lat) * ponte)
+      : this.ponto(S_LAGO + Math.sign(ds || 1) * borda, lat);
+    p.x = q.x; p.z = q.z;
+  },
+});
+RAIZES.yAgua = (S_LAGO - (84 - 10)) * 0.03 - 0.7; // altura da água do Lago Escondido
+
+export const TRACADOS = [BRASAS, RAIZES];
+
+// Funções para o mapa: juntam as duas dungeons
+export function tracadoPerto(x, z) { return TRACADOS.find((t) => t.perto(x, z)) || null; }
+export function foraDungeons(x, z) { return Math.min(...TRACADOS.map((t) => t.fora(x, z))); }
+export function alturaDungeons(x, z, h) {
+  for (const t of TRACADOS) if (t.local(x, z).s > t.sMin - 2) return t.altura(x, z, h);
+  return h;
 }
-// Dentro da parte jogável da dungeon (do portão de entrada em diante)?
-export function naDungeon(x, z) {
-  if (Math.hypot(x - CENTRO_CHEFE.x, z - CENTRO_CHEFE.z) < R_CHEFE) return true;
-  const { s, lat } = local(x, z);
-  return s >= S_INICIO - 2 && s <= S_FIM + 6 && Math.abs(lat) < LARGURA;
+export function dentroDungeonLivre(x, z, raio) { return TRACADOS.some((t) => t.livre(x, z, raio)); }
+export function prenderDungeons(p, raio) {
+  let melhor = null, dm = Infinity;
+  for (const t of TRACADOS) {
+    const q = t.prender(p, raio), d = Math.hypot(q.x - p.x, q.z - p.z);
+    if (d < dm) { dm = d; melhor = q; }
+  }
+  return melhor;
 }
-// 0 a 3 = etapas, 4 = Trono de Magma, -1 = fora
-export function etapaEm(x, z) {
-  if (!naDungeon(x, z)) return -1;
-  const { s } = local(x, z);
-  if (s >= S_FIM) return 4;
-  return Math.max(0, Math.min(ETAPAS.length - 1, Math.floor((s - S_INICIO) / S_ETAPA)));
-}
-// Altura extra: o caminho sobe até a cratera; o trono é plano
-export function alturaDungeon(x, z, h) {
-  const { s } = local(x, z);
-  if (s < S_INICIO - 10) return h;
-  const sobe = Math.min(110, s - (S_INICIO - 10)) * 0.055;
-  const dTrono = Math.hypot(x - CENTRO_CHEFE.x, z - CENTRO_CHEFE.z);
-  const plano = (S_CHEFE - S_INICIO + 10) * 0.055;
-  if (dTrono < 12) return plano;
-  if (dTrono < R_CHEFE) { const k = (dTrono - 12) / (R_CHEFE - 12); return plano * (1 - k) + (h * 0.4 + sobe) * k; }
-  return h * 0.4 + sobe;
-}
-// Prende um ponto dentro do corredor ou do trono (o que estiver mais perto)
-export function prenderDungeon(p, raio) {
-  const { s, lat } = local(p.x, p.z);
-  const lim = LARGURA - 2 - raio;
-  const sC = Math.min(S_FIM + 6, Math.max(S_MIN, s)), latC = Math.max(-lim, Math.min(lim, lat));
-  const a = ponto(sC, latC);
-  const dx = p.x - CENTRO_CHEFE.x, dz = p.z - CENTRO_CHEFE.z, d = Math.hypot(dx, dz) || 1, rl = R_CHEFE - 2 - raio;
-  const b = d > rl ? { x: CENTRO_CHEFE.x + (dx / d) * rl, z: CENTRO_CHEFE.z + (dz / d) * rl } : { x: p.x, z: p.z };
-  return Math.hypot(a.x - p.x, a.z - p.z) < Math.hypot(b.x - p.x, b.z - p.z) ? a : b;
-}
-export function dentroDungeonLivre(x, z, raio) {
-  const { s, lat } = local(x, z);
-  if (s >= S_MIN && s <= S_FIM + 6 && Math.abs(lat) < LARGURA - 2 - raio) return true;
-  return Math.hypot(x - CENTRO_CHEFE.x, z - CENTRO_CHEFE.z) < R_CHEFE - 2 - raio;
-}
+export function semCasaDungeons(x, z) { return TRACADOS.find((t) => t.semCasa(x, z)) || null; }
 
 // ---------- materiais e peças ----------
-const lambert = (cor, extra = {}) => new THREE.MeshLambertMaterial({ color: cor, flatShading: true, ...extra });
-const MAT = {
-  obsidiana: lambert('#2a1f2e'),
-  basalto: lambert('#4a3a36'),
-  pedra: lambert('#6b5a52'),
-  ruina: lambert('#8a7466'),
-  ferro: lambert('#3a3a42'),
-  madeira: lambert('#4a2e1e'),
-  osso: lambert('#e8dcc0'),
-  lava: lambert('#ff6a1f', { emissive: '#ff3a00', emissiveIntensity: 0.95 }),
-  chama: lambert('#ffb030', { emissive: '#ff7a1a', emissiveIntensity: 1 }),
-  chamaIgnea: lambert('#ff5a8a', { emissive: '#ff2a5a', emissiveIntensity: 1 }),
-  brasa: lambert('#ff4a1a', { emissive: '#ff3a00', emissiveIntensity: 0.6 }),
-  morta: lambert('#2e2420'),
-};
-const GEO = {
+export const lambert = (cor, extra = {}) => new THREE.MeshLambertMaterial({ color: cor, flatShading: true, ...extra });
+export const GEO = {
   caixa: new THREE.BoxGeometry(1, 1, 1),
   cil: new THREE.CylinderGeometry(0.5, 0.5, 1, 7),
   cilFino: new THREE.CylinderGeometry(0.35, 0.5, 1, 6),
   cone: new THREE.ConeGeometry(0.5, 1, 6),
   cone4: new THREE.ConeGeometry(0.5, 1, 4),
   dode: new THREE.DodecahedronGeometry(0.6, 0),
+  ico: new THREE.IcosahedronGeometry(0.6, 0),
   disco: new THREE.CircleGeometry(1, 20).rotateX(-Math.PI / 2),
   tigela: new THREE.CylinderGeometry(0.55, 0.3, 0.4, 7),
   toro: new THREE.TorusGeometry(0.6, 0.06, 4, 10, Math.PI),
+  arco: new THREE.TorusGeometry(1, 0.22, 5, 10, Math.PI),       // raiz em arco
+  chapeu: new THREE.SphereGeometry(1, 9, 5, 0, Math.PI * 2, 0, Math.PI / 2), // chapéu de cogumelo
 };
 
-// Junta várias peças iguais num InstancedMesh (bem mais leve para o celular)
-class Lote {
+// Junta várias peças iguais num InstancedMesh (bem mais leve para o celular).
+// As peças são separadas em quadrados de 40 m: assim o que está longe da câmera
+// nem é desenhado (cada quadrado tem a sua "bolha" de visibilidade).
+const TAM_QUADRADO = 40;
+export class Lote {
   constructor() { this.itens = new Map(); }
   add(geo, mat, x, y, z, sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0) {
-    const k = geo.uuid + '|' + mat.uuid;
+    const k = geo.uuid + '|' + mat.uuid + '|' + Math.floor(x / TAM_QUADRADO) + ',' + Math.floor(z / TAM_QUADRADO);
     if (!this.itens.has(k)) this.itens.set(k, { geo, mat, lista: [] });
     this.itens.get(k).lista.push([x, y, z, sx, sy, sz, rx, ry, rz]);
   }
@@ -132,12 +196,64 @@ class Lote {
         q.setFromEuler(e.set(rx, ry, rz));
         im.setMatrixAt(i, m4.compose(v.set(x, y, z), q, s.set(sx, sy, sz)));
       });
+      im.computeBoundingSphere();
       cena.add(im);
     }
+    this.itens.clear();
   }
 }
 
-function aleatorio(semente) {
+// Junta várias peças numa malha só por material (1 desenho por material).
+// Usado em coisas grandes que precisam ficar transparentes juntas (árvores gigantes).
+const SEM_INDICE = new Map();
+export class Bloco {
+  constructor() { this.pecas = new Map(); }
+  add(geo, mat, x, y, z, sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0) {
+    if (!this.pecas.has(mat)) this.pecas.set(mat, []);
+    this.pecas.get(mat).push([geo, x, y, z, sx, sy, sz, rx, ry, rz]);
+  }
+  // Devolve um grupo com uma malha por material (os materiais são copiados para poder desbotar)
+  montar(cena) {
+    const grupo = new THREE.Group(), mats = [];
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), sc = new THREE.Vector3(), p = new THREE.Vector3();
+    for (const [mat, lista] of this.pecas) {
+      let total = 0;
+      const geos = lista.map(([geo]) => {
+        if (!SEM_INDICE.has(geo)) SEM_INDICE.set(geo, geo.index ? geo.toNonIndexed() : geo);
+        const g = SEM_INDICE.get(geo);
+        total += g.attributes.position.count;
+        return g;
+      });
+      const pos = new Float32Array(total * 3);
+      let o = 0;
+      lista.forEach(([, x, y, z, sx, sy, sz, rx, ry, rz], i) => {
+        m4.compose(v.set(x, y, z), q.setFromEuler(e.set(rx, ry, rz)), sc.set(sx, sy, sz));
+        const a = geos[i].attributes.position;
+        for (let k = 0; k < a.count; k++, o += 3) {
+          p.fromBufferAttribute(a, k).applyMatrix4(m4);
+          pos[o] = p.x; pos[o + 1] = p.y; pos[o + 2] = p.z;
+        }
+      });
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      g.computeVertexNormals();
+      const m = mat.clone();
+      m.transparent = true;
+      mats.push(m);
+      grupo.add(new THREE.Mesh(g, m));
+    }
+    cena.add(grupo);
+    return { grupo, mats, op: 1 };
+  }
+}
+// Deixa um bloco transparente aos poucos (alvo: 1 = normal, ~0.2 = quase invisível)
+export function desbotar(b, alvo, dt) {
+  if (Math.abs(alvo - b.op) < 0.01) return;
+  b.op += (alvo - b.op) * Math.min(1, dt * 6);
+  for (const m of b.mats) { m.opacity = b.op; m.depthWrite = b.op > 0.9; }
+}
+
+export function aleatorio(semente) {
   return () => {
     semente |= 0; semente = (semente + 0x6d2b79f5) | 0;
     let t = Math.imul(semente ^ (semente >>> 15), 1 | semente);
@@ -146,297 +262,92 @@ function aleatorio(semente) {
   };
 }
 
-const COR_BRASA = new THREE.Color('#5a2620');
-const HEMI_BRASA = new THREE.Color('#ffb08a');
+export function sortear(lista) {
+  const total = lista.reduce((s, [, w]) => s + w, 0);
+  let r = Math.random() * total;
+  for (const [e, w] of lista) { r -= w; if (r <= 0) return e; }
+  return lista[0][0];
+}
 
-export class Dungeon {
-  constructor(mundo, alturaEm) {
+// ---------- 2) o que todas as dungeons fazem igual ----------
+// Uma subclasse precisa criar: caminho(), etapa(e), fim(), fundo(), estradaDeFora(),
+// pecasPortao(L, s, doChefe) e pode trocar as cores do clima e das partículas.
+export class DungeonAberta {
+  constructor(mundo, alturaEm, tracado, semente) {
     this.m = mundo;
+    this.t = tracado;
+    this.id = tracado.id;
+    this.cfg = DUNGEONS[tracado.id];
     this.altura = alturaEm;
     this.cena = mundo.cena;
-    this.rng = aleatorio(4242);
+    this.rng = aleatorio(semente);
     this.obstaculos = mundo.obstaculos;
     this.acampamentos = [];
     this.chefe = null;
-    this.chefeVolta = 0;          // segundos até o chefe poder reaparecer (espera o amanhecer)
-    this.esperaAmanhecer = false;
+    this.esperaAmanhecer = false;  // vencido: espera o próximo amanhecer para voltar
     this.etapaAvisada = -1;
-    this.fator = 0;               // 0 = fora, 1 = no fundo da dungeon (para o clima)
+    this.etapaAtual = -1;
+    this.fator = 0;                // 0 = fora, 1 = no fundo da dungeon (para o clima)
     this.lote = new Lote();
-    this.chamines = [];
     this.portoes = [];
     this.construir();
     this.lote.montar(this.cena);
     this.criarParticulas();
   }
 
+  // Valores que cada dungeon troca
+  get corCeu() { return new THREE.Color('#5a2620'); }
+  get corHemi() { return new THREE.Color('#ffb08a'); }
+  get paletaParticulas() { return ['#ffffff']; }
+  get tamParticula() { return 0.28; }
+
   y(x, z) { return this.altura(x, z); }
   obst(x, z, r) { this.obstaculos.push({ x, z, r }); }
+  ponto(s, lat) { return this.t.ponto(s, lat); }
+  sEtapa(e) { return this.t.sInicio + e * this.t.sEtapa; }
 
   // ---------- construção do cenário ----------
   construir() {
-    const L = this.lote, rng = this.rng;
-    // Portões: entrada de cada etapa + portão do trono
-    for (let i = 0; i <= ETAPAS.length; i++) this.portao(S_INICIO + i * S_ETAPA, i === ETAPAS.length);
-    // Braseiros dos dois lados do caminho
-    for (let s = S_INICIO - 14; s < S_FIM; s += 7) for (const lado of [-1, 1]) {
-      const p = ponto(s, lado * (LARGURA - 3.2));
-      this.braseiro(p.x, p.z, 1.6);
-    }
-    // Estrada de pedras no meio do caminho (só visual)
-    for (let s = S_INICIO - 20; s < S_FIM + 4; s += 1.6) {
-      const p = ponto(s, (rng() - 0.5) * 2);
-      L.add(GEO.caixa, MAT.pedra, p.x, this.y(p.x, p.z) + 0.02, p.z, 1.1 + rng() * 0.6, 0.08, 0.9 + rng() * 0.5, 0, rng() * 3, 0);
-    }
-    this.etapa1(); this.etapa2(); this.etapa3(); this.etapa4();
-    this.trono();
-    this.vulcao();
+    const T = this.t;
+    for (let i = 0; i <= T.nEtapas; i++) this.portao(T.sInicio + i * T.sEtapa, i === T.nEtapas);
+    this.caminho();
+    for (let e = 0; e < T.nEtapas; e++) this.etapa(e);
+    this.fim();
+    this.fundo();
     this.estradaDeFora();
     this.criarAcampamentos();
   }
 
-  // Duas colunas de obsidiana com uma viga e chamas em cima.
   // Cada portão é um grupo próprio: fica transparente quando você passa por baixo (para não tampar a câmera)
+  // (as peças de cada portão viram uma malha só por material: bem menos desenhos por quadro)
   portao(s, doChefe) {
-    const grupo = new THREE.Group();
-    const mats = {};
-    const tr = (m) => (mats[m.uuid] ||= m.clone());
-    const L = { add: (geo, m, x, y, z, sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0) => {
-      const o = new THREE.Mesh(geo, tr(m));
-      o.position.set(x, y, z); o.scale.set(sx, sy, sz); o.rotation.set(rx, ry, rz);
-      grupo.add(o);
-    } };
-    const h = doChefe ? 7 : 5.2, abre = doChefe ? 5 : 4.2;
-    for (const lado of [-1, 1]) {
-      const p = ponto(s, lado * abre), y = this.y(p.x, p.z);
-      L.add(GEO.caixa, MAT.obsidiana, p.x, y + h / 2, p.z, 1.3, h, 1.3, 0, Math.PI / 4, 0);
-      L.add(GEO.caixa, MAT.basalto, p.x, y + 0.4, p.z, 1.9, 0.8, 1.9, 0, Math.PI / 4, 0);
-      L.add(GEO.tigela, MAT.ferro, p.x, y + h + 0.2, p.z, 1.2, 1, 1.2);
-      L.add(GEO.cone, doChefe ? MAT.chamaIgnea : MAT.chama, p.x, y + h + 0.9, p.z, 0.9, 1.4, 0.9);
-      this.obst(p.x, p.z, 1.1);
-      // muros saindo do portão até a parede
-      for (let k = abre + 2; k < LARGURA - 1; k += 2) {
-        const q = ponto(s, lado * k);
-        L.add(GEO.caixa, MAT.basalto, q.x, this.y(q.x, q.z) + 0.9, q.z, 2, 1.8 + Math.sin(k) * 0.4, 1, 0, Math.PI / 4, 0);
-        this.obst(q.x, q.z, 1.1);
-      }
-    }
-    const a = ponto(s, -abre), b = ponto(s, abre);
-    const yv = Math.max(this.y(a.x, a.z), this.y(b.x, b.z)) + h + 0.5;
-    const mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2;
-    L.add(GEO.caixa, MAT.obsidiana, mx, yv, mz, abre * 2 + 2, 0.9, 1.4, 0, Math.atan2(b.x - a.x, b.z - a.z) + Math.PI / 2, 0);
-    L.add(GEO.cone4, doChefe ? MAT.chamaIgnea : MAT.brasa, mx, yv + 1, mz, 0.9, 1.2, 0.9);
-    for (const m of Object.values(mats)) m.transparent = true;
-    this.cena.add(grupo);
-    this.portoes.push({ x: mx, z: mz, s, mats: Object.values(mats), op: 1 });
+    const b = new Bloco();
+    this.pecasPortao(b, s, doChefe);
+    const blk = b.montar(this.cena), c = this.ponto(s, 0);
+    this.portoes.push({ x: c.x, z: c.z, s, mats: blk.mats, op: 1 });
   }
 
-  braseiro(x, z, alt) {
-    const L = this.lote, y = this.y(x, z);
-    L.add(GEO.cilFino, MAT.ferro, x, y + alt / 2, z, 0.35, alt, 0.35);
-    L.add(GEO.tigela, MAT.ferro, x, y + alt + 0.15, z, 0.9, 1, 0.9);
-    L.add(GEO.dode, MAT.brasa, x, y + alt + 0.3, z, 0.5, 0.35, 0.5);
-    L.add(GEO.cone, MAT.chama, x, y + alt + 0.75, z, 0.55, 0.9, 0.55);
-    this.obst(x, z, 0.4);
-  }
+  // Ângulo (rotação Y) para uma peça ficar atravessada no caminho
+  get angPortao() { return Math.atan2(this.t.perp.x, this.t.perp.z); }
 
   // Lugar livre dentro de uma etapa (longe do meio do caminho e de outros obstáculos)
-  lugarNaEtapa(e, latMin, folga) {
+  lugarNaEtapa(e, latMin, folga, filtro = null) {
+    const T = this.t;
     for (let t = 0; t < 60; t++) {
-      const s = S_INICIO + e * S_ETAPA + 2.5 + this.rng() * (S_ETAPA - 5);
-      const lat = (this.rng() < 0.5 ? -1 : 1) * (latMin + this.rng() * (LARGURA - 3.5 - latMin));
-      const p = ponto(s, lat);
+      const s = this.sEtapa(e) + 2.5 + this.rng() * (T.sEtapa - 5);
+      const lat = (this.rng() < 0.5 ? -1 : 1) * (latMin + this.rng() * (T.largura - 3.5 - latMin));
+      const p = this.ponto(s, lat);
+      if (filtro && !filtro(s, lat)) continue;
+      if (T.bloqueado?.(s, lat, folga)) continue;
       if (this.obstaculos.every((o) => Math.hypot(o.x - p.x, o.z - p.z) > o.r + folga)) return p;
     }
     return null;
   }
 
-  // Etapa 1: Portão de Cinzas — árvores mortas, ossos e pedras de lava
-  etapa1() {
-    const L = this.lote, rng = this.rng;
-    for (let i = 0; i < 9; i++) {
-      const p = this.lugarNaEtapa(0, 5, 1.5); if (!p) continue;
-      const y = this.y(p.x, p.z), h = 2.2 + rng() * 1.5;
-      L.add(GEO.cilFino, MAT.morta, p.x, y + h / 2, p.z, 0.45, h, 0.45, 0, 0, (rng() - 0.5) * 0.2);
-      for (let k = 0; k < 3; k++) L.add(GEO.cone4, MAT.morta, p.x + Math.cos(k * 2.1) * 0.5, y + h * (0.6 + k * 0.12), p.z + Math.sin(k * 2.1) * 0.5, 0.18, 1.3, 0.18, Math.cos(k * 2.1) * 0.9, 0, Math.sin(k * 2.1) * 0.9);
-      this.obst(p.x, p.z, 0.45);
-    }
-    for (let i = 0; i < 4; i++) { // costelas de uma fera antiga
-      const p = this.lugarNaEtapa(0, 6, 2); if (!p) continue;
-      const y = this.y(p.x, p.z), r = rng() * 3;
-      for (let k = 0; k < 4; k++) L.add(GEO.toro, MAT.osso, p.x + Math.sin(r) * (k - 1.5) * 0.5, y + 0.1, p.z + Math.cos(r) * (k - 1.5) * 0.5, 1.4 - Math.abs(k - 1.5) * 0.2, 1.4, 1, 0, r + Math.PI / 2, 0);
-      L.add(GEO.dode, MAT.osso, p.x + Math.sin(r) * 1.4, y + 0.3, p.z + Math.cos(r) * 1.4, 0.5, 0.4, 0.6);
-      this.obst(p.x, p.z, 1);
-    }
-    this.pedrasDeLava(0, 8);
-  }
-
-  // Etapa 2: Ruínas da Forja — muros quebrados, colunas, bigornas e fornalhas
-  etapa2() {
-    const L = this.lote, rng = this.rng;
-    for (let i = 0; i < 7; i++) {
-      const p = this.lugarNaEtapa(1, 5, 1.8); if (!p) continue;
-      const y = this.y(p.x, p.z), r = rng() * 3, comp = 2 + rng() * 2.5, alt = 0.8 + rng() * 1.6;
-      L.add(GEO.caixa, MAT.ruina, p.x, y + alt / 2, p.z, comp, alt, 0.7, 0, r, 0);
-      L.add(GEO.caixa, MAT.ruina, p.x + Math.cos(r) * comp * 0.3, y + alt + 0.25, p.z - Math.sin(r) * comp * 0.3, comp * 0.35, 0.5, 0.7, 0, r, 0.2);
-      this.obst(p.x, p.z, comp * 0.45);
-    }
-    for (let i = 0; i < 6; i++) {
-      const p = this.lugarNaEtapa(1, 4, 1.2); if (!p) continue;
-      const y = this.y(p.x, p.z), h = 1.5 + rng() * 2.8;
-      L.add(GEO.cil, MAT.ruina, p.x, y + h / 2, p.z, 0.8, h, 0.8);
-      L.add(GEO.caixa, MAT.ruina, p.x, y + h + 0.15, p.z, 1.1, 0.3, 1.1, 0, rng(), 0);
-      this.obst(p.x, p.z, 0.55);
-    }
-    for (let i = 0; i < 2; i++) { // fornalhas com a boca acesa e chaminé
-      const p = this.lugarNaEtapa(1, 7, 2.5); if (!p) continue;
-      const y = this.y(p.x, p.z);
-      L.add(GEO.caixa, MAT.basalto, p.x, y + 1.2, p.z, 3, 2.4, 2.6);
-      L.add(GEO.caixa, MAT.lava, p.x, y + 0.8, p.z + 1.31, 1.2, 0.9, 0.05);
-      L.add(GEO.caixa, MAT.lava, p.x - 1.51, y + 0.8, p.z, 0.05, 0.9, 1.2);
-      L.add(GEO.cil, MAT.basalto, p.x + 0.8, y + 3.4, p.z - 0.6, 0.7, 2.4, 0.7);
-      this.obst(p.x, p.z, 1.9);
-      this.chamines.push({ x: p.x + 0.8, y: y + 4.6, z: p.z - 0.6 });
-      for (const k of [-1, 1]) { // bigornas
-        const bx = p.x + k * 2.6, bz = p.z + 1.6;
-        L.add(GEO.caixa, MAT.ferro, bx, y + 0.5, bz, 0.5, 1, 0.5);
-        L.add(GEO.caixa, MAT.ferro, bx, y + 1.1, bz, 1.1, 0.3, 0.5);
-        this.obst(bx, bz, 0.5);
-      }
-    }
-    this.pedrasDeLava(1, 5);
-  }
-
-  // Etapa 3: Rio de Lava — um rio atravessa o caminho; só dá para passar pela ponte
-  etapa3() {
-    const L = this.lote, sR = S_INICIO + 2 * S_ETAPA + 10;
-    for (let lat = -LARGURA + 1; lat < LARGURA - 1; lat += 1.4) {
-      const p = ponto(sR, lat), y = this.y(p.x, p.z);
-      L.add(GEO.disco, MAT.lava, p.x, y + 0.05, p.z, 1.6, 1, 1.6);
-      if (Math.abs(lat) > 2.6) this.obst(p.x, p.z, 1.1);
-    }
-    // ponte de pedra
-    const a = ponto(sR - 3, 0), b = ponto(sR + 3, 0);
-    const ang = Math.atan2(b.x - a.x, b.z - a.z);
-    const meio = ponto(sR, 0), ym = this.y(meio.x, meio.z);
-    L.add(GEO.caixa, MAT.pedra, meio.x, ym + 0.3, meio.z, 3.6, 0.4, 7, 0, ang, 0);
-    for (const lado of [-1, 1]) for (const k of [-2.6, 0, 2.6]) {
-      const q = ponto(sR + k, lado * 1.9);
-      L.add(GEO.caixa, MAT.basalto, q.x, ym + 0.8, q.z, 0.4, 0.8, 0.4);
-    }
-    // poças de lava espalhadas
-    for (let i = 0; i < 7; i++) {
-      const p = this.lugarNaEtapa(2, 4, 2.2); if (!p) continue;
-      const r = 1.2 + this.rng() * 1.3;
-      L.add(GEO.disco, MAT.lava, p.x, this.y(p.x, p.z) + 0.06, p.z, r, 1, r);
-      L.add(GEO.dode, MAT.basalto, p.x + r, this.y(p.x, p.z) + 0.2, p.z, 0.8, 0.5, 0.8);
-      this.obst(p.x, p.z, r * 0.9);
-    }
-    this.pedrasDeLava(2, 8);
-  }
-
-  // Etapa 4: Escadaria de Obsidiana — degraus, espinhos de obsidiana e estátuas
-  etapa4() {
-    const L = this.lote, rng = this.rng, s0 = S_INICIO + 3 * S_ETAPA;
-    for (let k = 0; k < 6; k++) { // degraus largos (visual)
-      const p = ponto(s0 + 3 + k * 2.6, 0);
-      L.add(GEO.caixa, MAT.obsidiana, p.x, this.y(p.x, p.z) + 0.05, p.z, 9, 0.18, 1.4, 0, Math.PI / 4 + 0.1 * Math.cos(k), 0);
-    }
-    for (let i = 0; i < 16; i++) {
-      const p = this.lugarNaEtapa(3, 5, 1); if (!p) continue;
-      const h = 1.5 + rng() * 3.5;
-      L.add(GEO.cone4, MAT.obsidiana, p.x, this.y(p.x, p.z) + h / 2, p.z, 0.7 + rng() * 0.5, h, 0.7, (rng() - 0.5) * 0.3, rng() * 3, (rng() - 0.5) * 0.3);
-      this.obst(p.x, p.z, 0.5);
-    }
-    // estátuas de lobos de pedra guardando o caminho
-    for (const lado of [-1, 1]) for (const k of [5, 14]) {
-      const p = ponto(s0 + k, lado * 7), y = this.y(p.x, p.z);
-      L.add(GEO.caixa, MAT.basalto, p.x, y + 0.6, p.z, 1.8, 1.2, 1.8, 0, Math.PI / 4, 0);
-      L.add(GEO.dode, MAT.pedra, p.x, y + 1.7, p.z, 1.1, 0.9, 1.4);
-      L.add(GEO.dode, MAT.pedra, p.x - lado * 0.4, y + 2.5, p.z - lado * 0.4, 0.7, 0.7, 0.7);
-      for (const o of [-1, 1]) L.add(GEO.cone4, MAT.pedra, p.x - lado * 0.4 + o * 0.25, y + 3.1, p.z - lado * 0.4 - o * 0.25, 0.25, 0.6, 0.25);
-      this.obst(p.x, p.z, 1.3);
-    }
-    this.pedrasDeLava(3, 6);
-  }
-
-  pedrasDeLava(e, n) {
-    for (let i = 0; i < n; i++) {
-      const p = this.lugarNaEtapa(e, 4, 1); if (!p) continue;
-      const esc = 0.5 + this.rng() * 0.8;
-      this.lote.add(GEO.dode, this.rng() < 0.5 ? MAT.brasa : MAT.basalto, p.x, this.y(p.x, p.z) + 0.2 * esc, p.z, esc, esc * 0.7, esc, this.rng(), this.rng() * 6, this.rng());
-      this.obst(p.x, p.z, 0.6 * esc);
-    }
-  }
-
-  // Trono de Magma: arena redonda com pilares, chão de pedra e o trono do chefe
-  trono() {
-    const L = this.lote, c = CENTRO_CHEFE, y = this.y(c.x, c.z);
-    L.add(GEO.cil, MAT.pedra, c.x, y - 0.15, c.z, 24, 0.4, 24);
-    L.add(GEO.cil, MAT.basalto, c.x, y - 0.1, c.z, 16, 0.42, 16);
-    // anel de lava no chão
-    for (let i = 0; i < 28; i++) {
-      const a = (i / 28) * Math.PI * 2, r = 9.5;
-      L.add(GEO.caixa, MAT.lava, c.x + Math.cos(a) * r, y + 0.12, c.z + Math.sin(a) * r, 2.2, 0.05, 0.4, 0, -a, 0);
-    }
-    for (let i = 0; i < 10; i++) {
-      const a = (i / 10) * Math.PI * 2 + 0.3, r = R_CHEFE - 3.5;
-      const x = c.x + Math.cos(a) * r, z = c.z + Math.sin(a) * r;
-      const lp = local(x, z);
-      if (lp.s < S_CHEFE - 8 && Math.abs(lp.lat) < 6) continue; // deixa a entrada livre
-      const h = 5 + (i % 3) * 1.5;
-      L.add(GEO.caixa, MAT.obsidiana, x, y + h / 2, z, 1.2, h, 1.2, 0, a, 0);
-      L.add(GEO.tigela, MAT.ferro, x, y + h + 0.2, z, 1.1, 1, 1.1);
-      L.add(GEO.cone, MAT.chamaIgnea, x, y + h + 0.85, z, 0.8, 1.3, 0.8);
-      this.obst(x, z, 0.9);
-    }
-    // o trono, atrás do chefe
-    const t = ponto(S_CHEFE + 8, 0), yt = this.y(t.x, t.z), ang = Math.PI / 4 + Math.PI;
-    L.add(GEO.caixa, MAT.obsidiana, t.x, yt + 0.6, t.z, 6, 1.2, 3.5, 0, ang, 0);
-    L.add(GEO.caixa, MAT.obsidiana, t.x + DIR.x * 1.2, yt + 3, t.z + DIR.z * 1.2, 5, 4.5, 1, 0, ang, 0);
-    for (const lado of [-1, 1]) {
-      const q = { x: t.x + PERP.x * lado * 2.8, z: t.z + PERP.z * lado * 2.8 };
-      L.add(GEO.cone4, MAT.obsidiana, q.x, yt + 5.5, q.z, 0.8, 3, 0.8);
-      L.add(GEO.cone, MAT.chamaIgnea, q.x, yt + 7.3, q.z, 0.7, 1.2, 0.7);
-    }
-    L.add(GEO.caixa, MAT.lava, t.x + DIR.x * 0.65, yt + 3.6, t.z + DIR.z * 0.65, 1.2, 1.2, 0.05, 0, ang, Math.PI / 4);
-    this.obst(t.x, t.z, 3);
-  }
-
-  // O vulcão gigante no fundo, com cascatas de lava
-  vulcao() {
-    const p = ponto(S_VULCAO, 0), y = this.y(p.x, p.z);
-    const monte = new THREE.Mesh(new THREE.CylinderGeometry(7, 34, 40, 10), lambert('#3a2420'));
-    monte.position.set(p.x, y + 16, p.z);
-    const boca = new THREE.Mesh(new THREE.CylinderGeometry(6.4, 6.4, 0.5, 10), MAT.lava);
-    boca.position.set(p.x, y + 36.1, p.z);
-    this.cena.add(monte, boca);
-    for (let i = 0; i < 5; i++) {
-      const a = Math.PI * 0.75 + (i - 2) * 0.32; // virado para o trono
-      const cascata = new THREE.Mesh(GEO.caixa, MAT.lava);
-      const r = 20;
-      cascata.position.set(p.x + Math.cos(a) * r, y + 18, p.z + Math.sin(a) * r);
-      cascata.scale.set(1.4, 34, 0.6);
-      cascata.lookAt(p.x, y + 18, p.z);
-      cascata.rotateX(-0.5);
-      this.cena.add(cascata);
-    }
-    this.bocaVulcao = { x: p.x, y: y + 37, z: p.z };
-  }
-
-  // Na parte de fora (região de fogo do mapa principal): braseiros guiando até a entrada
-  estradaDeFora() {
-    for (let s = 40; s < S_INICIO - 14; s += 9) for (const lado of [-1, 1]) {
-      const p = ponto(s, lado * 5);
-      if (this.obstaculos.some((o) => Math.hypot(o.x - p.x, o.z - p.z) < o.r + 1)) continue;
-      this.braseiro(p.x, p.z, 1.3);
-    }
-  }
-
-  // ---------- partículas: cinzas caindo e brasas subindo ----------
+  // ---------- partículas do clima ----------
   criarParticulas() {
     const n = 360, pos = new Float32Array(n * 3), cor = new Float32Array(n * 3), c = new THREE.Color();
-    const paleta = ['#ff9a3a', '#ffcf5a', '#ff5a1f', '#7a6a66', '#9a8a86', '#5a4a46'];
+    const paleta = this.paletaParticulas;
     for (let i = 0; i < n; i++) {
       pos[i * 3] = (Math.random() * 2 - 1) * 26;
       pos[i * 3 + 1] = Math.random() * 16;
@@ -447,28 +358,35 @@ export class Dungeon {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     g.setAttribute('color', new THREE.BufferAttribute(cor, 3));
-    this.particulas = new THREE.Points(g, new THREE.PointsMaterial({ size: 0.28, vertexColors: true, transparent: true, opacity: 0, depthWrite: false }));
+    this.particulas = new THREE.Points(g, new THREE.PointsMaterial({ size: this.tamParticula, vertexColors: true, transparent: true, opacity: 0, depthWrite: false }));
     this.particulas.frustumCulled = false;
+    this.particulas.visible = false;
     this.cena.add(this.particulas);
-    // fumaça das chaminés e do vulcão
-    this.fumacas = [];
-    const fontes = [...this.chamines, this.bocaVulcao];
-    for (const f of fontes) for (let k = 0; k < 4; k++) {
-      const grande = f === this.bocaVulcao;
-      const m = new THREE.Mesh(new THREE.IcosahedronGeometry(grande ? 3 : 0.6, 0), new THREE.MeshLambertMaterial({ color: '#5a5050', transparent: true, opacity: 0.6, flatShading: true }));
-      this.cena.add(m);
-      this.fumacas.push({ m, f, fase: k / 4, alt: grande ? 22 : 5 });
+  }
+  moverParticula(a, k, i, dt, t) { a[k + 1] -= dt; }
+  moverParticulas(dt, t) {
+    const m = this.m, p = this.particulas.geometry.attributes.position, a = p.array;
+    this.particulas.position.set(m.pos.x, m.pos.y, m.pos.z);
+    for (let i = 0; i < p.count; i++) {
+      const k = i * 3;
+      this.moverParticula(a, k, i, dt, t);
+      if (a[k + 1] > 16) a[k + 1] -= 16;
+      if (a[k + 1] < 0) a[k + 1] += 16;
+      if (a[k] > 26) a[k] -= 52; else if (a[k] < -26) a[k] += 52;
+      if (a[k + 2] > 26) a[k + 2] -= 52; else if (a[k + 2] < -26) a[k + 2] += 52;
     }
+    p.needsUpdate = true;
   }
 
   // ---------- acampamentos de grupos ----------
+  // [distância dentro da etapa, lado] de cada acampamento
+  posAcampamentos() { return [[6, -1], [14, 1]]; }
+  fogueira(p) {}
   criarAcampamentos() {
-    for (let e = 0; e < ETAPAS.length; e++) {
-      for (const [k, lado] of [[6, -1], [14, 1]]) {
-        const p = ponto(S_INICIO + e * S_ETAPA + k, lado * 6.5);
-        // fogueira do acampamento (visual)
-        const y = this.y(p.x, p.z);
-        for (let i = 0; i < 6; i++) this.lote.add(GEO.dode, MAT.basalto, p.x + Math.cos(i) * 4.4, y + 0.15, p.z + Math.sin(i) * 4.4, 0.4, 0.3, 0.4);
+    for (let e = 0; e < this.t.nEtapas; e++) {
+      for (const [k, lado] of this.posAcampamentos(e)) {
+        const p = this.ponto(this.sEtapa(e) + k, lado * 6.5);
+        this.fogueira(p);
         this.acampamentos.push({ x: p.x, z: p.z, etapa: e, grupo: null, espera: 0 });
       }
     }
@@ -482,7 +400,7 @@ export class Dungeon {
       if (a.grupo && !m.grupos.includes(a.grupo)) { a.grupo = null; a.espera = RESPAWN_ACAMPAMENTO; }
       if (a.espera > 0) { a.espera -= dt; continue; }
       if (!a.grupo && d < 42 && d > 16) {
-        a.grupo = m.spawnarGrupo({ x: a.x, z: a.z, zona: 'brasas', niveis: niveisDaEtapa(m.mediaEquipe(), a.etapa), lista: APARICOES_DUNGEON, acampamento: a });
+        a.grupo = m.spawnarGrupo({ x: a.x, z: a.z, zona: this.cfg.zonaSoltos, niveis: niveisDaEtapa(m.mediaEquipe(), a.etapa, this.id), lista: this.cfg.aparicoes, acampamento: a });
       } else if (a.grupo && d > 60) {
         m.removerGrupo(a.grupo, true);
         a.grupo = null;
@@ -492,49 +410,52 @@ export class Dungeon {
 
   // Monstros soltos (já evoluídos) dentro da dungeon, perto de você
   atualizarSoltos(dentro) {
-    const m = this.m;
-    const soltos = m.selvagens.filter((s) => s.dungeon);
+    const m = this.m, T = this.t;
+    const soltos = m.selvagens.filter((s) => s.dungeon === this);
     for (const s of soltos) if (Math.hypot(s.x - m.pos.x, s.z - m.pos.z) > 70) m.removerSelvagem(s);
     if (!dentro || soltos.length >= MAX_SOLTOS) return;
-    const { s: sJ } = local(m.pos.x, m.pos.z);
+    const { s: sJ } = T.local(m.pos.x, m.pos.z);
     for (let t = 0; t < 12; t++) {
       const s = sJ + 14 + Math.random() * 18 * (Math.random() < 0.3 ? -1 : 1);
-      if (s < S_INICIO + 1 || s > S_FIM - 1) continue;
-      const p = ponto(s, (Math.random() * 2 - 1) * (LARGURA - 5));
+      if (s < T.sInicio + 1 || s > T.sFim - 1) continue;
+      const lat = (Math.random() * 2 - 1) * (T.largura - 5), p = this.ponto(s, lat);
+      if (T.bloqueado?.(s, lat, 1)) continue;
       if (Math.hypot(p.x - m.pos.x, p.z - m.pos.z) < 12) continue;
       if (this.obstaculos.some((o) => Math.hypot(o.x - p.x, o.z - p.z) < o.r + 1)) continue;
-      const etapa = etapaEm(p.x, p.z);
-      if (etapa < 0 || etapa > 3) continue;
-      const nv = niveisDaEtapa(m.mediaEquipe(), etapa).comum + Math.round(Math.random() * 2);
-      const escolha = sortear(APARICOES_DUNGEON);
+      const etapa = T.etapaEm(p.x, p.z);
+      if (etapa < 0 || etapa >= T.nEtapas) continue;
+      const nv = niveisDaEtapa(m.mediaEquipe(), etapa, this.id).comum + Math.round(Math.random() * 2);
+      const escolha = sortear(this.cfg.aparicoes);
       const especie = escolha.startsWith('L:') ? formaPorNivel(escolha.slice(2), nv) : escolha;
+      const esp = ESPECIES[especie];
       const dados = criarMonstro(especie, nv);
       const modelo = criarModelo(especie);
+      let aura = null;
+      if (esp.dupla) { aura = criarAuraDupla(esp.elementos.map((el) => ELEMENTOS[el].cor), esp.raio * 1.5); modelo.add(aura); }
       modelo.position.set(p.x, this.y(p.x, p.z), p.z);
       this.cena.add(modelo);
-      m.selvagens.push({ dados, modelo, dungeon: true, x: p.x, z: p.z, ang: Math.random() * 6.28, estado: 'parado', t: Math.random() * 2, zona: 'brasas', periodo: null, vel: statsDe(especie, nv).vel * 0.45 });
+      m.selvagens.push({ dados, modelo, aura, dupla: !!esp.dupla, dungeon: this, x: p.x, z: p.z, ang: Math.random() * 6.28, estado: 'parado', t: Math.random() * 2, zona: this.cfg.zonaSoltos, periodo: null, vel: statsDe(especie, nv).vel * 0.45 });
       return;
     }
   }
 
   // ---------- chefe ----------
   spawnarChefe() {
-    const m = this.m, c = CENTRO_CHEFE;
-    const nivel = nivelDoChefe(m.mediaEquipe());
-    const dados = criarMonstro('ignarion', nivel);
-    const modelo = criarModelo('ignarion');
+    const m = this.m, T = this.t, id = this.cfg.chefe;
+    const dados = criarMonstro(id, nivelDoChefe(m.mediaEquipe()));
+    const modelo = criarModelo(id);
     const coroa = criarCoroa(1.6);
-    coroa.position.y = ESPECIES.ignarion.altura + 0.2;
+    coroa.position.y = ESPECIES[id].altura + 0.2;
     modelo.add(coroa);
-    const pos = ponto(S_CHEFE + 3, 0);
+    const pos = this.ponto(T.sChefe + 3, 0);
     modelo.position.set(pos.x, this.y(pos.x, pos.z), pos.z);
-    modelo.rotation.y = Math.atan2(-DIR.x, -DIR.z); // olhando para a entrada
+    modelo.rotation.y = Math.atan2(-T.dir.x, -T.dir.z); // olhando para a entrada
     this.cena.add(modelo);
-    this.chefe = { dados, modelo, chefe: true, fixo: true, x: pos.x, z: pos.z, ang: modelo.rotation.y, estado: 'parado', t: 99, zona: 'cratera', periodo: null, vel: 0 };
+    this.chefe = { dados, modelo, chefe: true, fixo: true, x: pos.x, z: pos.z, ang: modelo.rotation.y, estado: 'parado', t: 99, zona: this.cfg.zonaChefe, periodo: null, vel: 0 };
     m.selvagens.push(this.chefe);
   }
 
-  atualizarChefe(dt) {
+  atualizarChefe() {
     const m = this.m;
     if (this.chefe && !m.selvagens.includes(this.chefe)) {
       // foi vencido ou capturado: volta no próximo amanhecer
@@ -542,60 +463,55 @@ export class Dungeon {
       this.esperaAmanhecer = true;
       this.periodoVisto = m.periodo;
     }
-    if (!this.chefe && this.esperaAmanhecer) {
-      if (m.periodo !== this.periodoVisto) {
-        this.periodoVisto = m.periodo;
-        if (m.periodo === 'dia') {
-          this.esperaAmanhecer = false;
-          this.spawnarChefe();
-          if (m.jogo.estado) m.jogo.aviso('Ignárion voltou ao Trono de Magma.');
-        }
+    if (!this.chefe && this.esperaAmanhecer && m.periodo !== this.periodoVisto) {
+      this.periodoVisto = m.periodo;
+      if (m.periodo === 'dia') {
+        this.esperaAmanhecer = false;
+        this.spawnarChefe();
+        if (m.jogo.estado) m.jogo.aviso(`${ESPECIES[this.cfg.chefe].nome} voltou ao ${this.cfg.fim}.`);
       }
     }
     if (!this.chefe && !this.esperaAmanhecer) this.spawnarChefe();
   }
 
   // ---------- quadro a quadro ----------
+  atualizarExtras(dt, t) {}
   atualizar(dt, t) {
-    const m = this.m;
-    const etapa = etapaEm(m.pos.x, m.pos.z);
+    const m = this.m, T = this.t;
+    const etapa = T.etapaEm(m.pos.x, m.pos.z);
     this.etapaAtual = etapa;
     const dentro = etapa >= 0;
     // aviso de etapa ao entrar em cada parte
     if (etapa !== this.etapaAvisada && m.jogo.estado) {
-      if (etapa >= 0 && etapa < 4 && etapa > this.etapaAvisada) {
-        const nv = niveisDaEtapa(m.mediaEquipe(), etapa);
-        m.jogo.mostrarZona(ETAPAS[etapa].nome);
+      const nomeChefe = ESPECIES[this.cfg.chefe].nome;
+      if (etapa >= 0 && etapa < T.nEtapas && etapa > this.etapaAvisada) {
+        const nv = niveisDaEtapa(m.mediaEquipe(), etapa, this.id);
+        m.jogo.mostrarZona(this.cfg.etapas[etapa].nome);
         m.jogo.aviso(`Grupos daqui: comuns Nv.${nv.comum}, líderes Nv.${nv.lider}.`);
-      } else if (etapa === 4) {
-        m.jogo.mostrarZona('Trono de Magma');
-        if (this.chefe) m.jogo.aviso(`O chefe Ignárion (Nv.${this.chefe.dados.nivel}) dorme no trono. Encoste nele para lutar.`);
-        else m.jogo.aviso('O trono está vazio. Ignárion volta no próximo amanhecer.');
+      } else if (etapa === T.nEtapas) {
+        m.jogo.mostrarZona(this.cfg.fim);
+        if (this.chefe) m.jogo.aviso(`O chefe ${nomeChefe} (Nv.${this.chefe.dados.nivel}) espera no ${this.cfg.fim}. Encoste nele para lutar.`);
+        else m.jogo.aviso(`O ${this.cfg.fim} está vazio. ${nomeChefe} volta no próximo amanhecer.`);
       } else if (etapa === -1 && this.etapaAvisada >= 0) {
-        m.jogo.mostrarZona('Vulcão');
+        m.jogo.mostrarZona(this.cfg.regiao);
       }
       this.etapaAvisada = etapa;
     }
-    // clima: quanto mais fundo, mais escuro e cheio de cinzas
-    const { s } = local(m.pos.x, m.pos.z);
-    const alvo = Math.max(0, Math.min(1, (s - (S_INICIO - 12)) / 50)) * (foraDungeon(m.pos.x, m.pos.z) < 6 ? 1 : 0);
+    // clima: quanto mais fundo, mais escuro e cheio de partículas
+    const { s } = T.local(m.pos.x, m.pos.z);
+    const alvo = Math.max(0, Math.min(1, (s - (T.sInicio - 12)) / 50)) * (T.fora(m.pos.x, m.pos.z) < 6 ? 1 : 0);
     this.fator += (alvo - this.fator) * Math.min(1, dt * 1.5);
     const f = this.fator;
     if (f > 0.001) {
-      m.cena.background.lerp(COR_BRASA, f * 0.75);
+      m.cena.background.lerp(this.corCeu, f * 0.75);
       m.cena.fog.color.copy(m.cena.background);
-      m.hemi.color.lerp(HEMI_BRASA, f * 0.5);
+      m.hemi.color.lerp(this.corHemi, f * 0.5);
+      m.cena.fog.near = 40 - 18 * f;
+      m.cena.fog.far = 115 - 40 * f;
     }
-    m.cena.fog.near = 40 - 18 * f;
-    m.cena.fog.far = 115 - 40 * f;
+    this.particulas.visible = f > 0.01;
     this.particulas.material.opacity = Math.min(0.9, f * 1.2);
-    if (f > 0.01) this.moverParticulas(dt, t);
-    for (const fu of this.fumacas) {
-      const k = (t * (fu.alt > 10 ? 0.08 : 0.25) + fu.fase) % 1;
-      fu.m.position.set(fu.f.x + Math.sin(k * 6 + fu.fase * 9) * 0.6, fu.f.y + k * fu.alt, fu.f.z);
-      fu.m.scale.setScalar(0.6 + k * 1.6);
-      fu.m.material.opacity = 0.6 * (1 - k);
-    }
+    if (this.particulas.visible) this.moverParticulas(dt, t);
     // portões ficam transparentes quando você está logo antes ou embaixo deles
     for (const pt of this.portoes) {
       const ds = s - pt.s;
@@ -605,33 +521,13 @@ export class Dungeon {
         for (const mt of pt.mats) { mt.opacity = pt.op; mt.depthWrite = pt.op > 0.9; }
       }
     }
+    this.atualizarExtras(dt, t);
     this.atualizarAcampamentos(dt);
     this.atualizarSoltos(dentro);
-    this.atualizarChefe(dt);
+    this.atualizarChefe();
     if (this.chefe) {
       animarModelo(this.chefe.modelo, t, false);
       this.chefe.modelo.position.y = this.y(this.chefe.x, this.chefe.z);
     }
   }
-
-  moverParticulas(dt, t) {
-    const m = this.m, p = this.particulas.geometry.attributes.position, a = p.array;
-    this.particulas.position.set(m.pos.x, m.pos.y, m.pos.z);
-    for (let i = 0; i < p.count; i++) {
-      const k = i * 3;
-      const brasa = i % 6 < 3;
-      a[k + 1] += (brasa ? 1.6 + (i % 4) * 0.4 : -0.8) * dt;
-      a[k] += Math.sin(t * 1.5 + i) * 0.6 * dt;
-      if (a[k + 1] > 16) a[k + 1] -= 16;
-      if (a[k + 1] < 0) a[k + 1] += 16;
-    }
-    p.needsUpdate = true;
-  }
-}
-
-function sortear(lista) {
-  const total = lista.reduce((s, [, w]) => s + w, 0);
-  let r = Math.random() * total;
-  for (const [e, w] of lista) { r -= w; if (r <= 0) return e; }
-  return lista[0][0];
 }

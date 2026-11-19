@@ -231,7 +231,7 @@ class Jogo {
     const nivelForma = e.chefe ? 25 : e.raro ? 1 : [1, ...NIVEIS_EVOLUCAO][e.estagio];
     const st = statsDe(id, nivelForma);
     let evo;
-    if (e.chefe) evo = 'Super raro: é o chefe do Caminho das Brasas, no Trono de Magma. Não evolui. Só um <b>Cristal Supremo</b> segura ele.';
+    if (e.chefe) evo = `Super raro: é o chefe ${e.onde}. Não evolui. Só um <b>Cristal Supremo</b> segura ele.`;
     else if (e.raro) evo = 'Monstro raro: não evolui.';
     else if (e.evoluiPara) {
       const prox = novidadesDaEvolucao(id, e.evoluiPara);
@@ -316,8 +316,9 @@ class Jogo {
       this.aviso('Casa guardada na mochila.');
     } else {
       const lugar = m.acharLugarCasa();
-      if (!lugar && m.dungeon && (m.dungeon.etapaAtual >= 0 || m.pos.x * Math.SQRT1_2 - m.pos.z * Math.SQRT1_2 > 76)) {
-        this.aviso('Calor demais aqui no Caminho das Brasas. Monte a casa antes da entrada.');
+      const dg = !lugar && m.dungeons?.find((d) => d.t.semCasa(m.pos.x, m.pos.z));
+      if (dg) {
+        this.aviso(dg.cfg.semCasa);
         return;
       }
       if (!lugar) {
@@ -422,7 +423,8 @@ class Jogo {
     // o chefe deixa um tesouro, vencido ou capturado
     if (b.chefe && vencidos.length) {
       ganho.forte += 3; ganho.supremo += 2;
-      this.aviso(b.capturados.length ? 'Você capturou o chefe do Trono de Magma!' : 'Você venceu Ignárion! Ele volta no próximo amanhecer.');
+      const chefe = ESPECIES[b.chefeEspecie] || ESPECIES.ignarion;
+      this.aviso(b.capturados.length ? `Você capturou ${chefe.nome}, o chefe ${chefe.onde}!` : `Você venceu ${chefe.nome}! Ele volta no próximo amanhecer.`);
     }
     for (const d of b.derrotados) {
       const esp = ESPECIES[d.especie];

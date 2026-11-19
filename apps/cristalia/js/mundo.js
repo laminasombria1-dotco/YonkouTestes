@@ -7,11 +7,15 @@
 // =============================================================
 import * as THREE from 'three';
 import { criarModelo, criarTreinador, criarCristal, pintarCristal, criarCoroa, criarCasa, animarCasa, animarModelo, criarAuraDupla, animarAura, descartar } from './modelos.js';
-import { Dungeon, foraDungeon, naDungeon, etapaEm, alturaDungeon, prenderDungeon, dentroDungeonLivre, local as localDungeon } from './dungeon.js';
+import { TRACADOS, S_LAGO, tracadoPerto, foraDungeons, alturaDungeons, prenderDungeons, dentroDungeonLivre, semCasaDungeons } from './dungeon.js';
+import { CaminhoDasBrasas } from './brasas.js';
+import { TrilhaAncestral, LAGOA, RESERVAS_FLORESTA, CRISTAL_ESCONDIDO } from './raizes.js';
 import { ESPECIES, ELEMENTOS, APARICOES, PERIODO_DA_LINHA, DUPLAS, ORDEM_DUPLAS, INTERVALO_DUPLO, CRISTAIS, criarMonstro, statsDe, formaPorNivel, nomeTipo } from './dados.js';
 
 export const RAIO_MUNDO = 88;
 const LAGO = { x: -32, z: 30, r: 15 };
+// Lagos do mapa: o grande (Lago) e o lago escondido da Floresta
+const LAGOS = [LAGO, LAGOA];
 const PEDREIRA = { x: 42, z: 38, r: 30 };
 const PLANALTO = { x: 0, z: -64, r: 24 };
 // A ordem importa: onde duas regiões se encostam, vale a primeira da lista
@@ -59,7 +63,8 @@ const HEMI_DIA = new THREE.Color('#d6f0ff'), HEMI_NOITE = new THREE.Color('#8f9f
 const SOL_DIA = new THREE.Color('#fff1d6'), SOL_NOITE = new THREE.Color('#a8b8ff');
 
 export function zonaEm(x, z) {
-  if (localDungeon(x, z).s > 70 && foraDungeon(x, z) < 6) return 'fogo'; // Caminho das Brasas
+  const t = tracadoPerto(x, z); // dentro (ou na boca) de uma dungeon aberta
+  if (t) return t.zona;
   for (const zn of ZONAS) if (Math.hypot(x - zn.x, z - zn.z) < zn.r) return zn.id;
   return 'campo';
 }
@@ -68,10 +73,12 @@ export function alturaEm(x, z) {
   let h = Math.sin(x * 0.07) * Math.cos(z * 0.06) * 1.4 + Math.sin(x * 0.19 + z * 0.11) * 0.45;
   const dc = Math.hypot(x, z);
   if (dc < 12) h *= dc / 12; // centro plano para a fonte
-  const dl = Math.hypot(x - LAGO.x, z - LAGO.z);
-  if (dl < LAGO.r + 6) {
-    const k = Math.min(1, (LAGO.r + 6 - dl) / 6);
-    h = h * (1 - k) - 1.8 * k;
+  for (const L of LAGOS) {
+    const dl = Math.hypot(x - L.x, z - L.z);
+    if (dl < L.r + 6) {
+      const k = Math.min(1, (L.r + 6 - dl) / 6);
+      h = h * (1 - k) - 1.8 * k;
+    }
   }
   const dv = Math.hypot(x - 42, z + 34);
   if (dv < 30) h += (1 - dv / 30) * 3;
@@ -79,10 +86,10 @@ export function alturaEm(x, z) {
   if (dp < PEDREIRA.r) h += (Math.sin(x * 0.3) * Math.cos(z * 0.27) + 1) * 1.1 * (1 - dp / PEDREIRA.r);
   const dt = Math.hypot(x - PLANALTO.x, z - PLANALTO.z);
   if (dt < PLANALTO.r) h += Math.min(1, (PLANALTO.r - dt) / 6) * 2.4; // mesa elevada
-  // Caminho das Brasas (sai pela borda nordeste)
-  if (localDungeon(x, z).s > 64) h = alturaDungeon(x, z, h);
-  // bordas: o chão sobe (no mapa redondo e nas paredes da dungeon)
-  const fora = Math.min(dc - (RAIO_MUNDO - 6), foraDungeon(x, z));
+  // Dungeons abertas (Caminho das Brasas a nordeste, Trilha Ancestral a noroeste)
+  h = alturaDungeons(x, z, h);
+  // bordas: o chão sobe (no mapa redondo e nas paredes das dungeons)
+  const fora = Math.min(dc - (RAIO_MUNDO - 6), foraDungeons(x, z));
   if (fora > 0) h += Math.min(18, fora * 0.9);
   return h;
 }
@@ -121,7 +128,9 @@ export class Mundo {
     this.criarAgua();
     this.criarFonte();
     this.criarDecoracao();
-    this.dungeon = new Dungeon(this, alturaEm);
+    this.dungeon = new CaminhoDasBrasas(this, alturaEm);
+    this.floresta = new TrilhaAncestral(this, alturaEm);
+    this.dungeons = [this.dungeon, this.floresta];
     this.criarEstrelas();
 
     this.jogador = criarTreinador();
@@ -158,13 +167,14 @@ export class Mundo {
   }
 
   get periodo() { return this.hora < 0.5 ? 'dia' : 'noite'; }
+  zona(x, z) { return zonaEm(x, z); }
 
   // ---------- construção do cenário ----------
   criarTerreno() {
-    // o chão cobre o mapa redondo e o Caminho das Brasas, a nordeste
-    let g = new THREE.PlaneGeometry(310, 310, 112, 112);
+    // o chão cobre o mapa redondo e as duas dungeons (nordeste e noroeste)
+    let g = new THREE.PlaneGeometry(380, 315, 136, 113);
     g.rotateX(-Math.PI / 2);
-    g.translate(30, 0, -30);
+    g.translate(0, 0, -32);
     g = g.toNonIndexed();
     const p = g.attributes.position;
     for (let i = 0; i < p.count; i++) p.setY(i, alturaEm(p.getX(i), p.getZ(i)));
@@ -181,16 +191,28 @@ export class Mundo {
     for (let i = 0; i < p.count; i += 3) {
       const cx = (p.getX(i) + p.getX(i + 1) + p.getX(i + 2)) / 3;
       const cz = (p.getZ(i) + p.getZ(i + 1) + p.getZ(i + 2)) / 3;
-      const dl = Math.hypot(cx - LAGO.x, cz - LAGO.z);
       const dc = Math.hypot(cx, cz);
       let hex;
-      const fd = foraDungeon(cx, cz), ls = localDungeon(cx, cz).s;
-      if (ls > 74 && fd < 8) {
+      const lago = LAGOS.find((L) => Math.hypot(cx - L.x, cz - L.z) < L.r + 5);
+      const dl = lago ? Math.hypot(cx - lago.x, cz - lago.z) : Infinity;
+      const tr = TRACADOS.find((t) => t.local(cx, cz).s > t.sMin + 8 && t.fora(cx, cz) < 8);
+      const sorte = (lista) => lista[Math.floor(this.rng() * lista.length)];
+      if (tr?.id === 'brasas') {
         // chão de basalto da dungeon, com rachaduras de lava; paredes escuras
-        hex = fd > 2 ? (this.rng() < 0.5 ? '#3a2a26' : '#2e2220') : (this.rng() < 0.08 ? '#c8461a' : ['#5a3a30', '#6b4535', '#4d3229'][Math.floor(this.rng() * 3)]);
-      } else if (dl < LAGO.r + 1) hex = '#5aa7c0';
-      else if (dl < LAGO.r + 5) hex = this.rng() < 0.5 ? '#ecd9a0' : '#e2cd90';
-      else if (dc > RAIO_MUNDO - 4) hex = zonaEm(cx * 0.85, cz * 0.85) === 'fogo' ? (this.rng() < 0.5 ? '#7a5a44' : '#6a4a3a') : (this.rng() < 0.5 ? '#8fa27a' : '#9aae84');
+        const fd = tr.fora(cx, cz);
+        hex = fd > 2 ? (this.rng() < 0.5 ? '#3a2a26' : '#2e2220') : (this.rng() < 0.08 ? '#c8461a' : sorte(['#5a3a30', '#6b4535', '#4d3229']));
+      } else if (tr) {
+        // chão de floresta fechada (musgo e terra); paredes verde-escuras; fundo do lago
+        const fd = tr.fora(cx, cz), lp = tr.local(cx, cz);
+        if (fd > 2) hex = sorte(['#1f4a2a', '#26522e', '#1a4024']);
+        else if (Math.abs(lp.s - S_LAGO) < 4.2 && Math.abs(lp.lat) > 2.6) hex = '#2a6a6a';
+        else hex = this.rng() < 0.1 ? '#6a5236' : sorte(['#3f7a3a', '#4a8a40', '#36703a', '#2f6a34']);
+      } else if (dl < lago?.r + 1) hex = lago === LAGO ? '#5aa7c0' : '#3a8a8a';
+      else if (lago) hex = lago === LAGO ? (this.rng() < 0.5 ? '#ecd9a0' : '#e2cd90') : sorte(['#5a8a3a', '#6a9a4a']);
+      else if (dc > RAIO_MUNDO - 4) {
+        const zb = zonaEm(cx * 0.85, cz * 0.85);
+        hex = zb === 'fogo' ? (this.rng() < 0.5 ? '#7a5a44' : '#6a4a3a') : zb === 'planta' ? sorte(['#3f6a3a', '#4a7a44']) : (this.rng() < 0.5 ? '#8fa27a' : '#9aae84');
+      }
       else {
         const lista = pal[zonaEm(cx, cz)];
         hex = lista[Math.floor(this.rng() * lista.length)];
@@ -204,13 +226,17 @@ export class Mundo {
   }
 
   criarAgua() {
-    this.agua = new THREE.Mesh(
-      new THREE.CircleGeometry(LAGO.r + 3, 28),
-      new THREE.MeshLambertMaterial({ color: '#4fc3f7', transparent: true, opacity: 0.82, flatShading: true }),
-    );
-    this.agua.rotation.x = -Math.PI / 2;
-    this.agua.position.set(LAGO.x, -0.55, LAGO.z);
-    this.cena.add(this.agua);
+    this.aguas = LAGOS.map((L) => {
+      const a = new THREE.Mesh(
+        new THREE.CircleGeometry(L.r + 3, 28),
+        new THREE.MeshLambertMaterial({ color: L === LAGO ? '#4fc3f7' : '#3ab8b0', transparent: true, opacity: 0.82, flatShading: true, emissive: L === LAGO ? '#000000' : '#0a4a4a', emissiveIntensity: 0.4 }),
+      );
+      a.rotation.x = -Math.PI / 2;
+      a.position.set(L.x, -0.55, L.z);
+      this.cena.add(a);
+      return a;
+    });
+    this.agua = this.aguas[0];
   }
 
   criarEstrelas() {
@@ -229,9 +255,11 @@ export class Mundo {
 
   pontoLivre(x, z, folga) {
     if (Math.hypot(x, z) < 13) return false;
-    if (localDungeon(x, z).s > 76 && foraDungeon(x, z) < 6) return false; // a dungeon se decora sozinha
+    if (TRACADOS.some((t) => t.reservado(x, z))) return false; // as dungeons se decoram sozinhas
     if (this.casaPos && Math.hypot(x - this.casaPos.x, z - this.casaPos.z) < AREA_SEGURA_CASA + 4) return false;
-    if (Math.hypot(x - LAGO.x, z - LAGO.z) < LAGO.r + 4) return false;
+    for (const L of LAGOS) if (Math.hypot(x - L.x, z - L.z) < L.r + 4) return false;
+    // lugares fixos da Floresta (árvores gigantes, ruína, clareiras, lago escondido)
+    for (const r of RESERVAS_FLORESTA) if (Math.hypot(x - r.x, z - r.z) < r.r + folga) return false;
     if (Math.hypot(x, z) > RAIO_MUNDO - 3) return false;
     for (const o of this.obstaculos) if (Math.hypot(x - o.x, z - o.z) < o.r + folga) return false;
     return true;
@@ -245,7 +273,7 @@ export class Mundo {
 
     // Árvores: quantas por região
     const arvores = [];
-    const quer = { planta: 70, campo: 26, agua: 16, fogo: 6, terra: 5, raio: 0 };
+    const quer = { planta: 58, campo: 26, agua: 16, fogo: 6, terra: 5, raio: 0 };
     const conta = { planta: 0, campo: 0, agua: 0, fogo: 0, terra: 0, raio: 0 };
     for (let tent = 0; tent < 3000; tent++) {
       const x = (rng() * 2 - 1) * RAIO_MUNDO, z = (rng() * 2 - 1) * RAIO_MUNDO;
@@ -323,7 +351,7 @@ export class Mundo {
     for (let tent = 0; tent < 3000 && n < 220; tent++) {
       const x = (rng() * 2 - 1) * RAIO_MUNDO, z = (rng() * 2 - 1) * RAIO_MUNDO;
       const zn = zonaEm(x, z);
-      if (zn === 'fogo' || zn === 'raio' || zn === 'terra' || Math.hypot(x - LAGO.x, z - LAGO.z) < LAGO.r + 4 || Math.hypot(x, z) > RAIO_MUNDO - 4 || Math.hypot(x, z) < 3) continue;
+      if (zn === 'fogo' || zn === 'raio' || zn === 'terra' || LAGOS.some((L) => Math.hypot(x - L.x, z - L.z) < L.r + 4) || Math.hypot(x, z) > RAIO_MUNDO - 4 || Math.hypot(x, z) < 3) continue;
       m4.compose(v.set(x, alturaEm(x, z) + 0.12, z), q.identity(), s.set(1, 1, 1));
       flores.setMatrixAt(n, m4);
       flores.setColorAt(n, cor.set(coresFlor[Math.floor(rng() * coresFlor.length)]));
@@ -334,13 +362,13 @@ export class Mundo {
 
     // Montanhas na borda do mapa
     const extras = [];
-    for (let sd = 90; sd < 215; sd += 8) for (const lado of [-1, 1]) extras.push([sd, lado]);
+    for (const t of TRACADOS) for (let sd = 90; sd < 215; sd += 8) for (const lado of [-1, 1]) extras.push([t, sd, lado]);
     const monts = new THREE.InstancedMesh(new THREE.ConeGeometry(1, 1, 6), new THREE.MeshLambertMaterial({ flatShading: true }), 46 + extras.length);
     let nm = 0;
     for (let i = 0; i < 46; i++) {
       const a = (i / 46) * Math.PI * 2 + rng() * 0.1;
-      const da = Math.atan2(Math.sin(a + Math.PI / 4), Math.cos(a + Math.PI / 4));
-      if (Math.abs(da) < 0.3) continue; // boca do Caminho das Brasas
+      // boca das dungeons: sem montanha
+      if (TRACADOS.some((t) => Math.abs(Math.atan2(Math.sin(a - t.angulo), Math.cos(a - t.angulo))) < 0.3)) continue;
       const r = RAIO_MUNDO + 6 + rng() * 8;
       const x = Math.cos(a) * r, z = Math.sin(a) * r;
       const larg = 9 + rng() * 7, alt = 10 + rng() * 12;
@@ -348,19 +376,16 @@ export class Mundo {
       m4.compose(v.set(x, alturaEm(x, z) + alt / 2 - 1, z), q, s.set(larg, alt, larg));
       monts.setMatrixAt(nm, m4);
       const zn = zonaEm(x * 0.8, z * 0.8);
-      monts.setColorAt(nm++, cor.set(zn === 'fogo' ? '#9a6a4a' : zn === 'raio' ? '#5a5a7a' : zn === 'terra' ? '#a8906a' : (rng() < 0.5 ? '#7fa36a' : '#8fb07a')));
+      monts.setColorAt(nm++, cor.set(zn === 'fogo' ? '#9a6a4a' : zn === 'raio' ? '#5a5a7a' : zn === 'terra' ? '#a8906a' : zn === 'planta' ? (rng() < 0.5 ? '#3f6a3a' : '#4a7a44') : (rng() < 0.5 ? '#7fa36a' : '#8fb07a')));
     }
-    // montanhas vulcânicas dos dois lados do Caminho das Brasas
-    const DIRx = Math.SQRT1_2, DIRz = -Math.SQRT1_2;
-    for (const [sd, lado] of extras) {
-      const latC = 7 * Math.sin(((sd - 84) / 80) * Math.PI * 1.3);
-      const lat = latC + lado * (24 + rng() * 6) * (sd > 165 ? 1.25 : 1);
-      const x = DIRx * sd + DIRx * lat, z = DIRz * sd - DIRz * lat;
+    // montanhas dos dois lados de cada dungeon (vulcânicas nas Brasas, morros de floresta na Trilha)
+    for (const [t, sd, lado] of extras) {
+      const { x, z } = t.ponto(sd, lado * (24 + rng() * 6) * (sd > 165 ? 1.25 : 1));
       const larg = 9 + rng() * 6, alt = 14 + rng() * 14;
       q.setFromAxisAngle(eixoY, rng() * 6);
       m4.compose(v.set(x, alturaEm(x, z) + alt / 2 - 2, z), q, s.set(larg, alt, larg));
       monts.setMatrixAt(nm, m4);
-      monts.setColorAt(nm++, cor.set(rng() < 0.5 ? '#3a2824' : '#4a322a'));
+      monts.setColorAt(nm++, cor.set(t.id === 'brasas' ? (rng() < 0.5 ? '#3a2824' : '#4a322a') : (rng() < 0.5 ? '#1f4426' : '#2a5230')));
     }
     monts.count = nm;
     this.cena.add(monts);
@@ -385,6 +410,12 @@ export class Mundo {
   criarCristaisChao() {
     const rng = aleatorio(777);
     let n = 0;
+    { // o cristal escondido no píer do lago da Floresta (começa como Cristal Forte)
+      const { x, z } = CRISTAL_ESCONDIDO, m = criarCristal(1, 1);
+      m.position.set(x, alturaEm(x, z) + 0.8, z);
+      this.cena.add(m);
+      this.cristais.push({ mesh: m, x, z, ativo: true, volta: 0, tipo: 1 });
+    }
     for (let tent = 0; tent < 800 && n < 14; tent++) {
       const x = (rng() * 2 - 1) * (RAIO_MUNDO - 8), z = (rng() * 2 - 1) * (RAIO_MUNDO - 8);
       if (!this.pontoLivre(x, z, 1.5)) continue;
@@ -418,6 +449,8 @@ export class Mundo {
     this.sol.color.lerpColors(SOL_DIA, SOL_NOITE, f);
     this.sol.intensity = THREE.MathUtils.lerp(1.9, 0.55, f);
     this.estrelas.material.opacity = f;
+    this.cena.fog.near = 40; // as dungeons fecham a névoa por cima disso
+    this.cena.fog.far = 115;
   }
 
   // ---------- monstros selvagens ----------
@@ -443,7 +476,7 @@ export class Mundo {
     for (let i = 0; i < 3; i++) this.spawnarSelvagem(true);
     for (let i = 0; i < MAX_SELVAGENS - 4; i++) this.spawnarSelvagem(false);
     for (let i = 0; i < gruposDesejados(this.mediaEquipe()); i++) this.spawnarGrupo();
-    for (const a of this.dungeon?.acampamentos || []) a.grupo = null;
+    for (const d of this.dungeons || []) for (const a of d.acampamentos) a.grupo = null;
     this.povoando = false;
   }
 
@@ -520,9 +553,9 @@ export class Mundo {
 
   // ---------- casa ----------
   podeMontarCasa(x, z) {
-    if (Math.hypot(x - LAGO.x, z - LAGO.z) < LAGO.r + 5) return false;
+    if (LAGOS.some((L) => Math.hypot(x - L.x, z - L.z) < L.r + 5)) return false;
     if (Math.hypot(x, z) > RAIO_MUNDO - 8) return false;
-    if (naDungeon(x, z) || localDungeon(x, z).s > 78) return false; // calor demais para a casa
+    if (semCasaDungeons(x, z)) return false; // dentro ou na boca das dungeons não
     if (Math.hypot(x, z) < 6) return false; // em cima da fonte não
     for (const o of this.obstaculos) {
       if (o === this.casaObst) continue;
@@ -666,13 +699,16 @@ export class Mundo {
       const d = Math.hypot(dx, dz), min = o.r + raio;
       if (d < min && d > 0.0001) { p.x = o.x + (dx / d) * min; p.z = o.z + (dz / d) * min; }
     }
-    const dx = p.x - LAGO.x, dz = p.z - LAGO.z, dl = Math.hypot(dx, dz);
-    if (dl < LAGO.r + 0.5) { p.x = LAGO.x + (dx / dl) * (LAGO.r + 0.5); p.z = LAGO.z + (dz / dl) * (LAGO.r + 0.5); }
-    // limites: o mapa redondo ou o Caminho das Brasas (vale o mais perto)
+    for (const t of TRACADOS) t.empurrar?.(p, raio); // água do Lago Escondido
+    for (const L of LAGOS) {
+      const dx = p.x - L.x, dz = p.z - L.z, dl = Math.hypot(dx, dz);
+      if (dl < L.r + 0.5) { p.x = L.x + (dx / dl) * (L.r + 0.5); p.z = L.z + (dz / dl) * (L.r + 0.5); }
+    }
+    // limites: o mapa redondo ou o corredor de uma dungeon (vale o mais perto)
     const dc = Math.hypot(p.x, p.z);
     if (dc > RAIO_MUNDO - 4 && !dentroDungeonLivre(p.x, p.z, raio)) {
       const mx = p.x * (RAIO_MUNDO - 4) / dc, mz = p.z * (RAIO_MUNDO - 4) / dc;
-      const d = prenderDungeon(p, raio);
+      const d = prenderDungeons(p, raio);
       if (Math.hypot(d.x - p.x, d.z - p.z) < Math.hypot(mx - p.x, mz - p.z)) { p.x = d.x; p.z = d.z; } else { p.x = mx; p.z = mz; }
     }
   }
@@ -705,7 +741,7 @@ export class Mundo {
 
     this.cristalFonte.rotation.y += dt * 1.2;
     this.cristalFonte.position.y = 2.9 + Math.sin(t * 2) * 0.15;
-    this.agua.position.y = -0.55 + Math.sin(t * 1.3) * 0.05;
+    for (const a of this.aguas) a.position.y = -0.55 + Math.sin(t * 1.3) * 0.05;
 
     // Relâmpagos no Planalto da Tempestade
     const zonaAtual = zonaEm(this.pos.x, this.pos.z);
@@ -765,7 +801,7 @@ export class Mundo {
 
     // Selvagens
     this.timerSpawn -= dt;
-    if (this.timerSpawn <= 0 && this.selvagens.filter((x) => !x.dungeon && !x.chefe).length < MAX_SELVAGENS) { this.timerSpawn = 3; this.spawnarSelvagem(false); }
+    if (this.timerSpawn <= 0 && this.selvagens.filter((x) => !x.dungeon && !x.chefe && !x.regiao).length < MAX_SELVAGENS) { this.timerSpawn = 3; this.spawnarSelvagem(false); }
     let maisPerto = null, menorD = 9;
     for (const s of [...this.selvagens]) {
       const dx = this.pos.x - s.x, dz = this.pos.z - s.z, d = Math.hypot(dx, dz);
@@ -787,8 +823,8 @@ export class Mundo {
       if (d < menorD) { menorD = d; maisPerto = s; }
     }
 
-    // Caminho das Brasas: acampamentos, monstros soltos, chefe e clima
-    this.dungeon.atualizar(dt, t);
+    // Dungeons abertas: acampamentos, monstros soltos, chefe e clima
+    for (const d of this.dungeons) d.atualizar(dt, t);
 
     // Grupos: andam juntos em formação; aparecem mais conforme sua equipe fica forte
     this.timerGrupo -= dt;

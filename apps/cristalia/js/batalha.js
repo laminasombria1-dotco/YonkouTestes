@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import {
   ESPECIES, GOLPES, ELEMENTOS, EFEITOS, EFEITO_DO_ELEMENTO, PODER_DISPARO_EXTRA, DURACAO_EFEITO_PERTO, DURACAO_EFEITO_DISPARO,
   multiplicadorContra, chanceCaptura, melhoriaDe, statsDe, modificadorArena, fatorDanoNivel, CRISTAIS, nomeTipo, fundoTipo,
+  fracoContraEspecie,
 } from './dados.js';
 import { criarModelo, criarCristal, criarCoroa, animarModelo, piscar, descartar } from './modelos.js';
 
@@ -88,7 +89,7 @@ class Lutador {
   tem(efeito) { return this.status[efeito] > 0; }
   podeAndar() { return !this.tem('paralisia') && !this.tem('sono') && !this.tem('enraizado'); }
   podeAtacar() { return !this.tem('paralisia') && !this.tem('sono') && !this.tem('medo'); }
-  get fatorVel() { return (this.lento > 0 ? 0.5 : 1) * (this.tem('encharcado') ? 0.55 : 1) * (this.mod?.vel ?? 1); }
+  get fatorVel() { return (this.lento > 0 ? 0.5 : 1) * (this.tem('encharcado') ? 0.55 : 1) * (this.tem('parasita') ? 0.7 : 1) * (this.mod?.vel ?? 1); }
 }
 
 export class Batalha {
@@ -140,8 +141,11 @@ export class Batalha {
       jogo.aviso(`Um grupo de ${this.total} monstros atacou!`);
       if (lider) jogo.aviso(`O líder é um ${ESPECIES[lider.especie].nome} Nv.${lider.nivel}. Ele entra por último.`);
     } else if (this.chefe) {
-      jogo.aviso(`O chefe ${this.ini.esp.nome} Nv.${this.ini.dados.nivel} acordou!`);
-      jogo.aviso('Golpes de Água são super efetivos contra Ígneo.');
+      const esp = this.ini.esp;
+      this.chefeEspecie = this.ini.dados.especie;
+      jogo.aviso(`O chefe ${esp.nome} Nv.${this.ini.dados.nivel} acordou!`);
+      const fracos = fracoContraEspecie(esp).map((el) => ELEMENTOS[el].nome);
+      if (fracos.length) jogo.aviso(`Golpes de ${fracos.join(' e ')} são super efetivos contra ${nomeTipo(esp)}.`);
     } else jogo.aviso(`Um ${this.ini.esp.nome} selvagem apareceu!`);
     if (this.arena.cfg.descricaoPerigo) jogo.aviso(this.arena.cfg.descricaoPerigo);
   }
@@ -497,8 +501,9 @@ export class Batalha {
     if (alvo.dados.hp <= 0) { this.desmaiar(alvo); return true; }
     if (alvo.esp.chefe && !alvo.furia && alvo.frac < 0.5) {
       alvo.furia = true;
-      piscar(alvo.modelo, 0.6, '#ff3d6a');
-      this.particulas(alvo.pos, '#ff3d6a', 30, 2);
+      const corFuria = ELEMENTOS[alvo.esp.elemento].cor;
+      piscar(alvo.modelo, 0.6, corFuria);
+      this.particulas(alvo.pos, corFuria, 30, 2);
       this.jogo.aviso(`${alvo.esp.nome} entrou em FÚRIA! Ataca mais rápido.`);
     }
     if (opcoes.efeito) this.aplicarEfeito(alvo, opcoes.efeito.nome, opcoes.efeito.dur, at);
@@ -511,6 +516,7 @@ export class Batalha {
     const novo = !alvo.tem(nome);
     alvo.status[nome] = Math.max(alvo.status[nome] || 0, dur);
     if (nome === 'queimadura' || nome === 'combustao') { alvo.fonteFogo = causador; alvo.tickFogo = 0.5; }
+    if (nome === 'parasita') { alvo.fonteParasita = causador; if (novo) alvo.tickParasita = 0.5; }
     if ((nome === 'paralisia' || nome === 'sono') && alvo.prep) this.cancelarPreparo(alvo);
     if (novo) {
       this.jogo.numero(ef.nome + '!', alvo.pos.clone().setY(alvo.altura + 0.7), ef.cor, 'pequeno');
@@ -533,6 +539,22 @@ export class Batalha {
         const dano = Math.max(1, Math.round(c.stats.hpMax * (c.tem('combustao') ? 0.03 : 0.02)));
         c.dados.hp = Math.max(0, c.dados.hp - dano);
         this.jogo.numero(String(dano), c.pos.clone().setY(c.altura * 0.8), '#ff9a4a', 'pequeno');
+        if (c.dados.hp <= 0) { this.desmaiar(c); return; }
+      }
+    }
+    // Parasita (Silvestre): suga 2,5% da vida a cada meio segundo e cura quem plantou a semente
+    if (c.tem('parasita')) {
+      c.tickParasita = (c.tickParasita ?? 0.5) - dt;
+      if (c.tickParasita <= 0) {
+        c.tickParasita = 0.5;
+        const dano = Math.max(1, Math.round(c.stats.hpMax * 0.025));
+        c.dados.hp = Math.max(0, c.dados.hp - dano);
+        this.jogo.numero(String(dano), c.pos.clone().setY(c.altura * 0.8), '#1fe0a0', 'pequeno');
+        const f = c.fonteParasita;
+        if (f && !f.morto && !f.tem('combustao') && f.dados.hp < f.stats.hpMax) {
+          f.dados.hp = Math.min(f.stats.hpMax, f.dados.hp + dano);
+          this.jogo.numero('+' + dano, f.pos.clone().setY(f.altura), '#5fe08a', 'pequeno');
+        }
         if (c.dados.hp <= 0) { this.desmaiar(c); return; }
       }
     }

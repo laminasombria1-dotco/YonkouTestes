@@ -839,7 +839,81 @@ function ignarion(c, u) {
   olhos(c, yC + 0.1, zC + 0.38, 0.17, 0.1, '#ff3d6a');
 }
 
-const RAROS_MODELO = { vulcarapa, aquaraia, espinhal, ignarion };
+// ---------- SUPER RARO: Silvárion, o chefe do Santuário da Árvore-Mãe ----------
+// Cervo ancestral de casca e musgo, com uma galhada que é uma pequena floresta,
+// flores de jade brilhando, cipós pendurados e folhas girando em volta
+function silvarion(c, u) {
+  const casca = mat('#5a3a24'), cascaEsc = mat('#3e2818'), musgo = mat('#3f8f3a'), musgoEsc = mat('#2c6a2e');
+  const folha = mat('#4ea64a'), jade = brilho('#1fe0a0', 0.9), flor = brilho('#ffe14a', 0.8), rosa = brilho('#ff7eb6', 0.7);
+  const yT = 1.35;
+  // corpo de casca com uma manta de musgo nas costas
+  p(c, G.ico(0.75, 1), casca, [0, yT, 0], null, [0.95, 0.85, 1.5]);
+  p(c, G.ico(0.72, 1), musgo, [0, yT + 0.28, -0.05], null, [0.9, 0.5, 1.35]);
+  p(c, G.ico(0.5, 1), cascaEsc, [0, yT - 0.05, 0.85], null, [0.95, 1, 0.8]);
+  // veios de jade na casca
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    p(c, G.caixa(0.05, 0.5, 0.05), jade, [Math.cos(a) * 0.7, yT - 0.1 + Math.sin(a * 3) * 0.1, Math.sin(a) * 1.0], [0, a, 0.5]);
+  }
+  // mini árvores e flores crescendo nas costas
+  for (let i = 0; i < 4; i++) {
+    const z = 0.45 - i * 0.35, x = (i % 2 ? 1 : -1) * 0.22;
+    p(c, G.cil(0.03, 0.05, 0.3, 4), cascaEsc, [x, yT + 0.6, z]);
+    const copa = p(c, G.cone(0.16, 0.42, 5), i % 2 ? musgoEsc : folha, [x, yT + 0.92, z]);
+    u.pulsos.push({ obj: copa, base: 1, amp: 0.08, vel: 2 + i });
+  }
+  [[0.4, 0.3, rosa], [-0.38, -0.2, flor], [0.3, -0.6, flor], [-0.2, 0.55, rosa]].forEach(([x, z, m]) => p(c, G.ico(0.08, 0), m, [x, yT + 0.55, z]));
+  // pernas finas com cascos de pedra
+  for (const s of [-1, 1]) for (const z of [0.7, -0.75]) {
+    p(c, G.cil(0.1, 0.15, 0.9, 6), casca, [s * 0.42, 0.95, z]);
+    p(c, G.cil(0.08, 0.1, 0.75, 6), cascaEsc, [s * 0.42, 0.38, z + 0.05]);
+    p(c, G.cil(0.13, 0.15, 0.14, 6), mat('#8f9a86'), [s * 0.42, 0.07, z + 0.05]);
+    p(c, G.ico(0.13, 0), musgo, [s * 0.42, 1.3, z]); // musgo no joelho
+  }
+  // pescoço e cabeça de cervo
+  const zC = 1.4, yC = yT + 1.05;
+  p(c, G.cil(0.22, 0.34, 0.95, 6), casca, [0, yT + 0.55, 1.05], [0.65, 0, 0]);
+  p(c, G.ico(0.34, 1), casca, [0, yC, zC], null, [0.9, 0.9, 1.1]);
+  p(c, G.caixa(0.32, 0.26, 0.5), cascaEsc, [0, yC - 0.12, zC + 0.38]);
+  p(c, G.esf(1), mat('#1b1b30'), [0, yC - 0.06, zC + 0.64], null, 0.06);
+  p(c, G.ico(0.3, 0), musgo, [0, yC + 0.12, zC - 0.25], null, [1.3, 0.6, 1]); // juba de musgo
+  for (const s of [-1, 1]) {
+    // orelhas de folha
+    apontar(p(c, G.cone(0.1, 0.38, 4), folha, [s * 0.3, yC + 0.15, zC - 0.05]), V(s, 0.4, -0.3));
+    // galhada: um galho grosso que se divide em vários, com folhas e flores de jade
+    const g = new THREE.Group();
+    g.position.set(s * 0.17, yC + 0.25, zC - 0.08);
+    const ramos = [[V(s * 0.5, 1, -0.2), 0.8, 0.06], [V(s * 1, 0.7, 0.1), 0.6, 0.045], [V(s * 0.2, 1, 0.4), 0.55, 0.045], [V(s * 0.8, 1, -0.6), 0.6, 0.04]];
+    ramos.forEach(([dir, comp, r], k) => {
+      const o = p(g, G.cil(r * 0.6, r, comp, 5), cascaEsc, [0, 0, 0]);
+      apontar(o, dir);
+      const d = dir.clone().normalize();
+      const base = k === 0 ? V(0, 0, 0) : V(s * 0.1, 0.35, -0.05);
+      o.position.copy(base).addScaledVector(d, comp / 2);
+      const ponta = base.clone().addScaledVector(d, comp);
+      p(g, G.ico(0.16 + (k === 0 ? 0.06 : 0), 0), k % 2 ? musgoEsc : folha, [ponta.x, ponta.y, ponta.z]);
+      const fl = p(g, G.ico(0.07, 0), k % 2 ? flor : jade, [ponta.x, ponta.y + 0.14, ponta.z + 0.05]);
+      u.pulsos.push({ obj: fl, base: 1, amp: 0.3, vel: 4 + k });
+    });
+    c.add(g);
+    // cipós pendurados da galhada
+    for (let k = 0; k < 2; k++) p(c, G.caixa(0.025, 0.5 + k * 0.2, 0.025), mat('#3a6a2a'), [s * (0.45 + k * 0.25), yC + 0.35 - k * 0.1, zC - 0.15 - k * 0.1]);
+  }
+  // cauda de folhas
+  const cauda = new THREE.Group();
+  cauda.position.set(0, yT + 0.2, -1.05);
+  for (let i = 0; i < 3; i++) p(cauda, G.cone(0.12 - i * 0.02, 0.45, 4), i % 2 ? musgo : folha, [0, -i * 0.1, -0.15 - i * 0.18], [-1.2, 0, 0]);
+  c.add(cauda);
+  u.caudas.push(cauda);
+  // folhas e esporos de jade girando em volta
+  for (let i = 0; i < 8; i++) {
+    const o = p(c, G.octa(0.09), i % 2 ? jade : folha, [0, 0, 0], null, [1, 0.4, 1.8]);
+    u.orbitas.push({ obj: o, raio: 1.7, vel: 1.1, y: yT + 0.3 + (i % 4) * 0.35, fase: (i / 8) * Math.PI * 2 });
+  }
+  olhos(c, yC + 0.08, zC + 0.28, 0.15, 0.08, '#1fe0a0');
+}
+
+const RAROS_MODELO = { vulcarapa, aquaraia, espinhal, ignarion, silvarion };
 
 export function criarModelo(especie) {
   const esp = ESPECIES[especie];

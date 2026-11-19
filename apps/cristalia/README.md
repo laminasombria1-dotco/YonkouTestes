@@ -103,12 +103,46 @@ Sai da borda nordeste do mapa, depois do Vulcão, seguindo a estrada de braseiro
 - Só é capturado com **Cristal Supremo**, e a chance é bem baixa.
 - Vencido ou capturado, deixa 3 Cristais Fortes e 2 Supremos, e vale o dobro de experiência. Ele volta no próximo amanhecer.
 
+## Trilha Ancestral (dungeon aberta da Floresta)
+
+Sai da borda noroeste do mapa, depois da Floresta, seguindo as lanternas de flor. Funciona igual ao Caminho das Brasas (as duas usam a mesma base em `js/dungeon.js`).
+
+| Etapa | Nome | Comuns (equipe Nv.3) | Líder (equipe Nv.3) | O que tem lá |
+|---|---|---|---|---|
+| 1 | Bosque dos Cogumelos | Nv.5 | Nv.12 | Cogumelos gigantes, troncos caídos, cogumelos e flores que brilham |
+| 2 | Ruínas de Musgo | Nv.8 | Nv.15 | Muros e colunas com musgo, arcos antigos, uma cabeça de pedra com olhos de jade |
+| 3 | Lago Escondido | Nv.11 | Nv.18 | Um lago atravessa o caminho: só se passa pela ponte de madeira. Vitórias-régias e cachoeiras |
+| 4 | Raízes Gigantes | Nv.14 | Nv.21 | Árvores enormes, raízes em arco, cipós e frutos brilhantes |
+
+- Quem aparece: só espécies que já existiam (Planta evoluída como Troncudo e Florestral, Espinhal, Fogo + Planta, e visitantes de Água, Terra, Luz e Trevas). Nenhum monstro novo além do chefe.
+- Não dá para montar a casa lá dentro (as raízes não deixam). Monte antes da entrada.
+- Quanto mais fundo, mais escuro e verde fica o céu, com folhas caindo e vaga-lumes.
+- As árvores gigantes ficam transparentes quando estão entre a câmera e você.
+- Arena dos grupos: **Trilha Ancestral** (favorece Planta). Perigo: **moitas de espinhos** que arranham quem pisa, mas curam monstros de Planta.
+
+### Chefe: Silvárion (super raro)
+
+- Fica no **Santuário da Árvore-Mãe**, no fim da trilha, aos pés de uma árvore gigantesca.
+- Tipo **Silvestre**, um elemento novo: uma planta mais forte, super efetiva contra Água, Terra e até Planta. Só **Fogo** (e o Ígneo) são fortes contra ele.
+- Efeito do Silvestre: **Parasita**: uma semente suga 2,5% da vida a cada meio segundo, cura quem a plantou e deixa 30% mais lento. Os três golpes dele (Galhada Ancestral, Semente Parasita e Selva Viva) causam o efeito.
+- Arena própria: **Santuário da Árvore-Mãe** (favorece Silvestre). Perigo: **raízes saem do chão** onde aparece um círculo verde; machucam e prendem (Planta e Silvestre não sentem).
+- Nível: 1,4× o nível da equipe + 22 (Nv.26 com equipe Nv.3). Com menos da metade da vida, entra em **fúria**.
+- Só é capturado com **Cristal Supremo**. Vencido ou capturado, deixa 3 Cristais Fortes e 2 Supremos e volta no próximo amanhecer.
+
+## Floresta (região de Planta)
+
+- Agora tem **5 árvores gigantes**, uma **ruína com arco e colunas**, cogumelos gigantes, troncos caídos, pedras com musgo, samambaias e muitas flores que brilham.
+- **Lago escondido** a oeste, cercado de árvores gigantes, com um píer de madeira. No começo do píer tem um **cristal escondido** (começa como Cristal Forte).
+- **2 clareiras** com anel de cogumelos: cada uma tem um grupo (5 + líder) que volta 2 minutos depois de vencido.
+- Enquanto você está na Floresta, aparecem **até 6 monstros a mais**, com nível um pouco maior (mais formas evoluídas).
+- À noite, **vaga-lumes** voam pela Floresta.
+
 ## Regiões
 
 | Região | Onde fica | Quem aparece |
 |---|---|---|
 | Campo | Centro | Um pouco de tudo; Sol e Luz de dia, Lua e Trevas à noite |
-| Floresta | Noroeste | Planta (Musguinho), Espinhal (raro); Luz de dia, Trevas à noite |
+| Floresta | Noroeste | Planta (Musguinho), Espinhal (raro); Luz de dia, Trevas à noite. Daqui sai a Trilha Ancestral |
 | Lago | Sudoeste | Água (Gotinho), Aquaraia (raro); Lua à noite |
 | Vulcão | Nordeste | Fogo (Brasito), Vulcarapa (raro). Daqui sai o Caminho das Brasas |
 | Pedreira | Sudeste | Terra (Pedrisco) |
@@ -129,6 +163,7 @@ Sai da borda nordeste do mapa, depois do Vulcão, seguindo a estrada de braseiro
 | Trevas | Breuzinho | Sombrelo | Umbrafel | Noctífero |
 
 Raros sem evolução: Vulcarapa (fogo), Aquaraia (água), Espinhal (planta).
+Super raros (chefes): Ignárion (Ígneo, Caminho das Brasas) e Silvárion (Silvestre, Trilha Ancestral).
 
 ## Vida e dano
 
@@ -147,6 +182,8 @@ Cada região tem a sua arena, com raio de 22 m e obstáculos que **bloqueiam o m
 | Floresta | Coração da Floresta | Vento de folhas | Planta | Água, Terra | O vento empurra quem não é Planta |
 | Vulcão | Cratera do Vulcão | Brasas | Fogo | Planta | Lava queima, mas cura Fogo |
 | Lago | Margem do Lago | Chuva | Água | Fogo, Terra | Poças encharcam, mas curam Água |
+| Trilha Ancestral | Trilha Ancestral | Vaga-lumes | Planta | Água, Terra | Moitas de espinhos arranham, mas curam Planta |
+| Santuário | Santuário da Árvore-Mãe | Esporos brilhantes | Silvestre | Água, Terra, Planta | Raízes saem do chão e prendem |
 | Pedreira | Fundo da Pedreira | Poeira | Terra | Fogo, Raio | Pedras caem (Terra não sente) |
 | Planalto | Topo da Tempestade | Relâmpagos | Raio | Água, Sol | Raios caem e paralisam (Raio não sente) |
 
@@ -173,6 +210,8 @@ Na batalha, o botão mostra "×2" ou "×3" no disparo e uma bolinha colorida nos
 | Elemento | Efeito | O que faz | Duração |
 |---|---|---|---|
 | Fogo | Queimadura | Perde 4% da vida por segundo | 4 s |
+| Ígneo (chefe) | Combustão | Perde 6% da vida por segundo e não pode ser curado | 3 s |
+| Silvestre (chefe) | Parasita | Perde 5% da vida por segundo, que vai para quem causou; 30% mais lento | 3,5 s |
 | Água | Encharcado | Fica 45% mais lento | 4 s |
 | Planta | Enraizado | Não consegue andar, mas ainda ataca | 1,8 s |
 | Terra | Soterrado | Defesa cai 30% | 5 s |
@@ -190,7 +229,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 
 | Elemento | Forte contra |
 |---|---|
-| Fogo | Planta |
+| Fogo | Planta, Silvestre |
 | Água | Fogo, Terra |
 | Planta | Água, Terra |
 | Terra | Fogo, Raio |
@@ -199,6 +238,8 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | Lua | Sol, Fogo |
 | Luz | Trevas, Lua |
 | Trevas | Luz, Planta |
+| Ígneo | Planta, Fogo, Terra, Silvestre |
+| Silvestre | Água, Terra, Planta |
 
 ## Arquivos
 
@@ -210,7 +251,9 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/plataforma.js` | A vitrine 3D do Monstruário e a animação de evolução |
 | `js/mundo.js` | Mapa aberto, regiões, dia e noite, monstros selvagens, cristais e fonte |
 | `js/batalha.js` | Batalha em tempo real: movimento, golpes, efeitos, IA do inimigo e captura |
-| `js/dungeon.js` | Caminho das Brasas: corredor, portões, estruturas, acampamentos, chefe e clima de cinzas |
+| `js/dungeon.js` | Base das dungeons abertas: a forma do corredor (`Tracado`), portões transparentes, acampamentos, monstros soltos, chefe e clima. Também o `Lote` e o `Bloco`, que juntam peças para ficar leve no celular |
+| `js/brasas.js` | Cenário do Caminho das Brasas (braseiros, forja, rio de lava, Trono de Magma, vulcão) |
+| `js/raizes.js` | Cenário da Trilha Ancestral e da Floresta (cogumelos, ruínas, lago, raízes, Árvore-Mãe, vaga-lumes, monstros extras) |
 | `js/arena.js` | Arenas: chão, obstáculos, clima animado e perigos de cada região |
 | `js/controles.js` | Joystick de toque, botões e teclado |
 | `js/main.js` | Liga tudo: telas, equipe, experiência, evolução, salvamento |
@@ -231,5 +274,7 @@ Depois abra `http://localhost:8000` no navegador.
 
 - Trocar os modelos de formas simples por modelos feitos no Blender (`.glb`)
 - Sons e música
-- Treinadores rivais e um chefe na cratera do vulcão
+- Treinadores rivais
+- Dungeons abertas nas outras regiões (Lago, Pedreira, Planalto) usando a mesma base de `dungeon.js`
+- Juntar as peças de cada monstro numa malha só, para pesar menos no celular
 - Levar as regras (`dados.js`) para o Unreal Engine

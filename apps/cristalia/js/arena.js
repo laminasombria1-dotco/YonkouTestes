@@ -19,8 +19,16 @@ const CORES = {
   brasas: { chao: ['#5a3a30', '#6b4535', '#4d3229'], mancha: '#2a1a16', fora: '#3a2420', ceu: '#d98a6a', obst: 'lava',   copa: ['#3a2420', '#2a1a16', '#4d3229'] },
   cratera:{ chao: ['#3a2420', '#2a1a16', '#4a2a22'], mancha: '#ff5a1f', fora: '#1f1210', ceu: '#a04a3a', obst: 'lava',   copa: ['#1f1210', '#2a1a16', '#3a2420'] },
   raio:   { chao: ['#7a7a9a', '#6c6c8c', '#86869f'], mancha: '#5a5a7a', fora: '#4a4a6a', ceu: '#6a6f95', obst: 'cristal', copa: ['#55557a', '#64648a', '#5a5a7a'] },
+  raizes: { chao: ['#3f7a3a', '#4a8a40', '#36703a'], mancha: '#6a5236', fora: '#1f4a2a', ceu: '#6a9a80', obst: 'arvore', copa: ['#1f5a2a', '#2f7a3a', '#3a6a2a'] },
+  santuario: { chao: ['#4f6e48', '#5a7a52', '#46663f'], mancha: '#2c6a2e', fora: '#183a24', ceu: '#3f6a5a', obst: 'menir', copa: ['#1f5a2a', '#2f7a3a', '#1d4a28'] },
 };
-const QTD_OBST = { campo: 7, planta: 12, fogo: 7, agua: 6, terra: 9, raio: 7, brasas: 9, cratera: 6 };
+const QTD_OBST = { campo: 7, planta: 12, fogo: 7, agua: 6, terra: 9, raio: 7, brasas: 9, cratera: 6, raizes: 10, santuario: 7 };
+// Poças do chão: quem é de casa se cura; os outros sofrem o efeito (ou dano, nos espinhos)
+const POCAS = {
+  lava:     { cura: ['fogo', 'igneo'], efeito: 'queimadura', dur: 1.5 },
+  pocas:    { cura: ['agua'], efeito: 'encharcado', dur: 1.2 },
+  espinhos: { cura: ['planta', 'silvestre'], dano: 0.02 },
+};
 const CEU_NOITE = new THREE.Color('#1b2550');
 const GEO_DISCO = new THREE.CircleGeometry(1, 32).rotateX(-Math.PI / 2);
 const GEO_ANEL = new THREE.RingGeometry(0.9, 1, 40).rotateX(-Math.PI / 2);
@@ -133,6 +141,23 @@ export class Arena {
       cr.position.y = 1.5; cr.scale.set(0.8, 2.6, 0.8);
       grupo.add(pe, cr);
       raio = 0.75 * esc;
+    } else if (tipo === 'cogumelo') {
+      const pe = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 1.8, 6), lambert('#efe4cc'));
+      pe.position.y = 0.9;
+      const ch = new THREE.Mesh(new THREE.SphereGeometry(1.2, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2), lambert(Math.random() < 0.6 ? '#d8483a' : '#8a5ad8'));
+      ch.position.y = 1.75; ch.scale.y = 0.6;
+      grupo.add(pe, ch);
+      raio = 0.6 * esc;
+    } else if (tipo === 'menir') {
+      const h = 2.6 + Math.random() * 1.4;
+      const pd = new THREE.Mesh(new THREE.BoxGeometry(1.1, h, 0.8), lambert('#8f9a86'));
+      pd.position.y = h / 2; pd.rotation.z = (Math.random() - 0.5) * 0.15;
+      const mg = new THREE.Mesh(new THREE.IcosahedronGeometry(0.6, 0), lambert('#3f8f3a'));
+      mg.position.y = h; mg.scale.set(1, 0.4, 0.8);
+      const runa = new THREE.Mesh(new THREE.BoxGeometry(0.4, h * 0.4, 0.05), lambert('#1fe0a0', { emissive: '#1fe0a0', emissiveIntensity: 0.9 }));
+      runa.position.set(0, h * 0.55, 0.42);
+      grupo.add(pd, mg, runa);
+      raio = 0.75 * esc;
     } else if (tipo === 'lava') {
       const pd = new THREE.Mesh(new THREE.DodecahedronGeometry(1, 0), lambert('#5a3328', { emissive: '#ff5a1f', emissiveIntensity: 0.35 }));
       pd.position.y = 0.45; pd.scale.set(1.2, 0.9, 1.1);
@@ -164,8 +189,9 @@ export class Arena {
       const a = Math.random() * Math.PI * 2, d = 3 + Math.random() * (RAIO_ARENA - 4);
       const x = Math.cos(a) * d, z = Math.sin(a) * d;
       const esc = 0.8 + Math.random() * 0.6;
-      // no campo, metade dos obstáculos são pedras
-      const t = this.zona === 'campo' && this.obstaculos.length % 2 ? 'pedra' : tipo;
+      // no campo, metade dos obstáculos são pedras; na Trilha Ancestral, metade são cogumelos gigantes
+      const metade = this.obstaculos.length % 2;
+      const t = this.zona === 'campo' && metade ? 'pedra' : this.zona === 'raizes' && metade ? 'cogumelo' : tipo;
       const rEstimado = 1.1 * esc;
       if (!this.lugarLivre(x, z, rEstimado)) continue;
       const r = this.criarPeca(t, x, z, esc);
@@ -174,18 +200,30 @@ export class Arena {
   }
 
   criarPocas() {
-    if (this.cfg.perigo !== 'lava' && this.cfg.perigo !== 'pocas') return;
-    const lava = this.cfg.perigo === 'lava';
-    const mat = lava
+    const perigo = this.cfg.perigo;
+    if (!POCAS[perigo]) return;
+    const espinhos = perigo === 'espinhos';
+    const mat = perigo === 'lava'
       ? lambert('#ff6a1f', { emissive: '#ff3a00', emissiveIntensity: 0.9 })
-      : new THREE.MeshLambertMaterial({ color: '#4fc3f7', transparent: true, opacity: 0.8, emissive: '#1a6a9a', emissiveIntensity: 0.3 });
-    const maxPocas = this.zona === 'cratera' ? 8 : this.zona === 'brasas' ? 6 : 5;
+      : espinhos ? lambert('#4a3a22')
+        : new THREE.MeshLambertMaterial({ color: '#4fc3f7', transparent: true, opacity: 0.8, emissive: '#1a6a9a', emissiveIntensity: 0.3 });
+    const matEspinho = espinhos ? lambert('#6a8a3a') : null;
+    const maxPocas = this.zona === 'cratera' ? 8 : this.zona === 'brasas' || espinhos ? 6 : 5;
     for (let tent = 0; tent < 300 && this.pocas.length < maxPocas; tent++) {
       const a = Math.random() * Math.PI * 2, d = 4 + Math.random() * (RAIO_ARENA - 7);
       const x = Math.cos(a) * d, z = Math.sin(a) * d, r = 1.8 + Math.random() * 1.4;
       if (!this.lugarLivre(x, z, r, 3)) continue;
       const m = new THREE.Mesh(new THREE.CircleGeometry(r, 18).rotateX(-Math.PI / 2), mat);
       m.position.set(x, 0.05, z);
+      if (espinhos) { // moita de espinhos: cones em cima do chão escuro
+        for (let k = 0; k < 9; k++) {
+          const a2 = Math.random() * Math.PI * 2, d2 = Math.random() * r * 0.85;
+          const e = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.6 + Math.random() * 0.5, 4), matEspinho);
+          e.position.set(Math.cos(a2) * d2, 0.3, Math.sin(a2) * d2);
+          e.rotation.set((Math.random() - 0.5) * 0.6, 0, (Math.random() - 0.5) * 0.6);
+          m.add(e);
+        }
+      }
       this.cena.add(m);
       this.pocas.push({ x, z, r, mesh: m });
     }
@@ -198,6 +236,7 @@ export class Arena {
       campo: ['#ffffff', '#fff3a0'], planta: ['#5fbf4a', '#9fd35a', '#e0a040'], fogo: ['#ffb030', '#ff6a1f', '#ffe14a'],
       agua: ['#cfefff', '#9fd8ff'], terra: ['#e8d4a8', '#c9a46a'], raio: ['#fff07a', '#ffffff'],
       brasas: ['#ffb030', '#ff6a1f', '#ffe14a'], cratera: ['#ff3d6a', '#ff6a1f', '#6a5a5a', '#8a7a7a'],
+      raizes: ['#d8ff7a', '#4ea64a', '#9fd35a', '#e0a040'], santuario: ['#1fe0a0', '#d8ff7a', '#7affd8', '#4ea64a'],
     };
     const c = new THREE.Color();
     for (let i = 0; i < n; i++) {
@@ -210,7 +249,7 @@ export class Arena {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     g.setAttribute('color', new THREE.BufferAttribute(cor, 3));
-    const tam = { campo: 0.18, planta: 0.32, fogo: 0.2, agua: 0.12, terra: 0.25, raio: 0.16, brasas: 0.22, cratera: 0.26 }[this.zona];
+    const tam = { campo: 0.18, planta: 0.32, fogo: 0.2, agua: 0.12, terra: 0.25, raio: 0.16, brasas: 0.22, cratera: 0.26, raizes: 0.26, santuario: 0.28 }[this.zona];
     this.clima = new THREE.Points(g, new THREE.PointsMaterial({ size: tam, vertexColors: true, transparent: true, opacity: this.zona === 'terra' ? 0.55 : 0.9, depthWrite: false }));
     this.cena.add(this.clima);
   }
@@ -262,6 +301,11 @@ export class Arena {
       switch (this.zona) {
         case 'planta': a[k] += vx * 6 * dt; a[k + 2] += vz * 6 * dt; a[k + 1] -= (1 + Math.sin(t * 3 + i)) * dt; break;
         case 'cratera': a[k + 1] += (i % 2 ? -1.2 : 2) * dt; a[k] += Math.sin(t * 2 + i) * 0.8 * dt; break;
+        case 'raizes':
+        case 'santuario': // vaga-lumes e esporos flutuando, folhas caindo
+          if (i % 3 === 0) { a[k] += Math.sin(t * 0.7 + i) * 0.9 * dt; a[k + 1] += (this.zona === 'santuario' ? 0.6 : 0) * dt + Math.cos(t + i) * 0.5 * dt; a[k + 2] += Math.cos(t * 0.6 + i) * 0.9 * dt; }
+          else { a[k + 1] -= 0.8 * dt; a[k] += Math.sin(t * 1.3 + i) * 1.1 * dt; }
+          break;
         case 'brasas':
         case 'fogo': a[k + 1] += (1.5 + (i % 5) * 0.3) * dt; a[k] += Math.sin(t * 2 + i) * 0.8 * dt; break;
         case 'agua': a[k + 1] -= 22 * dt; a[k] += 1.5 * dt; break;
@@ -286,22 +330,28 @@ export class Arena {
       const vx = Math.cos(this.vento.ang), vz = Math.sin(this.vento.ang);
       for (const l of lutadores) if (!l.esp.elementos.includes('planta')) { l.pos.x += vx * 1.4 * dt; l.pos.z += vz * 1.4 * dt; }
     }
-    if (perigo === 'lava' || perigo === 'pocas') {
-      const elementoCasa = perigo === 'lava' ? 'fogo' : 'agua';
+    const pc = POCAS[perigo];
+    if (pc) {
       this.tickPoca -= dt;
       const tick = this.tickPoca <= 0;
       if (tick) this.tickPoca = 0.5;
       for (const l of lutadores) {
         if (!this.pocaEm(l.pos)) continue;
-        if (l.esp.elementos.includes(elementoCasa) || (perigo === 'lava' && l.esp.elementos.includes('igneo'))) { if (tick) b.curar(l, 0.015); }
-        else if (perigo === 'lava') b.aplicarEfeito(l, 'queimadura', 1.5, null);
-        else b.aplicarEfeito(l, 'encharcado', 1.2, null);
+        if (l.esp.elementos.some((el) => pc.cura.includes(el))) { if (tick) b.curar(l, 0.015); }
+        else if (pc.efeito) b.aplicarEfeito(l, pc.efeito, pc.dur, null);
+        else if (tick && !l.morto && l.invul <= 0) { // espinhos: um arranhão a cada meio segundo
+          const dano = Math.max(1, Math.round(l.stats.hpMax * pc.dano));
+          l.dados.hp = Math.max(0, l.dados.hp - dano);
+          l.flash = 0.12;
+          this.b.jogo.numero(String(dano), l.pos.clone().setY(l.altura), '#9fd35a', 'pequeno');
+          if (l.dados.hp <= 0) b.desmaiar(l);
+        }
       }
     }
-    if (perigo === 'pedras' || perigo === 'raios') {
+    if (perigo === 'pedras' || perigo === 'raios' || perigo === 'raizes') {
       this.perigoT -= dt;
       if (this.perigoT <= 0 && lutadores.length) {
-        this.perigoT = perigo === 'raios' ? 2.2 + Math.random() * 1.8 : 2.6 + Math.random() * 2;
+        this.perigoT = perigo === 'raios' ? 2.2 + Math.random() * 1.8 : perigo === 'raizes' ? 2.4 + Math.random() * 1.8 : 2.6 + Math.random() * 2;
         const alvo = sorteia(lutadores);
         const a = Math.random() * Math.PI * 2, d = Math.random() * 2.5;
         const p = new THREE.Vector3(alvo.pos.x + Math.cos(a) * d, 0, alvo.pos.z + Math.sin(a) * d);
@@ -312,8 +362,8 @@ export class Arena {
 
   // Círculo de aviso no chão antes da pedra ou do raio cair
   criarAlerta(tipo, p) {
-    const raio = tipo === 'raios' ? 1.7 : 2;
-    const cor = tipo === 'raios' ? '#ffe74c' : '#7a5a3a';
+    const raio = tipo === 'raios' ? 1.7 : tipo === 'raizes' ? 2.2 : 2;
+    const cor = tipo === 'raios' ? '#ffe74c' : tipo === 'raizes' ? '#1fe0a0' : '#7a5a3a';
     const g = new THREE.Group();
     const anel = new THREE.Mesh(GEO_ANEL, basico(cor, 0.9));
     anel.scale.setScalar(raio);
@@ -344,10 +394,12 @@ export class Arena {
           if (Math.hypot(l.pos.x - al.p.x, l.pos.z - al.p.z) > al.raio + l.raio * 0.5) continue;
           if (al.tipo === 'raios' && !l.esp.elementos.includes('raio')) { b.danoAmbiente(l, 0.06, '#ffe74c'); b.aplicarEfeito(l, 'paralisia', 0.8, null); }
           if (al.tipo === 'pedras' && !l.esp.elementos.includes('terra')) b.danoAmbiente(l, 0.08, '#c9a46a');
+          if (al.tipo === 'raizes' && !l.esp.elementos.some((el) => el === 'planta' || el === 'silvestre')) { b.danoAmbiente(l, 0.07, '#1fe0a0'); b.aplicarEfeito(l, 'enraizado', 1, null); }
         }
       }
       if (al.tipo === 'raios') this.raioVisual(al.p);
-      b.particulas(al.p, al.tipo === 'raios' ? '#ffe74c' : '#c9a46a', 14, 1.3);
+      if (al.tipo === 'raizes') this.raizesVisual(al.p, al.raio);
+      b.particulas(al.p, al.tipo === 'raios' ? '#ffe74c' : al.tipo === 'raizes' ? '#1fe0a0' : '#c9a46a', 14, 1.3);
       this.cena.remove(al.g);
       al.g.children.forEach((m) => m.material.dispose());
       if (al.queda) {
@@ -356,6 +408,19 @@ export class Arena {
         b.efeitos.push({ obj: q, vida: 0.8, total: 0.8, upd: (e, kk) => { e.obj.scale.setScalar(1 - kk * 0.9); } });
       }
       this.alertas.splice(i, 1);
+    }
+  }
+
+  // Raízes pontudas saindo do chão e voltando para baixo
+  raizesVisual(p, raio) {
+    const mat = lambert('#5a3a24');
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2 + Math.random(), d = Math.random() * raio * 0.7;
+      const m = new THREE.Mesh(new THREE.ConeGeometry(0.28, 2.2, 5), mat);
+      m.position.set(p.x + Math.cos(a) * d, 0, p.z + Math.sin(a) * d);
+      m.rotation.set((Math.random() - 0.5) * 0.5, 0, (Math.random() - 0.5) * 0.5);
+      this.cena.add(m);
+      this.b.efeitos.push({ obj: m, vida: 0.9, total: 0.9, upd: (e, k) => { e.obj.position.y = Math.sin(Math.min(1, k * 1.2) * Math.PI) * 1.1 - 0.4; } });
     }
   }
 
