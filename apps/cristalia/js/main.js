@@ -503,6 +503,7 @@ class Jogo {
     this.painelAberto = true;
     this.renderizarEquipe();
     $('#painel-equipe').hidden = false;
+    $('#painel-equipe').scrollTop = 0; // abre sempre no topo, com a equipe à vista
   }
 
   fecharEquipe() {
