@@ -62,11 +62,10 @@ class Jogo {
 
     this.ui = {
       bjNome: $('#bj-nome'), bjNivel: $('#bj-nivel'), bjEl: $('#bj-el'), bjVida: $('#bj-vida b'), bjHp: $('#bj-hp'), bjEquipe: $('#bj-equipe'),
-      biNome: $('#bi-nome'), biNivel: $('#bi-nivel'), biEl: $('#bi-el'), biVida: $('#bi-vida b'), biHp: $('#bi-hp'),
-      bjStatus: $('#bj-status'), biStatus: $('#bi-status'), arenaInfo: $('#arena-info'), biTipo: $('#bi-tipo'),
+      bjStatus: $('#bj-status'),
       golpes: [...document.querySelectorAll('#hud-batalha .golpe')],
-      esquiva: $('#btn-esquiva'), qtdCristal: $('#qtd-cristal'), chanceCristal: $('#chance-cristal'),
-      nomeCristal: $('#nome-cristal'), btnCristal: $('#btn-cristal'),
+      qtdCristal: $('#qtd-cristal'), btnCristal: $('#btn-cristal'),
+      seletor: $('#seletor-cristal'), placas: $('#placas-inimigos'),
       rotulo: $('#rotulo'), numeros: $('#numeros'), avisos: $('#avisos'),
     };
     this.ctrl = new Controles(this.app, this.palco);
@@ -119,6 +118,7 @@ class Jogo {
     $('#tela-evolucao').hidden = nome !== 'evolucao';
     $('#hud-mundo').hidden = nome !== 'mundo';
     $('#hud-batalha').hidden = nome !== 'batalha';
+    this.app.classList.toggle('em-batalha', nome === 'batalha');
     this.ctrl.mostrar(nome === 'mundo' || nome === 'batalha');
     if (nome !== 'mundo') { this.mostrarRotulo(null); this.fecharEquipe(); }
     if (nome === 'titulo') $('#btn-continuar').hidden = !lerSave();
@@ -169,11 +169,30 @@ class Jogo {
     $('#evo-continuar').addEventListener('click', () => this.fecharEvolucao());
     $('#btn-equipe').addEventListener('click', () => this.abrirEquipe());
     $('#btn-casa').addEventListener('click', () => this.acaoCasa());
+    // Tela cheia: precisa ser no "clique" (o navegador só deixa logo depois de um toque)
+    document.querySelectorAll('.btn-tela-cheia').forEach((b) => b.addEventListener('click', () => this.alternarTelaCheia()));
+    const marcarTela = () => document.querySelectorAll('.btn-tela-cheia').forEach((b) => b.classList.toggle('ativa', !!(document.fullscreenElement || document.webkitFullscreenElement)));
+    document.addEventListener('fullscreenchange', () => { marcarTela(); this.medir(); });
+    document.addEventListener('webkitfullscreenchange', () => { marcarTela(); this.medir(); });
     $('#fechar-equipe').addEventListener('click', () => this.fecharEquipe());
     $('#painel-equipe').addEventListener('click', (e) => {
       const b = e.target.closest('[data-cmd]');
       if (b) this.comandoEquipe(b.dataset.cmd, Number(b.dataset.i));
     });
+  }
+
+  // ---------- tela cheia ----------
+  alternarTelaCheia() {
+    const d = document, el = d.documentElement;
+    if (d.fullscreenElement || d.webkitFullscreenElement) { (d.exitFullscreen || d.webkitExitFullscreen)?.call(d); return; }
+    const pedir = el.requestFullscreen || el.webkitRequestFullscreen;
+    const falhou = () => this.aviso('Este navegador não deixou usar a tela cheia aqui. No celular, abra o link no Chrome e use "Adicionar à tela inicial".');
+    if (!pedir) { falhou(); return; }
+    try {
+      Promise.resolve(pedir.call(el, { navigationUI: 'hide' }))
+        .then(() => screen.orientation?.lock?.('landscape').catch(() => {})) // deita a tela, se o celular deixar
+        .catch(falhou);
+    } catch { falhou(); }
   }
 
   // ---------- monstruário / escolha do inicial ----------
@@ -592,8 +611,10 @@ class Jogo {
     el.className = 'aviso';
     el.textContent = texto;
     this.ui.avisos.appendChild(el);
-    while (this.ui.avisos.children.length > 3) this.ui.avisos.firstChild.remove();
-    setTimeout(() => el.remove(), 2800);
+    // na batalha os avisos são curtos (no máximo 2 na tela) para não tampar a luta
+    const batalha = this.modo === 'batalha';
+    while (this.ui.avisos.children.length > (batalha ? 2 : 3)) this.ui.avisos.firstChild.remove();
+    setTimeout(() => el.remove(), batalha ? 1500 : 2800);
   }
 
   projetar(pos, camera) {

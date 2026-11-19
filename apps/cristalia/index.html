@@ -18,7 +18,7 @@
     --vida-baixa: #ff5470;
     --f-titulo: 'Fredoka', 'Trebuchet MS', system-ui, sans-serif;
     --f-corpo: 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
-    --toque: 74px;
+    --toque: clamp(60px, 13vmin, 80px);
     color-scheme: dark;
   }
   [hidden] { display: none !important; }
@@ -197,8 +197,8 @@
   .losango.forte { background: #c79bff; } .losango.supremo { background: #ffd23f; }
   .pilula.cristais { gap: 8px; }
   .pilula.cristais span { display: inline-flex; align-items: center; gap: 4px; }
-  .golpes { position: absolute; right: max(14px, calc(env(safe-area-inset-right, 0px) + 8px)); bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) + 8px));
-    display: grid; grid-template-columns: repeat(2, var(--toque)); grid-template-areas: "g2 esq" "g1 g0"; gap: 10px; }
+  .golpes { position: absolute; right: max(12px, calc(env(safe-area-inset-right, 0px) + 8px)); bottom: max(12px, calc(env(safe-area-inset-bottom, 0px) + 8px));
+    display: grid; grid-template-columns: repeat(2, var(--toque)); grid-template-areas: ". g2" "g1 g0"; gap: clamp(6px, 1.6vmin, 12px); }
   .golpe, .esquiva { position: relative; width: var(--toque); height: var(--toque); border-radius: 50%; border: 3px solid var(--cor, var(--creme)); background: var(--painel);
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 4px; overflow: hidden; touch-action: none; }
   .golpe[data-acao="golpe0"] { grid-area: g0; } .golpe[data-acao="golpe1"] { grid-area: g1; } .golpe[data-acao="golpe2"] { grid-area: g2; } .esquiva { grid-area: esq; --cor: var(--creme); }
@@ -225,6 +225,39 @@
   #evo-novidades { margin: 0; font-size: 1rem; font-weight: 800; color: var(--sol); text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6); text-wrap: balance; min-height: 1.4em; }
   .apertado { transform: scale(0.92); }
 
+  /* ---------- batalha enxuta: ícones, placas sobre os inimigos e seletor de cristal ---------- */
+  #hud-batalha .barra-luta.jog { width: clamp(150px, 30vw, 230px); padding: 6px 9px; gap: 3px; }
+  #hud-batalha .barra-luta .vida { height: 8px; }
+  .acoes-batalha { position: absolute; top: max(10px, env(safe-area-inset-top, 0px)); right: max(10px, env(safe-area-inset-right, 0px)); display: flex; gap: 8px; align-items: center; }
+  .btn-icone { --tam: clamp(40px, 8.5vmin, 52px); position: relative; width: var(--tam); height: var(--tam); border-radius: 50%; border: 2px solid var(--painel-borda);
+    background: var(--painel); display: inline-flex; align-items: center; justify-content: center; padding: 0; pointer-events: auto; flex: none; }
+  .btn-icone.mini { --tam: clamp(32px, 6.5vmin, 40px); }
+  .btn-icone svg { width: 55%; height: 55%; fill: none; stroke: var(--creme); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .btn-icone:active, .btn-icone.apertado { transform: scale(0.9); background: #23406e; }
+  #btn-cristal { --crist: var(--cristal); border-color: var(--crist); }
+  .losango.grande { width: 38%; height: 54%; background: var(--crist); box-shadow: 0 0 10px var(--crist); }
+  .selo { position: absolute; right: -4px; bottom: -4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--noite);
+    border: 2px solid var(--crist); font-size: 0.7rem; line-height: 16px; text-align: center; font-variant-numeric: tabular-nums; }
+  #btn-cristal.fraco { opacity: 0.55; border-style: dashed; }
+  #seletor-cristal { position: absolute; top: calc(max(10px, env(safe-area-inset-top, 0px)) + clamp(48px, 10vmin, 60px)); right: max(10px, env(safe-area-inset-right, 0px));
+    display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 14px; background: var(--painel); border: 1px solid var(--painel-borda); pointer-events: auto; }
+  #seletor-cristal button { display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 8px; min-width: 170px; padding: 7px 10px; border-radius: 10px;
+    border: 2px solid transparent; background: rgba(255, 255, 255, 0.06); font-weight: 800; font-size: 0.82rem; text-align: left; }
+  #seletor-cristal button .losango { background: var(--c); width: 12px; height: 17px; }
+  #seletor-cristal button.ativo { border-color: var(--c); }
+  #seletor-cristal button small { color: var(--creme-suave); font-weight: 700; }
+  #seletor-cristal button:disabled { opacity: 0.4; }
+  #placas-inimigos { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .placa-ini { position: absolute; left: 0; top: 0; padding: 2px 7px 4px; border-radius: 8px; background: var(--painel); font-size: 0.72rem; font-weight: 800;
+    text-align: center; white-space: nowrap; min-width: 64px; will-change: transform; }
+  .placa-ini i.vida { height: 5px; margin-top: 2px; }
+  .placa-ini.alvo { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85); }
+  .placa-ini.chefe, .placa-ini.lider { color: var(--sol); }
+  .placa-ini.furia { color: #ff6b81; }
+  /* avisos da batalha: pequenos, no alto, e somem rápido */
+  #app.em-batalha #avisos { top: calc(max(10px, env(safe-area-inset-top, 0px)) + 62px); bottom: auto; width: min(60vw, 360px); }
+  #app.em-batalha .aviso { padding: 4px 10px; font-size: 0.74rem; animation: entra 0.2s ease-out, sai 0.3s ease-in 1.2s forwards; }
+
   /* ---------- joystick ---------- */
   #joystick { position: absolute; inset: 0; pointer-events: none; }
   #joystick .base { position: absolute; left: 0; top: 0; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%;
@@ -244,7 +277,7 @@
 
   /* Celular em pé: tudo um pouco menor */
   @media (orientation: portrait) {
-    :root { --toque: 66px; }
+    :root { --toque: clamp(58px, 15vmin, 72px); }
     #tela-colecao { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(180px, 36%) minmax(0, 1fr);
       grid-template-areas: "topo" "abas" "palco" "info"; }
     .barra-luta { width: calc(50% - 16px); }
@@ -274,6 +307,7 @@
       <button id="btn-novo" class="btn-grande" type="button">Novo jogo</button>
       <button id="btn-continuar" class="btn-grande sec" type="button" hidden>Continuar</button>
       <button id="btn-monstruario" class="btn-grande sec" type="button">Monstruário</button>
+      <button class="btn-grande sec btn-tela-cheia" type="button">Tela cheia</button>
     </div>
     <p class="dica">Melhor com o celular deitado. Arraste o dedo em qualquer lugar da tela para andar.<br>No PC: WASD anda, J K L golpes, Espaço esquiva, C cristal, Q troca.</p>
   </section>
@@ -303,6 +337,7 @@
       <span class="pilula cristais" title="Cristais de captura: comum, forte e supremo" id="contador-cristais"></span>
       <button id="btn-monstros" class="btn-hud" type="button">Monstros</button>
       <button id="btn-equipe" class="btn-hud" type="button">Equipe</button>
+      <button class="btn-icone mini btn-tela-cheia" type="button" title="Tela cheia" aria-label="Tela cheia"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>
     </div>
     <div id="relogio" class="pilula relogio"><span class="astro"></span><span id="relogio-texto">Dia</span></div>
     <button id="btn-casa" class="btn-casa" type="button"><i class="icone-casa"></i><span>Montar casa</span></button>
@@ -310,33 +345,39 @@
   </div>
 
   <div id="hud-batalha" class="hud" hidden>
+    <!-- seu monstro: nome, nível, vida, equipe e efeitos (só quando houver) -->
     <div class="barra-luta jog">
-      <div class="topo"><span class="tag" id="bj-el"></span><strong id="bj-nome"></strong><span id="bj-nivel"></span></div>
+      <div class="topo"><strong id="bj-nome"></strong><span id="bj-nivel"></span></div>
       <i class="vida" id="bj-vida"><b></b></i>
       <div class="pe"><span id="bj-hp"></span><span id="bj-equipe"></span></div>
       <div class="status-lista" id="bj-status"></div>
     </div>
-    <!-- coluna da direita: barra do inimigo, botões e faixa da arena empilhados (um empurra o outro) -->
-    <div class="coluna-dir">
-      <div class="barra-luta ini">
-        <div class="topo"><span class="tag" id="bi-el"></span><strong id="bi-nome"></strong><span id="bi-nivel"></span></div>
-        <i class="vida" id="bi-vida"><b></b></i>
-        <div class="pe"><span id="bi-hp"></span><span id="bi-tipo">Selvagem</span></div>
-        <div class="status-lista" id="bi-status"></div>
-      </div>
-      <div class="acoes-topo">
-        <button id="btn-cristal" class="btn-hud" data-acao="cristal" type="button"><span class="losango"></span><span id="nome-cristal">Comum</span> <b id="qtd-cristal">0</b> <span id="chance-cristal"></span></button>
-        <button id="btn-tipo-cristal" class="btn-hud" data-acao="tipoCristal" type="button" title="Trocar o tipo de cristal (tecla V)" aria-label="Trocar o tipo de cristal">Tipo</button>
-        <button class="btn-hud" data-acao="trocar" type="button">Trocar</button>
-        <button class="btn-hud" data-acao="fugir" type="button">Fugir</button>
-      </div>
-      <div id="arena-info"></div>
+    <!-- ações em ícones: cristal, escolher cristal, trocar, fugir, tela cheia -->
+    <div class="acoes-batalha">
+      <button id="btn-cristal" class="btn-icone" data-acao="cristal" type="button" title="Lançar cristal (C)" aria-label="Lançar cristal">
+        <span class="losango grande"></span><b id="qtd-cristal" class="selo">0</b>
+      </button>
+      <button id="btn-tipo-cristal" class="btn-icone mini" data-acao="tipoCristal" type="button" title="Escolher cristal (V)" aria-label="Escolher o tipo de cristal">
+        <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <button class="btn-icone" data-acao="trocar" type="button" title="Trocar monstro (Q)" aria-label="Trocar monstro">
+        <svg viewBox="0 0 24 24"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>
+      </button>
+      <button class="btn-icone" data-acao="fugir" type="button" title="Fugir (F)" aria-label="Fugir">
+        <svg viewBox="0 0 24 24"><path d="M6 21V4h10v17M4 21h16M13 12.5h.01"/></svg>
+      </button>
+      <button class="btn-icone btn-tela-cheia" type="button" title="Tela cheia" aria-label="Tela cheia">
+        <svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>
+      </button>
     </div>
+    <!-- escolher o cristal: aparece ao tocar na setinha -->
+    <div id="seletor-cristal" hidden></div>
+    <!-- nome e vida de cada inimigo, em cima dele -->
+    <div id="placas-inimigos"></div>
     <div class="golpes">
       <button class="golpe" data-acao="golpe0" type="button"><span class="recarga"></span><span class="nome"></span><span class="tipo"></span></button>
       <button class="golpe" data-acao="golpe1" type="button"><span class="recarga"></span><span class="nome"></span><span class="tipo"></span></button>
       <button class="golpe" data-acao="golpe2" type="button"><span class="recarga"></span><span class="nome"></span><span class="tipo"></span></button>
-      <button class="esquiva" id="btn-esquiva" data-acao="esquiva" type="button"><span class="recarga"></span><span class="nome">Esquiva</span></button>
     </div>
   </div>
 

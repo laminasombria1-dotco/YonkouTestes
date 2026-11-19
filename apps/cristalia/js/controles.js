@@ -3,7 +3,7 @@
 // Toque: joystick virtual (encoste o dedo em qualquer lugar livre da tela e arraste)
 //        + botões na tela (qualquer elemento com data-acao="...").
 // Teclado: WASD/setas andam, J K L (ou 1 2 3) golpes, Espaço esquiva,
-//          C cristal, Q trocar, F fugir.
+//          C cristal, V próximo cristal, Q trocar, F fugir.
 // =============================================================
 
 const TECLAS_MOV = {
@@ -12,7 +12,7 @@ const TECLAS_MOV = {
 };
 const TECLAS_ACAO = {
   KeyJ: 'golpe0', Digit1: 'golpe0', KeyK: 'golpe1', Digit2: 'golpe1', KeyL: 'golpe2', Digit3: 'golpe2',
-  Space: 'esquiva', ShiftLeft: 'esquiva', KeyC: 'cristal', KeyV: 'tipoCristal', KeyQ: 'trocar', KeyF: 'fugir',
+  Space: 'esquiva', ShiftLeft: 'esquiva', KeyC: 'cristal', KeyV: 'proxCristal', KeyQ: 'trocar', KeyF: 'fugir',
 };
 
 export class Controles {

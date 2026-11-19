@@ -11,16 +11,18 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
 - **Encontrar monstros:** encoste num monstro selvagem para começar a batalha.
 - **Batalha em tempo real:**
   - 3 golpes: **perto** (avança e bate), **disparo** (tiro em linha reta) e **área** (explosão em volta).
-  - **Esquiva:** um pulo rápido que deixa seu monstro invulnerável por um instante.
+  - **Tela enxuta:** o nome e a vida de cada inimigo ficam em cima dele. Os botões do canto são ícones: **cristal** (com a quantidade), **setinha** para escolher outro cristal (mostra a chance de cada um), **setas** para trocar de monstro, **porta** para fugir e **tela cheia**.
+  - Os avisos da batalha ficam pequenos, no alto, e somem rápido.
   - O inimigo avisa antes de atacar: uma **faixa ou círculo vermelho no chão**. Saia dele ou use a esquiva.
-  - No PC: J, K e L para os golpes, Espaço para esquivar.
-- **Capturar:** enfraqueça o monstro e toque no botão do cristal (tecla C). O número ao lado é a chance de captura. O botão **Tipo** (tecla V) troca entre Comum, Forte e Supremo. Formas evoluídas são bem mais difíceis de capturar.
+  - No PC: J, K e L para os golpes. A esquiva não tem mais botão na tela, mas ainda funciona com Espaço.
+- **Capturar:** enfraqueça o monstro e toque no botão do cristal (tecla C). O número ao lado é a chance de captura. A **setinha** ao lado do cristal abre a lista para escolher Comum, Forte ou Supremo (no PC, a tecla V passa para o próximo). Formas evoluídas são bem mais difíceis de capturar.
 - **Evoluir:** cada linha tem 4 formas. A forma inicial evolui no **nível 6**, a 1ª evolução no **nível 12** e a 2ª evolução no **nível 30**. Quando seu monstro chega ao nível, aparece a animação de evolução e ele ganha atributos e golpes mais fortes.
 - **Dia e noite:** um ciclo completo dura 4 minutos (2 de dia e 2 de noite). **Sol e Luz** só aparecem de dia; **Lua e Trevas**, só à noite. O relógio fica no canto superior direito.
 - **Equipe:** até 3 monstros. Com a equipe cheia, o capturado vai para a reserva.
 - **Fonte de cura:** a fonte no centro do mapa cura todos os seus monstros.
 - **Nível dos selvagens:** acompanha o nível da sua equipe e aumenta quanto mais longe do centro você vai. Nas bordas aparecem as formas evoluídas.
 - O progresso é salvo automaticamente no navegador.
+- **Tela cheia:** botão na tela inicial, no mapa e na batalha. Alguns navegadores não deixam (o iPhone, por exemplo); nesse caso, use "Adicionar à tela inicial".
 
 ## Casa (base portátil)
 
