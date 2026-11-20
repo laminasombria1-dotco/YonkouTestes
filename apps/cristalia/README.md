@@ -287,6 +287,22 @@ A linha do Brasito tem golpes próprios. Os números ficam em `js/habilidades/br
 - Vulcarapa e os tipos duplos com Fogo continuam com os golpes de Fogo de sempre.
 - Mais detalhes em `js/habilidades/README.md`.
 
+## Golpes da linha do Gotinho (Água)
+
+A linha do Gotinho joga com **controle e defesa**: empurra, deixa lento e se protege. Os números ficam em `js/habilidades/gotinho.js`; como funcionam e aparecem, em `js/habilidades/gotinho-batalha.js`.
+
+| Forma | Perto | Disparo | Área |
+|---|---|---|---|
+| Gotinho | Investida | **Jato d'Água**: atravessa o 1º inimigo (o de trás leva 70%) | **Onda**: parede de água que anda 6 m à frente e empurra 3 m |
+| Marolo | Investida: **Escudo d'Água** de 8% da vida | Jato d'Água + encharcado | Onda + encharcado |
+| Marulhão | Investida: escudo de **12%** | **Hidrocanhão**: explode ao acertar e molha quem está a 2 m (50%) | **Onda Dupla**: 2 ondas seguidas, 4 m de largura, 7 m |
+| Tsunamar | Investida: escudo de **16%** | Hidrocanhão + **poça** de 2,5 m por 3 s que encharca quem pisa | **Maremoto**: anel que cresce até 7 m e empurra 4 m para fora |
+
+- **Escudo d'Água:** segura o dano antes da vida por 6 s e só volta **10 s** depois de ganho. Aparece como uma bolha em volta do monstro e em azul embaixo da vida ("Escudo 26"). Se o escudo segurar o golpe inteiro, o efeito do golpe também não pega.
+- O inimigo avisa a Onda com uma **faixa vermelha larga** e o Maremoto com o **círculo vermelho**. Obstáculos seguram as ondas (dá para se esconder atrás).
+- Esta linha não ganha o "disparo ×2/×3": o encharcado chega no disparo e na área já no Marolo.
+- Aquaraia e os tipos duplos com Água (Vaporito e evoluções) continuam com os golpes de Água de sempre.
+
 ## Golpes de Trevas (visual)
 
 Os golpes da linha de Trevas invocam coisas da escuridão, e cada evolução ganha algo novo. É só a aparência: dano, alcance e efeitos são os mesmos de antes. Tudo aparece **dentro da área que o golpe acerta**. O código fica em `js/habilidades/trevas-batalha.js`.
@@ -335,7 +351,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/brasas.js` | Cenário do Caminho das Brasas (braseiros, forja, rio de lava, Trono de Magma, vulcão) |
 | `js/raizes.js` | Cenário da Trilha Ancestral e da Floresta (cogumelos, ruínas, lago, raízes, Árvore-Mãe, vaga-lumes, monstros extras) |
 | `js/arena.js` | Arenas: chão, obstáculos, clima animado e perigos de cada região (com chance), e o escurecer do Astro Negro |
-| `js/habilidades/` | **Habilidades próprias das linhas de monstros** (uma pasta só para isso). Veja o `README.md` de lá. Hoje: linha do Brasito (`brasito.js` com os números, `brasito-batalha.js` com o lança-chamas, o rabo de fogo e a velocidade) e o visual de Trevas (`trevas-batalha.js`) |
+| `js/habilidades/` | **Habilidades próprias das linhas de monstros** (uma pasta só para isso). Veja o `README.md` de lá. Hoje: linha do Brasito (`brasito.js` com os números, `brasito-batalha.js` com o lança-chamas, o rabo de fogo e a velocidade), linha do Gotinho (`gotinho.js` e `gotinho-batalha.js`, com o jato, o hidrocanhão, as ondas, o maremoto e o escudo) e o visual de Trevas (`trevas-batalha.js`) |
 | `js/controles.js` | Joystick de toque (lado esquerdo), câmera (lado direito, controle de câmera e mouse), botões e teclado |
 | `js/camera.js` | Câmera em terceira pessoa: gira em volta do personagem, sobe e desce, aproxima e afasta |
 | `js/main.js` | Liga tudo: telas, equipe, experiência, evolução, salvamento |

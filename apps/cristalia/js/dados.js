@@ -7,10 +7,12 @@
 
 // Habilidades próprias de algumas linhas ficam na pasta js/habilidades/ (fácil de achar e mudar)
 import { GOLPES_BRASITO, GOLPES_POR_FORMA_BRASITO, MELHORIAS_BRASITO, TEXTOS_BRASITO, NOVIDADES_BRASITO } from './habilidades/brasito.js';
+import { GOLPES_GOTINHO, GOLPES_POR_FORMA_GOTINHO, MELHORIAS_GOTINHO, TEXTOS_GOTINHO, NOVIDADES_GOTINHO } from './habilidades/gotinho.js';
 
 // Linhas com habilidades próprias: golpes por forma, melhorias e textos
 const HABILIDADES_DA_LINHA = {
   fogo: { golpes: GOLPES_POR_FORMA_BRASITO, melhorias: MELHORIAS_BRASITO, textos: TEXTOS_BRASITO, novidades: NOVIDADES_BRASITO },
+  agua: { golpes: GOLPES_POR_FORMA_GOTINHO, melhorias: MELHORIAS_GOTINHO, textos: TEXTOS_GOTINHO, novidades: NOVIDADES_GOTINHO },
 };
 
 // Ordem em que os elementos aparecem nas telas
@@ -156,6 +158,8 @@ export const GOLPES = {
   abismo:           { nome: 'Abismo',           elemento: 'trevas', tipo: 'area',     poder: 31, recarga: 7,   raio: 4.8, lentidao: 2 },
   // golpes próprios da linha do Brasito (números em js/habilidades/brasito.js)
   ...GOLPES_BRASITO,
+  // golpes próprios da linha do Gotinho (números em js/habilidades/gotinho.js)
+  ...GOLPES_GOTINHO,
 };
 
 // Golpes de cada elemento: os 3 primeiros servem às formas iniciais,

@@ -13,6 +13,7 @@ import {
 } from './dados.js';
 import { VisualTrevas } from './habilidades/trevas-batalha.js';
 import { HabilidadesBrasito } from './habilidades/brasito-batalha.js';
+import { HabilidadesGotinho } from './habilidades/gotinho-batalha.js';
 import { CameraOrbita } from './camera.js';
 import { criarModelo, criarCristal, criarCoroa, animarModelo, piscar, descartar } from './modelos.js';
 
@@ -108,6 +109,7 @@ export class Batalha {
     this.arena = new Arena(this);
     this.trevas = new VisualTrevas(this); // visual especial dos golpes de Trevas
     this.brasito = new HabilidadesBrasito(this); // lança-chamas, rabo de fogo e velocidade da linha do Brasito
+    this.gotinho = new HabilidadesGotinho(this); // jato, hidrocanhão, ondas, maremoto e escudo da linha do Gotinho
     this.periodo = jogo.mundo.periodo;
 
     this.idx = idxInicial;
@@ -335,6 +337,7 @@ export class Batalha {
     this.atualizarEfeitos(dt);
     this.trevas.atualizar();
     this.brasito.atualizar(dt);
+    this.gotinho.atualizar(dt);
     if (this.captura) this.atualizarCaptura(dt);
 
     if (this.trocaAuto > 0) {
@@ -382,7 +385,8 @@ export class Batalha {
       for (let i = 0; i < 3; i++) {
         if (e.rec[i] > 0) continue;
         const gp = e.golpe(i);
-        if (gp.tipo === 'area' && d < gp.raio * 0.85 + (gp.dash || 0)) opcoes.push(i, i, i);
+        if (gp.onda) { if (d < gp.onda.distancia * 0.9) opcoes.push(i, i, i); } // onda que anda para a frente
+        else if (gp.tipo === 'area' && d < gp.raio * 0.85 + (gp.dash || 0)) opcoes.push(i, i, i);
         if (gp.tipo === 'corpo' && d < gp.alcance + 1.2) opcoes.push(i, i);
         if (gp.jato) { if (d < gp.jato.alcance * 0.9) opcoes.push(i, i); }
         else if (gp.tipo === 'projetil' && d > 2.5 && d < 12) opcoes.push(i);
@@ -439,6 +443,7 @@ export class Batalha {
     const cor = inimigo ? '#ff3d5e' : ELEMENTOS[gp.elemento].cor;
     if (gp.jato) return inimigo ? this.brasito.avisoJato(c, gp, dir) : null;   // lança-chamas
     if (gp.tamanhoRabo && gp.dash) return this.brasito.avisoGiro(c, gp, dir, cor); // rabo de fogo com dash
+    if (gp.onda) return this.gotinho.avisoOnda(c, gp, dir, cor);                    // onda que anda para a frente
     if (gp.tipo === 'area') {
       const g = new THREE.Group();
       const anel = new THREE.Mesh(GEO_ANEL, matBrilho(cor, 0.75));
@@ -493,6 +498,11 @@ export class Batalha {
       c.dash = { dir: dir.clone(), t: 0.17, vel: 12, gp, acertou: false, efeito: this.efeitoDoGolpe(c, gp) };
       if (this.trevas.dele(c)) this.trevas.avancar(c);
       if (this.brasito.dele(c) && gp === GOLPES.investida) this.brasito.aoUsarInvestida(c);
+      if (this.gotinho.dele(c) && gp === GOLPES.investida) this.gotinho.aoUsarInvestida(c);
+    } else if (gp.onda) {
+      this.gotinho.iniciarOnda(c, gp, dir, this.efeitoDoGolpe(c, gp)); // onda / onda dupla
+    } else if (gp.anel) {
+      this.gotinho.iniciarAnel(c, gp, this.efeitoDoGolpe(c, gp));      // maremoto
     } else if (gp.jato) {
       this.brasito.iniciarJato(c, gp, dir, this.efeitoDoGolpe(c, gp)); // lança-chamas
     } else if (gp.tamanhoRabo) {
@@ -545,15 +555,19 @@ export class Batalha {
     const nivel = fatorDanoNivel(at.dados.nivel);  // dano cresce com o nível de quem ataca
     const arena = at.mod?.dano ?? 1;               // bônus/penalidade da arena
     const dano = Math.max(1, Math.round(DANO_GERAL * gp.poder * (opcoes.fator ?? 1) * (at.stats.atk / def) * mult * exposto * nivel * arena * (0.9 + Math.random() * 0.2)));
-    alvo.dados.hp = Math.max(0, alvo.dados.hp - dano);
+    // Escudo d'Água (linha do Gotinho) segura o dano antes da vida
+    const passou = this.gotinho.absorver(alvo, dano);
+    alvo.dados.hp = Math.max(0, alvo.dados.hp - passou);
     if (alvo.tem('sono')) { alvo.status.sono = 0; this.jogo.numero('Acordou!', topo.clone().setY(topo.y + 0.5), '#b9b4ff', 'pequeno'); }
     alvo.flash = 0.18;
     // dano "leve" (cada pedaço do lança-chamas): empurra e trava menos
     alvo.stun = opcoes.leve ? 0.06 : 0.18;
-    alvo.emp.set(dir.x * (opcoes.leve ? 2 : 7), 0, dir.z * (opcoes.leve ? 2 : 7));
+    // opcoes.empurrao = empurrão maior (as ondas da linha do Gotinho)
+    const emp = opcoes.empurrao ?? (opcoes.leve ? 2 : 7);
+    alvo.emp.set(dir.x * emp, 0, dir.z * emp);
     if (gp.lentidao) alvo.lento = gp.lentidao;
     const cor = alvo.lado === 'inimigo' ? '#ffe066' : '#ff6b81';
-    this.jogo.numero(String(dano), topo, cor, mult > 1 ? 'grande' : '');
+    if (passou > 0) this.jogo.numero(String(passou), topo, cor, mult > 1 ? 'grande' : '');
     const avisaTipo = !opcoes.leve || opcoes.primeiro; // no lança-chamas, só no 1º pedaço
     if (mult > 1 && avisaTipo) this.jogo.numero('Super efetivo!', topo.clone().setY(topo.y + 0.9), '#ffd23f', 'pequeno');
     else if (mult < 1 && avisaTipo) this.jogo.numero('Pouco efetivo', topo.clone().setY(topo.y + 0.9), '#c9d6e8', 'pequeno');
@@ -567,7 +581,8 @@ export class Batalha {
       this.jogo.aviso(`${alvo.esp.nome} entrou em FÚRIA! Ataca mais rápido.`);
     }
     // o efeito só pega se passar no sorteio da chance (ex.: 30% para Medo na área)
-    if (opcoes.efeito && Math.random() < (opcoes.efeito.chance ?? 1)) this.aplicarEfeito(alvo, opcoes.efeito.nome, opcoes.efeito.dur, at);
+    // se o escudo segurou tudo, o efeito também não pega
+    if (opcoes.efeito && passou > 0 && Math.random() < (opcoes.efeito.chance ?? 1)) this.aplicarEfeito(alvo, opcoes.efeito.nome, opcoes.efeito.dur, at);
     return true;
   }
 
@@ -639,6 +654,7 @@ export class Batalha {
     l.dash = null;
     l.rajada = null;
     this.brasito.parar(l);
+    this.gotinho.parar(l);
     l.veloz = null;
     if (l.lado === 'inimigo') {
       this.derrotados.push(l.dados);
@@ -784,6 +800,16 @@ export class Batalha {
       this.projeteis.push({ mesh: info.obj, trevas: info, pos, dir, gp, dono: c, lado: c.lado, vida: 1.4, fator, efeito: this.efeitoDoGolpe(c, gp) });
       return;
     }
+    if (this.gotinho.dele(c) && gp.visual) {
+      // tiro da linha do Gotinho: jato fino (atravessa) ou bola do Hidrocanhão (explode)
+      const obj = this.gotinho.projetil(gp, ang, fator);
+      const dir = new THREE.Vector3(Math.sin(ang), 0, Math.cos(ang));
+      const pos = c.pos.clone().addScaledVector(dir, c.raio + 0.3).setY(0.8 * c.esp.tamanho);
+      obj.position.copy(pos);
+      this.cena.add(obj);
+      this.projeteis.push({ mesh: obj, gotinho: true, fixo: true, atravessa: gp.atravessa || 0, atingidos: new Set(), pos, dir, gp, dono: c, lado: c.lado, vida: 1.4, fator, efeito: this.efeitoDoGolpe(c, gp) });
+      return;
+    }
     const mesh = new THREE.Mesh(GEO_PROJ[gp.elemento] || GEO_PROJ.normal, new THREE.MeshLambertMaterial({ color: gp.elemento === 'trevas' ? '#3a1a5a' : cor, emissive: cor, emissiveIntensity: 0.6, flatShading: true, transparent: gp.elemento === 'agua', opacity: 0.85 }));
     if (gp.elemento === 'planta') mesh.scale.set(1, 0.3, 1.7);
     if (gp.elemento === 'raio') mesh.scale.set(0.7, 0.7, 2.4);
@@ -803,6 +829,7 @@ export class Batalha {
       p.vida -= dt;
       p.mesh.position.copy(p.pos);
       if (p.trevas) this.trevas.atualizarProjetil(p, dt);
+      else if (p.gotinho) this.gotinho.atualizarProjetil(p, dt);
       else if (p.gp.elemento === 'lua') p.mesh.rotation.y += dt * 14;
       else if (p.gp.elemento !== 'planta' && p.gp.elemento !== 'raio') p.mesh.rotation.x += dt * 8;
       const alvos = p.lado === 'jogador' ? this.vivos() : (this.jog.morto ? [] : [this.jog]);
@@ -812,15 +839,23 @@ export class Batalha {
         acabou = true;
         this.particulas(p.pos, ELEMENTOS[p.gp.elemento].cor, 5, 0.6);
       }
-      const alvo = acabou ? null : alvos.find((o) => Math.hypot(p.pos.x - o.pos.x, p.pos.z - o.pos.z) < p.gp.raio + o.raio);
+      const alvo = acabou ? null : alvos.find((o) => !p.atingidos?.has(o) && Math.hypot(p.pos.x - o.pos.x, p.pos.z - o.pos.z) < p.gp.raio + o.raio);
       if (alvo) {
         this.aplicarDano(p.dono, alvo, p.gp, p.dir, { fator: p.fator, efeito: p.efeito });
-        acabou = true;
+        if (p.atravessa > 0) {
+          // Jato d'Água: atravessa e segue com menos força
+          p.atravessa--;
+          p.atingidos.add(alvo);
+          p.fator *= p.gp.fatorAtravessa ?? 1;
+          this.gotinho.respingo(p.pos, 5, 0.5, p.pos.y);
+        } else acabou = true;
         if (p.trevas) this.trevas.impacto(p);
+        if (p.gotinho && acabou) this.gotinho.impacto(p, alvo);
       } else if (acabou && p.trevas && p.vida > 0) this.trevas.impacto(p);
+      else if (acabou && p.gotinho && p.vida > 0) this.gotinho.impacto(p, null);
       if (acabou) {
         this.cena.remove(p.mesh);
-        if (!p.trevas) p.mesh.material.dispose(); // os tiros de Trevas usam materiais fixos
+        if (!p.trevas && !p.fixo) p.mesh.material.dispose(); // os tiros de Trevas usam materiais fixos
         this.projeteis.splice(i, 1);
       }
     }
@@ -915,7 +950,7 @@ export class Batalha {
     est.pedras[tipo.id]--;
     const sucesso = Math.random() < chanceCaptura(this.ini.dados, this.tipoCristal);
     if (this.jog.prep) this.cancelarPreparo(this.jog);
-    for (const l of this.inimigos) { if (l.prep) this.cancelarPreparo(l); l.dash = null; l.rajada = null; this.brasito.parar(l); }
+    for (const l of this.inimigos) { if (l.prep) this.cancelarPreparo(l); l.dash = null; l.rajada = null; this.brasito.parar(l); this.gotinho.parar(l, false); }
     const cr = criarCristal(1.1, this.tipoCristal);
     this.cena.add(cr);
     this.captura = {
@@ -1006,6 +1041,7 @@ export class Batalha {
     if (prox < 0) { if (!auto) this.jogo.aviso('Nenhum outro monstro de pé na equipe.'); return; }
     const velho = this.jog;
     if (velho.prep) this.cancelarPreparo(velho);
+    this.gotinho.parar(velho);
     this.cena.remove(velho.modelo);
     descartar(velho.modelo);
     this.particulas(velho.pos, '#8ff4ff', 12, 1);
@@ -1073,7 +1109,8 @@ export class Batalha {
   // Só os efeitos ativos (os bônus de arena não aparecem mais, para limpar a tela)
   htmlStatus(l) {
     const veloz = l.veloz ? `<span style="--cor:#7dffa0">Veloz +${Math.round(l.veloz.bonus * 100)}% ${l.veloz.t.toFixed(0)}s</span>` : '';
-    return veloz + Object.entries(l.status).map(([k, v]) => `<span style="--cor:${EFEITOS[k].cor}">${EFEITOS[k].nome} ${v.toFixed(1)}s</span>`).join('');
+    const escudo = l.escudo ? `<span style="--cor:#8fdcff">Escudo ${l.escudo.valor} ${l.escudo.t.toFixed(0)}s</span>` : '';
+    return veloz + escudo + Object.entries(l.status).map(([k, v]) => `<span style="--cor:${EFEITOS[k].cor}">${EFEITOS[k].nome} ${v.toFixed(1)}s</span>`).join('');
   }
 
   // Placa em cima de cada inimigo: só o nome e uma barrinha de vida
