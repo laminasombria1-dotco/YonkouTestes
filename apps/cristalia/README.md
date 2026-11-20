@@ -388,6 +388,25 @@ Os golpes da linha de Trevas invocam coisas da escuridão, e cada evolução gan
 - **Astro Negro** é o nome do visual do Abismo. Não é "eclipse" para não confundir com o golpe Eclipse da Lua.
 - **Leve no celular:** as formas (dedo, dente, olho, morcego) são criadas uma vez só e reaproveitadas; cada golpe some em menos de 2 s.
 
+## Painel GM (administrador, para testes)
+
+Só a **conta GM** tem o painel. O código fica em `js/gm.js` e só é baixado quando a conta GM entra: para as outras contas o jogo não fica mais pesado. A entrada pela tela de login chega junto com as contas; até lá, ele só abre pelo console do navegador (`__jogo.ativarGM()`).
+
+- **No mapa:** botão **GM** (rosa) no alto, antes de "Monstros". O mundo para enquanto o painel está aberto. O botão Voltar do celular (ou Esc) fecha o painel.
+- **Na batalha:** botão **GM** embaixo da fileira de ícones, do lado direito. Ele abre uma gaveta ao lado (deitado, em 2 colunas, para não cobrir os golpes), que fecha ao tocar fora dela.
+
+| Aba | O que faz |
+|---|---|
+| **Monstros** | Escolhe qualquer espécie (todas as 53, separadas por linha) e o nível (1 a 50). **Aparecer perto** (8 m na sua frente), **Lutar agora** (na arena escolhida ou na da região), **Grupo (5 + líder)** no mapa, **Lutar com grupo** e **Dar para mim** (vai para a equipe ou a reserva). Atalhos: selvagem, tipo duplo ou grupo aleatório, e **limpar o mapa** (os chefes e os acampamentos ficam). |
+| **Dungeons** | Para o Caminho das Brasas e a Trilha Ancestral: **ir para** a entrada, cada etapa ou o chefe; **lutar contra o acampamento** de cada etapa (na ordem 2 fracos → 2 médios → 1 forte → líder, no nível que a sua equipe enfrentaria); **lutar com o chefe** no nível escolhido; **chefe volta já** (sem esperar o amanhecer); **monstro da dungeon perto**. |
+| **Equipe** | Escolhe o **monstro alvo** (equipe ou reserva) e mostra nível, vida e experiência. **Adicionar XP:** +50, +500, +1 nível ou **até o nível ___**. A XP sobe como no jogo, então ele **evolui** ao chegar no nível (a animação aparece quando o painel fecha). **Evoluir agora**, **Voltar uma forma** (fica no nível logo abaixo da evolução, para não evoluir de novo sozinho), **Curar**, **subir 1 nível sem evoluir**. Também **curar todos** e mudar os cristais (+10, 99 ou zerar). |
+| **Mundo** | **Hora:** amanhecer, meio-dia, anoitecer, meia-noite ou **parar o relógio**. **Teleporte:** fonte, as 6 regiões e a casa. **Andar ×1, ×2 ou ×3.** **Invisível:** os monstros não vêm atrás de você, mas encostar neles ainda começa a batalha. **Mostrar FPS** (embaixo, no meio da tela). |
+| **Testes** | **Invencível** (a vida não desce, nem com efeitos e perigos da arena), **recarga zero**, **captura garantida** (qualquer cristal segura qualquer monstro, até os chefes), **inimigos parados**, **dano ×10**. Na gaveta da batalha também: **encher minha vida** e **vencer agora** (derrota todos, até os que estão esperando nas ondas). |
+
+- As chaves (invencível, dano ×10...) valem até você desligar.
+- O monstro de um "Lutar agora" só existe para aquela luta: se você fugir, ele some do mapa.
+- **Ganchos no resto do jogo** (só funcionam com o GM ligado): `batalha.js` (invencível, recarga, captura, parados, dano), `mundo.js` (velocidade, invisível, relógio) e `main.js` (`ativarGM`, `gm.quadro`, `gm.depoisDaBatalha`).
+
 ## Vantagens entre elementos
 
 Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
@@ -422,7 +441,8 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/raizes.js` | Cenário da Trilha Ancestral e da Floresta (cogumelos, ruínas, lago, raízes, Árvore-Mãe, vaga-lumes, monstros extras) |
 | `js/arena.js` | Arenas: chão, obstáculos, clima animado e perigos de cada região (com chance), e o escurecer do Astro Negro |
 | `js/habilidades/` | **Habilidades próprias das linhas de monstros** (uma pasta só para isso). Veja o `README.md` de lá. Hoje: linha do Brasito (`brasito.js` com os números, `brasito-batalha.js` com o lança-chamas, o rabo de fogo e a velocidade), linha do Gotinho (`gotinho.js` e `gotinho-batalha.js`, com o jato, o hidrocanhão, as ondas, o maremoto e o escudo), linha do Musguinho (`musguinho.js` e `musguinho-batalha.js`, com a folha bumerangue, a vinha que puxa, as raízes, a moita e o bosque), linha do Pedrisco (`pedrisco.js` e `pedrisco-batalha.js`, com a pedra em arco que quica, o punho sísmico, o tremor e os pilares), linha do Faisquinho (`faisquinho.js` e `faisquinho-batalha.js`, com as marcas, o dash elétrico, o tiro que marca, o choque e as nuvens), linha do Solito (`solito.js` e `solito-batalha.js`, com o sol que dá bônus, o laser e o calor) e o visual de Trevas (`trevas-batalha.js`) |
-| `js/controles.js` | Joystick de toque (lado esquerdo), câmera (lado direito, controle de câmera e mouse), botões e teclado |
+| `js/gm.js` | Painel GM (só para a conta GM): fazer monstros, grupos, acampamentos e chefes aparecerem, XP, evolução, teleporte, hora e as chaves de teste da batalha. Só é baixado quando a conta GM entra |
+| `js/controles.js` | Joystick de toque (lado esquerdo), câmera (lado direito, controle de câmera e mouse), botões e teclado. Enquanto você escreve num campo (login, painel GM), as teclas não viram atalhos |
 | `js/camera.js` | Câmera em terceira pessoa: gira em volta do personagem, sobe e desce, aproxima e afasta |
 | `js/main.js` | Liga tudo: telas, equipe, experiência, evolução, salvamento |
 | `lib/three.module.min.js` | Biblioteca Three.js 0.170 (licença MIT, em `lib/THREE-LICENSE.txt`) |

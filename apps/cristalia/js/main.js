@@ -143,6 +143,21 @@ class Jogo {
     if (nome !== 'mundo') { this.mostrarRotulo(null); this.fecharEquipe(); }
     if (nome === 'titulo') this.atualizarTitulo();
     if (nome !== 'mundo') this.fecharMenu();
+    this.gm?.aoMudarTela(nome);
+  }
+
+  // ---------- painel GM ----------
+  // Só a conta GM carrega o painel (js/gm.js); as outras contas nem baixam o arquivo.
+  async ativarGM() {
+    if (this.gm) return this.gm;
+    const { PainelGM } = await import('./gm.js');
+    this.gm = new PainelGM(this);
+    return this.gm;
+  }
+
+  desativarGM() {
+    this.gm?.destruir();
+    this.gm = null;
   }
 
   ligarBotoes() {
@@ -279,6 +294,7 @@ class Jogo {
   voltar() {
     if (!$('#tela-saida').hidden) { $('#tela-saida').hidden = true; return 'ok'; }
     if (!$('#menu-pausa').hidden) { this.fecharMenu(); return 'ok'; }
+    if (this.gm?.fecharPainel()) return 'ok';
     if (this.painelAberto) { this.fecharEquipe(); return 'ok'; }
     if (this.modo === 'colecao') { this.fecharColecao(); return 'ok'; }
     if (this.modo === 'mundo') { this.abrirMenu(); return 'ok'; }
@@ -572,6 +588,7 @@ class Jogo {
     // No mapa: some quem foi vencido (num grupo, os que sobraram continuam andando)
     if (b.grupo) this.mundo.tirarDoGrupo(b.selvagem, vencidos.map((d) => d.uid));
     else if (vencidos.length) this.mundo.removerSelvagem(b.selvagem);
+    this.gm?.depoisDaBatalha(b); // GM: tira do mapa o monstro do "Lutar agora" que sobrou
     b.descartarTudo();
     this.batalha = null;
     if (tipo === 'derrota') {
@@ -814,6 +831,7 @@ class Jogo {
     if (this.modo === 'evolucao' && this.cenaEvo) { cena = this.cenaEvo.cena; camera = this.cenaEvo.camera; }
     this.renderer.render(cena, camera);
     this.atualizarNumeros(camera, dt);
+    this.gm?.quadro(dt);
     this.ctrl.fimDoQuadro();
   }
 }

@@ -296,9 +296,11 @@ export class Batalha {
     this.orbita.girar(giro, atras, this.camPadrao().pitch, dt);
     const girandoCam = giro.x || giro.y || giro.zoom || this.orbita.voltarPara != null;
     if (podeAgir && !j.morto && e) this.controlarJogador(j, e, ctrl.vetorDaCamera(this.orbita.yaw), dt, ctrl);
-    if (podeAgir && !j.morto) for (const ini of vivos) this.pensarIA(ini, j, dt, vivos.length);
+    const gm = this.jogo.gm; // painel GM (só na conta GM)
+    if (podeAgir && !j.morto && !gm?.parados) for (const ini of vivos) this.pensarIA(ini, j, dt, vivos.length);
 
     this.fisica(this.jog, dt);
+    gm?.quadroBatalha(this);
     for (const ini of this.inimigos) this.fisica(ini, dt);
     // ninguém ocupa o mesmo lugar que outro
     const todos = [this.jog, ...vivos];
@@ -611,7 +613,8 @@ export class Batalha {
     const arena = at.mod?.dano ?? 1;               // bônus/penalidade da arena
     // Sol da linha do Solito: quem soltou causa mais dano e recebe menos
     const sol = (1 + (at.sol?.cfg.ataque ?? 0)) * (1 - (alvo.sol?.cfg.defesa ?? 0));
-    const dano = Math.max(1, Math.round(DANO_GERAL * gp.poder * (opcoes.fator ?? 1) * (at.stats.atk / def) * mult * exposto * nivel * arena * sol * (0.9 + Math.random() * 0.2)));
+    const gmDano = at.lado === 'jogador' ? (this.jogo.gm?.dano || 1) : 1; // GM: dano ×10
+    const dano = Math.max(1, Math.round(DANO_GERAL * gp.poder * (opcoes.fator ?? 1) * (at.stats.atk / def) * mult * exposto * nivel * arena * sol * gmDano * (0.9 + Math.random() * 0.2)));
     // Escudo d'Água (linha do Gotinho) segura o dano antes da vida
     const passou = this.gotinho.absorver(alvo, dano);
     alvo.dados.hp = Math.max(0, alvo.dados.hp - passou);
@@ -706,6 +709,8 @@ export class Batalha {
 
   desmaiar(l) {
     if (l.morto) return;
+    // GM invencível: seu monstro não desmaia (a vida volta a encher)
+    if (l.lado === 'jogador' && this.jogo.gm?.invencivel) { l.dados.hp = l.stats.hpMax; return; }
     l.morto = true;
     if (l.prep) this.cancelarPreparo(l);
     l.dash = null;
@@ -1033,7 +1038,8 @@ export class Batalha {
   lancarCristal() {
     if (this.fim || this.captura || this.jog.morto || !this.ini || this.ini.morto) return;
     const est = this.jogo.estado, tipo = CRISTAIS[this.tipoCristal];
-    const min = this.ini.esp.cristalMin || 0;
+    const garantida = !!this.jogo.gm?.capturaGarantida; // GM: qualquer cristal segura qualquer monstro
+    const min = garantida ? 0 : this.ini.esp.cristalMin || 0;
     if (this.tipoCristal < min) {
       this.jogo.aviso(`${this.ini.esp.nome} é de tipo duplo: só um ${CRISTAIS[min].nome} (ou melhor) segura ele.`);
       return;
@@ -1043,7 +1049,7 @@ export class Batalha {
       return;
     }
     est.pedras[tipo.id]--;
-    const sucesso = Math.random() < chanceCaptura(this.ini.dados, this.tipoCristal);
+    const sucesso = garantida || Math.random() < chanceCaptura(this.ini.dados, this.tipoCristal);
     if (this.jog.prep) this.cancelarPreparo(this.jog);
     for (const l of this.inimigos) { if (l.prep) this.cancelarPreparo(l); l.dash = null; l.rajada = null; this.brasito.parar(l); this.gotinho.parar(l, false); this.musguinho.parar(l); this.pedrisco.parar(l); this.faisquinho.parar(l, false); }
     const cr = criarCristal(1.1, this.tipoCristal);

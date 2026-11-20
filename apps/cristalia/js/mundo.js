@@ -857,8 +857,9 @@ export class Mundo {
     const v = pausado ? { x: 0, z: 0 } : ctrl.vetorDaCamera(this.orbita.yaw);
     const movendo = Math.hypot(v.x, v.z) > 0.05;
     if (movendo) {
-      this.pos.x += v.x * VEL_JOGADOR * dt;
-      this.pos.z += v.z * VEL_JOGADOR * dt;
+      const vel = VEL_JOGADOR * (this.jogo.gm?.vel || 1); // GM: andar ×2 ou ×3
+      this.pos.x += v.x * vel * dt;
+      this.pos.z += v.z * vel * dt;
       this.ang = lerpAngulo(this.ang, Math.atan2(v.x, v.z), 1 - Math.exp(-14 * dt));
     }
     this.colidir(this.pos, 0.4);
@@ -880,7 +881,7 @@ export class Mundo {
       this.proxRelampago -= dt;
       if (this.proxRelampago <= 0) { this.relampago = 0.15; this.proxRelampago = 2.5 + Math.random() * 4; }
     }
-    this.atualizarCeu(pausado ? 0 : dt);
+    this.atualizarCeu(pausado || this.jogo.gm?.relogioParado ? 0 : dt); // GM: relógio parado
     if (this.periodo !== this.periodoAvisado) {
       this.periodoAvisado = this.periodo;
       if (this.jogo.estado) this.jogo.aviso(this.periodo === 'noite' ? 'Anoiteceu. Monstros de Lua e Trevas saíram!' : 'Amanheceu. Monstros de Sol e Luz estão por aí!');
@@ -944,7 +945,7 @@ export class Mundo {
         else { s.estado = 'parado'; s.t = 1 + Math.random() * 2.5; }
       }
       let andando = s.estado === 'andando' && !s.fixo;
-      if (d < 7 && this.graca <= 0 && est && !naAreaSegura && !s.fixo) { s.ang = Math.atan2(dx, dz); andando = true; }
+      if (d < 7 && this.graca <= 0 && est && !naAreaSegura && !s.fixo && !this.jogo.gm?.invisivel) { s.ang = Math.atan2(dx, dz); andando = true; }
       andando = (!s.fixo && this.fugirDaCasa(s)) || andando;
       if (andando && !pausado) this.andar(s, s.vel * dt, 0.6);
       s.modelo.position.set(s.x, alturaEm(s.x, s.z), s.z);
@@ -976,7 +977,7 @@ export class Mundo {
       for (const m of g.membros) dMembro = Math.min(dMembro, Math.hypot(this.pos.x - m.x, this.pos.z - m.z) - raioMembro(m));
       // vem atrás de você quando chega perto de QUALQUER um deles
       // (os de acampamento só de perto e sem se afastar muito da fogueira)
-      const perseguindo = !pausado && !!est && this.graca <= 0 && !naAreaSegura
+      const perseguindo = !pausado && !!est && this.graca <= 0 && !naAreaSegura && !this.jogo.gm?.invisivel
         && dMembro < (ac ? PERSEGUE_ACAMPAMENTO : PERSEGUE_GRUPO) && longeDeCasa < 12;
       let andando = g.estado === 'andando';
       if (perseguindo) {

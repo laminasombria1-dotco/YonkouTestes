@@ -22,6 +22,9 @@ const TECLAS_ACAO = {
   Space: 'esquiva', ShiftLeft: 'esquiva', KeyC: 'cristal', KeyV: 'proxCristal', KeyQ: 'trocar', KeyF: 'fugir',
 };
 
+// O foco está num campo de texto? (aí W, A, S, D, C, Espaço... são letras, não atalhos)
+const digitando = (e) => !!e.target?.closest?.('input, select, textarea');
+
 export class Controles {
   constructor(app, palco) {
     this.app = app;
@@ -58,6 +61,7 @@ export class Controles {
     });
 
     window.addEventListener('keydown', (e) => {
+      if (digitando(e)) return; // escrevendo num campo (login, painel GM): as teclas são letras, não atalhos
       if (TECLAS_MOV[e.code]) { this.teclas.add(e.code); e.preventDefault(); }
       const a = TECLAS_ACAO[e.code];
       if (a) { e.preventDefault(); if (!e.repeat) this.fila.push(a); }
