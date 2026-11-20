@@ -11,7 +11,9 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
 - **Botão Voltar do celular (app Android):** fecha o que estiver aberto (painel, Monstruário), abre o menu de pausa no mapa e fecha o app na tela de início. Na batalha não faz nada (use Fugir).
 - **Começar:** em "Novo jogo", escolha um dos 9 monstros iniciais (um de cada elemento). A tela mostra a linha evolutiva inteira dele.
 - **Monstruário:** na tela inicial ou no botão **Monstros** durante o jogo. Mostra todas as linhas, as evoluções, os atributos, os golpes e as vantagens de cada um.
-- **Andar:** arraste o dedo em qualquer lugar livre da tela (joystick virtual). No PC: WASD ou setas.
+- **Andar:** arraste o dedo no **lado esquerdo** da tela (joystick virtual). No PC: WASD ou setas. O andar segue a câmera: "para cima" anda para onde a câmera está olhando.
+- **Câmera (terceira pessoa):** arraste o **controle de câmera** (círculo com setinhas, do lado direito, acima da casa ou das habilidades) ou qualquer parte livre do **lado direito** da tela. Para os lados gira em volta do personagem; para cima e para baixo muda a altura. **Dois toques rápidos** no controle colocam a câmera de volta atrás do personagem. Funciona no mapa e na batalha.
+- **Câmera no PC:** arraste com o mouse para girar e use a **rodinha** para aproximar ou afastar.
 - **Encontrar monstros:** encoste num monstro selvagem para começar a batalha.
 - **Batalha em tempo real:**
   - 3 golpes: **perto** (avança e bate), **disparo** (tiro em linha reta) e **área** (explosão em volta).
@@ -315,7 +317,8 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/raizes.js` | Cenário da Trilha Ancestral e da Floresta (cogumelos, ruínas, lago, raízes, Árvore-Mãe, vaga-lumes, monstros extras) |
 | `js/arena.js` | Arenas: chão, obstáculos, clima animado e perigos de cada região (com chance), e o escurecer do Astro Negro |
 | `js/trevas.js` | Visual dos golpes de Trevas: poça, tentáculos, mãos, olhos, bocarra, garras, cópias sombrias, morcegos e Astro Negro |
-| `js/controles.js` | Joystick de toque, botões e teclado |
+| `js/controles.js` | Joystick de toque (lado esquerdo), câmera (lado direito, controle de câmera e mouse), botões e teclado |
+| `js/camera.js` | Câmera em terceira pessoa: gira em volta do personagem, sobe e desce, aproxima e afasta |
 | `js/main.js` | Liga tudo: telas, equipe, experiência, evolução, salvamento |
 | `lib/three.module.min.js` | Biblioteca Three.js 0.170 (licença MIT, em `lib/THREE-LICENSE.txt`) |
 

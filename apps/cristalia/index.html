@@ -338,6 +338,15 @@
   #joystick .base { position: absolute; left: 0; top: 0; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%;
     background: rgba(18, 33, 61, 0.35); border: 2px solid rgba(255, 246, 227, 0.35); opacity: 0.6; transition: opacity 0.15s; }
   #joystick.ativo .base { opacity: 1; }
+  /* controle da câmera: do lado direito, acima da casa (mapa) ou das habilidades (batalha) */
+  #camera-pad { position: absolute; right: max(18px, calc(env(safe-area-inset-right, 0px) + 12px)); bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 104px);
+    width: 88px; height: 88px; border-radius: 50%; display: grid; place-items: center; touch-action: none; pointer-events: auto;
+    background: rgba(18, 33, 61, 0.35); border: 2px dashed rgba(143, 244, 255, 0.45); opacity: 0.75; transition: opacity 0.15s; }
+  #camera-pad.ativo { opacity: 1; border-style: solid; }
+  #camera-pad .manete { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: rgba(143, 244, 255, 0.25); pointer-events: none; }
+  #camera-pad svg { width: 26px; height: 26px; fill: none; stroke: var(--cristal); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  #app.em-batalha #camera-pad { bottom: calc(max(12px, env(safe-area-inset-bottom, 0px)) + var(--toque) * 2 + clamp(6px, 1.6vmin, 12px) + 18px);
+    right: max(14px, calc(env(safe-area-inset-right, 0px) + 10px)); width: 76px; height: 76px; }
   #joystick .manete { position: absolute; left: 50%; top: 50%; width: 54px; height: 54px; margin: -27px 0 0 -27px; border-radius: 50%; background: rgba(255, 246, 227, 0.85); }
 
   /* ---------- avisos e números ---------- */
@@ -410,7 +419,7 @@
     </nav>
     <button class="btn-icone btn-tela-cheia canto" type="button" title="Tela cheia" aria-label="Tela cheia"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>
     <footer class="titulo-rodape">
-      <p class="dica">Arraste o dedo em qualquer lugar da tela para andar. No PC: WASD anda, J K L golpes, Espaço esquiva, C cristal, Q troca, Esc menu.</p>
+      <p class="dica">Lado esquerdo da tela: andar. Lado direito: girar a câmera. No PC: WASD anda, arraste o mouse para girar a câmera, rodinha aproxima, J K L golpes, Espaço esquiva, Esc menu.</p>
       <p id="versao" class="dica versao"></p>
     </footer>
   </section>
@@ -505,6 +514,10 @@
   </div>
 
   <div id="joystick" hidden><div class="base"><div class="manete"></div></div></div>
+  <!-- controle da câmera: arraste para girar; dois toques rápidos voltam a câmera para trás do personagem -->
+  <div id="camera-pad" hidden title="Câmera: arraste para girar (dois toques: volta para trás)">
+    <div class="manete"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 0 1-14 5.3M4 12a8 8 0 0 1 14-5.3"/><path d="M18 3v4h-4M6 21v-4h4"/><circle cx="12" cy="12" r="2.2"/></svg></div>
+  </div>
 
   <div id="painel-equipe" hidden>
     <div class="painel-caixa">

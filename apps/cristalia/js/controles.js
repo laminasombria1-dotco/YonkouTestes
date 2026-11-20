@@ -1,15 +1,22 @@
 // =============================================================
 // CONTROLES
-// Toque: joystick virtual (encoste o dedo em qualquer lugar livre da tela e arraste)
+// Toque: lado ESQUERDO da tela = joystick de andar;
+//        lado DIREITO (ou o controle de câmera acima das habilidades) = girar a câmera.
+//        Dois toques rápidos no controle de câmera: volta a câmera para trás do personagem.
 //        + botões na tela (qualquer elemento com data-acao="...").
+// Mouse: arrastar gira a câmera; a rodinha aproxima e afasta.
 // Teclado: WASD/setas andam, J K L (ou 1 2 3) golpes, Espaço esquiva,
 //          C cristal, V próximo cristal, Q trocar, F fugir.
+// O andar é relativo à câmera: "para cima" anda para onde a câmera olha.
 // =============================================================
 
 const TECLAS_MOV = {
   KeyW: [0, -1], ArrowUp: [0, -1], KeyS: [0, 1], ArrowDown: [0, 1],
   KeyA: [-1, 0], ArrowLeft: [-1, 0], KeyD: [1, 0], ArrowRight: [1, 0],
 };
+// Sensibilidade da câmera (radianos por pixel arrastado)
+const SENS_TOQUE = 0.0065, SENS_MOUSE = 0.005;
+
 const TECLAS_ACAO = {
   KeyJ: 'golpe0', Digit1: 'golpe0', KeyK: 'golpe1', Digit2: 'golpe1', KeyL: 'golpe2', Digit3: 'golpe2',
   Space: 'esquiva', ShiftLeft: 'esquiva', KeyC: 'cristal', KeyV: 'proxCristal', KeyQ: 'trocar', KeyF: 'fugir',
@@ -25,8 +32,17 @@ export class Controles {
     this.el = document.getElementById('joystick');
     this.base = this.el.querySelector('.base');
     this.manete = this.el.querySelector('.manete');
+    // câmera: um dedo (ou o mouse) por vez; o giro acumulado é lido pelo mapa/batalha a cada quadro
+    this.cam = { id: null, x: 0, y: 0, ox: 0, oy: 0 };
+    this.giro = { x: 0, y: 0, zoom: 0, centralizar: false };
+    this.ultimoToqueCam = 0;
+    this.pad = document.getElementById('camera-pad');
+    this.padManete = this.pad.querySelector('.manete');
+    this.pad.addEventListener('pointerdown', (e) => { e.preventDefault(); this.inicioCamera(e, true); });
 
     palco.addEventListener('pointerdown', (e) => this.inicio(e));
+    palco.addEventListener('contextmenu', (e) => e.preventDefault());
+    palco.addEventListener('wheel', (e) => { if (!this.el.hidden) { this.giro.zoom += Math.sign(e.deltaY) * 0.08; e.preventDefault(); } }, { passive: false });
     window.addEventListener('pointermove', (e) => this.mover(e));
     window.addEventListener('pointerup', (e) => this.fim(e));
     window.addEventListener('pointercancel', (e) => this.fim(e));
@@ -47,7 +63,7 @@ export class Controles {
       if (a) { e.preventDefault(); if (!e.repeat) this.fila.push(a); }
     });
     window.addEventListener('keyup', (e) => this.teclas.delete(e.code));
-    window.addEventListener('blur', () => { this.teclas.clear(); this.soltar(); });
+    window.addEventListener('blur', () => { this.teclas.clear(); this.soltar(); this.soltarCamera(); });
     this.repousar();
   }
 
@@ -57,14 +73,40 @@ export class Controles {
   }
 
   inicio(e) {
-    if (this.joy.id !== null || this.el.hidden) return;
+    if (this.el.hidden) return;
     const p = this.posLocal(e);
+    // mouse: arrastar sempre gira a câmera (no PC, anda-se com o teclado)
+    // toque: lado direito da tela gira a câmera, lado esquerdo é o joystick
+    if (e.pointerType === 'mouse' || p.x > this.app.clientWidth * 0.5) { this.inicioCamera(e, false); return; }
+    if (this.joy.id !== null) return;
     this.joy = { id: e.pointerId, ox: p.x, oy: p.y, dx: 0, dy: 0 };
     this.el.classList.add('ativo');
     this.desenhar();
   }
 
+  inicioCamera(e, noPad) {
+    if (this.cam.id !== null || this.el.hidden) return;
+    if (noPad) { // dois toques rápidos no controle: câmera volta para trás do personagem
+      const agora = performance.now();
+      if (agora - this.ultimoToqueCam < 300) this.giro.centralizar = true;
+      this.ultimoToqueCam = agora;
+    }
+    this.cam = { id: e.pointerId, x: e.clientX, y: e.clientY, ox: e.clientX, oy: e.clientY, sens: e.pointerType === 'mouse' ? SENS_MOUSE : SENS_TOQUE };
+    this.pad.classList.add('ativo');
+  }
+
   mover(e) {
+    if (e.pointerId === this.cam.id) {
+      this.giro.x += (e.clientX - this.cam.x) * this.cam.sens;
+      this.giro.y += (e.clientY - this.cam.y) * this.cam.sens;
+      this.cam.x = e.clientX; this.cam.y = e.clientY;
+      // a bolinha do controle acompanha o dedo (só para mostrar que está girando)
+      let dx = e.clientX - this.cam.ox, dy = e.clientY - this.cam.oy;
+      const l = Math.hypot(dx, dy), max = 22;
+      if (l > max) { dx = dx / l * max; dy = dy / l * max; }
+      this.padManete.style.transform = `translate(${dx}px, ${dy}px)`;
+      return;
+    }
     if (e.pointerId !== this.joy.id) return;
     const p = this.posLocal(e);
     this.joy.dx = p.x - this.joy.ox;
@@ -74,6 +116,21 @@ export class Controles {
 
   fim(e) {
     if (e.pointerId === this.joy.id) this.soltar();
+    if (e.pointerId === this.cam.id) this.soltarCamera();
+  }
+
+  soltarCamera() {
+    this.cam.id = null;
+    this.pad.classList.remove('ativo');
+    this.padManete.style.transform = '';
+  }
+
+  // Giro da câmera desde o último quadro (o mapa e a batalha chamam uma vez por quadro)
+  consumirGiro() {
+    const g = { ...this.giro };
+    this.giro.x = this.giro.y = this.giro.zoom = 0;
+    this.giro.centralizar = false;
+    return g;
   }
 
   soltar() {
@@ -100,7 +157,8 @@ export class Controles {
 
   mostrar(visivel) {
     this.el.hidden = !visivel;
-    if (!visivel) this.soltar();
+    this.pad.hidden = !visivel;
+    if (!visivel) { this.soltar(); this.soltarCamera(); }
     else this.repousar();
   }
 
@@ -120,6 +178,13 @@ export class Controles {
     const l = Math.hypot(x, z);
     if (l > 1) { x /= l; z /= l; }
     return { x, z };
+  }
+
+  // O mesmo vetor, mas virado para o lado que a câmera olha (yaw = giro da câmera em volta do personagem)
+  vetorDaCamera(yaw) {
+    const { x, z } = this.vetor();
+    const c = Math.cos(yaw), s = Math.sin(yaw);
+    return { x: x * c + z * s, z: -x * s + z * c };
   }
 
   consumir(acao) {

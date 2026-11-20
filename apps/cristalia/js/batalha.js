@@ -12,6 +12,7 @@ import {
   fracoContraEspecie, chanceDoEfeito, pct,
 } from './dados.js';
 import { VisualTrevas } from './trevas.js';
+import { CameraOrbita } from './camera.js';
 import { criarModelo, criarCristal, criarCoroa, animarModelo, piscar, descartar } from './modelos.js';
 
 const MAX_ATIVOS = 2;      // quantos inimigos de um grupo lutam ao mesmo tempo (o próximo par só entra quando estes caírem)
@@ -100,6 +101,7 @@ export class Batalha {
     this.zona = selvagem.zona;
     this.cena = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(50, jogo.aspecto, 0.1, 200);
+    this.orbita = new CameraOrbita(0); // começa atrás do seu monstro, olhando para o inimigo
     this.efeitos = [];
     this.arena = new Arena(this);
     this.trevas = new VisualTrevas(this); // visual especial dos golpes de Trevas
@@ -239,14 +241,21 @@ export class Batalha {
     this.jogo.numero('+' + cura, l.pos.clone().setY(l.altura), '#5fe08a', 'pequeno');
   }
 
+  camPadrao() {
+    return this.jogo.aspecto < 1 ? { dist: 17, pitch: 0.83 } : { dist: 11.3, pitch: 0.72 };
+  }
+
   posicionarCamera(k) {
     const alvo = this.ini || this.jog;
     const meio = new THREE.Vector3().addVectors(this.jog.pos, alvo.pos).multiplyScalar(0.5);
     // A câmera se afasta quando os monstros ficam longe um do outro (e um pouco mais em grupo)
     const afast = Math.min(10, Math.max(0, dist(this.jog, alvo) - 4)) * 0.07 + (this.grupo ? 1.15 : 1) + (this.chefe ? 0.35 : 0);
-    const off = this.jogo.aspecto < 1 ? new THREE.Vector3(0, 12.5, 11.5) : new THREE.Vector3(0, 7.5, 8.5);
-    off.multiplyScalar(afast);
-    this.camera.position.lerp(meio.clone().add(off), k);
+    const { dist: d, pitch } = this.camPadrao();
+    const destino = meio.clone().add(this.orbita.deslocamento(d * afast, pitch));
+    // fora da arena o chão sobe: a câmera não entra nele
+    const r = Math.hypot(destino.x, destino.z);
+    destino.y = Math.max(destino.y, 1.5, (r - RAIO_ARENA - 1) * 0.35 + 2);
+    this.camera.position.lerp(destino, k);
     this.camera.lookAt(meio.x, 0.8, meio.z);
   }
 
@@ -268,7 +277,12 @@ export class Batalha {
     if (!this.captura) this.escolherAlvo();
     const vivos = this.vivos();
     const podeAgir = !this.fim && !this.captura && liberado;
-    if (podeAgir && !j.morto && e) this.controlarJogador(j, e, ctrl.vetor(), dt, ctrl);
+    // câmera: gira com o que o jogador arrastou; dois toques põem ela atrás do seu monstro
+    const giro = ctrl.consumirGiro();
+    const atras = e ? Math.atan2(j.pos.x - e.pos.x, j.pos.z - e.pos.z) : this.orbita.yaw;
+    this.orbita.girar(giro, atras, this.camPadrao().pitch, dt);
+    const girandoCam = giro.x || giro.y || giro.zoom || this.orbita.voltarPara != null;
+    if (podeAgir && !j.morto && e) this.controlarJogador(j, e, ctrl.vetorDaCamera(this.orbita.yaw), dt, ctrl);
     if (podeAgir && !j.morto) for (const ini of vivos) this.pensarIA(ini, j, dt, vivos.length);
 
     this.fisica(this.jog, dt);
@@ -331,7 +345,7 @@ export class Batalha {
         return;
       }
     }
-    this.posicionarCamera(1 - Math.exp(-4 * dt));
+    this.posicionarCamera(1 - Math.exp((girandoCam ? -18 : -4) * dt));
     this.atualizarHud();
   }
 

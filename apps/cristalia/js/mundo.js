@@ -7,6 +7,7 @@
 // =============================================================
 import * as THREE from 'three';
 import { criarModelo, criarTreinador, criarCristal, pintarCristal, criarCoroa, criarCasa, animarCasa, animarModelo, criarAuraDupla, animarAura, descartar } from './modelos.js';
+import { CameraOrbita } from './camera.js';
 import { TRACADOS, S_LAGO, tracadoPerto, foraDungeons, alturaDungeons, prenderDungeons, dentroDungeonLivre, semCasaDungeons } from './dungeon.js';
 import { CaminhoDasBrasas } from './brasas.js';
 import { TrilhaAncestral, LAGOA, RESERVAS_FLORESTA, CRISTAL_ESCONDIDO } from './raizes.js';
@@ -117,6 +118,7 @@ export class Mundo {
     this.cena.background = CEU_DIA.clone();
     this.cena.fog = new THREE.Fog(CEU_DIA.clone(), 40, 115);
     this.camera = new THREE.PerspectiveCamera(50, 1, 0.1, 300);
+    this.orbita = new CameraOrbita(0); // câmera em terceira pessoa que o jogador gira
     this.hemi = new THREE.HemisphereLight(HEMI_DIA.clone(), '#5d7a3e', 1.7);
     this.sol = new THREE.DirectionalLight(SOL_DIA.clone(), 1.9);
     this.sol.position.set(30, 50, 20);
@@ -718,17 +720,28 @@ export class Mundo {
     }
   }
 
+  // Distância e altura padrão da câmera (com o celular em pé ela fica mais longe e mais alta)
+  camPadrao() {
+    return this.jogo.aspecto < 1 ? { dist: 20.5, pitch: 0.82 } : { dist: 14.5, pitch: 0.71 };
+  }
+
   posicionarCamera(k) {
-    const retrato = this.jogo.aspecto < 1;
-    const off = retrato ? new THREE.Vector3(0, 15, 14) : new THREE.Vector3(0, 9.5, 11);
+    const { dist, pitch } = this.camPadrao();
     const alvo = new THREE.Vector3(this.pos.x, this.pos.y + 1, this.pos.z);
-    this.camera.position.lerp(alvo.clone().add(off), k);
+    const destino = alvo.clone().add(this.orbita.deslocamento(dist, pitch));
+    // não deixa a câmera entrar no chão (as bordas do mapa sobem)
+    destino.y = Math.max(destino.y, alturaEm(destino.x, destino.z) + 1.2);
+    this.camera.position.lerp(destino, k);
     this.camera.lookAt(alvo);
   }
 
   // ---------- quadro a quadro ----------
   atualizar(dt, ctrl, t, pausado = false) {
-    const v = pausado ? { x: 0, z: 0 } : ctrl.vetor();
+    // câmera: gira com o que o jogador arrastou; o andar segue o lado que a câmera olha
+    const giro = ctrl.consumirGiro();
+    if (!pausado) this.orbita.girar(giro, this.ang + Math.PI, this.camPadrao().pitch, dt);
+    this.girandoCam = !pausado && (giro.x || giro.y || giro.zoom || this.orbita.voltarPara != null);
+    const v = pausado ? { x: 0, z: 0 } : ctrl.vetorDaCamera(this.orbita.yaw);
     const movendo = Math.hypot(v.x, v.z) > 0.05;
     if (movendo) {
       this.pos.x += v.x * VEL_JOGADOR * dt;
@@ -893,7 +906,7 @@ export class Mundo {
         new THREE.Vector3(maisPerto.x, maisPerto.modelo.position.y + esp.altura + 0.3, maisPerto.z), this.camera);
     } else this.jogo.mostrarRotulo(null);
 
-    this.posicionarCamera(1 - Math.exp(-6 * dt));
+    this.posicionarCamera(1 - Math.exp((this.girandoCam ? -18 : -6) * dt)); // girando: responde na hora
   }
 
   // Move um monstro (ou grupo) para frente; se bater em algo, vira
