@@ -5,10 +5,11 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
 
 ## Como jogar
 
-- **Tela de início:** **Continuar** (mostra o seu parceiro, o nível e quantos monstros você tem), **Novo jogo** (se já existe um jogo salvo, pede um 2º toque para confirmar), **Monstruário**, **Instalar app** (só aparece quando dá para instalar) e **Sair do jogo**.
+- **Login (toda vez que o jogo abre):** digite o **nome de usuário** e a **senha** e toque em **Entrar** (ou **Criar conta**, se o nome é novo). Embaixo aparecem as contas que já entraram neste aparelho: **1 toque** entra, sem digitar a senha. Veja "Contas e nuvem" abaixo.
+- **Tela de início:** mostra "Olá, nome" e onde o jogo está salvo (☁ na nuvem ou ⚠ só no celular). Tem **Continuar** (mostra o seu parceiro, o nível e quantos monstros você tem), **Novo jogo** (se já existe um jogo salvo, pede um 2º toque para confirmar), **Monstruário**, **Instalar app** (só aparece quando dá para instalar), **Trocar conta** e **Sair do jogo**.
 - **Menu de pausa:** o botão de menu (três risquinhos) no mapa, **Esc** no PC ou o botão **Voltar** do celular. Tem **Continuar jogando**, **Voltar ao início** e **Sair do jogo**. Tudo salva antes.
 - **Sair do jogo:** no app Android, fecha o app. No navegador, a página não pode se fechar sozinha: o jogo salva e avisa que já pode fechar a aba.
-- **Botão Voltar do celular (app Android):** fecha o que estiver aberto (painel, Monstruário), abre o menu de pausa no mapa e fecha o app na tela de início. Na batalha não faz nada (use Fugir).
+- **Botão Voltar do celular (app Android):** fecha o que estiver aberto (painel, Monstruário, painel GM), abre o menu de pausa no mapa e fecha o app na tela de início e no login. Na batalha não faz nada (use Fugir).
 - **Começar:** em "Novo jogo", escolha um dos 9 monstros iniciais (um de cada elemento). A tela mostra a linha evolutiva inteira dele.
 - **Monstruário:** na tela inicial ou no botão **Monstros** durante o jogo. Mostra todas as linhas, as evoluções, os atributos, os golpes e as vantagens de cada um.
 - **Andar:** arraste o dedo no **lado esquerdo** da tela (joystick virtual). No PC: WASD ou setas. O andar segue a câmera: "para cima" anda para onde a câmera está olhando.
@@ -29,8 +30,34 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
 - **Proteção:** o jogo guarda uma cópia de cada monstro que você já teve. Se algum sumir da equipe e da reserva por qualquer motivo, ele volta sozinho para a Reserva, com um aviso.
 - **Fonte de cura:** a fonte no centro do mapa cura todos os seus monstros.
 - **Nível dos selvagens:** acompanha o nível da sua equipe e aumenta quanto mais longe do centro você vai. Nas bordas aparecem as formas evoluídas.
-- O progresso é salvo automaticamente no navegador.
+- O progresso é salvo sozinho: no celular a cada 5 s e na nuvem (veja abaixo).
 - **Tela cheia:** botão na tela inicial, no mapa e na batalha. Alguns navegadores não deixam (o iPhone, por exemplo); nesse caso, use "Adicionar à tela inicial".
+
+## Contas e nuvem (Firebase)
+
+- **Cada conta tem o seu jogo salvo.** A conta fica na **nuvem** (Firebase, projeto `cristalia-91fd6`): entre com o mesmo nome e senha em qualquer celular, no app ou no site.
+- **Nome:** de 2 a 16 letras, números, espaço, - ou _. Acento e maiúscula não mudam a conta ("Lâmina" e "lamina" são a mesma). Cada nome tem um dono só.
+- **Senha:** pelo menos 6 letras ou números (é o mínimo do Firebase).
+- **Como o nome vira conta:** o jogo transforma o nome num "e-mail de mentira" (`lamina@cristalia.jogo`). Por isso **não existe "esqueci a senha"**: perdeu a senha, perdeu a conta.
+- **Quando salva na nuvem:** a cada 30 s enquanto você joga, no fim de cada batalha, ao voltar para o início, ao trocar de conta, ao sair e quando o app é minimizado. No celular continua salvando a cada 5 s.
+- **Ao entrar:** o jogo compara a cópia da nuvem com a do celular e **fica com a mais recente**. Jogando em 2 celulares, vale o que salvou por último.
+- **Sem internet:** o 1 toque numa conta que já entrou no aparelho funciona com a cópia do celular, e o jogo sobe para a nuvem quando a internet voltar ("⚠ sem internet" na tela de início). Entrar com senha precisa de internet; se não der, aparece **Jogar só neste aparelho (sem nuvem)**, que cria uma conta que não vai para a nuvem.
+- **O jogo salvo de antes das contas** vai sozinho para a 1ª conta que entrar (aparece um aviso). A cópia antiga continua guardada no aparelho, por segurança.
+- **Conta GM:** nome **GM** e a senha do GM. Ela fica **só no aparelho** (não vai para a nuvem), não aparece na lista de 1 toque e abre o painel GM. O nome GM é reservado: ninguém cria uma conta na nuvem com ele.
+- **Segurança:** a `apiKey` que está no código não é secreta (ela só diz qual projeto usar). Quem protege os dados são as **regras do Firestore**: cada jogador só lê e grava `jogadores/<o próprio uid>`. A senha do GM não fica no código, só a "impressão digital" dela (SHA-256). Mesmo assim, uma senha de 4 números dá para descobrir testando todas.
+- **No aparelho** (localStorage): `cristalia-contas` (contas que já entraram, para o 1 toque), `cristalia-save-v1:<id da conta>` (o jogo de cada conta) e `cristalia-save-v1` (o jogo salvo antigo, guardado).
+- O ajudante do app (`sw.js`) **nunca guarda** as conversas com o Firebase: elas vão sempre direto para a internet.
+- **Regras do Firestore** (no console do Firebase, Firestore → Regras):
+  ```
+  rules_version = '2';
+  service cloud.firestore {
+    match /databases/{database}/documents {
+      match /jogadores/{uid} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+  }
+  ```
 
 ## Instalar no celular (app que se atualiza sozinho)
 
@@ -46,7 +73,7 @@ O jogo é um **PWA** (aplicativo web instalável). Ele fica no site **https://la
 - O app instalado baixa a versão nova ao ser aberto com internet. Se a rede estiver lenta, ele abre a versão guardada e pega a nova na próxima vez.
 - A data e o código da versão aparecem embaixo, na tela inicial do jogo.
 - **Sem internet**, o app abre a última versão baixada.
-- O progresso salvo fica no celular e não se perde com as atualizações.
+- O progresso salvo fica no celular (e na nuvem) e não se perde com as atualizações.
 
 **APK para Android:** também dá para instalar como APK. O projeto do app fica em `apps/cristalia-android` (veja o README de lá). O APK abre o mesmo site, então recebe as mesmas atualizações.
 
@@ -390,7 +417,7 @@ Os golpes da linha de Trevas invocam coisas da escuridão, e cada evolução gan
 
 ## Painel GM (administrador, para testes)
 
-Só a **conta GM** tem o painel. O código fica em `js/gm.js` e só é baixado quando a conta GM entra: para as outras contas o jogo não fica mais pesado. A entrada pela tela de login chega junto com as contas; até lá, ele só abre pelo console do navegador (`__jogo.ativarGM()`).
+Só a **conta GM** tem o painel. O código fica em `js/gm.js` e só é baixado quando a conta GM entra: para as outras contas o jogo não fica mais pesado. Para entrar, use o nome **GM** e a senha do GM na tela de login. Nos testes no computador, também abre pelo console do navegador (`__jogo.ativarGM()`).
 
 - **No mapa:** botão **GM** (rosa) no alto, antes de "Monstros". O mundo para enquanto o painel está aberto. O botão Voltar do celular (ou Esc) fecha o painel.
 - **Na batalha:** botão **GM** embaixo da fileira de ícones, do lado direito. Ele abre uma gaveta ao lado (deitado, em 2 colunas, para não cobrir os golpes), que fecha ao tocar fora dela.
@@ -399,7 +426,7 @@ Só a **conta GM** tem o painel. O código fica em `js/gm.js` e só é baixado q
 |---|---|
 | **Monstros** | Escolhe qualquer espécie (todas as 53, separadas por linha) e o nível (1 a 50). **Aparecer perto** (8 m na sua frente), **Lutar agora** (na arena escolhida ou na da região), **Grupo (5 + líder)** no mapa, **Lutar com grupo** e **Dar para mim** (vai para a equipe ou a reserva). Atalhos: selvagem, tipo duplo ou grupo aleatório, e **limpar o mapa** (os chefes e os acampamentos ficam). |
 | **Dungeons** | Para o Caminho das Brasas e a Trilha Ancestral: **ir para** a entrada, cada etapa ou o chefe; **lutar contra o acampamento** de cada etapa (na ordem 2 fracos → 2 médios → 1 forte → líder, no nível que a sua equipe enfrentaria); **lutar com o chefe** no nível escolhido; **chefe volta já** (sem esperar o amanhecer); **monstro da dungeon perto**. |
-| **Equipe** | Escolhe o **monstro alvo** (equipe ou reserva) e mostra nível, vida e experiência. **Adicionar XP:** +50, +500, +1 nível ou **até o nível ___**. A XP sobe como no jogo, então ele **evolui** ao chegar no nível (a animação aparece quando o painel fecha). **Evoluir agora**, **Voltar uma forma** (fica no nível logo abaixo da evolução, para não evoluir de novo sozinho), **Curar**, **subir 1 nível sem evoluir**. Também **curar todos** e mudar os cristais (+10, 99 ou zerar). |
+| **Equipe** | **Copiar jogo de outra conta** deste aparelho para o GM (para testar com a equipe de verdade; a conta original não muda). Escolhe o **monstro alvo** (equipe ou reserva) e mostra nível, vida e experiência. **Adicionar XP:** +50, +500, +1 nível ou **até o nível ___**. A XP sobe como no jogo, então ele **evolui** ao chegar no nível (a animação aparece quando o painel fecha). **Evoluir agora**, **Voltar uma forma** (fica no nível logo abaixo da evolução, para não evoluir de novo sozinho), **Curar**, **subir 1 nível sem evoluir**. Também **curar todos** e mudar os cristais (+10, 99 ou zerar). |
 | **Mundo** | **Hora:** amanhecer, meio-dia, anoitecer, meia-noite ou **parar o relógio**. **Teleporte:** fonte, as 6 regiões e a casa. **Andar ×1, ×2 ou ×3.** **Invisível:** os monstros não vêm atrás de você, mas encostar neles ainda começa a batalha. **Mostrar FPS** (embaixo, no meio da tela). |
 | **Testes** | **Invencível** (a vida não desce, nem com efeitos e perigos da arena), **recarga zero**, **captura garantida** (qualquer cristal segura qualquer monstro, até os chefes), **inimigos parados**, **dano ×10**. Na gaveta da batalha também: **encher minha vida** e **vencer agora** (derrota todos, até os que estão esperando nas ondas). |
 
@@ -429,7 +456,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 
 | Arquivo | O que faz |
 |---|---|
-| `index.html` | A página: visual da interface (HUD, botões, telas), o botão Instalar app e a versão |
+| `index.html` | A página: visual da interface (login, HUD, botões, telas), o botão Instalar app e a versão |
 | `manifest.webmanifest`, `sw.js`, `icones/` | O app instalável: nome e ícone, o "ajudante" que guarda o jogo e busca atualizações |
 | `js/dados.js` | **Tabelas do jogo**: elementos, golpes, linhas evolutivas, níveis de evolução, onde cada monstro aparece. Para balancear, mexa aqui. |
 | `js/modelos.js` | Os modelos 3D: um construtor por linha que acrescenta peças a cada evolução. No fim, `juntarPecas` une as peças paradas de mesma aparência numa só (de ~24 para ~11 peças por monstro), deixando caudas, asas, pernas e peças animadas separadas |
@@ -441,10 +468,11 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/raizes.js` | Cenário da Trilha Ancestral e da Floresta (cogumelos, ruínas, lago, raízes, Árvore-Mãe, vaga-lumes, monstros extras) |
 | `js/arena.js` | Arenas: chão, obstáculos, clima animado e perigos de cada região (com chance), e o escurecer do Astro Negro |
 | `js/habilidades/` | **Habilidades próprias das linhas de monstros** (uma pasta só para isso). Veja o `README.md` de lá. Hoje: linha do Brasito (`brasito.js` com os números, `brasito-batalha.js` com o lança-chamas, o rabo de fogo e a velocidade), linha do Gotinho (`gotinho.js` e `gotinho-batalha.js`, com o jato, o hidrocanhão, as ondas, o maremoto e o escudo), linha do Musguinho (`musguinho.js` e `musguinho-batalha.js`, com a folha bumerangue, a vinha que puxa, as raízes, a moita e o bosque), linha do Pedrisco (`pedrisco.js` e `pedrisco-batalha.js`, com a pedra em arco que quica, o punho sísmico, o tremor e os pilares), linha do Faisquinho (`faisquinho.js` e `faisquinho-batalha.js`, com as marcas, o dash elétrico, o tiro que marca, o choque e as nuvens), linha do Solito (`solito.js` e `solito-batalha.js`, com o sol que dá bônus, o laser e o calor) e o visual de Trevas (`trevas-batalha.js`) |
+| `js/nuvem.js` | Contas e jogo salvo na nuvem (Firebase, direto pela internet, sem a biblioteca do Firebase): criar conta, entrar, entrar de novo com 1 toque, ler e gravar o jogo salvo, e a senha do GM |
 | `js/gm.js` | Painel GM (só para a conta GM): fazer monstros, grupos, acampamentos e chefes aparecerem, XP, evolução, teleporte, hora e as chaves de teste da batalha. Só é baixado quando a conta GM entra |
 | `js/controles.js` | Joystick de toque (lado esquerdo), câmera (lado direito, controle de câmera e mouse), botões e teclado. Enquanto você escreve num campo (login, painel GM), as teclas não viram atalhos |
 | `js/camera.js` | Câmera em terceira pessoa: gira em volta do personagem, sobe e desce, aproxima e afasta |
-| `js/main.js` | Liga tudo: telas, equipe, experiência, evolução, salvamento |
+| `js/main.js` | Liga tudo: login e contas, telas, equipe, experiência, evolução, salvamento (no celular e na nuvem) |
 | `lib/three.module.min.js` | Biblioteca Three.js 0.170 (licença MIT, em `lib/THREE-LICENSE.txt`) |
 
 ## Rodar no computador

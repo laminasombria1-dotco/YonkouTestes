@@ -309,7 +309,20 @@ export class PainelGM {
           <button class="gm-btn" type="button" data-gm="cristais" data-qtd="99">99 de cada</button>
           <button class="gm-btn" type="button" data-gm="cristais" data-qtd="0">Zerar</button>
         </div>
-      </div>`;
+      </div>
+      ${this.blocoCopiar()}`;
+  }
+
+  // Copiar o jogo de uma conta deste aparelho para o GM (o jogo atual do GM é trocado pela cópia)
+  blocoCopiar() {
+    const contas = this.jogo.contasDoAparelho?.() || [];
+    if (!contas.length) return '';
+    return `<div class="gm-bloco">
+      <h3>Copiar jogo de outra conta</h3>
+      <div class="gm-linha"><select data-campo="copiarDe">${contas.map((c) => `<option value="${esc(c.id)}">${esc(c.nome)}${c.resumo ? ' · ' + esc(c.resumo) : ''}</option>`).join('')}</select>
+        <button class="gm-btn forte" type="button" data-gm="copiar">Copiar para o GM</button></div>
+      <p class="gm-dica">Usa a cópia que está neste aparelho. O jogo atual do GM é trocado pela cópia, e a conta original não muda (o GM nunca grava nela).</p>
+    </div>`;
   }
 
   abaMundo() {
@@ -380,7 +393,7 @@ export class PainelGM {
   mudou(e) {
     const c = e.target.dataset.campo;
     if (!c || e.target.tagName === 'BUTTON') return;
-    if (c === 'especie' || c === 'arena') this.sel[c] = e.target.value;
+    if (c === 'especie' || c === 'arena' || c === 'copiarDe') this.sel[c] = e.target.value;
     else if (c === 'alvo') { this.sel.alvo = Number(e.target.value); this.renderizar(); }
     else this.sel[c] = this.limitarNivel(e.target.value);
   }
@@ -390,7 +403,7 @@ export class PainelGM {
   lerCampos() {
     for (const el of this.painel.querySelectorAll('input[data-campo], select[data-campo]')) {
       const c = el.dataset.campo;
-      if (c === 'especie' || c === 'arena') this.sel[c] = el.value;
+      if (c === 'especie' || c === 'arena' || c === 'copiarDe') this.sel[c] = el.value;
       else if (c === 'alvo') this.sel.alvo = Number(el.value);
       else this.sel[c] = this.limitarNivel(el.value);
     }
@@ -437,6 +450,12 @@ export class PainelGM {
       case 'curarAlvo': { const m = this.alvo(); m.hp = statsDe(m.especie, m.nivel).hpMax; this.salvar(); break; }
       case 'curarTodos': this.jogo.curarEquipe(); this.jogo.aviso('GM: todos curados.'); break;
       case 'cristais': this.cristais(Number(d.qtd)); break;
+      case 'copiar': {
+        const conta = this.jogo.contasDoAparelho().find((c) => c.id === this.sel.copiarDe);
+        if (conta && this.jogo.copiarJogoParaGM(conta.id)) this.jogo.aviso(`GM: jogo de ${conta.nome} copiado. Toque em Continuar.`);
+        else this.jogo.aviso('GM: essa conta ainda não tem jogo salvo neste aparelho.');
+        return;
+      }
       case 'hora': this.mundo.hora = Number(d.h); this.mundo.atualizarCeu(0); break;
       case 'ir': this.ir(d.onde); this.fecharPainel(); return;
       case 'vel': this.vel = Number(d.v); break;

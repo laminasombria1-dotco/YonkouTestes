@@ -15,8 +15,14 @@ import {
   CRISTAIS, CUSTO_FUSAO, ORDEM_DUPLAS, DUPLAS, nomeDupla, nomeTipo, fundoTipo, fracoContraEspecie, forteContraEspecie,
   DURACAO_EFEITO_DISPARO,
 } from './dados.js';
+import { chaveNome, problemaNome, ErroNuvem, criarConta, entrar, renovar, Nuvem, senhaDoGM, SENHA_MIN } from './nuvem.js';
 
+// Cada conta tem o seu jogo salvo no aparelho: cristalia-save-v1:<id da conta>
+// (o jogo salvo antigo, de antes das contas, fica em 'cristalia-save-v1' e vai para a 1ª conta que entrar)
 const CHAVE_SAVE = 'cristalia-save-v1';
+const CHAVE_CONTAS = 'cristalia-contas';   // contas que já entraram neste aparelho (para entrar com 1 toque)
+const CHAVE_MIGRADO = 'cristalia-save-migrado';
+const ENVIO_NUVEM = 30;                    // segundos entre um envio para a nuvem e outro (enquanto joga)
 const MAX_EQUIPE = 3;
 const $ = (s) => document.querySelector(s);
 const TIPOS = { corpo: 'perto', projetil: 'disparo', area: 'área' };
@@ -47,9 +53,20 @@ function protegerColecao(e) {
   return voltaram;
 }
 
-function lerSave() {
+// Contas deste aparelho: { ultima: id, lista: [{ id, nome, tipo: 'nuvem' | 'local', refresh, visto, resumo }] }
+function lerContas() {
+  try { const c = JSON.parse(localStorage.getItem(CHAVE_CONTAS)); if (c?.lista) return c; } catch { /* nada guardado */ }
+  return { ultima: null, lista: [] };
+}
+function gravarContas(c) { try { localStorage.setItem(CHAVE_CONTAS, JSON.stringify(c)); } catch { /* sem armazenamento */ } }
+const lerTexto = (chave) => { try { return localStorage.getItem(chave); } catch { return null; } };
+const gravarTexto = (chave, txt) => { try { localStorage.setItem(chave, txt); return true; } catch { return false; } };
+const horaDoSave = (txt) => { try { return JSON.parse(txt)?.t || 0; } catch { return 0; } };
+const escHtml = (x) => String(x).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function lerSave(chave) {
   try {
-    const bruto = localStorage.getItem(CHAVE_SAVE);
+    const bruto = localStorage.getItem(chave);
     if (!bruto) return null;
     const s = JSON.parse(bruto);
     if (!s?.estado?.equipe?.length) return null;
@@ -101,21 +118,28 @@ class Jogo {
     this.t = 0;
     this.rotuloHtml = '';
     this.colecao = { modo: 'inicial', aba: 'fogo', volta: 'titulo' };
+    this.conta = null;          // { id, nome, tipo: 'nuvem' | 'local' | 'gm', nuvem }
+    this.estadoNuvem = null;    // 'ok' | 'offline' | 'erro' (aparece na tela de início)
+    this.envioT = 0;
 
     window.addEventListener('resize', () => this.medir());
     this.ligarBotoes();
 
     // Se a página foi atualizada com o jogo aberto, continua de onde estava
-    if (dadosQuentes?.estado) {
+    if (dadosQuentes?.estado && dadosQuentes.conta) {
+      this.restaurarConta(dadosQuentes.conta);
       this.estado = migrarEstado(dadosQuentes.estado);
       protegerColecao(this.estado);
       this.entrarNoMundo();
       if (dadosQuentes.pos) this.mundo.pos.set(dadosQuentes.pos.x, 0, dadosQuentes.pos.z);
       if (dadosQuentes.hora != null) this.mundo.hora = dadosQuentes.hora;
     } else {
-      this.mostrarTela('titulo');
+      this.mostrarLogin();
     }
-    window.claude?.hot?.snapshot?.(() => (this.estado ? { estado: this.estado, pos: { x: this.mundo.pos.x, z: this.mundo.pos.z }, hora: this.mundo.hora } : {}));
+    window.claude?.hot?.snapshot?.(() => (this.estado ? { estado: this.estado, conta: this.conta && { id: this.conta.id, nome: this.conta.nome, tipo: this.conta.tipo }, pos: { x: this.mundo.pos.x, z: this.mundo.pos.z }, hora: this.mundo.hora } : {}));
+    // App minimizado ou fechado: salva e manda para a nuvem na hora
+    document.addEventListener('visibilitychange', () => { if (document.hidden) { this.salvar(); this.enviarNuvem(true, true); } });
+    window.addEventListener('pagehide', () => { this.salvar(); this.enviarNuvem(true, true); });
     this.quadro();
   }
 
@@ -133,6 +157,7 @@ class Jogo {
   // ---------- telas ----------
   mostrarTela(nome) {
     this.modo = nome;
+    $('#tela-login').hidden = nome !== 'login';
     $('#tela-titulo').hidden = nome !== 'titulo';
     $('#tela-colecao').hidden = nome !== 'colecao';
     $('#tela-evolucao').hidden = nome !== 'evolucao';
@@ -164,7 +189,7 @@ class Jogo {
     const btnNovo = $('#btn-novo');
     btnNovo.addEventListener('click', () => {
       // já tem jogo salvo: o 1º toque só avisa; o 2º (em até 3,5 s) apaga e começa
-      if (lerSave() && !btnNovo.dataset.confirmar) {
+      if (lerSave(this.chaveSave()) && !btnNovo.dataset.confirmar) {
         const [titulo, linha] = [btnNovo.querySelector('b'), btnNovo.querySelector('small')];
         btnNovo.dataset.confirmar = '1';
         btnNovo.classList.add('confirmar');
@@ -181,7 +206,7 @@ class Jogo {
       this.abrirColecao('inicial');
     });
     $('#btn-continuar').addEventListener('click', () => {
-      const s = lerSave();
+      const s = lerSave(this.chaveSave());
       if (!s) return;
       this.estado = s.estado;
       if (s.voltaram?.length) setTimeout(() => this.aviso(`Recuperados para a reserva: ${s.voltaram.join(', ')}.`), 600);
@@ -193,6 +218,21 @@ class Jogo {
       if (this.filaEvo.length) this.proximaEvolucao();
     });
     $('#btn-monstruario').addEventListener('click', () => this.abrirColecao('ver'));
+    // Login: Entrar, Criar conta, contas deste aparelho (1 toque) e Trocar conta
+    $('#form-login').addEventListener('submit', (e) => { e.preventDefault(); this.loginComSenha(false); });
+    $('#btn-criar-conta').addEventListener('click', () => this.loginComSenha(true));
+    $('#btn-sem-nuvem').addEventListener('click', () => this.entrarSemNuvem());
+    $('#contas-aparelho').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-conta]');
+      if (b) this.entrarComUmToque(b.dataset.conta);
+    });
+    $('#btn-trocar-conta').addEventListener('click', () => this.trocarConta());
+    // com o teclado aberto (celular deitado), o quadro do login sobe para o campo ficar à vista
+    // (só quando o foco está num campo de texto: tocar num botão não pode esconder nada no meio do toque)
+    $('#form-login').addEventListener('focusin', (e) => { if (e.target.tagName === 'INPUT') $('#tela-login').classList.add('digitando'); });
+    $('#form-login').addEventListener('focusout', () => setTimeout(() => {
+      if (document.activeElement?.tagName !== 'INPUT') $('#tela-login').classList.remove('digitando');
+    }, 50));
     // Menu de pausa e saída
     $('#btn-sair').addEventListener('click', () => this.sairDoJogo());
     $('#btn-menu').addEventListener('click', () => this.abrirMenu());
@@ -249,7 +289,16 @@ class Jogo {
   // ---------- tela de início ----------
   // Mostra "Continuar" com um resumo do jogo salvo (parceiro, nível, quantos monstros)
   atualizarTitulo() {
-    const s = lerSave();
+    const c = this.conta;
+    if (c) {
+      const nuvem = c.tipo === 'gm' ? 'conta GM: salvo só neste aparelho'
+        : c.tipo === 'local' ? 'salvo só neste aparelho'
+        : this.estadoNuvem === 'ok' ? '☁ salvo na nuvem'
+        : this.estadoNuvem === 'offline' ? '⚠ sem internet: salvo no celular, sobe para a nuvem depois'
+        : this.estadoNuvem === 'erro' ? '⚠ a nuvem não respondeu: salvo no celular' : '☁ nuvem';
+      $('#ola').innerHTML = `Olá, <b>${escHtml(c.nome)}</b>! <small>${nuvem}</small>`;
+    }
+    const s = this.conta ? lerSave(this.chaveSave()) : null;
     $('#btn-continuar').hidden = !s;
     if (!s) return;
     const lider = s.estado.equipe[0], esp = ESPECIES[lider.especie];
@@ -274,6 +323,7 @@ class Jogo {
 
   voltarAoInicio() {
     this.salvar();
+    this.enviarNuvem(true);
     this.fecharMenu();
     this.mostrarTela('titulo');
   }
@@ -282,6 +332,7 @@ class Jogo {
   // não pode se fechar sozinha: tenta e, se não der, mostra "Progresso salvo, pode fechar".
   sairDoJogo() {
     this.salvar();
+    this.enviarNuvem(true, true);
     this.fecharMenu();
     if (window.CristaliaApp?.sair) { window.CristaliaApp.sair(); return; }
     if (this.modo === 'mundo') this.mostrarTela('titulo');
@@ -298,7 +349,8 @@ class Jogo {
     if (this.painelAberto) { this.fecharEquipe(); return 'ok'; }
     if (this.modo === 'colecao') { this.fecharColecao(); return 'ok'; }
     if (this.modo === 'mundo') { this.abrirMenu(); return 'ok'; }
-    if (this.modo === 'titulo') { this.salvar(); return 'sair'; }
+    if (this.modo === 'titulo') { this.salvar(); this.enviarNuvem(true, true); return 'sair'; }
+    if (this.modo === 'login') return 'sair';
     return 'ok'; // na batalha e na evolução, o Voltar não faz nada (use Fugir)
   }
 
@@ -600,6 +652,7 @@ class Jogo {
       this.mundo.graca = 2.5;
     }
     this.salvar();
+    this.enviarNuvem(true); // fim de batalha: manda para a nuvem na hora
     if (this.filaEvo.length) { this.proximaEvolucao(); return; }
     this.mostrarTela('mundo');
     this.atualizarHudMundo();
@@ -787,14 +840,221 @@ class Jogo {
   }
 
   // ---------- salvar ----------
+  // Salva no aparelho (na chave da conta). A nuvem recebe no máximo a cada 30 s (e na hora em momentos importantes).
   salvar() {
-    if (!this.estado) return;
+    if (!this.estado || !this.conta) return;
     const voltaram = protegerColecao(this.estado);
     if (voltaram.length) { this.aviso(`Recuperados para a reserva: ${voltaram.join(', ')}.`); this.atualizarHudMundo?.(); }
-    try {
-      localStorage.setItem(CHAVE_SAVE, JSON.stringify({ v: 3, estado: this.estado, pos: { x: this.mundo.pos.x, z: this.mundo.pos.z }, hora: this.mundo.hora }));
-    } catch { /* sem armazenamento: o jogo continua sem salvar */ }
+    gravarTexto(this.chaveSave(), JSON.stringify({ v: 3, t: Date.now(), estado: this.estado, pos: { x: this.mundo.pos.x, z: this.mundo.pos.z }, hora: this.mundo.hora }));
+    if (this.conta.nuvem) this.nuvemPendente = true;
   }
+
+  // ---------- contas ----------
+  chaveSave() { return this.conta ? `${CHAVE_SAVE}:${this.conta.id}` : null; }
+
+  mostrarLogin(mensagem = '') {
+    this.mostrarTela('login');
+    document.activeElement?.blur?.();
+    $('#tela-login').classList.remove('digitando');
+    const contas = lerContas();
+    const ordem = [...contas.lista].sort((a, b) => (b.id === contas.ultima) - (a.id === contas.ultima) || b.visto - a.visto);
+    $('#contas-aparelho').innerHTML = ordem.length ? '<small>Já entraram neste aparelho (1 toque)</small>' + ordem.map((c) => {
+      const cor = ['#ff7a3d', '#4fc3ff', '#5fe08a', '#c79bff', '#ffd23f'][c.nome.length % 5];
+      const resumo = (c.resumo ? c.resumo + ' · ' : '') + (c.tipo === 'local' ? 'só neste aparelho' : '☁ nuvem');
+      return `<button type="button" class="conta ${c.id === contas.ultima ? 'ultima' : ''}" data-conta="${escHtml(c.id)}" style="--cor:${cor}">
+        <span class="av">${escHtml(c.nome[0].toUpperCase())}</span><span class="txt"><b>${escHtml(c.nome)}</b><small>${escHtml(resumo)}</small></span></button>`;
+    }).join('') : '';
+    $('#btn-sem-nuvem').hidden = true;
+    this.mensagemLogin(mensagem);
+    this.ocupado(false);
+  }
+
+  mensagemLogin(txt, erro = true) {
+    const el = $('#msg-login');
+    el.textContent = txt;
+    el.hidden = !txt;
+    el.classList.toggle('erro', erro);
+  }
+
+  ocupado(sim) {
+    for (const el of document.querySelectorAll('#tela-login button, #tela-login input')) el.disabled = sim;
+    $('#form-login').classList.toggle('esperando', sim);
+  }
+
+  // Entrar (criar = false) ou Criar conta (criar = true) com nome e senha
+  async loginComSenha(criar) {
+    const nome = $('#nome-login').value.trim(), senha = $('#senha-login').value;
+    // conta GM: só neste aparelho, com a senha do GM
+    if (chaveNome(nome) === 'gm') {
+      if (criar) { this.mensagemLogin('O nome GM é reservado.'); return; }
+      if (await senhaDoGM(senha)) { $('#senha-login').value = ''; await this.entrarConta({ id: 'gm', nome: 'GM', tipo: 'gm' }); }
+      else this.mensagemLogin('Senha do GM errada.');
+      return;
+    }
+    const problema = problemaNome(nome);
+    if (problema) { this.mensagemLogin(problema); $('#nome-login').focus(); return; }
+    if (senha.length < SENHA_MIN) { this.mensagemLogin(`A senha precisa ter pelo menos ${SENHA_MIN} letras ou números.`); $('#senha-login').focus(); return; }
+    this.ocupado(true);
+    this.mensagemLogin(criar ? 'Criando a conta...' : 'Entrando...', false);
+    try {
+      const sessao = criar ? await criarConta(nome, senha) : await entrar(nome, senha);
+      $('#senha-login').value = '';
+      await this.entrarNuvem(nome, sessao, criar);
+    } catch (e) {
+      this.ocupado(false);
+      this.mensagemLogin(e.message || 'Não deu para entrar.');
+      // sem internet (ou a página não deixa falar com a nuvem): oferece jogar só neste aparelho
+      if (e instanceof ErroNuvem && e.tipo === 'rede') {
+        this.mensagemLogin('Sem conexão com a nuvem. Confira a internet e tente de novo, ou jogue só neste aparelho (sem nuvem).');
+        $('#btn-sem-nuvem').hidden = false;
+      }
+    }
+  }
+
+  // Conta só deste aparelho (quando a nuvem não está ao alcance)
+  async entrarSemNuvem() {
+    const nome = $('#nome-login').value.trim();
+    const problema = problemaNome(nome);
+    if (problema) { this.mensagemLogin(problema); return; }
+    await this.entrarConta({ id: 'local:' + chaveNome(nome), nome, tipo: 'local' });
+  }
+
+  // Toque numa conta que já entrou neste aparelho
+  async entrarComUmToque(id) {
+    const c = lerContas().lista.find((x) => x.id === id);
+    if (!c) return;
+    if (c.tipo === 'local') { await this.entrarConta({ id: c.id, nome: c.nome, tipo: 'local' }); return; }
+    this.ocupado(true);
+    this.mensagemLogin('Entrando...', false);
+    try {
+      const sessao = await renovar(c.refresh);
+      await this.entrarNuvem(c.nome, sessao, false);
+    } catch (e) {
+      this.ocupado(false);
+      if (e instanceof ErroNuvem && e.tipo === 'rede') {
+        // sem internet: entra com a cópia do celular e manda para a nuvem quando a internet voltar
+        await this.entrarConta({ id: c.id, nome: c.nome, tipo: 'nuvem', nuvem: new Nuvem({ uid: c.id, refreshToken: c.refresh }) }, 'offline');
+      } else {
+        $('#nome-login').value = c.nome;
+        $('#senha-login').focus();
+        this.mensagemLogin(e.message || 'Entre de novo com a sua senha.');
+      }
+    }
+  }
+
+  // Entrou na nuvem: junta o jogo salvo da nuvem com o do celular (vale o mais recente)
+  async entrarNuvem(nome, sessao, nova) {
+    const nuvem = new Nuvem(sessao);
+    const conta = { id: sessao.uid, nome, tipo: 'nuvem', nuvem };
+    const chave = `${CHAVE_SAVE}:${conta.id}`;
+    let estadoNuvem = 'ok';
+    try {
+      const daNuvem = nova ? null : await nuvem.ler();
+      if (daNuvem?.nome) conta.nome = daNuvem.nome; // o nome do jeito que foi criado (com acento e maiúsculas)
+      const local = lerTexto(chave);
+      if (daNuvem?.save && (!local || daNuvem.atualizado > horaDoSave(local))) gravarTexto(chave, daNuvem.save);
+      else if (!daNuvem?.save && !local) this.migrarSaveAntigo(chave, conta.nome);
+      const agora = lerTexto(chave);
+      // o celular tem algo mais novo (ou a nuvem está vazia): manda para a nuvem
+      if (agora && (!daNuvem?.save || horaDoSave(agora) > daNuvem.atualizado)) await nuvem.gravar(conta.nome, agora, horaDoSave(agora) || Date.now());
+      else if (!daNuvem) await nuvem.gravar(conta.nome, '', 0); // conta nova: já guarda o nome
+    } catch (e) {
+      estadoNuvem = e instanceof ErroNuvem && e.tipo === 'rede' ? 'offline' : 'erro';
+    }
+    await this.entrarConta(conta, estadoNuvem);
+  }
+
+  // O jogo salvo de antes das contas vai para a 1ª conta que entrar (a cópia antiga continua guardada)
+  migrarSaveAntigo(chave, nome) {
+    if (lerTexto(CHAVE_MIGRADO)) return;
+    const antigo = lerTexto(CHAVE_SAVE);
+    if (!antigo || !lerSave(CHAVE_SAVE)) return;
+    const s = JSON.parse(antigo);
+    s.t = Date.now();
+    gravarTexto(chave, JSON.stringify(s));
+    gravarTexto(CHAVE_MIGRADO, chave);
+    this.avisoMigrado = `O seu jogo salvo de antes agora é da conta ${nome}.`;
+  }
+
+  async entrarConta(conta, estadoNuvem = null) {
+    this.conta = conta;
+    this.estadoNuvem = estadoNuvem;
+    this.estado = null;
+    this.filaEvo = [];
+    if (conta.tipo !== 'gm') {
+      // guarda a conta na lista do aparelho (para o 1 toque) com um resumo do jogo
+      const contas = lerContas();
+      const s = lerSave(this.chaveSave());
+      const lider = s?.estado.equipe[0];
+      const item = { id: conta.id, nome: conta.nome, tipo: conta.tipo, refresh: conta.nuvem?.refreshToken || null, visto: Date.now(),
+        resumo: lider ? `${ESPECIES[lider.especie].nome} Nv.${lider.nivel}` : '' };
+      contas.lista = [item, ...contas.lista.filter((x) => x.id !== conta.id)];
+      contas.ultima = conta.id;
+      gravarContas(contas);
+    }
+    if (conta.tipo === 'gm') await this.ativarGM(); else this.desativarGM();
+    this.mostrarTela('titulo');
+    if (this.avisoMigrado) { this.aviso(this.avisoMigrado); this.avisoMigrado = null; }
+  }
+
+  // Volta a conta depois de uma atualização da página (artifact)
+  restaurarConta(c) {
+    const item = lerContas().lista.find((x) => x.id === c.id);
+    this.conta = { ...c, nuvem: c.tipo === 'nuvem' && item?.refresh ? new Nuvem({ uid: c.id, refreshToken: item.refresh }) : null };
+    if (c.tipo === 'gm') this.ativarGM();
+  }
+
+  trocarConta() {
+    this.salvar();
+    this.enviarNuvem(true);
+    this.estado = null;
+    this.conta = null;
+    this.desativarGM();
+    this.mostrarLogin();
+  }
+
+  // Manda o jogo salvo para a nuvem. agora = sem esperar os 30 s; fechando = o app pode fechar logo depois
+  async enviarNuvem(agora = false, fechando = false) {
+    const c = this.conta;
+    if (!c?.nuvem || !this.nuvemPendente) return;
+    if (!agora && this.envioT < ENVIO_NUVEM) return;
+    if (this.enviando && !fechando) return;
+    const txt = lerTexto(this.chaveSave());
+    if (!txt) return;
+    this.nuvemPendente = false;
+    this.envioT = 0;
+    this.enviando = true;
+    try {
+      await c.nuvem.gravar(c.nome, txt, horaDoSave(txt) || Date.now(), fechando);
+      this.estadoNuvem = 'ok';
+      // guarda o refresh token novo (ele pode mudar)
+      const contas = lerContas(), item = contas.lista.find((x) => x.id === c.id);
+      if (item && item.refresh !== c.nuvem.refreshToken) { item.refresh = c.nuvem.refreshToken; gravarContas(contas); }
+    } catch (e) {
+      this.nuvemPendente = true; // tenta de novo daqui a pouco
+      this.estadoNuvem = e instanceof ErroNuvem && e.tipo === 'rede' ? 'offline' : 'erro';
+    } finally {
+      this.enviando = false;
+    }
+    if (this.modo === 'titulo') this.atualizarTitulo();
+  }
+
+  // GM: copia o jogo salvo de outra conta deste aparelho para a conta GM (para testar com a equipe de verdade)
+  copiarJogoParaGM(id) {
+    if (this.conta?.tipo !== 'gm') return false;
+    const txt = lerTexto(`${CHAVE_SAVE}:${id}`);
+    if (!txt) return false;
+    const s = JSON.parse(txt);
+    s.t = Date.now();
+    gravarTexto(this.chaveSave(), JSON.stringify(s));
+    this.estado = null;   // não deixa o jogo atual do GM gravar por cima da cópia
+    this.filaEvo = [];
+    this.gm?.fecharPainel();
+    this.mostrarTela('titulo');
+    return true;
+  }
+
+  contasDoAparelho() { return lerContas().lista; }
 
   // ---------- laço principal ----------
   quadro() {
@@ -802,7 +1062,9 @@ class Jogo {
     const dt = Math.min(0.05, this.relogio.getDelta());
     this.t += dt;
     let cena = this.mundo.cena, camera = this.mundo.camera;
-    if (this.modo === 'titulo') {
+    this.envioT += dt;
+    if (this.nuvemPendente && this.envioT >= ENVIO_NUVEM) this.enviarNuvem();
+    if (this.modo === 'titulo' || this.modo === 'login') {
       this.mundo.orbitar(this.t);
     } else if (this.modo === 'colecao') {
       this.enquadrarColecao();
