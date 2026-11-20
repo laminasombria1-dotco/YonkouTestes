@@ -9,12 +9,14 @@
 import { GOLPES_BRASITO, GOLPES_POR_FORMA_BRASITO, MELHORIAS_BRASITO, TEXTOS_BRASITO, NOVIDADES_BRASITO } from './habilidades/brasito.js';
 import { GOLPES_GOTINHO, GOLPES_POR_FORMA_GOTINHO, MELHORIAS_GOTINHO, TEXTOS_GOTINHO, NOVIDADES_GOTINHO } from './habilidades/gotinho.js';
 import { GOLPES_MUSGUINHO, GOLPES_POR_FORMA_MUSGUINHO, MELHORIAS_MUSGUINHO, TEXTOS_MUSGUINHO, NOVIDADES_MUSGUINHO } from './habilidades/musguinho.js';
+import { GOLPES_PEDRISCO, GOLPES_POR_FORMA_PEDRISCO, MELHORIAS_PEDRISCO, TEXTOS_PEDRISCO, NOVIDADES_PEDRISCO } from './habilidades/pedrisco.js';
 
 // Linhas com habilidades próprias: golpes por forma, melhorias e textos
 const HABILIDADES_DA_LINHA = {
   fogo: { golpes: GOLPES_POR_FORMA_BRASITO, melhorias: MELHORIAS_BRASITO, textos: TEXTOS_BRASITO, novidades: NOVIDADES_BRASITO },
   agua: { golpes: GOLPES_POR_FORMA_GOTINHO, melhorias: MELHORIAS_GOTINHO, textos: TEXTOS_GOTINHO, novidades: NOVIDADES_GOTINHO },
   planta: { golpes: GOLPES_POR_FORMA_MUSGUINHO, melhorias: MELHORIAS_MUSGUINHO, textos: TEXTOS_MUSGUINHO, novidades: NOVIDADES_MUSGUINHO },
+  terra: { golpes: GOLPES_POR_FORMA_PEDRISCO, melhorias: MELHORIAS_PEDRISCO, textos: TEXTOS_PEDRISCO, novidades: NOVIDADES_PEDRISCO },
 };
 
 // Ordem em que os elementos aparecem nas telas
@@ -164,6 +166,8 @@ export const GOLPES = {
   ...GOLPES_GOTINHO,
   // golpes próprios da linha do Musguinho (números em js/habilidades/musguinho.js)
   ...GOLPES_MUSGUINHO,
+  // golpes próprios da linha do Pedrisco (números em js/habilidades/pedrisco.js)
+  ...GOLPES_PEDRISCO,
 };
 
 // Golpes de cada elemento: os 3 primeiros servem às formas iniciais,

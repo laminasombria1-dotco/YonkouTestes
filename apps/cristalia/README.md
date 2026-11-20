@@ -321,6 +321,24 @@ A linha do Musguinho é lenta e resistente: em vez de correr atrás, ela **puxa,
 - Esta linha não ganha o "disparo ×2/×3": no lugar, ganha mais folhas (1 → 2 → 3).
 - Espinhal, Silvárion e os tipos duplos com Planta (Brotobrasa e evoluções) continuam com os golpes de Planta de sempre.
 
+## Golpes da linha do Pedrisco (Terra)
+
+A linha do Pedrisco é a **dona do terreno**: joga pedras **por cima** dos obstáculos, faz espinhos saírem do chão que **jogam para o alto** e levanta **pilares** que viram obstáculos. Os números ficam em `js/habilidades/pedrisco.js`; como funcionam e aparecem, em `js/habilidades/pedrisco-batalha.js`.
+
+| Forma | Perto | Disparo | Área |
+|---|---|---|---|
+| Pedrisco | Investida (ele **rola**) | **Pedregulho**: pedra em arco (3 a 10 m) que passa por cima dos obstáculos e cai onde o alvo estava (área de 1,4 m) | **Tremor**: o chão racha em volta (4 m) |
+| Cascalhão | **Punho Sísmico**: espinhos saem do chão 4 m à frente e jogam o inimigo **para o alto** (0,5 s sem andar nem atacar) | Pedregulho + soterrado | Tremor + soterrado |
+| Rochedrão | Punho Sísmico: 5 m | **Pedregulho Quicante**: cai, **quica** e cai de novo 4 m à frente (70% da força) | **Muralha de Pedra**: Tremor + **8 pilares** em roda (4 m) por 4 s |
+| Montanhar | **Punho da Montanha**: 7 m, 0,6 s no ar + soterrado | **Rocha Nevada**: pedra gigante (área de 2 m) que quica **2 vezes** (70% e 50%) | **Cordilheira**: **10 pilares nevados** em roda (5 m) por 5 s |
+
+- **Pilares:** são obstáculos de verdade enquanto estão de pé: seguram **tiros retos** e a passagem (dá para sair pelos vãos de uns 2 m; monstros grandes ficam presos). A **pedra em arco passa por cima** deles. Quando é o inimigo que levanta, eles seguram os **seus** tiros também.
+- **No ar:** quem é jogado para o alto perde o golpe que estava preparando. É curto e sem sorteio, para não ficar igual à Paralisia do Raio.
+- O inimigo avisa o Pedregulho com **círculos vermelhos onde a pedra vai cair** (e onde vai quicar), o Punho com uma **faixa vermelha** e a área com o círculo vermelho. Os seus pedregulhos mostram onde caem com um círculo na cor da Terra.
+- O soterrado de cada pedra é sorteado **uma vez por inimigo** (23%), juntando as quedas.
+- Esta linha não ganha o "disparo ×2/×3": no lugar, a pedra quica.
+- O Imanito e as evoluções (Terra + Raio) continuam com os golpes de Terra de sempre.
+
 ## Golpes de Trevas (visual)
 
 Os golpes da linha de Trevas invocam coisas da escuridão, e cada evolução ganha algo novo. É só a aparência: dano, alcance e efeitos são os mesmos de antes. Tudo aparece **dentro da área que o golpe acerta**. O código fica em `js/habilidades/trevas-batalha.js`.
@@ -369,7 +387,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/brasas.js` | Cenário do Caminho das Brasas (braseiros, forja, rio de lava, Trono de Magma, vulcão) |
 | `js/raizes.js` | Cenário da Trilha Ancestral e da Floresta (cogumelos, ruínas, lago, raízes, Árvore-Mãe, vaga-lumes, monstros extras) |
 | `js/arena.js` | Arenas: chão, obstáculos, clima animado e perigos de cada região (com chance), e o escurecer do Astro Negro |
-| `js/habilidades/` | **Habilidades próprias das linhas de monstros** (uma pasta só para isso). Veja o `README.md` de lá. Hoje: linha do Brasito (`brasito.js` com os números, `brasito-batalha.js` com o lança-chamas, o rabo de fogo e a velocidade), linha do Gotinho (`gotinho.js` e `gotinho-batalha.js`, com o jato, o hidrocanhão, as ondas, o maremoto e o escudo), linha do Musguinho (`musguinho.js` e `musguinho-batalha.js`, com a folha bumerangue, a vinha que puxa, as raízes, a moita e o bosque) e o visual de Trevas (`trevas-batalha.js`) |
+| `js/habilidades/` | **Habilidades próprias das linhas de monstros** (uma pasta só para isso). Veja o `README.md` de lá. Hoje: linha do Brasito (`brasito.js` com os números, `brasito-batalha.js` com o lança-chamas, o rabo de fogo e a velocidade), linha do Gotinho (`gotinho.js` e `gotinho-batalha.js`, com o jato, o hidrocanhão, as ondas, o maremoto e o escudo), linha do Musguinho (`musguinho.js` e `musguinho-batalha.js`, com a folha bumerangue, a vinha que puxa, as raízes, a moita e o bosque), linha do Pedrisco (`pedrisco.js` e `pedrisco-batalha.js`, com a pedra em arco que quica, o punho sísmico, o tremor e os pilares) e o visual de Trevas (`trevas-batalha.js`) |
 | `js/controles.js` | Joystick de toque (lado esquerdo), câmera (lado direito, controle de câmera e mouse), botões e teclado |
 | `js/camera.js` | Câmera em terceira pessoa: gira em volta do personagem, sobe e desce, aproxima e afasta |
 | `js/main.js` | Liga tudo: telas, equipe, experiência, evolução, salvamento |

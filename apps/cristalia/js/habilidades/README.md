@@ -79,6 +79,29 @@ Musguinho (Nv.1) > Moitão (Nv.6) > Troncudo (Nv.12) > Florestral (Nv.30)
 - Mais cura no Florestral: `folhaBumerangueViva` → `bumerangue.cura` e `bosqueVivo` → `zona.cura` (0,02 = 2% por segundo).
 - Moita que dura mais: `moitaEspinhos` → `zona.duracao` e `zona.poderTick`.
 
+### Terra: linha do Pedrisco (`pedrisco.js` e `pedrisco-batalha.js`)
+Pedrisco (Nv.1) > Cascalhão (Nv.6) > Rochedrão (Nv.12) > Montanhar (Nv.30)
+
+| Forma | Perto | Disparo | Área |
+|---|---|---|---|
+| Pedrisco | Investida (rola para a frente, só visual) | **Pedregulho**: arco de 3 a 10 m, sobe 3,5 m, 0,65 s no ar, área de 1,4 m (força 15) | **Tremor**: 4 m (força 20), rachaduras em estrela |
+| Cascalhão | **Punho Sísmico**: fileira de espinhos de 4 m (1,2 m de largura), joga para o alto 0,5 s (força 14) | Pedregulho + **soterrado** | Tremor + **soterrado** |
+| Rochedrão | Punho Sísmico: 5 m (força 18), espinhos com cristal | **Pedregulho Quicante**: área de 1,6 m, quica 4 m à frente (2ª queda com 70%) | **Muralha de Pedra**: 4 m (força 22) + 8 pilares por 4 s |
+| Montanhar | **Punho da Montanha**: 7 m (1,5 m de largura), 0,6 s no ar + **soterrado** (32%) | **Rocha Nevada**: até 12 m, área de 2 m (força 20), quica 2 vezes (70% e 50%) | **Cordilheira**: 5 m (força 30) + 10 pilares nevados por 5 s |
+
+- A pedra em arco cai onde o alvo **estava** quando o golpe começou: quem se mexe escapa. Ela passa por cima de tudo (obstáculos e pilares) e nunca cai fora da arena.
+- Os espinhos saem um atrás do outro e **param no primeiro obstáculo**. Cada inimigo é acertado uma vez. Quem é atingido fica no ar (sem andar, atacar ou esquivar) e perde o golpe que preparava.
+- Os pilares entram na lista de obstáculos da arena (`arena.obstaculos`) enquanto estão de pé e saem dela quando começam a afundar. Pilar que cairia fora da arena não sobe.
+- Chances de Soterrado: área 45%, Punho do Montanhar 32%, pedra 23% (uma vez por inimigo a cada pedra, juntando as quedas).
+- O inimigo avisa a pedra com círculos vermelhos em cada lugar onde ela vai cair, o Punho com uma faixa vermelha e as áreas com o círculo vermelho.
+- Só a linha do Pedrisco usa estes golpes. O Imanito e as evoluções (Terra + Raio) continuam com os golpes de `dados.js`.
+
+**Exemplos de mudança (em `pedrisco.js`):**
+- Pedra que vai mais longe ou mais rápida: `pedregulho` → `arco.alcance` e `arco.voo` (segundos no ar).
+- Mais quiques: `arco.quiques` (cada número é a força de um quique: `[0.7, 0.5]` = 2 quiques).
+- Mais tempo no ar: `punhoSismico` → `espinhos.levanta` (segundos).
+- Pilares que duram mais ou em maior número: `muralhaPedra` → `pilares.duracao` e `pilares.quantidade`.
+
 ### Trevas: linha do Breuzinho (`trevas-batalha.js`)
 Só o **visual** (poça de breu, tentáculos, mãos de sombra, olhos, bocarra, cópias sombrias, morcegos e o Astro Negro). Os números dos golpes de Trevas continuam em `../dados.js` (Mordida Sombria, Bola Sombria, Vazio, Garra Abissal, Sombras, Abismo).
 
