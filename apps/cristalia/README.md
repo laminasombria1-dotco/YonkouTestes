@@ -303,6 +303,24 @@ A linha do Gotinho joga com **controle e defesa**: empurra, deixa lento e se pro
 - Esta linha não ganha o "disparo ×2/×3": o encharcado chega no disparo e na área já no Marolo.
 - Aquaraia e os tipos duplos com Água (Vaporito e evoluções) continuam com os golpes de Água de sempre.
 
+## Golpes da linha do Musguinho (Planta)
+
+A linha do Musguinho é lenta e resistente: em vez de correr atrás, ela **puxa, prende e se cura**. Os números ficam em `js/habilidades/musguinho.js`; como funcionam e aparecem, em `js/habilidades/musguinho-batalha.js`.
+
+| Forma | Perto | Disparo | Área |
+|---|---|---|---|
+| Musguinho | Investida | **Folha Bumerangue**: vai 8 m, gira e volta, acertando na ida e na volta | **Raízes**: brotam do chão em volta (3,6 m) e deixam lento 2,5 s |
+| Moitão | **Chicote de Vinha**: estica até 4,5 m e **puxa** o inimigo 2,5 m | **2 folhas** em V + enraizado | Raízes + enraizado |
+| Troncudo | Chicote de Vinha: 5 m, puxa 3 m | **3 folhas** em leque | **Moita de Espinhos**: fica 4 s no chão (3,5 m) e machuca quem está dentro |
+| Florestral | **Vinha Agarradora**: 6 m, puxa 3,5 m + enraizado | 3 folhas; as que acertaram **curam** 1,5% da vida ao voltar | **Bosque Vivo**: raízes gigantes (5 m) por 5 s; machuca quem está dentro e **cura** o Florestral 2% por segundo |
+
+- **Combinação:** puxe com a vinha e logo depois use as Raízes (3,6 m).
+- A vinha para quando encosta: não puxa o inimigo para dentro do monstro. Obstáculos seguram a vinha.
+- O inimigo avisa a vinha com uma **faixa vermelha estreita** e a área com o **círculo vermelho**. A moita e o bosque ficam visíveis no chão: saia de dentro.
+- O enraizado das folhas é sorteado **uma vez por inimigo a cada uso** (18%).
+- Esta linha não ganha o "disparo ×2/×3": no lugar, ganha mais folhas (1 → 2 → 3).
+- Espinhal, Silvárion e os tipos duplos com Planta (Brotobrasa e evoluções) continuam com os golpes de Planta de sempre.
+
 ## Golpes de Trevas (visual)
 
 Os golpes da linha de Trevas invocam coisas da escuridão, e cada evolução ganha algo novo. É só a aparência: dano, alcance e efeitos são os mesmos de antes. Tudo aparece **dentro da área que o golpe acerta**. O código fica em `js/habilidades/trevas-batalha.js`.
@@ -351,7 +369,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/brasas.js` | Cenário do Caminho das Brasas (braseiros, forja, rio de lava, Trono de Magma, vulcão) |
 | `js/raizes.js` | Cenário da Trilha Ancestral e da Floresta (cogumelos, ruínas, lago, raízes, Árvore-Mãe, vaga-lumes, monstros extras) |
 | `js/arena.js` | Arenas: chão, obstáculos, clima animado e perigos de cada região (com chance), e o escurecer do Astro Negro |
-| `js/habilidades/` | **Habilidades próprias das linhas de monstros** (uma pasta só para isso). Veja o `README.md` de lá. Hoje: linha do Brasito (`brasito.js` com os números, `brasito-batalha.js` com o lança-chamas, o rabo de fogo e a velocidade), linha do Gotinho (`gotinho.js` e `gotinho-batalha.js`, com o jato, o hidrocanhão, as ondas, o maremoto e o escudo) e o visual de Trevas (`trevas-batalha.js`) |
+| `js/habilidades/` | **Habilidades próprias das linhas de monstros** (uma pasta só para isso). Veja o `README.md` de lá. Hoje: linha do Brasito (`brasito.js` com os números, `brasito-batalha.js` com o lança-chamas, o rabo de fogo e a velocidade), linha do Gotinho (`gotinho.js` e `gotinho-batalha.js`, com o jato, o hidrocanhão, as ondas, o maremoto e o escudo), linha do Musguinho (`musguinho.js` e `musguinho-batalha.js`, com a folha bumerangue, a vinha que puxa, as raízes, a moita e o bosque) e o visual de Trevas (`trevas-batalha.js`) |
 | `js/controles.js` | Joystick de toque (lado esquerdo), câmera (lado direito, controle de câmera e mouse), botões e teclado |
 | `js/camera.js` | Câmera em terceira pessoa: gira em volta do personagem, sobe e desce, aproxima e afasta |
 | `js/main.js` | Liga tudo: telas, equipe, experiência, evolução, salvamento |

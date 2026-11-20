@@ -14,6 +14,7 @@ import {
 import { VisualTrevas } from './habilidades/trevas-batalha.js';
 import { HabilidadesBrasito } from './habilidades/brasito-batalha.js';
 import { HabilidadesGotinho } from './habilidades/gotinho-batalha.js';
+import { HabilidadesMusguinho } from './habilidades/musguinho-batalha.js';
 import { CameraOrbita } from './camera.js';
 import { criarModelo, criarCristal, criarCoroa, animarModelo, piscar, descartar } from './modelos.js';
 
@@ -110,6 +111,7 @@ export class Batalha {
     this.trevas = new VisualTrevas(this); // visual especial dos golpes de Trevas
     this.brasito = new HabilidadesBrasito(this); // lança-chamas, rabo de fogo e velocidade da linha do Brasito
     this.gotinho = new HabilidadesGotinho(this); // jato, hidrocanhão, ondas, maremoto e escudo da linha do Gotinho
+    this.musguinho = new HabilidadesMusguinho(this); // folha bumerangue, vinha que puxa, raízes, moita e bosque da linha do Musguinho
     this.periodo = jogo.mundo.periodo;
 
     this.idx = idxInicial;
@@ -338,6 +340,7 @@ export class Batalha {
     this.trevas.atualizar();
     this.brasito.atualizar(dt);
     this.gotinho.atualizar(dt);
+    this.musguinho.atualizar(dt);
     if (this.captura) this.atualizarCaptura(dt);
 
     if (this.trocaAuto > 0) {
@@ -396,7 +399,8 @@ export class Batalha {
     if (!e.dash && !e.giro && e.stun <= 0 && e.podeAndar()) {
       const ax = (j.pos.x - e.pos.x) / (d || 1), az = (j.pos.z - e.pos.z) / (d || 1);
       // distância preferida depende de qual golpe está pronto
-      const prefere = e.rec[0] <= 0.2 ? 1.8 : (e.rec[1] <= 0.3 ? 6 : 4.5);
+      const vinha = e.golpe(0).vinha ? e.golpe(0).alcance * 0.7 : 1.8; // com a vinha, fica mais longe para puxar
+      const prefere = e.rec[0] <= 0.2 ? vinha : (e.rec[1] <= 0.3 ? 6 : 4.5);
       let fx = 0, fz = 0;
       if (d > prefere + 0.5) { fx += ax; fz += az; } else if (d < prefere - 0.5) { fx -= ax; fz -= az; }
       fx += -az * ia.strafe * 0.7;
@@ -417,7 +421,7 @@ export class Batalha {
   }
 
   tentarGolpe(c, i, alvo) {
-    if (c.prep || c.rec[i] > 0 || c.stun > 0 || c.dash || c.morto || c.rajada || c.jato || c.giro) return;
+    if (c.prep || c.rec[i] > 0 || c.stun > 0 || c.dash || c.morto || c.rajada || c.jato || c.giro || c.vinha) return;
     if (!c.podeAtacar()) {
       // avisa o jogador por que o golpe não saiu
       if (c.lado === 'jogador' && this.t - (this.avisoBloqueio || 0) > 0.8) {
@@ -444,6 +448,7 @@ export class Batalha {
     if (gp.jato) return inimigo ? this.brasito.avisoJato(c, gp, dir) : null;   // lança-chamas
     if (gp.tamanhoRabo && gp.dash) return this.brasito.avisoGiro(c, gp, dir, cor); // rabo de fogo com dash
     if (gp.onda) return this.gotinho.avisoOnda(c, gp, dir, cor);                    // onda que anda para a frente
+    if (gp.vinha) return inimigo ? this.musguinho.avisoVinha(c, gp, dir, cor) : null; // vinha que puxa
     if (gp.tipo === 'area') {
       const g = new THREE.Group();
       const anel = new THREE.Mesh(GEO_ANEL, matBrilho(cor, 0.75));
@@ -494,7 +499,9 @@ export class Batalha {
 
   executar(c, p) {
     const gp = p.gp, dir = p.dir;
-    if (gp.tipo === 'corpo') {
+    if (gp.vinha) {
+      this.musguinho.iniciarVinha(c, gp, dir, this.efeitoDoGolpe(c, gp)); // chicote de vinha: estica e puxa
+    } else if (gp.tipo === 'corpo') {
       c.dash = { dir: dir.clone(), t: 0.17, vel: 12, gp, acertou: false, efeito: this.efeitoDoGolpe(c, gp) };
       if (this.trevas.dele(c)) this.trevas.avancar(c);
       if (this.brasito.dele(c) && gp === GOLPES.investida) this.brasito.aoUsarInvestida(c);
@@ -527,6 +534,7 @@ export class Batalha {
         }
       }
       if (sombrio) this.trevas.area(c, gp, atingidos);
+      if (this.musguinho.dele(c)) this.musguinho.aoUsarArea(c, gp); // raízes, moita ou bosque
     }
   }
 
@@ -655,6 +663,7 @@ export class Batalha {
     l.rajada = null;
     this.brasito.parar(l);
     this.gotinho.parar(l);
+    this.musguinho.parar(l);
     l.veloz = null;
     if (l.lado === 'inimigo') {
       this.derrotados.push(l.dados);
@@ -734,6 +743,7 @@ export class Batalha {
 
     if (c.jato) this.brasito.atualizarJato(c, dt);
     if (c.giro) this.brasito.atualizarGiro(c, dt);
+    if (c.vinha) this.musguinho.atualizarVinha(c, dt);
 
     if (c.dash) {
       const ds = c.dash;
@@ -800,6 +810,19 @@ export class Batalha {
       this.projeteis.push({ mesh: info.obj, trevas: info, pos, dir, gp, dono: c, lado: c.lado, vida: 1.4, fator, efeito: this.efeitoDoGolpe(c, gp) });
       return;
     }
+    if (this.musguinho.dele(c) && gp.bumerangue) {
+      // folha bumerangue da linha do Musguinho: vai, faz a curva e volta
+      const obj = this.musguinho.projetil(gp, ang, fator);
+      const dir = new THREE.Vector3(Math.sin(ang), 0, Math.cos(ang));
+      const pos = c.pos.clone().addScaledVector(dir, c.raio + 0.3).setY(0.8 * c.esp.tamanho);
+      obj.position.copy(pos);
+      this.cena.add(obj);
+      // as folhas do mesmo uso dividem a lista de quem já sorteou o efeito
+      const sorteados = this.sorteadosFolha?.dono === c && this.sorteadosFolha.t === this.t ? this.sorteadosFolha.lista : new Set();
+      this.sorteadosFolha = { dono: c, t: this.t, lista: sorteados };
+      this.projeteis.push({ mesh: obj, bumerangue: true, fixo: true, fase: 'ida', andou: 0, atingidos: new Set(), sorteados, pos, dir, gp, dono: c, lado: c.lado, vida: 10, fator, efeito: this.efeitoDoGolpe(c, gp) });
+      return;
+    }
     if (this.gotinho.dele(c) && gp.visual) {
       // tiro da linha do Gotinho: jato fino (atravessa) ou bola do Hidrocanhão (explode)
       const obj = this.gotinho.projetil(gp, ang, fator);
@@ -825,15 +848,17 @@ export class Batalha {
   atualizarProjeteis(dt) {
     for (let i = this.projeteis.length - 1; i >= 0; i--) {
       const p = this.projeteis[i];
-      p.pos.addScaledVector(p.dir, p.gp.velocidade * dt);
+      if (p.bumerangue) this.musguinho.moverFolha(p, dt); // folha que vai e volta
+      else p.pos.addScaledVector(p.dir, p.gp.velocidade * dt);
       p.vida -= dt;
       p.mesh.position.copy(p.pos);
       if (p.trevas) this.trevas.atualizarProjetil(p, dt);
       else if (p.gotinho) this.gotinho.atualizarProjetil(p, dt);
+      else if (p.bumerangue) { /* a folha gira em moverFolha */ }
       else if (p.gp.elemento === 'lua') p.mesh.rotation.y += dt * 14;
       else if (p.gp.elemento !== 'planta' && p.gp.elemento !== 'raio') p.mesh.rotation.x += dt * 8;
       const alvos = p.lado === 'jogador' ? this.vivos() : (this.jog.morto ? [] : [this.jog]);
-      let acabou = p.vida <= 0 || Math.hypot(p.pos.x, p.pos.z) > RAIO_ARENA + 1;
+      let acabou = p.vida <= 0 || p.chegou || Math.hypot(p.pos.x, p.pos.z) > RAIO_ARENA + 1;
       // obstáculos seguram os disparos: dá para se esconder atrás deles
       if (!acabou && this.arena.bloqueia(p.pos, p.gp.raio * 0.6)) {
         acabou = true;
@@ -841,8 +866,12 @@ export class Batalha {
       }
       const alvo = acabou ? null : alvos.find((o) => !p.atingidos?.has(o) && Math.hypot(p.pos.x - o.pos.x, p.pos.z - o.pos.z) < p.gp.raio + o.raio);
       if (alvo) {
-        this.aplicarDano(p.dono, alvo, p.gp, p.dir, { fator: p.fator, efeito: p.efeito });
-        if (p.atravessa > 0) {
+        this.aplicarDano(p.dono, alvo, p.gp, p.dir, { fator: p.fator, efeito: p.bumerangue ? this.musguinho.efeitoDaFolha(p, alvo) : p.efeito });
+        if (p.bumerangue) {
+          // folha bumerangue: passa pelo alvo e segue (acerta cada um uma vez na ida e uma na volta)
+          p.atingidos.add(alvo);
+          p.acertou = true;
+        } else if (p.atravessa > 0) {
           // Jato d'Água: atravessa e segue com menos força
           p.atravessa--;
           p.atingidos.add(alvo);
@@ -950,7 +979,7 @@ export class Batalha {
     est.pedras[tipo.id]--;
     const sucesso = Math.random() < chanceCaptura(this.ini.dados, this.tipoCristal);
     if (this.jog.prep) this.cancelarPreparo(this.jog);
-    for (const l of this.inimigos) { if (l.prep) this.cancelarPreparo(l); l.dash = null; l.rajada = null; this.brasito.parar(l); this.gotinho.parar(l, false); }
+    for (const l of this.inimigos) { if (l.prep) this.cancelarPreparo(l); l.dash = null; l.rajada = null; this.brasito.parar(l); this.gotinho.parar(l, false); this.musguinho.parar(l); }
     const cr = criarCristal(1.1, this.tipoCristal);
     this.cena.add(cr);
     this.captura = {
@@ -1042,6 +1071,7 @@ export class Batalha {
     const velho = this.jog;
     if (velho.prep) this.cancelarPreparo(velho);
     this.gotinho.parar(velho);
+    this.musguinho.parar(velho);
     this.cena.remove(velho.modelo);
     descartar(velho.modelo);
     this.particulas(velho.pos, '#8ff4ff', 12, 1);
