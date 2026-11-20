@@ -1,0 +1,39 @@
+plugins { id 'com.android.application' }
+
+// A senha e o arquivo da assinatura NÃO ficam no repositório (veja o README).
+// Eles vêm do arquivo assinatura.properties, que fica só no seu computador/celular.
+def assin = new Properties()
+def arqAssin = rootProject.file('assinatura.properties')
+if (arqAssin.exists()) arqAssin.withInputStream { assin.load(it) }
+
+android {
+    namespace 'com.laminasombria.cristalia'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'com.laminasombria.cristalia'
+        minSdk 24          // Android 7 ou mais novo
+        targetSdk 35
+        versionCode 1
+        versionName '1.0'
+    }
+    signingConfigs {
+        release {
+            if (arqAssin.exists()) {
+                storeFile rootProject.file(assin['arquivo'])
+                storePassword assin['senha']
+                keyAlias assin['apelido']
+                keyPassword assin['senha']
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

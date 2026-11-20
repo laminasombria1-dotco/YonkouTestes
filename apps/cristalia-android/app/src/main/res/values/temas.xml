@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fundo azul-noite enquanto o jogo carrega, sem barra de título -->
+    <style name="Tema" parent="android:Theme.Material.NoActionBar.Fullscreen">
+        <item name="android:windowBackground">@color/noite</item>
+        <item name="android:statusBarColor">@color/noite</item>
+        <item name="android:navigationBarColor">@color/noite</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+    </style>
+    <color name="noite">#14233F</color>
+</resources>

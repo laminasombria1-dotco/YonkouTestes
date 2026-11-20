@@ -1,0 +1,9 @@
+# Assinatura do app: NUNCA vai para o repositório
+*.jks
+*.keystore
+assinatura.properties
+# arquivos gerados na montagem
+.gradle/
+build/
+app/build/
+local.properties

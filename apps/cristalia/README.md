@@ -28,7 +28,7 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
 
 ## Instalar no celular (app que se atualiza sozinho)
 
-O jogo é um **PWA** (aplicativo web instalável). Ele fica no site **https://laminasombria1-dotco.github.io/yonkoutestes/** e, depois de instalado, abre como um app normal.
+O jogo é um **PWA** (aplicativo web instalável). Ele fica no site **https://laminasombria1-dotco.github.io/YonkouTestes/** e, depois de instalado, abre como um app normal.
 
 **No Android (Chrome):**
 1. Abra o endereço acima no **Chrome**.
@@ -41,6 +41,8 @@ O jogo é um **PWA** (aplicativo web instalável). Ele fica no site **https://la
 - A data e o código da versão aparecem embaixo, na tela inicial do jogo.
 - **Sem internet**, o app abre a última versão baixada.
 - O progresso salvo fica no celular e não se perde com as atualizações.
+
+**APK para Android:** também dá para instalar como APK. O projeto do app fica em `apps/cristalia-android` (veja o README de lá). O APK abre o mesmo site, então recebe as mesmas atualizações.
 
 **Arquivos do app:** `manifest.webmanifest` (nome, ícone e cores do app), `sw.js` (o "ajudante" que guarda o jogo e busca as atualizações) e `icones/`.
 
