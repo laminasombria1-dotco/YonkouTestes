@@ -242,7 +242,7 @@ export class Batalha {
   }
 
   camPadrao() {
-    return this.jogo.aspecto < 1 ? { dist: 17, pitch: 0.83 } : { dist: 11.3, pitch: 0.72 };
+    return this.jogo.aspecto < 1 ? { dist: 19.5, pitch: 0.83 } : { dist: 13, pitch: 0.72 }; // um pouco mais longe
   }
 
   posicionarCamera(k) {
