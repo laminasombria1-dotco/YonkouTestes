@@ -16,6 +16,7 @@ import { HabilidadesBrasito } from './habilidades/brasito-batalha.js';
 import { HabilidadesGotinho } from './habilidades/gotinho-batalha.js';
 import { HabilidadesMusguinho } from './habilidades/musguinho-batalha.js';
 import { HabilidadesPedrisco } from './habilidades/pedrisco-batalha.js';
+import { HabilidadesFaisquinho } from './habilidades/faisquinho-batalha.js';
 import { CameraOrbita } from './camera.js';
 import { criarModelo, criarCristal, criarCoroa, animarModelo, piscar, descartar } from './modelos.js';
 
@@ -114,6 +115,7 @@ export class Batalha {
     this.gotinho = new HabilidadesGotinho(this); // jato, hidrocanhão, ondas, maremoto e escudo da linha do Gotinho
     this.musguinho = new HabilidadesMusguinho(this); // folha bumerangue, vinha que puxa, raízes, moita e bosque da linha do Musguinho
     this.pedrisco = new HabilidadesPedrisco(this); // pedra em arco, punho sísmico, tremor e pilares da linha do Pedrisco
+    this.faisquinho = new HabilidadesFaisquinho(this); // marcas, dash elétrico, tiro que marca, choque e nuvens da linha do Faisquinho
     this.periodo = jogo.mundo.periodo;
 
     this.idx = idxInicial;
@@ -344,6 +346,7 @@ export class Batalha {
     this.gotinho.atualizar(dt);
     this.musguinho.atualizar(dt);
     this.pedrisco.atualizar(dt);
+    this.faisquinho.atualizar(dt);
     if (this.captura) this.atualizarCaptura(dt);
 
     if (this.trocaAuto > 0) {
@@ -367,7 +370,7 @@ export class Batalha {
     for (let i = 0; i < 3; i++) if (ctrl.consumir('golpe' + i)) this.tentarGolpe(j, i, e);
     if (ctrl.consumir('esquiva')) this.esquivar(j, mov ? v : null, e);
     if (!j.dash && !j.giro && j.stun <= 0 && j.podeAndar()) {
-      const vel = j.stats.vel * j.fatorVel * (j.prep || j.jato || j.punho ? 0.35 : 1);
+      const vel = j.stats.vel * j.fatorVel * (j.prep || j.jato || j.punho || j.feixe ? 0.35 : 1);
       j.pos.x += v.x * vel * dt;
       j.pos.z += v.z * vel * dt;
       j.movendo = mov;
@@ -394,7 +397,9 @@ export class Batalha {
         if (gp.onda) { if (d < gp.onda.distancia * 0.9) opcoes.push(i, i, i); } // onda que anda para a frente
         else if (gp.tipo === 'area' && d < gp.raio * 0.85 + (gp.dash || 0)) opcoes.push(i, i, i);
         if (gp.tipo === 'corpo' && d < gp.alcance + 1.2) opcoes.push(i, i);
-        if (gp.jato) { if (d < gp.jato.alcance * 0.9) opcoes.push(i, i); }
+        if (gp.marca && e.choque) opcoes.push(i, i, i, i); // Choque pronto: acerto garantido
+        else if (gp.marca) { if (d > 2 && d < gp.alcance) opcoes.push(i, i); } // tiro que marca
+        else if (gp.jato) { if (d < gp.jato.alcance * 0.9) opcoes.push(i, i); }
         else if (gp.arco) { if (d > 2.5 && d < gp.arco.alcance + 1) opcoes.push(i, i); } // pedra em arco
         else if (gp.tipo === 'projetil' && d > 2.5 && d < 12) opcoes.push(i);
       }
@@ -416,7 +421,7 @@ export class Batalha {
         [fx, fz] = [fx * cs - fz * sn, fx * sn + fz * cs];
         l = Math.hypot(fx, fz) || 1;
       }
-      const vel = e.stats.vel * 0.85 * e.fatorVel * (e.prep || e.jato || e.punho ? 0.2 : 1);
+      const vel = e.stats.vel * 0.85 * e.fatorVel * (e.prep || e.jato || e.punho || e.feixe ? 0.2 : 1);
       e.pos.x += (fx / l) * vel * dt;
       e.pos.z += (fz / l) * vel * dt;
       e.movendo = true;
@@ -425,7 +430,7 @@ export class Batalha {
   }
 
   tentarGolpe(c, i, alvo) {
-    if (c.prep || c.rec[i] > 0 || c.stun > 0 || c.dash || c.morto || c.rajada || c.jato || c.giro || c.vinha || c.punho) return;
+    if (c.prep || c.rec[i] > 0 || c.stun > 0 || c.dash || c.morto || c.rajada || c.jato || c.giro || c.vinha || c.punho || c.feixe) return;
     if (!c.podeAtacar()) {
       // avisa o jogador por que o golpe não saiu
       if (c.lado === 'jogador' && this.t - (this.avisoBloqueio || 0) > 0.8) {
@@ -436,6 +441,8 @@ export class Batalha {
       return;
     }
     const gp = c.golpe(i);
+    // linha do Faisquinho: depois do tiro acertar, o mesmo botão solta o Choque (na hora)
+    if (gp.marca && c.choque) { this.faisquinho.usarChoque(c, gp); return; }
     const inimigo = c.lado === 'inimigo';
     c.rec[i] = gp.recarga * (inimigo ? (c.furia ? 0.95 : 1.4) : 1);
     let prep = gp.tipo === 'area' ? 0.35 : gp.tipo === 'corpo' ? 0.1 : 0.06;
@@ -458,6 +465,8 @@ export class Batalha {
     if (gp.onda) return this.gotinho.avisoOnda(c, gp, dir, cor);                    // onda que anda para a frente
     if (gp.vinha) return inimigo ? this.musguinho.avisoVinha(c, gp, dir, cor) : null; // vinha que puxa
     if (gp.espinhos) return inimigo ? this.pedrisco.avisoPunho(c, gp, dir, cor) : null; // punho sísmico
+    if (gp.dashRaio) return inimigo ? this.faisquinho.avisoDash(c, gp, dir, cor) : null; // dash elétrico
+    if (gp.nuvens) return null; // as nuvens avisam cada raio que cai no chão
     if (gp.tipo === 'area') {
       const g = new THREE.Group();
       const anel = new THREE.Mesh(GEO_ANEL, matBrilho(cor, 0.75));
@@ -470,7 +479,7 @@ export class Batalha {
       return g;
     }
     if (!inimigo) return null;
-    const comp = gp.tipo === 'corpo' ? gp.alcance + 2.2 : 12;
+    const comp = gp.tipo === 'corpo' ? gp.alcance + 2.2 : (gp.marca ? gp.alcance : 12);
     const larg = gp.tipo === 'corpo' ? 1.4 : (gp.quantidade > 1 ? 2.6 : 1);
     const m = new THREE.Mesh(GEO_FAIXA, matBrilho(cor, 0.3));
     m.scale.set(larg, 1, comp);
@@ -518,6 +527,10 @@ export class Batalha {
       this.pedrisco.iniciarPunho(c, gp, dir, this.efeitoDoGolpe(c, gp)); // punho sísmico: espinhos à frente
     } else if (gp.arco) {
       this.pedrisco.lancar(c, gp, p.quedas, p.aviso, this.efeitoDoGolpe(c, gp)); // pedra em arco
+    } else if (gp.dashRaio) {
+      this.faisquinho.iniciarDash(c, gp, dir, this.efeitoDoGolpe(c, gp)); // dash elétrico: marca, sem dano
+    } else if (gp.nuvens) {
+      this.faisquinho.iniciarNuvens(c, gp, this.efeitoDoGolpe(c, gp)); // nuvens que soltam raios
     } else if (gp.tipo === 'corpo') {
       c.dash = { dir: dir.clone(), t: 0.17, vel: 12, gp, acertou: false, efeito: this.efeitoDoGolpe(c, gp) };
       if (this.trevas.dele(c)) this.trevas.avancar(c);
@@ -567,12 +580,13 @@ export class Batalha {
   aplicarDano(at, alvo, gp, dir, opcoes = {}) {
     if (alvo.morto || this.captura || !alvo.modelo.visible) return false;
     const topo = alvo.pos.clone().setY(alvo.altura);
-    if (alvo.invul > 0) {
+    // opcoes.garantido = acerto garantido (Choque e raios das nuvens nos marcados): não dá para esquivar nem errar
+    if (alvo.invul > 0 && !opcoes.garantido) {
       this.jogo.numero('Esquivou!', topo, '#ffffff', 'pequeno');
       return false;
     }
     // Ofuscado: quem ataca pode errar
-    if (at.tem('ofuscado') && Math.random() < 0.4) {
+    if (at.tem('ofuscado') && !opcoes.garantido && Math.random() < 0.4) {
       this.jogo.numero('Errou!', topo, '#ffab2e', 'pequeno');
       return false;
     }
@@ -684,6 +698,7 @@ export class Batalha {
     this.gotinho.parar(l);
     this.musguinho.parar(l);
     this.pedrisco.parar(l);
+    this.faisquinho.parar(l);
     l.veloz = null;
     if (l.lado === 'inimigo') {
       this.derrotados.push(l.dados);
@@ -770,6 +785,7 @@ export class Batalha {
       const ds = c.dash;
       c.pos.addScaledVector(ds.dir, ds.vel * dt);
       ds.t -= dt;
+      if (ds.dashRaio) this.faisquinho.atualizarDash(c); // dash elétrico marca quem passar perto
       if (ds.gp && !ds.acertou) {
         // o golpe de perto acerta o primeiro adversário que encostar
         const alvo = this.alvosDe(c).find((o) => dist(c, o) < c.raio + o.raio + 0.5);
@@ -844,6 +860,16 @@ export class Batalha {
       this.projeteis.push({ mesh: obj, bumerangue: true, fixo: true, fase: 'ida', andou: 0, atingidos: new Set(), sorteados, pos, dir, gp, dono: c, lado: c.lado, vida: 10, fator, efeito: this.efeitoDoGolpe(c, gp) });
       return;
     }
+    if (this.faisquinho.dele(c) && gp.marca) {
+      // tiro da linha do Faisquinho: raiozinho que marca quem acertar
+      const obj = this.faisquinho.projetil(gp, ang, fator);
+      const dir = new THREE.Vector3(Math.sin(ang), 0, Math.cos(ang));
+      const pos = c.pos.clone().addScaledVector(dir, c.raio + 0.3).setY(0.8 * c.esp.tamanho);
+      obj.position.copy(pos);
+      this.cena.add(obj);
+      this.projeteis.push({ mesh: obj, faisca: true, fixo: true, pos, dir, gp, dono: c, lado: c.lado, vida: gp.alcance / gp.velocidade, fator, efeito: this.efeitoDoGolpe(c, gp) });
+      return;
+    }
     if (this.gotinho.dele(c) && gp.visual) {
       // tiro da linha do Gotinho: jato fino (atravessa) ou bola do Hidrocanhão (explode)
       const obj = this.gotinho.projetil(gp, ang, fator);
@@ -875,6 +901,7 @@ export class Batalha {
       p.mesh.position.copy(p.pos);
       if (p.trevas) this.trevas.atualizarProjetil(p, dt);
       else if (p.gotinho) this.gotinho.atualizarProjetil(p, dt);
+      else if (p.faisca) this.faisquinho.atualizarProjetil(p, dt);
       else if (p.bumerangue) { /* a folha gira em moverFolha */ }
       else if (p.gp.elemento === 'lua') p.mesh.rotation.y += dt * 14;
       else if (p.gp.elemento !== 'planta' && p.gp.elemento !== 'raio') p.mesh.rotation.x += dt * 8;
@@ -887,7 +914,8 @@ export class Batalha {
       }
       const alvo = acabou ? null : alvos.find((o) => !p.atingidos?.has(o) && Math.hypot(p.pos.x - o.pos.x, p.pos.z - o.pos.z) < p.gp.raio + o.raio);
       if (alvo) {
-        this.aplicarDano(p.dono, alvo, p.gp, p.dir, { fator: p.fator, efeito: p.bumerangue ? this.musguinho.efeitoDaFolha(p, alvo) : p.efeito });
+        const acertou = this.aplicarDano(p.dono, alvo, p.gp, p.dir, { fator: p.fator, efeito: p.bumerangue ? this.musguinho.efeitoDaFolha(p, alvo) : p.efeito });
+        if (p.faisca && acertou) this.faisquinho.aoAcertarTiro(p, alvo); // marca e deixa o Choque pronto
         if (p.bumerangue) {
           // folha bumerangue: passa pelo alvo e segue (acerta cada um uma vez na ida e uma na volta)
           p.atingidos.add(alvo);
@@ -1000,7 +1028,7 @@ export class Batalha {
     est.pedras[tipo.id]--;
     const sucesso = Math.random() < chanceCaptura(this.ini.dados, this.tipoCristal);
     if (this.jog.prep) this.cancelarPreparo(this.jog);
-    for (const l of this.inimigos) { if (l.prep) this.cancelarPreparo(l); l.dash = null; l.rajada = null; this.brasito.parar(l); this.gotinho.parar(l, false); this.musguinho.parar(l); this.pedrisco.parar(l); }
+    for (const l of this.inimigos) { if (l.prep) this.cancelarPreparo(l); l.dash = null; l.rajada = null; this.brasito.parar(l); this.gotinho.parar(l, false); this.musguinho.parar(l); this.pedrisco.parar(l); this.faisquinho.parar(l, false); }
     const cr = criarCristal(1.1, this.tipoCristal);
     this.cena.add(cr);
     this.captura = {
@@ -1094,6 +1122,7 @@ export class Batalha {
     this.gotinho.parar(velho);
     this.musguinho.parar(velho);
     this.pedrisco.parar(velho);
+    this.faisquinho.parar(velho);
     this.cena.remove(velho.modelo);
     descartar(velho.modelo);
     this.particulas(velho.pos, '#8ff4ff', 12, 1);
@@ -1162,7 +1191,8 @@ export class Batalha {
   htmlStatus(l) {
     const veloz = l.veloz ? `<span style="--cor:#7dffa0">Veloz +${Math.round(l.veloz.bonus * 100)}% ${l.veloz.t.toFixed(0)}s</span>` : '';
     const escudo = l.escudo ? `<span style="--cor:#8fdcff">Escudo ${l.escudo.valor} ${l.escudo.t.toFixed(0)}s</span>` : '';
-    return veloz + escudo + Object.entries(l.status).map(([k, v]) => `<span style="--cor:${EFEITOS[k].cor}">${EFEITOS[k].nome} ${v.toFixed(1)}s</span>`).join('');
+    const marcas = l.marcas ? `<span style="--cor:#f7e43a">Marcado ×${l.marcas.n} ${l.marcas.t.toFixed(0)}s</span>` : '';
+    return veloz + escudo + marcas + Object.entries(l.status).map(([k, v]) => `<span style="--cor:${EFEITOS[k].cor}">${EFEITOS[k].nome} ${v.toFixed(1)}s</span>`).join('');
   }
 
   // Placa em cima de cada inimigo: só o nome e uma barrinha de vida
@@ -1175,10 +1205,10 @@ export class Batalha {
       if (!p) {
         const el = document.createElement('div');
         el.className = 'placa-ini';
-        el.innerHTML = `<span></span><i class="vida"><b></b></i>`;
+        el.innerHTML = `<span></span><small style="color:#f7e43a;margin-left:4px"></small><i class="vida"><b></b></i>`;
         el.querySelector('span').textContent = l.esp.nome;
         ui.placas.appendChild(el);
-        p = { el, barra: el.querySelector('b') };
+        p = { el, barra: el.querySelector('b'), marca: el.querySelector('small'), txtMarca: '' };
         this.placas.set(l, p);
       }
       const f = Math.max(0, l.frac);
@@ -1188,6 +1218,9 @@ export class Batalha {
       p.el.classList.toggle('chefe', this.chefe);
       p.el.classList.toggle('lider', !!l.dados.lider);
       p.el.classList.toggle('furia', !!l.furia);
+      // marcas da linha do Faisquinho: "⚡2" ao lado do nome
+      const txtMarca = l.marcas ? '⚡' + l.marcas.n : '';
+      if (p.txtMarca !== txtMarca) { p.txtMarca = txtMarca; p.marca.textContent = txtMarca; }
       const pos = this.jogo.projetar(l.pos.clone().setY(l.altura + 0.6), this.camera);
       p.el.hidden = pos.atras;
       p.x = pos.x; p.y = pos.y; p.w = p.el.offsetWidth || 70; p.h = p.el.offsetHeight || 26;
@@ -1236,6 +1269,8 @@ export class Batalha {
     ui.golpes.forEach((b, i) => {
       const gp = j.golpe(i);
       const r = j.rec[i] / gp.recarga;
+      // linha do Faisquinho: o botão do disparo vira "Choque" enquanto ele está pronto
+      if (gp.marca) { const nome = this.faisquinho.nomeBotao(j, gp); if (b.dataset.nomeAtual !== nome) { b.dataset.nomeAtual = nome; b.querySelector('.nome').textContent = nome; } }
       b.style.setProperty('--p', r.toFixed(3));
       b.classList.toggle('carregando', r > 0);
       b.classList.toggle('bloqueado', !j.podeAtacar());

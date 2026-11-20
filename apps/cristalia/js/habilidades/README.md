@@ -102,6 +102,30 @@ Pedrisco (Nv.1) > Cascalhão (Nv.6) > Rochedrão (Nv.12) > Montanhar (Nv.30)
 - Mais tempo no ar: `punhoSismico` → `espinhos.levanta` (segundos).
 - Pilares que duram mais ou em maior número: `muralhaPedra` → `pilares.duracao` e `pilares.quantidade`.
 
+### Raio: linha do Faisquinho (`faisquinho.js` e `faisquinho-batalha.js`)
+Faisquinho (Nv.1) > Choquilho (Nv.6) > Trovolt (Nv.12) > Tempestor (Nv.30)
+
+| Forma | Perto | Disparo (tiro → Choque) | Área |
+|---|---|---|---|
+| Faisquinho | Investida | **Faísca Marcadora**: força 10, 9 m, 22 m/s, +1 marca. **Choque**: força 14, 1 alvo | **Nuvem Elétrica**: 1 nuvem, 4 s, raio de força 5 a cada 1,5 s |
+| Choquilho | **Dash Elétrico**: 5 m em 0,25 s, aura de 1,2 m, **sem dano**, recarga 4 s | Faísca Marcadora + **paralisia** | Nuvem Elétrica + **paralisia** (0,7 s) |
+| Trovolt | Dash: 6 m, aura de 1,5 m | **Relâmpago Marcador**: força 12, 10 m. Choque: força 18, até 2 alvos | **Nuvens de Tempestade**: 2 nuvens, 5 s, força 6 |
+| Tempestor | Dash: 7 m, aura de 1,8 m + **paralisia** (21%) | Relâmpago Marcador: força 13, 11 m. Choque: força 22, até 3 alvos | **Tempestade**: 3 nuvens, 6 s, força 7 |
+
+- **Marcas** (`MARCAS` em `faisquinho.js`): duram 6 s, cabem 3 e dão o bônus `[1, 1.25, 1.5]` no Choque e nas nuvens.
+- **Botão em duas partes:** se o tiro acertar, o botão do disparo vira "Choque" e fica pronto por 4 s (`marca.janela`). O Choque liga os marcados (o mais marcado primeiro), dá o dano em 4 pedaços e estoura as marcas. Se a janela passar, começa a recarga normal do tiro.
+- **Acerto garantido:** o Choque e os raios das nuvens nos marcados usam `garantido: true` em `aplicarDano`: passam pela esquiva e pelo Ofuscado e não têm limite de distância.
+- As nuvens se revezam: cada uma solta o 1º raio num tempo diferente e, com vários marcados, cada raio vai num deles. Sem marcados, o raio cai a até `espalha` metros do monstro, com o círculo de aviso.
+- Chances de Paralisia: nuvens 30% (0,7 s), tiro e Choque 15% (um sorteio por inimigo a cada Choque), dash do Tempestor 21%.
+- **Atenção:** só lutam 2 inimigos ao mesmo tempo (`MAX_ATIVOS` em `../batalha.js`), então o "até 3" do Tempestor hoje liga no máximo 2.
+- Só a linha do Faisquinho usa estes golpes. O Imanito e as evoluções (Terra + Raio) continuam com os golpes de `dados.js`.
+
+**Exemplos de mudança (em `faisquinho.js`):**
+- Marcas que duram mais ou dão mais bônus: `MARCAS.duracao` e `MARCAS.bonus`.
+- Choque mais forte: `faiscaMarcadora` → `marca.choque.poder`; mais tempo para usar: `marca.janela`.
+- Dash mais longo: `dashEletrico` → `dashRaio.distancia`; aura maior: `dashRaio.aura`.
+- Mais nuvens ou que duram mais: `nuvemEletrica` → `nuvens.quantidade` e `nuvens.duracao`.
+
 ### Trevas: linha do Breuzinho (`trevas-batalha.js`)
 Só o **visual** (poça de breu, tentáculos, mãos de sombra, olhos, bocarra, cópias sombrias, morcegos e o Astro Negro). Os números dos golpes de Trevas continuam em `../dados.js` (Mordida Sombria, Bola Sombria, Vazio, Garra Abissal, Sombras, Abismo).
 
