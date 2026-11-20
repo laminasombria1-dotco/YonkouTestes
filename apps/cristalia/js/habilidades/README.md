@@ -110,14 +110,14 @@ Faisquinho (Nv.1) > Choquilho (Nv.6) > Trovolt (Nv.12) > Tempestor (Nv.30)
 | Faisquinho | Investida | **Faísca Marcadora**: força 10, 9 m, 22 m/s, +1 marca. **Choque**: força 14, 1 alvo | **Nuvem Elétrica**: 1 nuvem, 4 s, raio de força 5 a cada 1,5 s |
 | Choquilho | **Dash Elétrico**: 5 m em 0,25 s, aura de 1,2 m, **sem dano**, recarga 4 s | Faísca Marcadora + **paralisia** | Nuvem Elétrica + **paralisia** (0,7 s) |
 | Trovolt | Dash: 6 m, aura de 1,5 m | **Relâmpago Marcador**: força 12, 10 m. Choque: força 18, até 2 alvos | **Nuvens de Tempestade**: 2 nuvens, 5 s, força 6 |
-| Tempestor | Dash: 7 m, aura de 1,8 m + **paralisia** (21%) | Relâmpago Marcador: força 13, 11 m. Choque: força 22, até 3 alvos | **Tempestade**: 3 nuvens, 6 s, força 7 |
+| Tempestor | Dash: 7 m, aura de 1,8 m + **paralisia** (21%) | Relâmpago Marcador: força 13, 11 m. Choque: força **28**, até 2 alvos | **Tempestade**: 3 nuvens, 6 s, força 7 |
 
 - **Marcas** (`MARCAS` em `faisquinho.js`): duram 6 s, cabem 3 e dão o bônus `[1, 1.25, 1.5]` no Choque e nas nuvens.
 - **Botão em duas partes:** se o tiro acertar, o botão do disparo vira "Choque" e fica pronto por 4 s (`marca.janela`). O Choque liga os marcados (o mais marcado primeiro), dá o dano em 4 pedaços e estoura as marcas. Se a janela passar, começa a recarga normal do tiro.
 - **Acerto garantido:** o Choque e os raios das nuvens nos marcados usam `garantido: true` em `aplicarDano`: passam pela esquiva e pelo Ofuscado e não têm limite de distância.
 - As nuvens se revezam: cada uma solta o 1º raio num tempo diferente e, com vários marcados, cada raio vai num deles. Sem marcados, o raio cai a até `espalha` metros do monstro, com o círculo de aviso.
 - Chances de Paralisia: nuvens 30% (0,7 s), tiro e Choque 15% (um sorteio por inimigo a cada Choque), dash do Tempestor 21%.
-- **Atenção:** só lutam 2 inimigos ao mesmo tempo (`MAX_ATIVOS` em `../batalha.js`), então o "até 3" do Tempestor hoje liga no máximo 2.
+- Só lutam 2 inimigos ao mesmo tempo (`MAX_ATIVOS` em `../batalha.js`), por isso o Choque liga no máximo 2; no Tempestor, no lugar de um 3º alvo, ele ficou mais forte.
 - Só a linha do Faisquinho usa estes golpes. O Imanito e as evoluções (Terra + Raio) continuam com os golpes de `dados.js`.
 
 **Exemplos de mudança (em `faisquinho.js`):**
@@ -125,6 +125,27 @@ Faisquinho (Nv.1) > Choquilho (Nv.6) > Trovolt (Nv.12) > Tempestor (Nv.30)
 - Choque mais forte: `faiscaMarcadora` → `marca.choque.poder`; mais tempo para usar: `marca.janela`.
 - Dash mais longo: `dashEletrico` → `dashRaio.distancia`; aura maior: `dashRaio.aura`.
 - Mais nuvens ou que duram mais: `nuvemEletrica` → `nuvens.quantidade` e `nuvens.duracao`.
+
+### Sol: linha do Solito (`solito.js` e `solito-batalha.js`)
+Solito (Nv.1) > Solário (Nv.6) > Solaurum (Nv.12) > Astrorei (Nv.30)
+
+| Forma | Perto | Disparo | Área |
+|---|---|---|---|
+| Solito | Investida | **Raio Solar**: força 14, 10 m, 0,5 m de largura, recarga 1,6 s | **Calor**: 4 por pedaço, 3 m, 3 s (6 pedaços), recarga 6 s |
+| Solário | **Pequeno Sol**: 20 s; +10% de dano, −15% de dano recebido, +15% de velocidade; recarga 15 s depois que some | Raio Solar + **ofuscado** (20%) | Calor + **ofuscado** (40%) |
+| Solaurum | **Sol Dourado**: +15% / −20% / +20% | Raio Solar: força 16, 12 m, 0,8 m de largura, **recarga 1,2 s** | **Onda de Calor**: 4 por pedaço, 3,8 m, 4 s, esquenta +15% por pedaço, recarga 7 s |
+| Astrorei | **Sol Rei**: +20% / −25% / +25%; o sol atira junto (60%) | **Laser Real**: força 20, 14 m, 1 m de largura, recarga 1,8 s | **Supernova**: 5 por pedaço, 4,5 m, 5 s, esquenta; explosão de força 24 no fim, recarga 8 s |
+
+- **Sol:** `soltarSol` cria a bola ao lado e acima do monstro; enquanto ela existir, `c.sol` guarda o bônus. `batalha.js` usa o bônus no dano (`aplicarDano`) e na velocidade (`fatorVel`). O bônus vale no campo todo. Enquanto o sol existe, a recarga fica travada; quando ele some, começa a recarga de 15 s (`recarga` do golpe).
+- **Laser:** acerta todos com o corpo na faixa (largura + metade do monstro), até o primeiro obstáculo. No Astrorei, o sol solta um 2º laser do alto, no inimigo mais perto dele, com `sol.atira` da força.
+- **Calor:** um pedaço a cada `calor.intervalo` em quem está a até `raio` dele. Com `esquenta`, o pedaço número N no mesmo inimigo tem `(1 + esquenta)^N` da força. A Supernova termina com `calor.explosao`.
+- Só a linha do Solito usa estes golpes. Os de Sol de sempre continuam em `dados.js`.
+
+**Exemplos de mudança (em `solito.js`):**
+- Bônus do sol: `pequenoSol` → `sol.ataque`, `sol.defesa` e `sol.velocidade` (0,15 = 15%); tempo: `sol.duracao`; espera: `recarga`.
+- Laser mais longo ou mais grosso: `raioSolarSolito` → `laser.alcance` e `laser.largura`.
+- Calor mais forte ou mais longo: `calorSolito` → `poder` (cada pedaço), `calor.duracao` e `raio`.
+- Calor que esquenta mais rápido: `ondaCalor` → `calor.esquenta`.
 
 ### Trevas: linha do Breuzinho (`trevas-batalha.js`)
 Só o **visual** (poça de breu, tentáculos, mãos de sombra, olhos, bocarra, cópias sombrias, morcegos e o Astro Negro). Os números dos golpes de Trevas continuam em `../dados.js` (Mordida Sombria, Bola Sombria, Vazio, Garra Abissal, Sombras, Abismo).

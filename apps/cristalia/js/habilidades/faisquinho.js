@@ -28,7 +28,7 @@ export const MARCAS = {
 //              aura (m em volta dele que marca quem passar perto) }
 //  marca     = o tiro marca quem acertar; depois o botão vira "Choque": { janela (s que
 //              o Choque fica disponível), choque: { poder, alvos (quantos marcados ele
-//              liga, pulando de um para o outro), duracao (s da ligação) } }
+//              liga, pulando de um para o outro; só lutam 2 inimigos por vez), duracao (s da ligação) } }
 //  alcance   = até onde vai o tiro (m)
 //  nuvens    = nuvens em volta dele: { quantidade, duracao (s), intervalo (s entre os
 //              raios de cada nuvem), area (m do raio que cai no chão), espalha (m em
@@ -63,7 +63,7 @@ export const GOLPES_FAISQUINHO = {
   relampagoTempestor: {
     nome: 'Relâmpago Marcador', elemento: 'raio', tipo: 'projetil', poder: 13, recarga: 1.6,
     velocidade: 24, raio: 0.5, alcance: 11,
-    marca: { janela: 4, choque: { poder: 22, alvos: 3, duracao: 0.8 } },
+    marca: { janela: 4, choque: { poder: 28, alvos: 2, duracao: 0.8 } }, // só lutam 2 inimigos por vez: no lugar do 3º alvo, mais força
   },
   // ---- Área: nuvens que soltam raios ----
   nuvemEletrica: {
@@ -86,7 +86,7 @@ export const GOLPES_POR_FORMA_FAISQUINHO = [
   ['investida', 'faiscaMarcadora', 'nuvemEletrica'],             // Faisquinho
   ['dashEletrico', 'faiscaMarcadora', 'nuvemEletrica'],          // Choquilho: dash que marca, + paralisia
   ['dashEletricoForte', 'relampagoMarcador', 'nuvensTempestade'], // Trovolt: choque em 2, 2 nuvens
-  ['dashTempestade', 'relampagoTempestor', 'tempestadeTempestor'], // Tempestor: choque em 3, 3 nuvens
+  ['dashTempestade', 'relampagoTempestor', 'tempestadeTempestor'], // Tempestor: choque mais forte, 3 nuvens
 ];
 
 // Melhorias desta linha (no lugar das melhorias padrão de dados.js):
@@ -104,11 +104,11 @@ export const TEXTOS_FAISQUINHO = [
   ['Faísca Marcadora: o raio que acerta deixa 1 marca (até 3, por 6 s). Toque de novo em até 4 s para o Choque: liga você ao marcado e estoura as marcas (+25% com 2, +50% com 3).', 'Nuvem Elétrica: 1 nuvem por 4 s; os marcados levam o raio direto, sem errar.'],
   ['Dash Elétrico: avança 5 m e marca quem passar perto (1,2 m). Não causa dano.', 'Tiro, Choque e nuvens podem causar Paralisia.'],
   ['Dash Elétrico: 6 m.', 'Relâmpago Marcador: o Choque liga até 2 marcados.', 'Nuvens de Tempestade: 2 nuvens por 5 s.'],
-  ['Dash Elétrico: 7 m e pode paralisar.', 'O Choque liga até 3 marcados, pulando de um para o outro.', 'Tempestade: 3 nuvens por 6 s.', 'Paralisia dura 50% mais.'],
+  ['Dash Elétrico: 7 m e pode paralisar.', 'Choque mais forte (força 28), ligando até 2 marcados.', 'Tempestade: 3 nuvens por 6 s.', 'Paralisia dura 50% mais.'],
 ];
 export const NOVIDADES_FAISQUINHO = [
   null,
   ['Dash Elétrico (marca)', 'tiro e nuvens agora paralisam'],
   ['Choque em 2 marcados', '2 nuvens', 'dash mais longo'],
-  ['Choque em 3 marcados', 'Tempestade (3 nuvens)', 'dash paralisa'],
+  ['Choque mais forte', 'Tempestade (3 nuvens)', 'dash paralisa'],
 ];

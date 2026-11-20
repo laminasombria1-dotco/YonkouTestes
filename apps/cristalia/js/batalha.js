@@ -17,6 +17,7 @@ import { HabilidadesGotinho } from './habilidades/gotinho-batalha.js';
 import { HabilidadesMusguinho } from './habilidades/musguinho-batalha.js';
 import { HabilidadesPedrisco } from './habilidades/pedrisco-batalha.js';
 import { HabilidadesFaisquinho } from './habilidades/faisquinho-batalha.js';
+import { HabilidadesSolito } from './habilidades/solito-batalha.js';
 import { CameraOrbita } from './camera.js';
 import { criarModelo, criarCristal, criarCoroa, animarModelo, piscar, descartar } from './modelos.js';
 
@@ -96,8 +97,8 @@ class Lutador {
   tem(efeito) { return this.status[efeito] > 0; }
   podeAndar() { return !this.tem('paralisia') && !this.tem('sono') && !this.tem('enraizado'); }
   podeAtacar() { return !this.tem('paralisia') && !this.tem('sono') && !this.tem('medo'); }
-  // veloz = velocidade extra da Investida da linha do Brasito
-  get fatorVel() { return (this.veloz ? 1 + this.veloz.bonus : 1) * (this.lento > 0 ? 0.5 : 1) * (this.tem('encharcado') ? 0.55 : 1) * (this.tem('parasita') ? 0.7 : 1) * (this.mod?.vel ?? 1); }
+  // veloz = velocidade extra da Investida da linha do Brasito | sol = bônus do Sol da linha do Solito
+  get fatorVel() { return (this.veloz ? 1 + this.veloz.bonus : 1) * (this.sol ? 1 + this.sol.cfg.velocidade : 1) * (this.lento > 0 ? 0.5 : 1) * (this.tem('encharcado') ? 0.55 : 1) * (this.tem('parasita') ? 0.7 : 1) * (this.mod?.vel ?? 1); }
 }
 
 export class Batalha {
@@ -116,6 +117,7 @@ export class Batalha {
     this.musguinho = new HabilidadesMusguinho(this); // folha bumerangue, vinha que puxa, raízes, moita e bosque da linha do Musguinho
     this.pedrisco = new HabilidadesPedrisco(this); // pedra em arco, punho sísmico, tremor e pilares da linha do Pedrisco
     this.faisquinho = new HabilidadesFaisquinho(this); // marcas, dash elétrico, tiro que marca, choque e nuvens da linha do Faisquinho
+    this.solito = new HabilidadesSolito(this); // sol que dá bônus, laser e calor da linha do Solito
     this.periodo = jogo.mundo.periodo;
 
     this.idx = idxInicial;
@@ -347,6 +349,7 @@ export class Batalha {
     this.musguinho.atualizar(dt);
     this.pedrisco.atualizar(dt);
     this.faisquinho.atualizar(dt);
+    this.solito.atualizar(dt);
     if (this.captura) this.atualizarCaptura(dt);
 
     if (this.trocaAuto > 0) {
@@ -394,6 +397,8 @@ export class Batalha {
       for (let i = 0; i < 3; i++) {
         if (e.rec[i] > 0) continue;
         const gp = e.golpe(i);
+        if (gp.sol) { if (!e.sol) opcoes.push(i, i, i); continue; }             // solta o sol quando não tem
+        if (gp.laser) { if (d < gp.laser.alcance) opcoes.push(i, i); continue; } // laser
         if (gp.onda) { if (d < gp.onda.distancia * 0.9) opcoes.push(i, i, i); } // onda que anda para a frente
         else if (gp.tipo === 'area' && d < gp.raio * 0.85 + (gp.dash || 0)) opcoes.push(i, i, i);
         if (gp.tipo === 'corpo' && d < gp.alcance + 1.2) opcoes.push(i, i);
@@ -408,7 +413,8 @@ export class Batalha {
     if (!e.dash && !e.giro && e.stun <= 0 && e.podeAndar()) {
       const ax = (j.pos.x - e.pos.x) / (d || 1), az = (j.pos.z - e.pos.z) / (d || 1);
       // distância preferida depende de qual golpe está pronto
-      const vinha = e.golpe(0).vinha || e.golpe(0).espinhos ? e.golpe(0).alcance * 0.7 : 1.8; // com a vinha ou o punho sísmico, fica mais longe
+      const g0 = e.golpe(0);
+      const vinha = g0.vinha || g0.espinhos ? g0.alcance * 0.7 : g0.sol ? 6 : 1.8; // com a vinha ou o punho sísmico fica mais longe; o sol não é de perto
       const prefere = e.rec[0] <= 0.2 ? vinha : (e.rec[1] <= 0.3 ? 6 : 4.5);
       let fx = 0, fz = 0;
       if (d > prefere + 0.5) { fx += ax; fz += az; } else if (d < prefere - 0.5) { fx -= ax; fz -= az; }
@@ -467,6 +473,8 @@ export class Batalha {
     if (gp.espinhos) return inimigo ? this.pedrisco.avisoPunho(c, gp, dir, cor) : null; // punho sísmico
     if (gp.dashRaio) return inimigo ? this.faisquinho.avisoDash(c, gp, dir, cor) : null; // dash elétrico
     if (gp.nuvens) return null; // as nuvens avisam cada raio que cai no chão
+    if (gp.sol) return null;    // o sol não ataca
+    if (gp.laser) return inimigo ? this.solito.avisoLaser(c, gp, dir, cor) : null; // laser
     if (gp.tipo === 'area') {
       const g = new THREE.Group();
       const anel = new THREE.Mesh(GEO_ANEL, matBrilho(cor, 0.75));
@@ -531,6 +539,12 @@ export class Batalha {
       this.faisquinho.iniciarDash(c, gp, dir, this.efeitoDoGolpe(c, gp)); // dash elétrico: marca, sem dano
     } else if (gp.nuvens) {
       this.faisquinho.iniciarNuvens(c, gp, this.efeitoDoGolpe(c, gp)); // nuvens que soltam raios
+    } else if (gp.sol) {
+      this.solito.soltarSol(c, gp);                                      // sol que dá bônus
+    } else if (gp.laser) {
+      this.solito.atirarLaser(c, gp, dir, this.efeitoDoGolpe(c, gp));   // laser
+    } else if (gp.calor) {
+      this.solito.iniciarCalor(c, gp, this.efeitoDoGolpe(c, gp));       // calor em volta
     } else if (gp.tipo === 'corpo') {
       c.dash = { dir: dir.clone(), t: 0.17, vel: 12, gp, acertou: false, efeito: this.efeitoDoGolpe(c, gp) };
       if (this.trevas.dele(c)) this.trevas.avancar(c);
@@ -595,7 +609,9 @@ export class Batalha {
     const exposto = alvo.tem('exposto') ? 1.3 : 1;
     const nivel = fatorDanoNivel(at.dados.nivel);  // dano cresce com o nível de quem ataca
     const arena = at.mod?.dano ?? 1;               // bônus/penalidade da arena
-    const dano = Math.max(1, Math.round(DANO_GERAL * gp.poder * (opcoes.fator ?? 1) * (at.stats.atk / def) * mult * exposto * nivel * arena * (0.9 + Math.random() * 0.2)));
+    // Sol da linha do Solito: quem soltou causa mais dano e recebe menos
+    const sol = (1 + (at.sol?.cfg.ataque ?? 0)) * (1 - (alvo.sol?.cfg.defesa ?? 0));
+    const dano = Math.max(1, Math.round(DANO_GERAL * gp.poder * (opcoes.fator ?? 1) * (at.stats.atk / def) * mult * exposto * nivel * arena * sol * (0.9 + Math.random() * 0.2)));
     // Escudo d'Água (linha do Gotinho) segura o dano antes da vida
     const passou = this.gotinho.absorver(alvo, dano);
     alvo.dados.hp = Math.max(0, alvo.dados.hp - passou);
@@ -699,6 +715,7 @@ export class Batalha {
     this.musguinho.parar(l);
     this.pedrisco.parar(l);
     this.faisquinho.parar(l);
+    this.solito.parar(l);
     l.veloz = null;
     if (l.lado === 'inimigo') {
       this.derrotados.push(l.dados);
@@ -1123,6 +1140,7 @@ export class Batalha {
     this.musguinho.parar(velho);
     this.pedrisco.parar(velho);
     this.faisquinho.parar(velho);
+    this.solito.parar(velho);
     this.cena.remove(velho.modelo);
     descartar(velho.modelo);
     this.particulas(velho.pos, '#8ff4ff', 12, 1);
@@ -1191,8 +1209,9 @@ export class Batalha {
   htmlStatus(l) {
     const veloz = l.veloz ? `<span style="--cor:#7dffa0">Veloz +${Math.round(l.veloz.bonus * 100)}% ${l.veloz.t.toFixed(0)}s</span>` : '';
     const escudo = l.escudo ? `<span style="--cor:#8fdcff">Escudo ${l.escudo.valor} ${l.escudo.t.toFixed(0)}s</span>` : '';
+    const sol = l.sol ? `<span style="--cor:#ffab2e">Sol +${Math.round(l.sol.cfg.ataque * 100)}% ${l.sol.t.toFixed(0)}s</span>` : '';
     const marcas = l.marcas ? `<span style="--cor:#f7e43a">Marcado ×${l.marcas.n} ${l.marcas.t.toFixed(0)}s</span>` : '';
-    return veloz + escudo + marcas + Object.entries(l.status).map(([k, v]) => `<span style="--cor:${EFEITOS[k].cor}">${EFEITOS[k].nome} ${v.toFixed(1)}s</span>`).join('');
+    return veloz + escudo + sol + marcas + Object.entries(l.status).map(([k, v]) => `<span style="--cor:${EFEITOS[k].cor}">${EFEITOS[k].nome} ${v.toFixed(1)}s</span>`).join('');
   }
 
   // Placa em cima de cada inimigo: só o nome e uma barrinha de vida

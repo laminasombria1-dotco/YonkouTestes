@@ -11,6 +11,7 @@ import { GOLPES_GOTINHO, GOLPES_POR_FORMA_GOTINHO, MELHORIAS_GOTINHO, TEXTOS_GOT
 import { GOLPES_MUSGUINHO, GOLPES_POR_FORMA_MUSGUINHO, MELHORIAS_MUSGUINHO, TEXTOS_MUSGUINHO, NOVIDADES_MUSGUINHO } from './habilidades/musguinho.js';
 import { GOLPES_PEDRISCO, GOLPES_POR_FORMA_PEDRISCO, MELHORIAS_PEDRISCO, TEXTOS_PEDRISCO, NOVIDADES_PEDRISCO } from './habilidades/pedrisco.js';
 import { GOLPES_FAISQUINHO, GOLPES_POR_FORMA_FAISQUINHO, MELHORIAS_FAISQUINHO, TEXTOS_FAISQUINHO, NOVIDADES_FAISQUINHO } from './habilidades/faisquinho.js';
+import { GOLPES_SOLITO, GOLPES_POR_FORMA_SOLITO, MELHORIAS_SOLITO, TEXTOS_SOLITO, NOVIDADES_SOLITO } from './habilidades/solito.js';
 
 // Linhas com habilidades próprias: golpes por forma, melhorias e textos
 const HABILIDADES_DA_LINHA = {
@@ -19,6 +20,7 @@ const HABILIDADES_DA_LINHA = {
   planta: { golpes: GOLPES_POR_FORMA_MUSGUINHO, melhorias: MELHORIAS_MUSGUINHO, textos: TEXTOS_MUSGUINHO, novidades: NOVIDADES_MUSGUINHO },
   terra: { golpes: GOLPES_POR_FORMA_PEDRISCO, melhorias: MELHORIAS_PEDRISCO, textos: TEXTOS_PEDRISCO, novidades: NOVIDADES_PEDRISCO },
   raio: { golpes: GOLPES_POR_FORMA_FAISQUINHO, melhorias: MELHORIAS_FAISQUINHO, textos: TEXTOS_FAISQUINHO, novidades: NOVIDADES_FAISQUINHO },
+  sol: { golpes: GOLPES_POR_FORMA_SOLITO, melhorias: MELHORIAS_SOLITO, textos: TEXTOS_SOLITO, novidades: NOVIDADES_SOLITO },
 };
 
 // Ordem em que os elementos aparecem nas telas
@@ -172,6 +174,8 @@ export const GOLPES = {
   ...GOLPES_PEDRISCO,
   // golpes próprios da linha do Faisquinho (números em js/habilidades/faisquinho.js)
   ...GOLPES_FAISQUINHO,
+  // golpes próprios da linha do Solito (números em js/habilidades/solito.js)
+  ...GOLPES_SOLITO,
 };
 
 // Golpes de cada elemento: os 3 primeiros servem às formas iniciais,

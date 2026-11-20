@@ -348,7 +348,7 @@ A linha do Faisquinho joga com **marcas**: o Dash Elétrico e o tiro **marcam** 
 | Faisquinho | Investida | **Faísca Marcadora**: tiro de 9 m que deixa 1 marca. Se acertar, o botão vira **Choque** por 4 s | **Nuvem Elétrica**: 1 nuvem por 4 s |
 | Choquilho | **Dash Elétrico**: avança 5 m e marca quem passar perto (1,2 m). **Sem dano**, recarga 4 s | + Paralisia | + Paralisia |
 | Trovolt | Dash: 6 m, aura de 1,5 m | **Relâmpago Marcador**: o Choque liga até **2** marcados | **Nuvens de Tempestade**: 2 nuvens por 5 s |
-| Tempestor | Dash: 7 m, aura de 1,8 m + Paralisia | O Choque liga até **3** marcados, pulando de um para o outro | **Tempestade**: 3 nuvens por 6 s |
+| Tempestor | Dash: 7 m, aura de 1,8 m + Paralisia | Choque **mais forte** (força 28), ligando até 2 marcados | **Tempestade**: 3 nuvens por 6 s |
 
 - **Marcas:** até **3** no mesmo inimigo, por **6 s** (cada marca nova renova o tempo). Aparecem como raiozinhos amarelos girando em cima dele, "⚡2" ao lado do nome e, quando é você o marcado, "Marcado ×2" embaixo da sua vida.
 - **Bônus das marcas** (no Choque e nas nuvens): 1 marca = dano normal, 2 = **+25%**, 3 = **+50%**.
@@ -356,6 +356,22 @@ A linha do Faisquinho joga com **marcas**: o Dash Elétrico e o tiro **marcam** 
 - **Nuvens:** cada uma solta um raio a cada 1,5 s. Quem está marcado leva o raio **direto**, com acerto garantido, e **continua marcado**. Sem ninguém marcado, o raio cai num ponto perto do monstro, com um círculo de aviso (dá para desviar). A paralisia dos raios das nuvens dura só 0,7 s.
 - O inimigo avisa o tiro e o dash com uma **faixa vermelha**. O Choque e os raios nos marcados não têm aviso: para fugir deles, não deixe ele te marcar (ou troque de monstro, o que tira as marcas).
 - Esta linha não ganha o "disparo ×2/×3". O Imanito e as evoluções (Terra + Raio) continuam com os golpes de Raio de sempre.
+
+## Golpes da linha do Solito (Sol)
+
+A linha do Solito **solta um sol no campo** que a deixa mais forte, **queima quem chega perto** e **atira longe com o laser**. Os números ficam em `js/habilidades/solito.js`; como funcionam e aparecem, em `js/habilidades/solito-batalha.js`.
+
+| Forma | Perto | Disparo | Área |
+|---|---|---|---|
+| Solito | Investida | **Raio Solar**: laser fino de 10 m que atravessa todos na linha | **Calor**: queima quem está a até 3 m dele, por 3 s |
+| Solário | **Pequeno Sol**: sol que fica 20 s no campo; enquanto existir: **+10% de dano, 15% menos dano recebido, +15% de velocidade** | Raio Solar + ofuscado | Calor + ofuscado |
+| Solaurum | **Sol Dourado**: +15% / −20% / +20% | Raio Solar **mais grosso** (12 m) e com **recarga menor** (1,2 s) | **Onda de Calor**: 3,8 m por 4 s; **esquenta** (cada pedaço no mesmo inimigo é 15% mais forte) |
+| Astrorei | **Sol Rei**: +20% / −25% / +25%; o **sol atira o laser junto** (60% da força) | **Laser Real**: 14 m, mais grosso | **Supernova**: 4,5 m por 5 s, esquenta e **explode no fim** |
+
+- **O Sol:** o bônus vale no **campo todo** enquanto ele existir (aparece "Sol +10% 18s" embaixo da vida). A recarga de **15 s só começa quando o sol some**. Se o monstro desmaiar ou for trocado, o sol some.
+- **Laser:** é na hora e atravessa todos na linha; obstáculos seguram. O inimigo avisa com uma **faixa vermelha fina e comprida**.
+- **Calor:** anda junto com o monstro e dá dano a cada meio segundo em quem está perto; o anel fica mais vermelho quando esquenta. É o calor do Sol, não a Queimadura do Fogo. O ofuscado é sorteado uma vez por inimigo a cada uso.
+- Esta linha não ganha o "disparo ×2/×3". Os golpes de Sol de sempre (em `dados.js`) continuam para quem não é desta linha.
 
 ## Golpes de Trevas (visual)
 
@@ -405,7 +421,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/brasas.js` | Cenário do Caminho das Brasas (braseiros, forja, rio de lava, Trono de Magma, vulcão) |
 | `js/raizes.js` | Cenário da Trilha Ancestral e da Floresta (cogumelos, ruínas, lago, raízes, Árvore-Mãe, vaga-lumes, monstros extras) |
 | `js/arena.js` | Arenas: chão, obstáculos, clima animado e perigos de cada região (com chance), e o escurecer do Astro Negro |
-| `js/habilidades/` | **Habilidades próprias das linhas de monstros** (uma pasta só para isso). Veja o `README.md` de lá. Hoje: linha do Brasito (`brasito.js` com os números, `brasito-batalha.js` com o lança-chamas, o rabo de fogo e a velocidade), linha do Gotinho (`gotinho.js` e `gotinho-batalha.js`, com o jato, o hidrocanhão, as ondas, o maremoto e o escudo), linha do Musguinho (`musguinho.js` e `musguinho-batalha.js`, com a folha bumerangue, a vinha que puxa, as raízes, a moita e o bosque), linha do Pedrisco (`pedrisco.js` e `pedrisco-batalha.js`, com a pedra em arco que quica, o punho sísmico, o tremor e os pilares), linha do Faisquinho (`faisquinho.js` e `faisquinho-batalha.js`, com as marcas, o dash elétrico, o tiro que marca, o choque e as nuvens) e o visual de Trevas (`trevas-batalha.js`) |
+| `js/habilidades/` | **Habilidades próprias das linhas de monstros** (uma pasta só para isso). Veja o `README.md` de lá. Hoje: linha do Brasito (`brasito.js` com os números, `brasito-batalha.js` com o lança-chamas, o rabo de fogo e a velocidade), linha do Gotinho (`gotinho.js` e `gotinho-batalha.js`, com o jato, o hidrocanhão, as ondas, o maremoto e o escudo), linha do Musguinho (`musguinho.js` e `musguinho-batalha.js`, com a folha bumerangue, a vinha que puxa, as raízes, a moita e o bosque), linha do Pedrisco (`pedrisco.js` e `pedrisco-batalha.js`, com a pedra em arco que quica, o punho sísmico, o tremor e os pilares), linha do Faisquinho (`faisquinho.js` e `faisquinho-batalha.js`, com as marcas, o dash elétrico, o tiro que marca, o choque e as nuvens), linha do Solito (`solito.js` e `solito-batalha.js`, com o sol que dá bônus, o laser e o calor) e o visual de Trevas (`trevas-batalha.js`) |
 | `js/controles.js` | Joystick de toque (lado esquerdo), câmera (lado direito, controle de câmera e mouse), botões e teclado |
 | `js/camera.js` | Câmera em terceira pessoa: gira em volta do personagem, sobe e desce, aproxima e afasta |
 | `js/main.js` | Liga tudo: telas, equipe, experiência, evolução, salvamento |
