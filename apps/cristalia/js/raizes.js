@@ -350,7 +350,7 @@ export class TrilhaAncestral extends DungeonAberta {
     for (let i = 0; i < 4; i++) { const q = this.lugarNaEtapa(2, 5, 2.2, (s) => Math.abs(s - S_LAGO) > LARG_LAGO + 4); if (q) this.cogumeloGigante(L, q.x, q.z, 0.8); }
   }
   // na etapa do lago os acampamentos ficam longe da água
-  posAcampamentos(e) { return e === 2 ? [[3.5, -1], [17, 1]] : [[6, -1], [14, 1]]; }
+  posAcampamentos(e) { return e === 2 ? [[16.5, 0.5]] : [[10, 0]]; }
 
   // Etapa 4: Raízes Gigantes — árvores enormes, raízes em arco por cima do chão e cipós
   etapa4() {

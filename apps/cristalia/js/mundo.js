@@ -36,10 +36,16 @@ const CURA_CASA = 4.6;        // encostou nessa distância, a equipe é curada
 const AREA_SEGURA_CASA = 10;  // monstros não chegam perto da casa
 const TAMANHO_GRUPO = 6;      // 5 comuns + 1 líder
 
-// Quantos grupos andam pelo mapa: aumenta com o nível médio da sua equipe (máximo 5)
+// Quantos grupos andam pelo mapa: aumenta com o nível médio da sua equipe (máximo 4)
 export function gruposDesejados(media) {
-  return Math.min(5, 1 + Math.floor((media - 1) / 5));
+  return Math.min(4, 1 + Math.floor((media - 1) / 5));
 }
+// Espaço entre os grupos no mapa (de centro a centro, em metros)
+const DIST_NASCER_GRUPOS = 40; // um grupo novo só aparece a pelo menos 40 m dos outros
+const DIST_AFASTAR_GRUPOS = 32; // andando, se chegam mais perto que isso, se afastam
+// Formação: duplas com 2 m entre os dois monstros e 5 m entre uma dupla e a próxima
+// (medidos entre os corpos, para os monstros grandes também ficarem com esse espaço)
+const ESPACO_NA_DUPLA = 2, ESPACO_ENTRE_DUPLAS = 5;
 // Níveis do grupo. Começo do jogo (equipe ~Nv.3): comuns ~Nv.5, líder ~Nv.12
 export function niveisDoGrupo(media) {
   const comum = Math.round(media * 1.1 + 2);
@@ -504,6 +510,7 @@ export class Mundo {
       if (opcoes) { x = opcoes.x; z = opcoes.z; } else {
         x = (Math.random() * 2 - 1) * (RAIO_MUNDO - 12); z = (Math.random() * 2 - 1) * (RAIO_MUNDO - 12);
         if (Math.hypot(x, z) < 22 || Math.hypot(x - this.pos.x, z - this.pos.z) < 30) continue;
+        if (this.grupos.some((o) => Math.hypot(o.x - x, o.z - z) < DIST_NASCER_GRUPOS)) continue; // longe dos outros grupos
         if (!this.pontoLivre(x, z, 3)) continue;
       }
       const zona = opcoes?.zona || zonaEm(x, z);
@@ -530,12 +537,10 @@ export class Mundo {
           coroa.position.y = ESPECIES[especie].altura + 0.15;
           modelo.add(coroa);
         }
-        // formação: líder no meio, os outros em roda
-        const a = ((i - 1) / (TAMANHO_GRUPO - 1)) * Math.PI * 2;
-        const ox = lider ? 0 : Math.cos(a) * 2.6, oz = lider ? 0 : Math.sin(a) * 2.6;
         this.cena.add(modelo);
-        membros.push({ dados, modelo, ox, oz });
+        membros.push({ dados, modelo, ox: 0, oz: 0 });
       }
+      this.formarDuplas(membros);
       this.contaSpawn += TAMANHO_GRUPO;
       const velMin = Math.min(...membros.map((m) => statsDe(m.dados.especie, m.dados.nivel).vel));
       const g = { grupo: true, membros, x, z, ang: Math.random() * 6.28, estado: 'parado', t: 2, zona, vel: velMin * 0.35, acampamento: opcoes?.acampamento || null };
@@ -543,6 +548,44 @@ export class Mundo {
       return g;
     }
     return null;
+  }
+
+  // Arruma o grupo em duplas, na ordem em que eles entram na luta:
+  //   fileira da frente: 1ª dupla  [5 m]  2ª dupla
+  //   (5 m para trás)
+  //   fileira de trás:   o 5º monstro (o "forte") e o líder (o rei)
+  // membros[0] é o líder; membros[1..5] estão na ordem da luta.
+  // ox = para o lado, oz = para a frente do grupo (o grupo anda para +oz)
+  formarDuplas(membros) {
+    const raio = (m) => ESPECIES[m.dados.especie].raio * (m.dados.lider ? 1.3 : 1);
+    const [lider, ...comuns] = membros;
+    const duplas = [];
+    for (let i = 0; i < comuns.length; i += 2) duplas.push(comuns.slice(i, i + 2));
+    // a última "dupla" incompleta (o 5º) fica junto do líder; sem 5º, o líder fica sozinho atrás
+    const ultima = duplas.length && duplas[duplas.length - 1].length === 1 ? duplas.pop() : [];
+    const fileiras = [];
+    for (let i = 0; i < duplas.length; i += 2) fileiras.push(duplas.slice(i, i + 2));
+    fileiras.push([[...ultima, lider]]);
+    // posição de cada fileira (frente -> trás), com 5 m entre elas
+    const fundo = fileiras.map((f) => Math.max(...f.flat().map(raio)));
+    let z = 0;
+    const zs = fileiras.map((_, i) => { if (i) z -= fundo[i - 1] + ESPACO_ENTRE_DUPLAS + fundo[i]; return z; });
+    const meioZ = (zs[0] + zs[zs.length - 1]) / 2;
+    fileiras.forEach((fileira, i) => {
+      // dentro da fileira: 2 m entre os da dupla, 5 m entre uma dupla e outra
+      const lista = [];
+      let x = 0;
+      fileira.forEach((dupla, d) => {
+        if (d) x += ESPACO_ENTRE_DUPLAS;
+        dupla.forEach((m, k) => {
+          if (k) x += ESPACO_NA_DUPLA;
+          x += raio(m);
+          lista.push([m, x]);
+          x += raio(m);
+        });
+      });
+      for (const [m, mx] of lista) { m.ox = mx - x / 2; m.oz = zs[i] - meioZ; }
+    });
   }
 
   removerGrupo(g) {
@@ -863,8 +906,13 @@ export class Mundo {
       // grupos de acampamento perseguem só de perto e não se afastam muito da fogueira
       if (dg < (ac ? 9 : 12) && this.graca <= 0 && est && !naAreaSegura && longeDeCasa < 10) { g.ang = Math.atan2(this.pos.x - g.x, this.pos.z - g.z); andando = true; }
       else if (ac && longeDeCasa > 4) g.ang = Math.atan2(ac.x - g.x, ac.z - g.z);
+      // grupos soltos não andam colados: se outro grupo está perto, se afastam (quando não estão te perseguindo)
+      if (!ac && !(dg < 12 && this.graca <= 0 && est)) {
+        const perto = this.grupos.find((o) => o !== g && Math.hypot(o.x - g.x, o.z - g.z) < DIST_AFASTAR_GRUPOS);
+        if (perto) { g.ang = Math.atan2(g.x - perto.x, g.z - perto.z); andando = true; }
+      }
       andando = this.fugirDaCasa(g) || andando;
-      if (andando && !pausado) this.andar(g, g.vel * dt, 3);
+      if (andando && !pausado) this.andar(g, g.vel * dt, 5);
       const cs = Math.cos(g.ang), sn = Math.sin(g.ang);
       for (const m of g.membros) {
         const x = g.x + m.ox * cs + m.oz * sn, z = g.z - m.ox * sn + m.oz * cs;

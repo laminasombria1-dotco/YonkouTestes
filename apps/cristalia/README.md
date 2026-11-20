@@ -67,7 +67,9 @@ O jogo é um **PWA** (aplicativo web instalável). Ele fica no site **https://la
 
 - Pelo mapa andam **grupos de 6 monstros**: 5 comuns e 1 **líder**, que é maior e usa coroa dourada.
 - **Níveis:** acompanham a sua equipe. Comuns ficam em ~1,1× o seu nível médio + 2; o líder em ~1,4× + 8. No começo do jogo (equipe Nv.3), os comuns ficam no Nv.5 e o líder no Nv.12.
-- **Quantidade:** 1 grupo no começo e mais 1 a cada 5 níveis da equipe, até 5 grupos.
+- **Quantidade:** 1 grupo no começo e mais 1 a cada 5 níveis da equipe, até **4 grupos**.
+- **Formação em duplas:** na frente, a 1ª e a 2ª dupla lado a lado; 5 m atrás, o 5º monstro e o líder. Há **2 m entre os dois de cada dupla** e **5 m entre uma dupla e a próxima** (medidos entre os corpos).
+- **Espaço entre grupos:** um grupo novo só aparece a pelo menos **40 m** dos outros, e grupos que se aproximam a menos de **32 m** se afastam.
 - **Na batalha:**
   - lutam em **ondas de no máximo 2**: a próxima onda só entra quando **os dois** da onda atual caírem (ou forem capturados);
   - nos grupos do mapa, os comuns vêm de 2 em 2 e o **líder entra por último, sozinho**;
@@ -109,7 +111,7 @@ O jogo é um **PWA** (aplicativo web instalável). Ele fica no site **https://la
 
 Sai da borda nordeste do mapa, depois do Vulcão, seguindo a estrada de braseiros. Não tem tela de carregamento: você entra andando.
 
-- **4 etapas**, separadas por portões. Cada etapa tem 2 acampamentos com grupos (5 comuns + 1 líder). Quanto mais fundo, mais fortes:
+- **4 etapas**, separadas por portões. Cada etapa tem **1 acampamento** no meio, com um grupo (5 comuns + 1 líder). Quanto mais fundo, mais fortes:
 
 | Etapa | Nome | Comuns (equipe Nv.3) | Líder (equipe Nv.3) | O que tem lá |
 |---|---|---|---|---|

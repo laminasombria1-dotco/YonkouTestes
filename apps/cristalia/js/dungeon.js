@@ -2,7 +2,7 @@
 // DUNGEONS ABERTAS (base comum)
 // Uma dungeon aberta é um corredor que sai da borda do mapa redondo.
 // Não é "instanciada": é parte do mapa, você entra andando.
-//  - 4 etapas, separadas por portões. Cada etapa tem 2 acampamentos
+//  - 4 etapas, separadas por portões. Cada etapa tem 1 acampamento
 //    com grupos (5 comuns + 1 líder), cada vez mais fortes.
 //  - Monstros soltos também aparecem lá dentro, já evoluídos.
 //  - No fim, uma arena redonda com um chefe super raro.
@@ -380,7 +380,8 @@ export class DungeonAberta {
 
   // ---------- acampamentos de grupos ----------
   // [distância dentro da etapa, lado] de cada acampamento
-  posAcampamentos() { return [[6, -1], [14, 1]]; }
+  // 1 acampamento por etapa, no meio (com a formação em duplas, 2 por etapa ficavam colados)
+  posAcampamentos() { return [[10, 0]]; }
   fogueira(p) {}
   criarAcampamentos() {
     for (let e = 0; e < this.t.nEtapas; e++) {
