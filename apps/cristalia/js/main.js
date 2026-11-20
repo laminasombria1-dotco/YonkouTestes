@@ -141,16 +141,26 @@ class Jogo {
     this.app.classList.toggle('em-batalha', nome === 'batalha');
     this.ctrl.mostrar(nome === 'mundo' || nome === 'batalha');
     if (nome !== 'mundo') { this.mostrarRotulo(null); this.fecharEquipe(); }
-    if (nome === 'titulo') $('#btn-continuar').hidden = !lerSave();
+    if (nome === 'titulo') this.atualizarTitulo();
+    if (nome !== 'mundo') this.fecharMenu();
   }
 
   ligarBotoes() {
     const btnNovo = $('#btn-novo');
     btnNovo.addEventListener('click', () => {
+      // já tem jogo salvo: o 1º toque só avisa; o 2º (em até 3,5 s) apaga e começa
       if (lerSave() && !btnNovo.dataset.confirmar) {
+        const [titulo, linha] = [btnNovo.querySelector('b'), btnNovo.querySelector('small')];
         btnNovo.dataset.confirmar = '1';
-        btnNovo.textContent = 'Apagar progresso e começar?';
-        setTimeout(() => { delete btnNovo.dataset.confirmar; btnNovo.textContent = 'Novo jogo'; }, 3500);
+        btnNovo.classList.add('confirmar');
+        titulo.textContent = 'Apagar e começar?';
+        linha.textContent = 'Toque de novo para confirmar';
+        setTimeout(() => {
+          delete btnNovo.dataset.confirmar;
+          btnNovo.classList.remove('confirmar');
+          titulo.textContent = 'Novo jogo';
+          linha.textContent = 'Escolha seu primeiro parceiro';
+        }, 3500);
         return;
       }
       this.abrirColecao('inicial');
@@ -168,6 +178,20 @@ class Jogo {
       if (this.filaEvo.length) this.proximaEvolucao();
     });
     $('#btn-monstruario').addEventListener('click', () => this.abrirColecao('ver'));
+    // Menu de pausa e saída
+    $('#btn-sair').addEventListener('click', () => this.sairDoJogo());
+    $('#btn-menu').addEventListener('click', () => this.abrirMenu());
+    document.querySelectorAll('[data-menu]').forEach((b) => b.addEventListener('click', () => {
+      const acao = b.dataset.menu;
+      if (acao === 'continuar') this.fecharMenu();
+      else if (acao === 'inicio') this.voltarAoInicio();
+      else if (acao === 'sair') this.sairDoJogo();
+      else if (acao === 'voltar-saida') $('#tela-saida').hidden = true;
+    }));
+    // Esc no PC abre/fecha o menu
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') this.voltar(); });
+    // Botão Voltar do celular (o app Android chama esta função)
+    window.__voltar = () => this.voltar();
     $('#btn-monstros').addEventListener('click', () => this.abrirColecao('ver'));
     $('#col-voltar').addEventListener('click', () => this.fecharColecao());
     $('#col-escolher').addEventListener('click', () => {
@@ -205,6 +229,61 @@ class Jogo {
       const b = e.target.closest('[data-cmd]');
       if (b) this.comandoEquipe(b.dataset.cmd, Number(b.dataset.i));
     });
+  }
+
+  // ---------- tela de início ----------
+  // Mostra "Continuar" com um resumo do jogo salvo (parceiro, nível, quantos monstros)
+  atualizarTitulo() {
+    const s = lerSave();
+    $('#btn-continuar').hidden = !s;
+    if (!s) return;
+    const lider = s.estado.equipe[0], esp = ESPECIES[lider.especie];
+    const total = s.estado.equipe.length + s.estado.reserva.length;
+    $('#resumo-save').textContent = `${esp.nome} Nv.${lider.nivel} · ${total} ${total === 1 ? 'monstro' : 'monstros'}`;
+  }
+
+  // ---------- menu de pausa e sair ----------
+  abrirMenu() {
+    if (this.modo !== 'mundo') return;
+    this.fecharEquipe();
+    this.painelAberto = true; // o mundo para enquanto o menu está aberto
+    $('#menu-pausa').hidden = false;
+  }
+
+  fecharMenu() {
+    const el = $('#menu-pausa');
+    if (el.hidden) return;
+    el.hidden = true;
+    this.painelAberto = false;
+  }
+
+  voltarAoInicio() {
+    this.salvar();
+    this.fecharMenu();
+    this.mostrarTela('titulo');
+  }
+
+  // Salva e fecha. No app Android, fecha o app de verdade. No navegador, a página
+  // não pode se fechar sozinha: tenta e, se não der, mostra "Progresso salvo, pode fechar".
+  sairDoJogo() {
+    this.salvar();
+    this.fecharMenu();
+    if (window.CristaliaApp?.sair) { window.CristaliaApp.sair(); return; }
+    if (this.modo === 'mundo') this.mostrarTela('titulo');
+    try { window.close(); } catch { /* o navegador não deixou */ }
+    setTimeout(() => { $('#tela-saida').hidden = false; }, 300);
+  }
+
+  // Botão Voltar (celular) ou Esc (PC): fecha o que estiver aberto, um passo de cada vez.
+  // Devolve 'sair' quando não há mais nada para fechar (o app Android então fecha).
+  voltar() {
+    if (!$('#tela-saida').hidden) { $('#tela-saida').hidden = true; return 'ok'; }
+    if (!$('#menu-pausa').hidden) { this.fecharMenu(); return 'ok'; }
+    if (this.painelAberto) { this.fecharEquipe(); return 'ok'; }
+    if (this.modo === 'colecao') { this.fecharColecao(); return 'ok'; }
+    if (this.modo === 'mundo') { this.abrirMenu(); return 'ok'; }
+    if (this.modo === 'titulo') { this.salvar(); return 'sair'; }
+    return 'ok'; // na batalha e na evolução, o Voltar não faz nada (use Fugir)
   }
 
   // ---------- tela cheia ----------

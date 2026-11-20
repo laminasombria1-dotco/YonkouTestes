@@ -12,6 +12,12 @@ App Android bem pequeno (~50 KB) que abre o jogo em tela cheia. O jogo de verdad
 2. Toque nele. O Android vai pedir para **permitir instalar apps desta fonte** (do navegador ou do gerenciador de arquivos): permita.
 3. Toque em **Instalar**. Se o Play Protect avisar "app desconhecido", toque em **Instalar mesmo assim**: o aviso aparece porque o app não veio da Play Store.
 
+## Versões do APK
+| Versão | O que mudou |
+|---|---|
+| 1.0 | Primeira versão: abre o jogo em tela cheia |
+| 1.1 | Botão **Sair do jogo** fecha o app; o **Voltar** do celular abre o menu de pausa em vez de fechar o jogo |
+
 ## Quando precisa de um APK novo?
 Só quando mudar algo do **app** em si (nome, ícone, endereço do site). Mudanças no **jogo** não precisam.
 

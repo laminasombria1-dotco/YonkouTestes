@@ -5,6 +5,10 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
 
 ## Como jogar
 
+- **Tela de início:** **Continuar** (mostra o seu parceiro, o nível e quantos monstros você tem), **Novo jogo** (se já existe um jogo salvo, pede um 2º toque para confirmar), **Monstruário**, **Instalar app** (só aparece quando dá para instalar) e **Sair do jogo**.
+- **Menu de pausa:** o botão de menu (três risquinhos) no mapa, **Esc** no PC ou o botão **Voltar** do celular. Tem **Continuar jogando**, **Voltar ao início** e **Sair do jogo**. Tudo salva antes.
+- **Sair do jogo:** no app Android, fecha o app. No navegador, a página não pode se fechar sozinha: o jogo salva e avisa que já pode fechar a aba.
+- **Botão Voltar do celular (app Android):** fecha o que estiver aberto (painel, Monstruário), abre o menu de pausa no mapa e fecha o app na tela de início. Na batalha não faz nada (use Fugir).
 - **Começar:** em "Novo jogo", escolha um dos 9 monstros iniciais (um de cada elemento). A tela mostra a linha evolutiva inteira dele.
 - **Monstruário:** na tela inicial ou no botão **Monstros** durante o jogo. Mostra todas as linhas, as evoluções, os atributos, os golpes e as vantagens de cada um.
 - **Andar:** arraste o dedo em qualquer lugar livre da tela (joystick virtual). No PC: WASD ou setas.

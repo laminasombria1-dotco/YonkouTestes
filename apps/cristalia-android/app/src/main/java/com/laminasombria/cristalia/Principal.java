@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
@@ -42,6 +43,9 @@ public class Principal extends Activity {
         s.setMediaPlaybackRequiresUserGesture(false);
         s.setCacheMode(WebSettings.LOAD_DEFAULT);
         s.setSupportZoom(false);
+
+        // Ponte com o jogo: o botão "Sair do jogo" chama CristaliaApp.sair()
+        web.addJavascriptInterface(new Ponte(), "CristaliaApp");
 
         web.setWebViewClient(new WebViewClient() {
             // links para outros sites abrem no navegador, o jogo fica aqui
@@ -100,10 +104,19 @@ public class Principal extends Activity {
     @Override
     protected void onResume() { super.onResume(); web.onResume(); }
 
+    // O que o jogo pode pedir ao app
+    class Ponte {
+        @JavascriptInterface
+        public void sair() { runOnUiThread(() -> finishAndRemoveTask()); }
+    }
+
+    // Botão Voltar: pergunta ao jogo. Ele fecha o que estiver aberto (painel, Monstruário)
+    // ou abre o menu de pausa. Só na tela de início (ou sem o jogo carregado) o app fecha.
     @Override
     @SuppressWarnings("deprecation")
     public void onBackPressed() {
-        if (web.canGoBack()) web.goBack();
-        else super.onBackPressed();
+        web.evaluateJavascript("window.__voltar ? window.__voltar() : 'sair'", (resposta) -> {
+            if ("\"sair\"".equals(resposta) || "null".equals(resposta)) finishAndRemoveTask();
+        });
     }
 }
