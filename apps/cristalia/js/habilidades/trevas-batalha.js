@@ -13,7 +13,7 @@
 // e os materiais "fixos" são divididos entre todos os golpes.
 // =============================================================
 import * as THREE from 'three';
-import { MAT_SOMBRA } from './modelos.js';
+import { MAT_SOMBRA } from '../modelos.js';
 
 // ---------- formas (criadas uma vez) ----------
 function triangulo() {

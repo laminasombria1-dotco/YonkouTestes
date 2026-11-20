@@ -5,6 +5,14 @@
 // mexer nos números deste arquivo.
 // =============================================================
 
+// Habilidades próprias de algumas linhas ficam na pasta js/habilidades/ (fácil de achar e mudar)
+import { GOLPES_BRASITO, GOLPES_POR_FORMA_BRASITO, MELHORIAS_BRASITO, TEXTOS_BRASITO, NOVIDADES_BRASITO } from './habilidades/brasito.js';
+
+// Linhas com habilidades próprias: golpes por forma, melhorias e textos
+const HABILIDADES_DA_LINHA = {
+  fogo: { golpes: GOLPES_POR_FORMA_BRASITO, melhorias: MELHORIAS_BRASITO, textos: TEXTOS_BRASITO, novidades: NOVIDADES_BRASITO },
+};
+
 // Ordem em que os elementos aparecem nas telas
 export const ORDEM_ELEMENTOS = ['fogo', 'agua', 'planta', 'terra', 'raio', 'sol', 'lua', 'luz', 'trevas'];
 
@@ -146,6 +154,8 @@ export const GOLPES = {
   sementeParasita:  { nome: 'Semente Parasita', elemento: 'silvestre', tipo: 'projetil', poder: 13, recarga: 1.9, velocidade: 15, raio: 0.55, quantidade: 3 },
   selvaViva:        { nome: 'Selva Viva',       elemento: 'silvestre', tipo: 'area',    poder: 34, recarga: 6.5, raio: 6, lentidao: 2 },
   abismo:           { nome: 'Abismo',           elemento: 'trevas', tipo: 'area',     poder: 31, recarga: 7,   raio: 4.8, lentidao: 2 },
+  // golpes próprios da linha do Brasito (números em js/habilidades/brasito.js)
+  ...GOLPES_BRASITO,
 };
 
 // Golpes de cada elemento: os 3 primeiros servem às formas iniciais,
@@ -231,6 +241,8 @@ export function melhoriaDe(especie) {
   // o chefe já luta com todas as melhorias (Silvárion também planta a semente com o disparo)
   if (e.chefe) return e.efeitoDisparo ? { ...MELHORIAS[3], efeitoDisparo: true } : MELHORIAS[3];
   if (e.raro) return MELHORIAS[0];
+  const propria = HABILIDADES_DA_LINHA[e.linha]?.melhorias;
+  if (propria) return propria[e.estagio];
   const m = MELHORIAS[e.estagio];
   return e.dupla ? { ...m, efeitoDisparo: e.estagio >= 2 } : m;
 }
@@ -246,6 +258,8 @@ function seg(n) { return n.toFixed(1).replace('.', ',').replace(',0', '') + 's';
 // Frases que explicam o que cada forma tem de especial
 export function textosMelhoria(especie) {
   const e = ESPECIES[especie];
+  const proprios = HABILIDADES_DA_LINHA[e.linha]?.textos;
+  if (proprios) return proprios[e.estagio];
   const m = melhoriaDe(especie);
   const [efP, efD, efA] = e.golpes.map(efeitoDoElementoDoGolpe);
   const [perto, disparo, area] = e.golpes.map((g) => GOLPES[g].nome);
@@ -261,6 +275,8 @@ export function textosMelhoria(especie) {
 export function novidadesDaEvolucao(de, para) {
   const a = melhoriaDe(de), b = melhoriaDe(para);
   const e = ESPECIES[para];
+  const proprias = HABILIDADES_DA_LINHA[e.linha]?.novidades;
+  if (proprias?.[e.estagio]) return proprias[e.estagio];
   const [efP, efD, efA] = e.golpes.map(efeitoDoElementoDoGolpe);
   const [perto, disparo, area] = e.golpes.map((g) => GOLPES[g].nome);
   const lista = [];
@@ -397,7 +413,7 @@ for (const [el, linha] of Object.entries(LINHAS)) {
       raio: 0.65 * TAMANHO[e] * (1 + e * 0.12),
       altura: (1.7 + e * 0.45) * TAMANHO[e],
       base: { hp: linha.base.hp * MULT[e], atk: linha.base.atk * MULT[e], def: linha.base.def * MULT[e], vel: linha.base.vel * MULT_VEL[e] },
-      golpes: golpesDoEstagio(el, e),
+      golpes: HABILIDADES_DA_LINHA[el]?.golpes[e] ?? golpesDoEstagio(el, e),
       evoluiPara: linha.formas[e + 1]?.[0] ?? null,
       nivelEvolucao: NIVEIS_EVOLUCAO[e] ?? null,
     };

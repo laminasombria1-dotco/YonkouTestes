@@ -11,7 +11,8 @@ import {
   multiplicadorContra, chanceCaptura, melhoriaDe, statsDe, modificadorArena, fatorDanoNivel, CRISTAIS, nomeTipo, fundoTipo, DANO_GERAL,
   fracoContraEspecie, chanceDoEfeito, pct,
 } from './dados.js';
-import { VisualTrevas } from './trevas.js';
+import { VisualTrevas } from './habilidades/trevas-batalha.js';
+import { HabilidadesBrasito } from './habilidades/brasito-batalha.js';
 import { CameraOrbita } from './camera.js';
 import { criarModelo, criarCristal, criarCoroa, animarModelo, piscar, descartar } from './modelos.js';
 
@@ -91,7 +92,8 @@ class Lutador {
   tem(efeito) { return this.status[efeito] > 0; }
   podeAndar() { return !this.tem('paralisia') && !this.tem('sono') && !this.tem('enraizado'); }
   podeAtacar() { return !this.tem('paralisia') && !this.tem('sono') && !this.tem('medo'); }
-  get fatorVel() { return (this.lento > 0 ? 0.5 : 1) * (this.tem('encharcado') ? 0.55 : 1) * (this.tem('parasita') ? 0.7 : 1) * (this.mod?.vel ?? 1); }
+  // veloz = velocidade extra da Investida da linha do Brasito
+  get fatorVel() { return (this.veloz ? 1 + this.veloz.bonus : 1) * (this.lento > 0 ? 0.5 : 1) * (this.tem('encharcado') ? 0.55 : 1) * (this.tem('parasita') ? 0.7 : 1) * (this.mod?.vel ?? 1); }
 }
 
 export class Batalha {
@@ -105,6 +107,7 @@ export class Batalha {
     this.efeitos = [];
     this.arena = new Arena(this);
     this.trevas = new VisualTrevas(this); // visual especial dos golpes de Trevas
+    this.brasito = new HabilidadesBrasito(this); // lança-chamas, rabo de fogo e velocidade da linha do Brasito
     this.periodo = jogo.mundo.periodo;
 
     this.idx = idxInicial;
@@ -331,6 +334,7 @@ export class Batalha {
     this.arena.atualizar(dt, this.t);
     this.atualizarEfeitos(dt);
     this.trevas.atualizar();
+    this.brasito.atualizar(dt);
     if (this.captura) this.atualizarCaptura(dt);
 
     if (this.trocaAuto > 0) {
@@ -353,12 +357,13 @@ export class Batalha {
     const mov = Math.hypot(v.x, v.z) > 0.05;
     for (let i = 0; i < 3; i++) if (ctrl.consumir('golpe' + i)) this.tentarGolpe(j, i, e);
     if (ctrl.consumir('esquiva')) this.esquivar(j, mov ? v : null, e);
-    if (!j.dash && j.stun <= 0 && j.podeAndar()) {
-      const vel = j.stats.vel * j.fatorVel * (j.prep ? 0.35 : 1);
+    if (!j.dash && !j.giro && j.stun <= 0 && j.podeAndar()) {
+      const vel = j.stats.vel * j.fatorVel * (j.prep || j.jato ? 0.35 : 1);
       j.pos.x += v.x * vel * dt;
       j.pos.z += v.z * vel * dt;
       j.movendo = mov;
       if (j.prep) j.angAlvo = Math.atan2(j.prep.dir.x, j.prep.dir.z);
+      else if (j.jato) j.angAlvo = Math.atan2(j.jato.dir.x, j.jato.dir.z);
       else if (mov) j.angAlvo = Math.atan2(v.x, v.z);
     }
   }
@@ -377,13 +382,14 @@ export class Batalha {
       for (let i = 0; i < 3; i++) {
         if (e.rec[i] > 0) continue;
         const gp = e.golpe(i);
-        if (gp.tipo === 'area' && d < gp.raio * 0.85) opcoes.push(i, i, i);
+        if (gp.tipo === 'area' && d < gp.raio * 0.85 + (gp.dash || 0)) opcoes.push(i, i, i);
         if (gp.tipo === 'corpo' && d < gp.alcance + 1.2) opcoes.push(i, i);
-        if (gp.tipo === 'projetil' && d > 2.5 && d < 12) opcoes.push(i);
+        if (gp.jato) { if (d < gp.jato.alcance * 0.9) opcoes.push(i, i); }
+        else if (gp.tipo === 'projetil' && d > 2.5 && d < 12) opcoes.push(i);
       }
       if (opcoes.length && Math.random() < 0.75) this.tentarGolpe(e, opcoes[Math.floor(Math.random() * opcoes.length)], j);
     }
-    if (!e.dash && e.stun <= 0 && e.podeAndar()) {
+    if (!e.dash && !e.giro && e.stun <= 0 && e.podeAndar()) {
       const ax = (j.pos.x - e.pos.x) / (d || 1), az = (j.pos.z - e.pos.z) / (d || 1);
       // distância preferida depende de qual golpe está pronto
       const prefere = e.rec[0] <= 0.2 ? 1.8 : (e.rec[1] <= 0.3 ? 6 : 4.5);
@@ -398,16 +404,16 @@ export class Batalha {
         [fx, fz] = [fx * cs - fz * sn, fx * sn + fz * cs];
         l = Math.hypot(fx, fz) || 1;
       }
-      const vel = e.stats.vel * 0.85 * e.fatorVel * (e.prep ? 0.2 : 1);
+      const vel = e.stats.vel * 0.85 * e.fatorVel * (e.prep || e.jato ? 0.2 : 1);
       e.pos.x += (fx / l) * vel * dt;
       e.pos.z += (fz / l) * vel * dt;
       e.movendo = true;
-      e.angAlvo = e.prep ? Math.atan2(e.prep.dir.x, e.prep.dir.z) : Math.atan2(ax, az);
+      e.angAlvo = e.prep ? Math.atan2(e.prep.dir.x, e.prep.dir.z) : e.jato ? Math.atan2(e.jato.dir.x, e.jato.dir.z) : Math.atan2(ax, az);
     }
   }
 
   tentarGolpe(c, i, alvo) {
-    if (c.prep || c.rec[i] > 0 || c.stun > 0 || c.dash || c.morto || c.rajada) return;
+    if (c.prep || c.rec[i] > 0 || c.stun > 0 || c.dash || c.morto || c.rajada || c.jato || c.giro) return;
     if (!c.podeAtacar()) {
       // avisa o jogador por que o golpe não saiu
       if (c.lado === 'jogador' && this.t - (this.avisoBloqueio || 0) > 0.8) {
@@ -431,6 +437,8 @@ export class Batalha {
 
   criarAviso(c, gp, dir, inimigo) {
     const cor = inimigo ? '#ff3d5e' : ELEMENTOS[gp.elemento].cor;
+    if (gp.jato) return inimigo ? this.brasito.avisoJato(c, gp, dir) : null;   // lança-chamas
+    if (gp.tamanhoRabo && gp.dash) return this.brasito.avisoGiro(c, gp, dir, cor); // rabo de fogo com dash
     if (gp.tipo === 'area') {
       const g = new THREE.Group();
       const anel = new THREE.Mesh(GEO_ANEL, matBrilho(cor, 0.75));
@@ -455,7 +463,7 @@ export class Batalha {
   }
 
   removerAviso(c) {
-    if (c.prep?.aviso) this.cena.remove(c.prep.aviso);
+    if (c.prep?.aviso) { this.cena.remove(c.prep.aviso); descartar(c.prep.aviso); }
   }
 
   cancelarPreparo(c) {
@@ -484,6 +492,11 @@ export class Batalha {
     if (gp.tipo === 'corpo') {
       c.dash = { dir: dir.clone(), t: 0.17, vel: 12, gp, acertou: false, efeito: this.efeitoDoGolpe(c, gp) };
       if (this.trevas.dele(c)) this.trevas.avancar(c);
+      if (this.brasito.dele(c) && gp === GOLPES.investida) this.brasito.aoUsarInvestida(c);
+    } else if (gp.jato) {
+      this.brasito.iniciarJato(c, gp, dir, this.efeitoDoGolpe(c, gp)); // lança-chamas
+    } else if (gp.tamanhoRabo) {
+      this.brasito.iniciarGiro(c, gp, dir, this.efeitoDoGolpe(c, gp)); // rabo de fogo
     } else if (gp.tipo === 'projetil') {
       this.disparar(c, gp, dir, 1);
       if (this.trevas.dele(c) && gp.elemento === 'trevas') this.trevas.aoDisparar(c, dir);
@@ -535,13 +548,15 @@ export class Batalha {
     alvo.dados.hp = Math.max(0, alvo.dados.hp - dano);
     if (alvo.tem('sono')) { alvo.status.sono = 0; this.jogo.numero('Acordou!', topo.clone().setY(topo.y + 0.5), '#b9b4ff', 'pequeno'); }
     alvo.flash = 0.18;
-    alvo.stun = 0.18;
-    alvo.emp.set(dir.x * 7, 0, dir.z * 7);
+    // dano "leve" (cada pedaço do lança-chamas): empurra e trava menos
+    alvo.stun = opcoes.leve ? 0.06 : 0.18;
+    alvo.emp.set(dir.x * (opcoes.leve ? 2 : 7), 0, dir.z * (opcoes.leve ? 2 : 7));
     if (gp.lentidao) alvo.lento = gp.lentidao;
     const cor = alvo.lado === 'inimigo' ? '#ffe066' : '#ff6b81';
     this.jogo.numero(String(dano), topo, cor, mult > 1 ? 'grande' : '');
-    if (mult > 1) this.jogo.numero('Super efetivo!', topo.clone().setY(topo.y + 0.9), '#ffd23f', 'pequeno');
-    else if (mult < 1) this.jogo.numero('Pouco efetivo', topo.clone().setY(topo.y + 0.9), '#c9d6e8', 'pequeno');
+    const avisaTipo = !opcoes.leve || opcoes.primeiro; // no lança-chamas, só no 1º pedaço
+    if (mult > 1 && avisaTipo) this.jogo.numero('Super efetivo!', topo.clone().setY(topo.y + 0.9), '#ffd23f', 'pequeno');
+    else if (mult < 1 && avisaTipo) this.jogo.numero('Pouco efetivo', topo.clone().setY(topo.y + 0.9), '#c9d6e8', 'pequeno');
     this.particulas(alvo.pos, ELEMENTOS[gp.elemento].cor, 8, 0.9);
     if (alvo.dados.hp <= 0) { this.desmaiar(alvo); return true; }
     if (alvo.esp.chefe && !alvo.furia && alvo.frac < 0.5) {
@@ -623,6 +638,8 @@ export class Batalha {
     if (l.prep) this.cancelarPreparo(l);
     l.dash = null;
     l.rajada = null;
+    this.brasito.parar(l);
+    l.veloz = null;
     if (l.lado === 'inimigo') {
       this.derrotados.push(l.dados);
       if (l.dados.lider) this.liderDerrotado = true;
@@ -699,6 +716,9 @@ export class Batalha {
       }
     }
 
+    if (c.jato) this.brasito.atualizarJato(c, dt);
+    if (c.giro) this.brasito.atualizarGiro(c, dt);
+
     if (c.dash) {
       const ds = c.dash;
       c.pos.addScaledVector(ds.dir, ds.vel * dt);
@@ -731,7 +751,7 @@ export class Batalha {
     c.ang = lerpAngulo(c.ang, c.angAlvo, 1 - Math.exp(-14 * dt));
     const m = c.modelo;
     m.position.set(c.pos.x, 0, c.pos.z);
-    m.rotation.y = c.ang + (c.dash?.esquiva ? (0.2 - c.dash.t) * 30 : 0);
+    m.rotation.y = c.ang + (c.dash?.esquiva ? (0.2 - c.dash.t) * 30 : 0) + (c.giro ? c.giro.spin : 0);
     if (c.morto) {
       m.rotation.z = THREE.MathUtils.lerp(m.rotation.z, 1.5, 1 - Math.exp(-6 * dt));
       m.userData.corpo.position.y = 0;
@@ -895,7 +915,7 @@ export class Batalha {
     est.pedras[tipo.id]--;
     const sucesso = Math.random() < chanceCaptura(this.ini.dados, this.tipoCristal);
     if (this.jog.prep) this.cancelarPreparo(this.jog);
-    for (const l of this.inimigos) { if (l.prep) this.cancelarPreparo(l); l.dash = null; l.rajada = null; }
+    for (const l of this.inimigos) { if (l.prep) this.cancelarPreparo(l); l.dash = null; l.rajada = null; this.brasito.parar(l); }
     const cr = criarCristal(1.1, this.tipoCristal);
     this.cena.add(cr);
     this.captura = {
@@ -1052,7 +1072,8 @@ export class Batalha {
 
   // Só os efeitos ativos (os bônus de arena não aparecem mais, para limpar a tela)
   htmlStatus(l) {
-    return Object.entries(l.status).map(([k, v]) => `<span style="--cor:${EFEITOS[k].cor}">${EFEITOS[k].nome} ${v.toFixed(1)}s</span>`).join('');
+    const veloz = l.veloz ? `<span style="--cor:#7dffa0">Veloz +${Math.round(l.veloz.bonus * 100)}% ${l.veloz.t.toFixed(0)}s</span>` : '';
+    return veloz + Object.entries(l.status).map(([k, v]) => `<span style="--cor:${EFEITOS[k].cor}">${EFEITOS[k].nome} ${v.toFixed(1)}s</span>`).join('');
   }
 
   // Placa em cima de cada inimigo: só o nome e uma barrinha de vida
