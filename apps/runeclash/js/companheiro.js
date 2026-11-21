@@ -15,6 +15,7 @@ import { alturaEm } from './mundo.js';
 import { Treino } from './treino.js';
 import { conjurar } from './invocador.js';
 import { Efeitos } from './arena/efeitos.js';
+import { QUALIDADES, lerQualidade } from './mapa/config.js';
 import { Surgimentos } from './invocacao.js';
 
 const DIST_ATRAS = 2.2;   // metros atrás do treinador
@@ -48,7 +49,7 @@ export class Companheiro {
   // ---------- invocar e guardar ----------
   efeitos() {
     if (!this.fx) {
-      this.fx = new Efeitos(this.mundo.cena, { chao: alturaEm });
+      this.fx = new Efeitos(this.mundo.cena, { chao: alturaEm, qualidade: QUALIDADES[lerQualidade()].efeitos });
       this.surg = new Surgimentos(this.fx);
     }
     this.fx.pontos.visible = true;

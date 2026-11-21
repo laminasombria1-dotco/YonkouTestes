@@ -81,6 +81,7 @@ export class HabilidadesSolito {
 
   // brasinha/partícula de calor subindo
   brasa(pos, vel, tam, vida, mat = BRASAS[Math.floor(Math.random() * 3)]) {
+    if (this.b.poupar()) return; // Qualidade mais leve: só parte dos pedacinhos sai
     const m = new THREE.Mesh(GEO_BRASA, mat);
     m.position.copy(pos);
     m.scale.setScalar(tam);

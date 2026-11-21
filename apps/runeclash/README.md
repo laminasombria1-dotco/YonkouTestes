@@ -9,7 +9,7 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
 
 Só os **monstros** lutam; o Invocador não luta. O plano, etapa por etapa, fica em **[PLANO.md](PLANO.md)**.
 
-> **Hoje (ideia 3.1 pronta)** o Runeclash joga como o Cristalia, com o nome novo, o jogo salvo separado e o visual próprio: roxo-runa e dourado, fonte Cinzel nos títulos, o **Sealfolio** (o antigo Monstruário), as **pedras de selamento** (azul, roxa e dourada) no lugar dos cristais, o **Invocador** (o Aiden, com o criador de personagem) no mapa o **Selamento** com correntes na batalha e o monstro que **sobe de um círculo de runas** quando é invocado. Os golpes das linhas do Brasito, do Faisquinho, do Pedrisco, do Gotinho, do Musguinho e do Solito já usam os efeitos da Arena (fogo, relâmpagos, pedras, água, plantas e sol). As regras da batalha e da chance de selar ainda são as do Cristalia.
+> **Hoje (ideias 3.1 e 3.2 prontas)** o Runeclash joga como o Cristalia, com o nome novo, o jogo salvo separado e o visual próprio: roxo-runa e dourado, fonte Cinzel nos títulos, o **Sealfolio** (o antigo Monstruário), as **pedras de selamento** (azul, roxa e dourada) no lugar dos cristais, o **Invocador** (o Aiden, com o criador de personagem) no mapa o **Selamento** com correntes na batalha e o monstro que **sobe de um círculo de runas** quando é invocado. Os golpes das linhas do Brasito, do Faisquinho, do Pedrisco, do Gotinho, do Musguinho e do Solito já usam os efeitos da Arena (fogo, relâmpagos, pedras, água, plantas e sol), e esses efeitos seguem a **Qualidade** do menu (mais leves no Fraco). As regras da batalha e da chance de selar ainda são as do Cristalia.
 
 ## Como jogar
 
@@ -263,11 +263,13 @@ O mapa é **gerado por uma semente** (seed): um número que decide tudo (onde fi
 
 ### Qualidade (menu de pausa)
 
-| Qualidade | Chunks em volta | Distância de visão | Objetos | Resolução máx. |
-|---|---|---|---|---|
-| Fraco | 2 (~21 chunks) | 78 m | 60% | 1× |
-| Médio | 3 (~37 chunks) | 108 m | 100% | 1,5× |
-| Forte | 4 (~69 chunks) | 138 m | 120% | 1,75× |
+| Qualidade | Chunks em volta | Distância de visão | Objetos | Resolução máx. | Efeitos dos golpes (3.2) |
+|---|---|---|---|---|---|
+| Fraco | 2 (~21 chunks) | 78 m | 60% | 1× | 45% das partículas (25% maiores), metade dos pedacinhos 3D, até 2500 partículas |
+| Médio | 3 (~37 chunks) | 108 m | 100% | 1,5× | todos |
+| Forte | 4 (~69 chunks) | 138 m | 120% | 1,75× | todos, e os clarões com luz de verdade |
+
+Trocar a Qualidade no meio da batalha já muda os efeitos; as luzes do Forte e o limite de partículas valem a partir da próxima batalha (números em `QUALIDADES[...].efeitos`, `js/mapa/config.js`).
 
 Na primeira vez, o jogo escolhe sozinho: **Fraco** em celular com 4 núcleos ou menos (ou pouca memória) e **Médio** nos outros. A escolha fica guardada no aparelho.
 

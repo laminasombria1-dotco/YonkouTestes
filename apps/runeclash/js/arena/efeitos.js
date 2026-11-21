@@ -15,6 +15,10 @@
 //   camada      um <div> por cima do jogo para os números de dano (texto()). Sem ele, texto() não faz nada.
 //   luzes       quantas luzes de verdade os clarões usam (padrão 0). Cada luz pesa em TODOS os
 //               materiais da cena, o tempo todo, mesmo apagada; com 0, o clarão vira um brilho leve.
+//   qualidade   (etapa 3.2) o perfil "efeitos" da Qualidade (js/mapa/config.js): { taxa, tam, malhas,
+//               galhos, max, solidas, luzes }. Sem ele, tudo sai inteiro (como no Médio).
+//               definirQualidade(perfil) muda taxa/tam/malhas/galhos na hora; max e luzes só valem
+//               para um Efeitos novo (na próxima batalha).
 //
 // Todos os efeitos recebem só números, listas e objetos simples: assim, no futuro (online),
 // dá para repetir o mesmo efeito nos outros aparelhos (veja FX_REDE no fim).
@@ -300,8 +304,10 @@ export class Efeitos {
     this.textos = [];
     this.tremor = 0;
     this.tempo = 0;
+    const Q = opcoes.qualidade || {};
+    this.definirQualidade(Q);
     // ---- particulas (um unico objeto Points). giro/puxa fazem a particula rodar em volta de (cx,cz) e ser puxada para o centro
-    this.P = criarGrupo(MAX);
+    this.P = criarGrupo(Q.max ?? MAX);
     this.pontos = criarPontos(this.P, false);
     this.matP = this.pontos.material;
     if (cena) cena.add(this.pontos);
@@ -309,14 +315,14 @@ export class Efeitos {
     // claro do dia como as que brilham (a soma de laranja com grama verde vira amarelo claro)
     this.F = null;
     if (opcoes.fogo) {
-      this.F = criarGrupo(opcoes.fogo);
+      this.F = criarGrupo(Math.min(opcoes.fogo, Q.solidas ?? opcoes.fogo));
       this.pontosF = criarPontos(this.F, true);
       if (cena) cena.add(this.pontosF);
     }
     // ---- claroes: poucas luzes fixas, ligadas e desligadas (criar luzes na hora faria o jogo travar recompilando).
     // Padrao 0 luzes (leve no celular): o clarao vira um brilho, sem iluminar o cenario.
     this.luzes = [];
-    for (let i = 0; i < (opcoes.luzes ?? 0); i++) {
+    for (let i = 0; i < (opcoes.luzes ?? Q.luzes ?? 0); i++) {
       const l = new THREE.PointLight(0xffffff, 0, 22, 2);
       l.userData = { vida: 0, max: 1, forca: 0 };
       this.luzes.push(l);
@@ -324,11 +330,21 @@ export class Efeitos {
     }
   }
 
+  // Qualidade (3.2): taxa = parte das partículas que sai; tam = quanto as que saem crescem;
+  // malhas = parte dos cacos; galhos = parte dos galhos do relâmpago
+  definirQualidade(q = {}) {
+    this.taxa = q.taxa ?? 1;
+    this.tamQ = q.tam ?? 1;
+    this.malhasQ = q.malhas ?? 1;
+    this.galhosQ = q.galhos ?? 1;
+  }
+
   // o = { x,y,z, n, cor, vel, cima, vida, tam, grav, raio, alto, giro, puxa }
   particulas(o) {
     const P = this.P,
       c = new THREE.Color(o.cor ?? 0xffffff),
-      n = o.n ?? 12;
+      n0 = o.n ?? 12,
+      n = n0 > 1 && this.taxa < 1 ? Math.max(1, Math.round(n0 * this.taxa)) : n0;
     for (let k = 0; k < n; k++) {
       const i = (P.i = (P.i + 1) % P.n),
         a = Math.random() * Math.PI * 2,
@@ -346,7 +362,7 @@ export class Efeitos {
       P.cor[i * 4 + 2] = c.b;
       P.cor[i * 4 + 3] = 1;
       P.max[i] = P.vida[i] = (o.vida ?? 0.6) * (0.6 + Math.random() * 0.4);
-      P.t0[i] = (o.tam ?? 0.25) * (0.6 + Math.random() * 0.7);
+      P.t0[i] = (o.tam ?? 0.25) * (0.6 + Math.random() * 0.7) * this.tamQ;
       P.grav[i] = o.grav ?? 6;
       P.cx[i] = o.x;
       P.cz[i] = o.z;
@@ -361,6 +377,7 @@ export class Efeitos {
   // o = { fim: THREE.Color (a cor no fim da vida), cresce: quanto ela cresce (0 = encolhe, como as outras),
   //       solido: vai para o fogo "solido" (precisa de opcoes.fogo; sem ele, brilha como as outras) }
   _ponto(x, y, z, vx, vy, vz, c, vida, tam, grav = 0, o = null) {
+    if (this.taxa < 1 && Math.random() > this.taxa) return; // Qualidade mais leve: só parte delas sai
     const P = o?.solido && this.F ? this.F : this.P,
       i = (P.i = (P.i + 1) % P.n);
     P.vivas = P.n;
@@ -375,7 +392,7 @@ export class Efeitos {
     P.cor[i * 4 + 2] = c.b;
     P.cor[i * 4 + 3] = 1;
     P.max[i] = P.vida[i] = vida;
-    P.t0[i] = tam;
+    P.t0[i] = tam * this.tamQ;
     P.grav[i] = grav;
     P.giro[i] = 0;
     P.puxa[i] = 0;
@@ -648,7 +665,7 @@ export class Efeitos {
   // particulas que sobem girando e sao puxadas para o centro. o = { id, n (por segundo), giro, puxa, tam, cima }
   espiral(x, y, z, r, h, cor, vida = 1.5, o = {}) {
     const c = new THREE.Color(cor),
-      ritmo = o.n ?? 70;
+      ritmo = (o.n ?? 70) * this.taxa;
     let acum = 0;
     this._temp(
       new THREE.Object3D(),
@@ -723,6 +740,7 @@ export class Efeitos {
       ? new THREE.MeshLambertMaterial({ color: cor, flatShading: true, transparent: true })
       : new THREE.MeshBasicMaterial({ color: cor, ...ADD });
     const lista = [];
+    if (this.malhasQ < 1) n = Math.max(3, Math.round(n * this.malhasQ));
     for (let i = 0; i < n; i++) {
       const m = new THREE.Mesh(gEst, mat),
         a = Math.random() * Math.PI * 2,
@@ -916,7 +934,7 @@ export class Efeitos {
       pts.push(q);
       for (let i = 0; i < n; i++) seg(pts[i], pts[i + 1], l);
       if (nivel > 0)
-        for (let k = 0; k < (o.galhos ?? 2); k++) {
+        for (let k = 0; k < Math.floor((o.galhos ?? 2) * this.galhosQ); k++) {
           const ini = pts[1 + Math.floor(Math.random() * (n - 2))];
           raio(
             ini,

@@ -73,6 +73,7 @@ export class HabilidadesFaisquinho {
 
   // ---------- faíscas (partículas) ----------
   faisca(pos, vel, tam, vida) {
+    if (this.b.poupar()) return; // Qualidade mais leve: só parte dos pedacinhos sai
     const m = new THREE.Mesh(GEO_FAISCA, Math.random() < 0.5 ? AMARELO : MIOLO);
     m.position.copy(pos);
     m.scale.set(tam * 0.5, tam * 0.5, tam * 1.6);

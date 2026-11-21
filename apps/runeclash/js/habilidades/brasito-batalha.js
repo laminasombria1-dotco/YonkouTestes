@@ -46,6 +46,7 @@ export class HabilidadesBrasito {
 
   // ---------- chamas (partículas) ----------
   chama(pos, vel, tam, vida, magma = false) {
+    if (this.b.poupar()) return; // Qualidade mais leve: só parte dos pedacinhos sai
     const cores = magma ? MAGMA : FOGO;
     const m = new THREE.Mesh(GEO_CHAMA, cores[Math.floor(Math.random() * cores.length)]);
     m.position.copy(pos);

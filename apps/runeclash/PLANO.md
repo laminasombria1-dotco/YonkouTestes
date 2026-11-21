@@ -53,8 +53,8 @@ Uma ideia por vez, sem pressa. Cada ideia é feita numa branch, com proposta ant
   - [x] **Gotinho:** borrifos de gotas "sólidas", coluna de água no Hidrocanhão e no Maremoto, ondinhas no chão, espuma na crista das ondas, escudo que se parte em cacos e bolhas na poça. Tsunamar com água mais funda.
   - [x] **Musguinho:** o chão que racha em marrom e a terra que voa nas Raízes, anel verde e folhinhas quando a Moita e o Bosque brotam, pólen na Moita, vaga-lumes no Bosque Vivo, espiral verde na cura do Florestral, rastro verde da Folha e folhas quando a Vinha agarra.
   - [x] **Solito:** espiral dourada e brilho em volta do Sol, feixe da Arena por cima do laser com clarões, faixa de luz no chão e faíscas, brasas e ondas no Calor (mais vermelhas quando esquenta) e a Supernova que explode com coluna de luz, cacos e chão queimado. O Astrorei tem brilho vermelho de eclipse (aparece mais à noite).
-- [ ] **3.2** Os efeitos respeitam a Qualidade (Fraco/Médio/Forte) para não pesar no celular.
-- [ ] **3.3** Habilidades próprias para **Lua, Luz e Trevas**. Trevas primeiro, já no tom trevoso.
+- [x] **3.2** Os efeitos respeitam a Qualidade (Fraco/Médio/Forte) para não pesar no celular. No **Fraco**: menos da metade das partículas (25% maiores), metade dos pedacinhos 3D e dos cacos, relâmpagos com menos galhos e no máximo 2500 partículas. O **Médio** é o de sempre. No **Forte**, os clarões têm luz de verdade. Os números ficam em `QUALIDADES[...].efeitos` (`js/mapa/config.js`); trocar no menu vale na hora.
+- [ ] **3.3** Habilidades próprias para **Lua, Luz e Trevas**. Trevas primeiro, já no tom trevoso. *(Fica para depois: antes, testar o jogo como ele está.)*
 - [ ] **3.4** Rebalancear dano, vida e chances depois das mudanças.
 
 ### Etapa 4: Personagens (os monstros)

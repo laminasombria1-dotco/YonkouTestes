@@ -59,6 +59,7 @@ export class HabilidadesMusguinho {
 
   // folhinhas soltas (partículas)
   folhinha(pos, vel, vida, mat = FOLHA) {
+    if (this.b.poupar()) return; // Qualidade mais leve: só parte dos pedacinhos sai
     const m = new THREE.Mesh(GEO_FOLHINHA, mat);
     m.position.copy(pos);
     m.rotation.set(Math.random() * 3, Math.random() * 3, 0);

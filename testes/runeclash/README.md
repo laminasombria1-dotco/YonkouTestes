@@ -18,6 +18,7 @@ Ficam **fora** de `apps/runeclash`: nada daqui vai para o jogo nem pesa no celul
 | Água do Gotinho | Tsunamar: o Maremoto com espuma da Arena, o Hidrocanhão que sai e acaba, e o Escudo d'Água que se parte | `14-maremoto.png` |
 | Plantas do Musguinho | Florestral: o Bosque Vivo brota (raízes, terra e vaga-lumes da Arena) e some sozinho; a Vinha Agarradora estica e recolhe | `15-bosque.png` |
 | Sol do Solito | Astrorei: o Sol Rei nasce com o brilho da Arena, o Laser Real atira e a Supernova esquenta e explode | `16-supernova.png` |
+| Qualidade dos efeitos | No Fraco os golpes soltam menos partículas (maiores) e menos pedacinhos; trocar no menu vale na hora; no Forte os clarões têm luz de verdade | — |
 | Monstro invocado e modo treino | Invoca o Faisquinho, passa o controle para ele e usa o golpe de área no treino | `5-treino.png` |
 | Material da Arena | Os efeitos e as 66 peças do Blender (`js/arena/`) carregam e aparecem no mapa | `6-arena-vitrine.png` |
 | Invocador | O **Novo jogo** abre o criador com o Aiden escolhido, troca cabelo e penteado, escolhe o parceiro, confere o jogo salvo, ergue a pedra ao invocar o monstro e muda a aparência pelo menu **Aparência** | `7-criador.png`, `8-invocador-mapa.png` |

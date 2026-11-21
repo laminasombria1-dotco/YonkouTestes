@@ -28,6 +28,7 @@ fx.atualizar(dt, camera, largura, altura);
 - **Peso:** as partículas ficam num objeto só, com até **6.000** de uma vez. Na etapa 3.2 isso vai seguir a Qualidade (Fraco/Médio/Forte). Quando não há partícula viva, nada vai para a placa de vídeo.
 - **`fogo`** (ex.: `new Efeitos(cena, { fogo: 1500 })`): um segundo grupo de partículas com **mistura normal** (pinta por cima em vez de somar luz), para o fogo não virar amarelo claro e sumir no chão claro do dia. Use com `_ponto(..., { solido: true })`.
 - **`rachadura(x, z, r, cor, vida, solida)`**: com `solida = true` a rachadura pinta por cima (de dia, laranja somado com a grama vira verde-limão).
+- **`qualidade`** (etapa 3.2): o perfil `efeitos` da Qualidade (`js/mapa/config.js`). `taxa` = parte das partículas que sai, `tam` = quanto as que saem crescem, `malhas` = parte dos cacos, `galhos` = parte dos galhos do relâmpago, `max`/`solidas` = limite de partículas, `luzes` = luzes de verdade nos clarões. `definirQualidade(perfil)` muda taxa/tam/malhas/galhos na hora; o resto vale para um `Efeitos` novo.
 - **`_ponto(x, y, z, vx, vy, vz, cor, vida, tam, grav, { fim, cresce, solido })`**: `fim` = a cor no fim da vida; `cresce` = quanto a partícula cresce (como uma chama), em vez de encolher.
 - `texto()` (números de dano) só funciona com `camada` e o estilo CSS `.num`; o jogo ainda usa os números de dano próprios.
 

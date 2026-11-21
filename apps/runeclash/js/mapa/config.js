@@ -47,10 +47,20 @@ export const CONFIG_MAPA = {
 //  nevoa:      distância de visão (m)
 //  densidade:  multiplica a quantidade de objetos
 //  pixel:      resolução máxima da tela (1 = mais leve)
+//  efeitos:    os efeitos dos golpes (etapa 3.2), em js/arena/efeitos.js e nas batalhas:
+//    taxa    = parte das partículas da Arena que sai (0,5 = metade)
+//    tam     = as partículas que saem ficam maiores (para o golpe não parecer vazio com menos)
+//    malhas  = parte dos pedacinhos 3D (lascas, gotas, folhas, brasas) e dos cacos que sai
+//    galhos  = parte dos galhos de cada relâmpago
+//    max     = quantas partículas podem existir ao mesmo tempo (as que brilham / as "sólidas")
+//    luzes   = luzes de verdade nos clarões (iluminam monstros e chão; pesam em tudo o tempo todo)
 export const QUALIDADES = {
-  fraco: { nome: 'Fraco', raioChunks: 2, detalhe: 1, nevoa: 78, densidade: 0.6, pixel: 1 },
-  medio: { nome: 'Médio', raioChunks: 3, detalhe: 1, nevoa: 108, densidade: 1, pixel: 1.5 },
-  forte: { nome: 'Forte', raioChunks: 4, detalhe: 2, nevoa: 138, densidade: 1.2, pixel: 1.75 },
+  fraco: { nome: 'Fraco', raioChunks: 2, detalhe: 1, nevoa: 78, densidade: 0.6, pixel: 1,
+    efeitos: { taxa: 0.45, tam: 1.25, malhas: 0.5, galhos: 0.5, max: 2500, solidas: 700, luzes: 0 } },
+  medio: { nome: 'Médio', raioChunks: 3, detalhe: 1, nevoa: 108, densidade: 1, pixel: 1.5,
+    efeitos: { taxa: 1, tam: 1, malhas: 1, galhos: 1, max: 6000, solidas: 1500, luzes: 0 } },
+  forte: { nome: 'Forte', raioChunks: 4, detalhe: 2, nevoa: 138, densidade: 1.2, pixel: 1.75,
+    efeitos: { taxa: 1, tam: 1, malhas: 1, galhos: 1, max: 6000, solidas: 1500, luzes: 2 } },
 };
 export const ORDEM_QUALIDADES = ['fraco', 'medio', 'forte'];
 const CHAVE_QUALIDADE = 'runeclash-qualidade';

@@ -67,6 +67,7 @@ export class HabilidadesPedrisco {
 
   // ---------- lascas de pedra (partículas) ----------
   lasca(pos, vel, tam, vida, mat = ROCHA) {
+    if (this.b.poupar()) return; // Qualidade mais leve: só parte dos pedacinhos sai
     const m = new THREE.Mesh(GEO_LASCA, mat);
     m.position.copy(pos);
     m.rotation.set(Math.random() * 3, Math.random() * 3, 0);

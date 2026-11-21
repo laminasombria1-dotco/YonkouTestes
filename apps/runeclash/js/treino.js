@@ -18,6 +18,7 @@ import { Batalha, Lutador } from './batalha.js';
 import { alturaEm } from './mundo.js';
 import { descartar } from './modelos.js';
 import { Efeitos } from './arena/efeitos.js';
+import { QUALIDADES, lerQualidade } from './mapa/config.js';
 import { VisualTrevas } from './habilidades/trevas-batalha.js';
 import { HabilidadesBrasito } from './habilidades/brasito-batalha.js';
 import { HabilidadesGotinho } from './habilidades/gotinho-batalha.js';
@@ -42,7 +43,8 @@ export class Treino extends Batalha {
     mundo.cena.add(t.cena);
     t.camera = mundo.camera;
     t.efeitos = [];
-    t.fx = new Efeitos(t.cena, { fogo: 1500 }); // efeitos da Arena dentro da camada do treino (o chão dela é plano)
+    t.qfx = QUALIDADES[lerQualidade()].efeitos; // quanto efeito sai (segue a Qualidade do menu)
+    t.fx = new Efeitos(t.cena, { fogo: 1500, qualidade: t.qfx }); // efeitos da Arena dentro da camada do treino (o chão dela é plano)
     t.projeteis = [];
     t.inimigos = [];
     t.capturados = [];

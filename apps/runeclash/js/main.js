@@ -351,6 +351,11 @@ class Jogo {
     const q = ORDEM_QUALIDADES[(ORDEM_QUALIDADES.indexOf(atual) + 1) % ORDEM_QUALIDADES.length];
     gravarQualidade(q);
     this.mundo.aplicarQualidade(q);
+    // os efeitos dos golpes seguem na hora (luzes e limite de partículas: na próxima batalha)
+    const perfil = QUALIDADES[q].efeitos;
+    this.batalha?.definirQualidade?.(q);
+    this.pet?.treino?.definirQualidade?.(q);
+    this.pet?.fx?.definirQualidade(perfil);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, QUALIDADES[q].pixel));
     this.medir();
     this.atualizarBotaoQualidade();

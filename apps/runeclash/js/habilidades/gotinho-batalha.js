@@ -94,6 +94,7 @@ export class HabilidadesGotinho {
 
   // ---------- gotinhas (partículas) ----------
   gota(pos, vel, tam, vida, mat = AGUA_CLARA) {
+    if (this.b.poupar()) return; // Qualidade mais leve: só parte dos pedacinhos sai
     const m = new THREE.Mesh(GEO_GOTA, mat);
     m.position.copy(pos);
     m.scale.setScalar(tam);

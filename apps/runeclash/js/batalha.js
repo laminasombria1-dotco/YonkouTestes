@@ -28,6 +28,7 @@ import { Arena, RAIO_ARENA } from './arena.js';
 import { Selamento } from './selamento.js';
 import { Surgimentos } from './invocacao.js';
 import { Efeitos } from './arena/efeitos.js';
+import { QUALIDADES, lerQualidade } from './mapa/config.js';
 
 export { RAIO_ARENA };
 
@@ -116,7 +117,8 @@ export class Batalha {
     this.efeitos = [];
     this.arena = new Arena(this);
     this.trevas = new VisualTrevas(this); // visual especial dos golpes de Trevas
-    this.fx = new Efeitos(this.cena, { fogo: 1500 }); // efeitos da Arena (js/arena/efeitos.js): um só para a batalha toda; o chão é plano
+    this.qfx = QUALIDADES[lerQualidade()].efeitos; // quanto efeito sai (etapa 3.2: segue a Qualidade do menu)
+    this.fx = new Efeitos(this.cena, { fogo: 1500, qualidade: this.qfx }); // efeitos da Arena (js/arena/efeitos.js): um só para a batalha toda; o chão é plano
     this.brasito = new HabilidadesBrasito(this); // lança-chamas, rabo de fogo e velocidade da linha do Brasito
     this.gotinho = new HabilidadesGotinho(this); // jato, hidrocanhão, ondas, maremoto e escudo da linha do Gotinho
     this.musguinho = new HabilidadesMusguinho(this); // folha bumerangue, vinha que puxa, raízes, moita e bosque da linha do Musguinho
@@ -985,7 +987,16 @@ export class Batalha {
     } });
   }
 
+  // Qualidade (3.2): os pedacinhos 3D dos golpes saem só em parte no Fraco.
+  // poupar() = true quando este pedacinho NÃO deve sair.
+  poupar() { return this.qfx.malhas < 1 && Math.random() > this.qfx.malhas; }
+  definirQualidade(q) {
+    this.qfx = QUALIDADES[q].efeitos;
+    this.fx.definirQualidade(this.qfx);
+  }
+
   particulas(pos, cor, n, forca) {
+    if (this.qfx.malhas < 1) n = Math.max(1, Math.round(n * this.qfx.malhas));
     for (let i = 0; i < n; i++) {
       const m = new THREE.Mesh(GEO_PARTICULA, new THREE.MeshBasicMaterial({ color: cor, transparent: true }));
       m.position.set(pos.x, 0.8, pos.z);

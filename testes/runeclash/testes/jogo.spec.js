@@ -269,6 +269,39 @@ test('Solito: o sol que brilha, o laser e a Supernova com os efeitos da Arena', 
   semErros(erros);
 });
 
+test('Qualidade: no Fraco os efeitos saem mais leves, e mudar no menu vale na hora', async ({ page }) => {
+  const erros = vigiarErros(page);
+  await page.addInitScript(() => { try { if (!sessionStorage.getItem('q')) { localStorage.setItem('runeclash-qualidade', 'fraco'); sessionStorage.setItem('q', '1'); } } catch {} });
+  await abrirJogo(page);
+  await entrarLocal(page);
+  await novoJogo(page, 'brasito');
+  const entrar = async () => {
+    await page.evaluate(() => { const j = window.__jogo; j.estado.equipe = [window.D.criarMonstro('magmalobo', 35)]; j.iniciarBatalha(j.mundo.selvagens[0]); });
+    await page.waitForFunction(() => window.__jogo.modo === 'batalha' && !!window.__jogo.batalha?.ini, null, { timeout: 30_000 });
+    await page.evaluate(() => { const b = window.__jogo.batalha; b.pensarIA = () => {}; b.aplicarDano = () => false; });
+  };
+  await entrar();
+  // Fraco: menos partículas (e maiores), limite menor e sem luzes
+  expect(await page.evaluate(() => { const fx = window.__jogo.batalha.fx; return [fx.taxa < 1, fx.tamQ > 1, fx.P.n, fx.luzes.length]; })).toEqual([true, true, 2500, 0]);
+  await esperar(page, 800);
+  await page.evaluate(() => { const b = window.__jogo.batalha; b.jog.rec = [0, 0, 0]; b.tentarGolpe(b.jog, 1, b.ini); });
+  await esperar(page, 500);
+  expect(await page.evaluate(() => window.__jogo.batalha.fx.F.vivas)).toBeGreaterThan(0);
+  // Fraco → Médio no menu: os efeitos saem inteiros na hora
+  await page.evaluate(() => window.__jogo.trocarQualidade());
+  expect(await page.evaluate(() => [window.__jogo.batalha.fx.taxa, window.__jogo.batalha.qfx.malhas])).toEqual([1, 1]);
+  // Médio → Forte: na próxima batalha, os clarões têm luz de verdade
+  await page.evaluate(() => window.__jogo.trocarQualidade());
+  await page.evaluate(() => window.__jogo.batalha.fugir());
+  await page.waitForFunction(() => window.__jogo.modo === 'mundo', null, { timeout: 20_000 });
+  await entrar();
+  expect(await page.evaluate(() => window.__jogo.batalha.fx.luzes.length)).toBe(2);
+  // volta para o Fraco (a ordem é Fraco → Médio → Forte → Fraco)
+  await page.evaluate(() => window.__jogo.trocarQualidade());
+  expect(await page.evaluate(() => window.__jogo.batalha.fx.taxa)).toBeLessThan(1);
+  semErros(erros);
+});
+
 test('monstro invocado e golpe no modo treino', async ({ page }) => {
   const erros = vigiarErros(page);
   await abrirJogo(page);
