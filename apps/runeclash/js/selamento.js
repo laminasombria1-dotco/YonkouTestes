@@ -13,6 +13,7 @@ import * as THREE from 'three';
 import { Efeitos } from './arena/efeitos.js';
 import { criarCristal } from './modelos.js';
 import { CRISTAIS } from './dados.js';
+import { sombraRuna } from './invocacao.js';
 
 const T_ERGUER = 0.45;   // s até as correntes saírem da pedra
 const T_PULSO = 0.6;     // s entre um pulso e outro
@@ -21,20 +22,6 @@ const T_VOO = 0.8;       // s da essência voando até a pedra
 const COR_FALHA = 0xff6a8a;
 
 const corHex = (c) => new THREE.Color(c).getHex();
-
-// Sombra escura embaixo de um círculo de runas: o brilho roxo some na grama clara do dia sem ela
-const GEO_SOMBRA = new THREE.CircleGeometry(1, 32).rotateX(-Math.PI / 2);
-GEO_SOMBRA.userData.fixa = true; // os efeitos não apagam esta forma (ela é de todas as sombras)
-function sombraRuna(fx, x, z, r, vida, id) {
-  const m = new THREE.Mesh(GEO_SOMBRA, new THREE.MeshBasicMaterial({ color: 0x120a22, transparent: true, opacity: 0, depthWrite: false }));
-  m.position.set(x, 0.06, z);
-  m.scale.setScalar(r * 0.92);
-  m.renderOrder = -1;
-  fx._temp(m, vida, (q, k) => {
-    const t = k * q.max, entra = Math.min(1, t / 0.25), sai = Math.min(1, (q.max - t) / 0.3);
-    m.material.opacity = 0.42 * entra * sai;
-  }, { id });
-}
 
 export class Selamento {
   constructor(batalha) {

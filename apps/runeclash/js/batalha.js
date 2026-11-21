@@ -26,6 +26,7 @@ const ESCALA_LIDER = 1.3;  // o líder do grupo é maior
 const LIMITE_SELAVEL = 0.35; // com 35% de vida ou menos aparece "PODE SER SELADO" em cima do monstro
 import { Arena, RAIO_ARENA } from './arena.js';
 import { Selamento } from './selamento.js';
+import { Surgimentos } from './invocacao.js';
 
 export { RAIO_ARENA };
 
@@ -162,7 +163,9 @@ export class Batalha {
     this.captura = null;
     this.tipoCristal = 0;          // 0 comum, 1 forte, 2 supremo
     this.cristalEscolhido = false; // o jogador trocou na mão? então respeita a escolha
-    this.selo = new Selamento(this); // o Invocador na arena e o Selamento em etapas (js/selamento.js)
+    this.selo = new Selamento(this); // o Selamento em etapas: a pedra, as correntes e o selo (js/selamento.js)
+    this.surgimentos = new Surgimentos(this.selo.fx); // o seu monstro sobe de um círculo de runas (js/invocacao.js)
+    this.invocarComRunas(this.jog);
     this.fim = null;
     this.t = 0;
     this.trocaCd = 0;
@@ -356,6 +359,7 @@ export class Batalha {
     this.faisquinho.atualizar(dt);
     this.solito.atualizar(dt);
     this.selo.atualizar(dt);
+    this.surgimentos.atualizar(dt); // depois da física: só desce e encolhe o modelo por cima do lugar certo
 
     if (this.trocaAuto > 0) {
       this.trocaAuto -= dt;
@@ -1095,6 +1099,11 @@ export class Batalha {
     return -1;
   }
 
+  // Invocar com runas (2.2): o monstro sobe de um círculo de runas no chão
+  invocarComRunas(l) {
+    this.surgimentos.surgir(l.modelo, { x: l.pos.x, z: l.pos.z, chao: 0, raio: l.raio, altura: l.altura, cor: ELEMENTOS[l.esp.elemento].cor });
+  }
+
   trocar(auto) {
     if (this.fim || this.captura) return;
     if (!auto && (this.trocaCd > 0 || this.trocaAuto > 0)) return;
@@ -1107,9 +1116,10 @@ export class Batalha {
     this.pedrisco.parar(velho);
     this.faisquinho.parar(velho);
     this.solito.parar(velho);
+    // o que sai vira luz e volta para a pedra
+    this.surgimentos.guardar([velho.pos.x, velho.altura * 0.5, velho.pos.z], null, ELEMENTOS[velho.esp.elemento].cor);
     this.cena.remove(velho.modelo);
     descartar(velho.modelo);
-    this.particulas(velho.pos, '#8ff4ff', 12, 1);
     const novo = new Lutador(this.jogo.estado.equipe[prox], 'jogador');
     novo.pos.copy(velho.pos);
     const mira = this.ini || velho;
@@ -1117,6 +1127,7 @@ export class Batalha {
     novo.stun = 0.4;
     this.cena.add(novo.modelo);
     this.aplicarModArena(novo);
+    this.invocarComRunas(novo);
     this.jog = novo;
     this.idx = prox;
     this.trocaCd = 1.5;

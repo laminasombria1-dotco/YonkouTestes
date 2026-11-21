@@ -14,6 +14,8 @@ import { criarModelo, animarModelo, descartar } from './modelos.js';
 import { alturaEm } from './mundo.js';
 import { Treino } from './treino.js';
 import { conjurar } from './invocador.js';
+import { Efeitos } from './arena/efeitos.js';
+import { Surgimentos } from './invocacao.js';
 
 const DIST_ATRAS = 2.2;   // metros atrás do treinador
 const DIST_LADO = 0.9;    // um pouco para o lado (não fica escondido atrás dele)
@@ -21,6 +23,7 @@ const LONGE = 15;         // mais longe que isso: aparece do lado do treinador
 const VEL_SEGUIR = 8.2;   // um pouco mais rápido que o treinador (7,5), para alcançar
 const TIPOS = { corpo: 'perto', projetil: 'disparo', area: 'área' };
 const $ = (s) => document.querySelector(s);
+const T_FX = 1.6; // s que os efeitos de invocar/guardar duram (depois disso eles param de rodar)
 
 export class Companheiro {
   constructor(jogo) {
@@ -33,6 +36,9 @@ export class Companheiro {
     this.ang = 0;
     this.treino = null;
     this.t = 0;
+    this.fx = null;    // efeitos da Arena no mapa (criados na primeira invocação)
+    this.surg = null;  // o monstro subindo do círculo de runas (js/invocacao.js)
+    this.fxT = 0;      // enquanto > 0 os efeitos rodam; parado, não gasta nada
     this.golpes = [...document.querySelectorAll('#hud-treino .golpe')];
   }
 
@@ -40,6 +46,24 @@ export class Companheiro {
   get controlando() { return !!this.treino; }
 
   // ---------- invocar e guardar ----------
+  efeitos() {
+    if (!this.fx) {
+      this.fx = new Efeitos(this.mundo.cena, { chao: alturaEm });
+      this.surg = new Surgimentos(this.fx);
+    }
+    this.fx.pontos.visible = true;
+    this.fxT = T_FX;
+    return this.surg;
+  }
+
+  // a pedra na mão do Invocador, no mundo (para onde a luz do monstro volta)
+  posPedra() {
+    const p = this.mundo.jogador?.userData.J?.pedra;
+    if (!p) return null;
+    const v = p.getWorldPosition(new THREE.Vector3());
+    return [v.x, v.y, v.z];
+  }
+
   alternar() { if (this.ativo) this.guardar(); else this.invocar(); }
 
   invocar(silencioso = false) {
@@ -56,13 +80,28 @@ export class Companheiro {
     this.ativo = true;
     this.jogo.estado.pet = true;
     this.atualizarBotoes();
-    if (!silencioso) { this.jogo.aviso(`${nome} saiu para passear com você!`); conjurar(m.jogador); } // o Invocador ergue a pedra
+    if (!silencioso) {
+      this.jogo.aviso(`${nome} saiu para passear com você!`);
+      conjurar(m.jogador); // o Invocador ergue a pedra
+      // e o monstro sobe de um círculo de runas (2.2)
+      const esp = ESPECIES[d.especie];
+      this.efeitos().surgir(this.modelo, { x: this.pos.x, z: this.pos.z, chao: alturaEm(this.pos.x, this.pos.z), raio: esp.raio, altura: esp.altura, cor: ELEMENTOS[esp.elemento].cor });
+    }
   }
 
   guardar(silencioso = false) {
     if (this.treino) this.voltarAoTreinador(true);
-    if (this.modelo) { this.mundo.cena.remove(this.modelo); descartar(this.modelo); }
     const nome = this.especie ? ESPECIES[this.especie].nome : '';
+    if (this.modelo) {
+      // vira luz e volta para a pedra na mão do Invocador (2.2)
+      if (!silencioso && this.modelo.visible) {
+        const esp = ESPECIES[this.especie], p = this.modelo.position;
+        this.efeitos().guardar([p.x, p.y + esp.altura * 0.5, p.z], this.posPedra(), ELEMENTOS[esp.elemento].cor);
+      }
+      if (this.surg) this.surg.lista = this.surg.lista.filter((s) => s.modelo !== this.modelo);
+      this.mundo.cena.remove(this.modelo);
+      descartar(this.modelo);
+    }
     this.modelo = null;
     this.dados = null;
     this.especie = null;
@@ -162,6 +201,7 @@ export class Companheiro {
   // ---------- a cada quadro (no mapa) ----------
   atualizar(dt, ctrl, t, pausado) {
     this.t = t;
+    this.atualizarEfeitos(dt);
     if (!pausado) {
       if (ctrl.consumir('pet')) this.alternar();
       if (ctrl.consumir('controlar')) { if (this.ativo) this.alternarControle(); }
@@ -214,6 +254,19 @@ export class Companheiro {
     this.modelo.position.set(this.pos.x, alturaEm(this.pos.x, this.pos.z), this.pos.z);
     this.modelo.rotation.y = this.ang;
     animarModelo(this.modelo, t, movendo);
+    this.surg?.atualizar(dt); // subindo das runas: por cima do lugar certo
+  }
+
+  // os efeitos só rodam por um tempinho depois de invocar ou guardar
+  atualizarEfeitos(dt) {
+    if (!this.fx || this.fxT <= 0) return;
+    this.fxT -= dt;
+    const W = this.jogo.palco.clientWidth, H = this.jogo.palco.clientHeight;
+    this.fx.atualizar(dt, this.mundo.camera, W, H);
+    if (this.fxT <= 0) {
+      if (this.fx.temp.length) this.fxT = 0.2; // ainda tem efeito no ar: espera ele acabar
+      else this.fx.pontos.visible = false;
+    }
   }
 }
 

@@ -9,7 +9,7 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
 
 Só os **monstros** lutam; o Invocador não luta. O plano, etapa por etapa, fica em **[PLANO.md](PLANO.md)**.
 
-> **Hoje (ideia 2.1)** o Runeclash joga como o Cristalia, com o nome novo, o jogo salvo separado e o visual próprio: roxo-runa e dourado, fonte Cinzel nos títulos, o **Sealfolio** (o antigo Monstruário), as **pedras de selamento** (azul, roxa e dourada) no lugar dos cristais, o **Invocador** (o Aiden, com o criador de personagem) no mapa e o **Selamento** com correntes na batalha. As regras da batalha e da chance de selar ainda são as do Cristalia.
+> **Hoje (ideia 2.2)** o Runeclash joga como o Cristalia, com o nome novo, o jogo salvo separado e o visual próprio: roxo-runa e dourado, fonte Cinzel nos títulos, o **Sealfolio** (o antigo Monstruário), as **pedras de selamento** (azul, roxa e dourada) no lugar dos cristais, o **Invocador** (o Aiden, com o criador de personagem) no mapa o **Selamento** com correntes na batalha e o monstro que **sobe de um círculo de runas** quando é invocado. As regras da batalha e da chance de selar ainda são as do Cristalia.
 
 ## Como jogar
 
@@ -36,6 +36,7 @@ Só os **monstros** lutam; o Invocador não luta. O plano, etapa por etapa, fica
 - **Selar (o Selamento):** enfraqueça o monstro e toque no botão da pedra (tecla C). O número ao lado é a chance de selar. A **setinha** ao lado da pedra abre a lista para escolher a Azul, a Roxa ou a Dourada (no PC, a tecla V passa para a próxima). Formas evoluídas são bem mais difíceis de selar.
   - Com **35% de vida ou menos**, a placa do monstro mostra **PODE SER SELADO** e o botão da pedra pisca (dá para tentar antes, com chance baixa).
   - O Selamento (`js/selamento.js`, com os efeitos da Arena): a **pedra aparece flutuando ao lado do seu monstro** → **correntes** saem dela e prendem o monstro (runas no chão, anéis se apertando, partículas em espiral), na cor da pedra → o monstro se debate em **pulsos** (3 quando vai dar certo, 1 a 3 quando vai falhar) → **selou:** implosão, coluna de luz e a essência voa até a pedra; **falhou:** as correntes se partem e o círculo fica vermelho. Enquanto sela, ninguém age.
+  - **Invocar com runas** (`js/invocacao.js`): quando a luta começa e quando você troca, o seu monstro sobe de um círculo de runas (roxo por fora, na cor do elemento por dentro) com uma coluna de luz; o que sai na troca vira luz.
 - **Evoluir:** cada linha tem 4 formas. A forma inicial evolui no **nível 6**, a 1ª evolução no **nível 12** e a 2ª evolução no **nível 30**. Quando seu monstro chega ao nível, aparece a animação de evolução e ele ganha atributos e golpes mais fortes.
 - **Dia e noite:** um ciclo completo dura 4 minutos (2 de dia e 2 de noite). **Sol e Luz** só aparecem de dia; **Lua e Trevas**, só à noite. O relógio fica no canto superior direito.
 - **Equipe:** até 3 monstros. Com a equipe cheia, o selado vai para a reserva.
@@ -88,7 +89,7 @@ O Runeclash **ainda não tem site**: por enquanto ele roda só no computador (ve
 
 ## Monstro invocado (companheiro)
 
-- **Invocar:** o botão com a patinha, ao lado de "Montar casa", invoca o **1º monstro da equipe** (o mesmo que entra primeiro na batalha). Para trocar qual vem, use "Pôr na frente" no painel Equipe. O botão vira **Guardar**. No PC: tecla **R**.
+- **Invocar:** o botão com a patinha, ao lado de "Montar casa", invoca o **1º monstro da equipe** (o mesmo que entra primeiro na batalha). Para trocar qual vem, use "Pôr na frente" no painel Equipe. O botão vira **Guardar**. No PC: tecla **R**. Ele sobe de um círculo de runas ao ser invocado e, ao guardar, vira luz e volta para a pedra na mão do Invocador (os efeitos só rodam esse pouquinho e depois desligam).
 - **Seguir:** ele anda uns 2 m atrás do treinador, com as animações de parado e correndo, desviando de árvores e pedras. Se ficar a mais de 15 m (teleporte, fim de batalha), aparece do lado do treinador.
 - **Controlar** (tecla **T**): o joystick e a câmera passam para o monstro e o **treinador fica parado e protegido**: nenhum selvagem vem atrás dele nem começa batalha.
   - Aparecem os **3 golpes**, iguais aos da batalha e com a mesma recarga. Eles saem para a frente do monstro, **no ar**: não precisam de inimigo e **não machucam** ninguém (é só para mostrar). Espaço faz a esquiva.
@@ -535,6 +536,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `modelos/` | Os arquivos `.glb` (hoje `brasito.glb`) e um README com os detalhes de cada um |
 | `js/plataforma.js` | A vitrine 3D do Sealfolio e a animação de evolução |
 | `js/invocador.js` | O **Invocador** (o jogador no mapa): o corpo com as peças do Blender da Arena (`h_*`), as cores, os penteados, as animações (parado, andar e conjurar) e a pedra na mão. A aparência padrão é o **Aiden** |
+| `js/invocacao.js` | **Invocar com runas:** o monstro subindo do círculo de runas e virando luz ao ser guardado (na batalha e no mapa); também a sombra escura embaixo das runas, usada pelo Selamento |
 | `js/selamento.js` | O **Selamento** na batalha: a pedra que aparece ao lado do seu monstro, as correntes, os pulsos, o selo que fecha ou quebra (usa `js/arena/efeitos.js`) |
 | `js/criador.js` | A cena 3D da tela **Crie seu Invocador** (o pedestal com runas; arrastar gira o personagem) |
 | `js/mundo.js` | Mapa aberto: regiões, dia e noite, monstros selvagens e grupos (em volta do jogador), pedras de selamento, fonte, casa, colisão e câmera |

@@ -11,6 +11,7 @@ Ficam **fora** de `apps/runeclash`: nada daqui vai para o jogo nem pesa no celul
 | Conta, novo jogo e jogo salvo | Entra numa conta só do aparelho, começa com o Pedrisco, o mapa tem monstros e o jogo salvo usa as chaves `runeclash-*` (**nenhuma** do Cristalia) | `2-mapa.png` |
 | Batalha e captura | Entra numa batalha (com o Brasito) e sela o monstro (com a "captura garantida" do GM, para não depender da sorte) | `3-batalha.png`, `4-captura.png` |
 | Selamento | Monstro fraco mostra **PODE SER SELADO**; um selo que falha (o sorteio forçado a dar "não"): a pedra aparece ao lado do seu monstro, as correntes prendem, o monstro se solta, a pedra é gasta e some | `5-correntes.png` |
+| Invocar com runas | No mapa o companheiro sobe das runas e volta ao tamanho normal; ao guardar, some e os efeitos desligam sozinhos; na batalha o seu monstro sobe das runas, e na troca o novo (Gotinho) também | `9-runas-mapa.png`, `10-runas-troca.png` |
 | Monstro invocado e modo treino | Invoca o Faisquinho, passa o controle para ele e usa o golpe de área no treino | `5-treino.png` |
 | Material da Arena | Os efeitos e as 66 peças do Blender (`js/arena/`) carregam e aparecem no mapa | `6-arena-vitrine.png` |
 | Invocador | O **Novo jogo** abre o criador com o Aiden escolhido, troca cabelo e penteado, escolhe o parceiro, confere o jogo salvo, ergue a pedra ao invocar o monstro e muda a aparência pelo menu **Aparência** | `7-criador.png`, `8-invocador-mapa.png` |

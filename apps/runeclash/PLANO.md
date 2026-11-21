@@ -42,7 +42,7 @@ Uma ideia por vez, sem pressa. Cada ideia é feita numa branch, com proposta ant
 ### Etapa 2: Selar e invocar (o coração da junção)
 - [x] **2.1** **A captura vira o Selamento em etapas:** "PODE SER SELADO" quando o monstro está fraco → círculo de runas e **correntes saindo da pedra** na mão do Invocador → canalização com partículas em espiral → sucesso (implosão, o monstro some na pedra) ou falha (as correntes se partem).
   Feito (`js/selamento.js`): "PODE SER SELADO" com 35% de vida ou menos; a pedra aparece flutuando ao lado do seu monstro e as correntes saem dela; 3 pulsos (sucesso) ou 1 a 3 (falha); a essência voa até a pedra. As regras e a chance não mudaram. **Decisão da Lâmina:** por enquanto o Invocador fica **fora da batalha** (a pedra aparece sozinha); a cena dele vem na 2.3.
-- [ ] **2.2** **Invocar com runas:** o monstro sobe de um círculo de runas ao entrar na batalha, ao trocar e ao ser invocado no mapa.
+- [x] **2.2** **Invocar com runas:** o monstro sobe de um círculo de runas ao entrar na batalha, ao trocar e ao ser invocado no mapa. Ao guardar (e o que sai na troca), ele vira luz e volta para a pedra (`js/invocacao.js`).
 - [ ] **2.3** **Cena do Invocador** erguendo a pedra e o selo aparecendo no monstro que vai ser selado (a Lâmina vai fazer a cena), junto com o modelo 3D da pedra. O corpo do Invocador já tem a pose de segurar a pedra erguida (`canal` em `js/invocador.js`).
 
 ### Etapa 3: Habilidades melhores

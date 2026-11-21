@@ -83,6 +83,35 @@ test('Selamento: "PODE SER SELADO", correntes e o selo que falha', async ({ page
   semErros(erros);
 });
 
+test('Invocar com runas: no mapa, ao entrar na batalha e na troca', async ({ page }) => {
+  const erros = vigiarErros(page);
+  await abrirJogo(page);
+  await entrarLocal(page);
+  await novoJogo(page, 'brasito');
+  // mapa: o companheiro sobe do círculo de runas e volta ao tamanho normal
+  await page.evaluate(() => { window.__jogo.pet.guardar(true); window.__jogo.pet.invocar(); });
+  expect(await page.evaluate(() => window.__jogo.pet.surg.subindo(window.__jogo.pet.modelo))).toBe(true);
+  await page.waitForFunction(() => !window.__jogo.pet.surg.subindo(window.__jogo.pet.modelo), null, { timeout: 15_000 });
+  await foto(page, '9-runas-mapa');
+  // guardar: some do mapa (a luz volta para a pedra) e os efeitos param sozinhos depois
+  await page.evaluate(() => window.__jogo.pet.guardar());
+  expect(await page.evaluate(() => window.__jogo.pet.modelo)).toBe(null);
+  await page.waitForFunction(() => !window.__jogo.pet.fx.pontos.visible, null, { timeout: 15_000 });
+  // batalha: o seu monstro sobe das runas; na troca, o novo também
+  await page.evaluate(() => { const j = window.__jogo; j.estado.equipe.push(window.D.criarMonstro('gotinho', 8)); j.iniciarBatalha(j.mundo.selvagens[0]); });
+  await page.waitForFunction(() => window.__jogo.modo === 'batalha' && !!window.__jogo.batalha?.ini, null, { timeout: 30_000 });
+  await page.evaluate(() => { window.__jogo.batalha.pensarIA = () => {}; });
+  await page.waitForFunction(() => { const b = window.__jogo.batalha; return !b.surgimentos.subindo(b.jog.modelo); }, null, { timeout: 15_000 });
+  await page.waitForFunction(() => window.__jogo.batalha.trocaCd <= 0, null, { timeout: 15_000 });
+  await page.evaluate(() => window.__jogo.batalha.trocar(false));
+  const troca = await page.evaluate(() => { const b = window.__jogo.batalha; return { esp: b.jog.dados.especie, subindo: b.surgimentos.subindo(b.jog.modelo) }; });
+  expect(troca).toEqual({ esp: 'gotinho', subindo: true });
+  await esperar(page, 300);
+  await foto(page, '10-runas-troca');
+  await page.waitForFunction(() => { const b = window.__jogo.batalha; return !b.surgimentos.subindo(b.jog.modelo) && Math.abs(b.jog.modelo.scale.x - 1) < 1e-6; }, null, { timeout: 15_000 });
+  semErros(erros);
+});
+
 test('monstro invocado e golpe no modo treino', async ({ page }) => {
   const erros = vigiarErros(page);
   await abrirJogo(page);
