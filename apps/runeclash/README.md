@@ -564,6 +564,8 @@ python -m http.server 8766
 
 Depois abra `http://localhost:8766` no navegador. (A porta 8766 é só para não brigar com o Cristalia, que costuma rodar na 8765.) O erro 404 do `versao.json` é normal no teste local.
 
+**Testes automáticos:** veja `testes/runeclash/README.md` na raiz do repositório (`npx playwright test` dentro de `testes/runeclash`).
+
 ## Próximos passos possíveis
 
 - Trocar os outros modelos de formas simples por modelos feitos no Blender (`.glb`), como já foi feito com o Brasito

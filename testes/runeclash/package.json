@@ -1,0 +1,14 @@
+{
+  "name": "testes-runeclash",
+  "private": true,
+  "description": "Testes automáticos do Runeclash (Playwright). Ficam fora de apps/runeclash: nada daqui vai para o jogo.",
+  "type": "module",
+  "scripts": {
+    "testar": "playwright test",
+    "instalar-navegador": "playwright install chromium",
+    "relatorio": "playwright show-report relatorio"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1"
+  }
+}

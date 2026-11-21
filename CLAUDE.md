@@ -83,6 +83,7 @@ Começou (etapa 0.1) como uma **cópia do Cristalia**, e vai recebendo da **Aren
 - **Separado do Cristalia:** chaves no aparelho `runeclash-*`, cache `runeclash-v1` no `sw.js` e jogo salvo em `runeclash_jogadores/<uid>` no Firestore (mesmas contas do Cristalia). Não troque isso.
 - **Material da Arena:** `js/arena/` (efeitos, peças do Blender; veja o README de lá) e `blender/` (o `.blend` e os scripts que modelam e exportam as peças). Para mexer nas peças, mude no Blender e rode `exportar_pecas.py`; **não edite `pecas_blender.js` à mão**.
 - **Rodar:** dentro de `apps/runeclash`, `python -m http.server 8766` e abra `http://localhost:8766`.
+- **Testes automáticos:** `testes/runeclash/` (Playwright, fora do jogo). Dentro dela: `npm install` na primeira vez (no Windows usa o Edge; no Linux/nuvem, `npx playwright install chromium` se faltar o Chromium), depois **`npx playwright test`** (liga o servidor sozinho, ~20 s no PC). Playwright **1.64.1**: a 1.49 trava no Node 26. Rode **antes de cada commit** do Runeclash e mostre as fotos de `testes/runeclash/fotos/`. Veja o README de lá para acrescentar testes.
 - Mudanças no Runeclash **não** mexem em `apps/cristalia/` (e vice-versa). Se uma melhoria do Cristalia tiver que vir para cá, traga na mão, quando o Lâmina pedir.
 
 ## App Android (`apps/cristalia-android/`)

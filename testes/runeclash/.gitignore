@@ -1,0 +1,6 @@
+# instalados pelo npm (refaça com: npm install)
+node_modules/
+# gerados a cada teste
+fotos/
+resultados/
+relatorio/
