@@ -9,7 +9,7 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
 
 Só os **monstros** lutam; o Invocador não luta. O plano, etapa por etapa, fica em **[PLANO.md](PLANO.md)**.
 
-> **Hoje (ideia 3.1, começando pelo Brasito)** o Runeclash joga como o Cristalia, com o nome novo, o jogo salvo separado e o visual próprio: roxo-runa e dourado, fonte Cinzel nos títulos, o **Sealfolio** (o antigo Monstruário), as **pedras de selamento** (azul, roxa e dourada) no lugar dos cristais, o **Invocador** (o Aiden, com o criador de personagem) no mapa o **Selamento** com correntes na batalha e o monstro que **sobe de um círculo de runas** quando é invocado. Os golpes das linhas do Brasito, do Faisquinho e do Pedrisco já usam os efeitos da Arena (fogo, relâmpagos e pedras). As regras da batalha e da chance de selar ainda são as do Cristalia.
+> **Hoje (ideia 3.1, começando pelo Brasito)** o Runeclash joga como o Cristalia, com o nome novo, o jogo salvo separado e o visual próprio: roxo-runa e dourado, fonte Cinzel nos títulos, o **Sealfolio** (o antigo Monstruário), as **pedras de selamento** (azul, roxa e dourada) no lugar dos cristais, o **Invocador** (o Aiden, com o criador de personagem) no mapa o **Selamento** com correntes na batalha e o monstro que **sobe de um círculo de runas** quando é invocado. Os golpes das linhas do Brasito, do Faisquinho, do Pedrisco e do Gotinho já usam os efeitos da Arena (fogo, relâmpagos, pedras e água). As regras da batalha e da chance de selar ainda são as do Cristalia.
 
 ## Como jogar
 
@@ -560,7 +560,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/main.js` | Liga tudo: login e contas, telas, equipe, experiência, evolução, salvamento (no celular e na nuvem) |
 | `lib/three.module.min.js` | Biblioteca Three.js 0.170 (licença MIT, em `lib/THREE-LICENSE.txt`) |
 | `lib/addons/` | Peças extras do Three.js 0.170 (mesma licença): `loaders/GLTFLoader.js` (abre os `.glb`), `utils/SkeletonUtils.js` (copia um modelo com ossos) e `utils/BufferGeometryUtils.js` (usado pelo GLTFLoader). No `index.html`, o caminho `three/addons/` aponta para esta pasta |
-| `js/arena/` | **Material da Arena das Brasas** (etapa 0.2; hoje usado no Selamento, no Invocar com runas, no fogo do Brasito, nos raios do Faisquinho e nas pedras do Pedrisco): `efeitos.js` (runas, correntes, relâmpagos, rachaduras, espinhos, chamas...), `pecas.js` (lê as peças do Blender; `LotePecas` junta muitas numa malha só) e `pecas_blender.js` (as 66 peças, gerado pelo Blender). Veja o `README.md` de lá |
+| `js/arena/` | **Material da Arena das Brasas** (etapa 0.2; hoje usado no Selamento, no Invocar com runas, no fogo do Brasito, nos raios do Faisquinho, nas pedras do Pedrisco e na água do Gotinho): `efeitos.js` (runas, correntes, relâmpagos, rachaduras, espinhos, chamas...), `pecas.js` (lê as peças do Blender; `LotePecas` junta muitas numa malha só) e `pecas_blender.js` (as 66 peças, gerado pelo Blender). Veja o `README.md` de lá |
 | `blender/` | O `arena_pecas.blend` e os scripts que modelam as peças (cenário, corpo do Invocador e chefes) e exportam para `js/arena/pecas_blender.js`. Veja o `README.md` de lá |
 | `PLANO.md` | O plano do Runeclash: as decisões e as etapas |
 

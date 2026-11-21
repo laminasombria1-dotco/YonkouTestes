@@ -50,6 +50,7 @@ Gotinho (Nv.1) > Marolo (Nv.6) > Marulhão (Nv.12) > Tsunamar (Nv.30)
 - Chances de Encharcado: Onda, Onda Dupla e Maremoto 45% (cada onda sorteia), cada tiro 23%.
 - O inimigo avisa a Onda com uma **faixa vermelha** do tamanho dela e o Maremoto com o círculo vermelho de sempre. Obstáculos seguram as ondas e o anel.
 - Esta linha não ganha o "disparo ×2/×3" das outras: no lugar, ganha o que está na tabela.
+- **Visual (etapa 3.1):** os efeitos da Arena (`this.b.fx`) põem borrifos de gotas "sólidas" (`borrifo()`), a coluna de água do Hidrocanhão e do Maremoto, ondinhas no chão, espuma na crista, o escudo que se parte em cacos e bolhas na poça. No Tsunamar a água é mais funda (`funda()`).
 - Só a linha do Gotinho usa estes golpes. Aquaraia e os tipos duplos com Água continuam com os golpes de `dados.js`.
 
 **Exemplos de mudança (em `gotinho.js`):**

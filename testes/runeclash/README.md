@@ -15,6 +15,7 @@ Ficam **fora** de `apps/runeclash`: nada daqui vai para o jogo nem pesa no celul
 | Fogo do Brasito | Lança-Chamas com o fogo da Arena (o fogo "sólido" aparece e o brilho da boca some no fim do jato) e o Rabo de Fogo até o fim; no modo treino o mesmo fogo funciona | `11-lanca-chamas.png` |
 | Raios do Faisquinho | Tempestor: o Choque num marcado (a ligação e o relâmpago da Arena por cima) e as 3 nuvens que soltam raios e somem sozinhas | `12-choque.png` |
 | Pedras do Pedrisco | Montanhar: a Cordilheira levanta poeira e os pilares sobem; a Rocha Nevada cai, quica e some | `13-cordilheira.png` |
+| Água do Gotinho | Tsunamar: o Maremoto com espuma da Arena, o Hidrocanhão que sai e acaba, e o Escudo d'Água que se parte | `14-maremoto.png` |
 | Monstro invocado e modo treino | Invoca o Faisquinho, passa o controle para ele e usa o golpe de área no treino | `5-treino.png` |
 | Material da Arena | Os efeitos e as 66 peças do Blender (`js/arena/`) carregam e aparecem no mapa | `6-arena-vitrine.png` |
 | Invocador | O **Novo jogo** abre o criador com o Aiden escolhido, troca cabelo e penteado, escolhe o parceiro, confere o jogo salvo, ergue a pedra ao invocar o monstro e muda a aparência pelo menu **Aparência** | `7-criador.png`, `8-invocador-mapa.png` |

@@ -188,6 +188,34 @@ test('Pedrisco: poeira, rachaduras e pilares com os efeitos da Arena', async ({ 
   semErros(erros);
 });
 
+test('Gotinho: borrifos, coluna de água e o escudo que se parte', async ({ page }) => {
+  const erros = vigiarErros(page);
+  await abrirJogo(page);
+  await entrarLocal(page);
+  await novoJogo(page, 'gotinho');
+  await page.evaluate(() => { const j = window.__jogo; j.estado.equipe = [window.D.criarMonstro('tsunamar', 35)]; j.iniciarBatalha(j.mundo.selvagens[0]); });
+  await page.waitForFunction(() => window.__jogo.modo === 'batalha' && !!window.__jogo.batalha?.ini, null, { timeout: 30_000 });
+  // sem dano: o Tsunamar (Nv.35) derrubaria o selvagem e a luta acabaria antes do fim do teste
+  await page.evaluate(() => { const b = window.__jogo.batalha; b.pensarIA = () => {}; b.aplicarDano = () => false; });
+  await esperar(page, 1200);
+  // Maremoto: o anel cresce com espuma da Arena e some
+  await page.evaluate(() => { const b = window.__jogo.batalha; b.jog.rec = [0, 0, 0]; b.tentarGolpe(b.jog, 2, b.ini); });
+  await page.waitForFunction(() => window.__jogo.batalha.gotinho.aneis.length > 0, null, { timeout: 10_000 });
+  expect(await page.evaluate(() => window.__jogo.batalha.fx.F.vivas)).toBeGreaterThan(0);
+  await foto(page, '14-maremoto');
+  await page.waitForFunction(() => window.__jogo.batalha.gotinho.aneis.length === 0, null, { timeout: 10_000 });
+  // Hidrocanhão: sai e acerta (ou bate) e acaba
+  await page.evaluate(() => { const b = window.__jogo.batalha; b.jog.rec = [0, 0, 0]; b.tentarGolpe(b.jog, 1, b.ini); });
+  await page.waitForFunction(() => window.__jogo.batalha.projeteis.length > 0, null, { timeout: 10_000 });
+  await page.waitForFunction(() => window.__jogo.batalha.projeteis.length === 0, null, { timeout: 10_000 });
+  // Escudo d'Água: ganha com a Investida e se parte
+  await page.evaluate(() => { const b = window.__jogo.batalha; b.jog.rec = [0, 0, 0]; b.jog.esperaEscudo = 0; b.tentarGolpe(b.jog, 0, b.ini); });
+  await page.waitForFunction(() => !!window.__jogo.batalha.jog.escudo, null, { timeout: 10_000 });
+  await page.evaluate(() => { const b = window.__jogo.batalha; b.gotinho.estourarEscudo(b.jog); });
+  expect(await page.evaluate(() => window.__jogo.batalha.jog.escudo)).toBe(null);
+  semErros(erros);
+});
+
 test('monstro invocado e golpe no modo treino', async ({ page }) => {
   const erros = vigiarErros(page);
   await abrirJogo(page);

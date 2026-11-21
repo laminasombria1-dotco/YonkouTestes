@@ -8,6 +8,10 @@
 //  - Maremoto: anel de água que cresce em volta e empurra para fora
 // Para ficar leve no celular: formas e materiais são criados uma vez só
 // e reaproveitados; quase tudo some em menos de 1 s (a poça, em 3 s).
+// Etapa 3.1: a água ganha os efeitos da Arena (js/arena/efeitos.js, em this.b.fx): borrifos de gotas
+// "sólidas" (aparecem no chão claro), a coluna de água do Hidrocanhão e do Maremoto, as ondinhas no
+// chão e o escudo que se parte em cacos de vidro. No Tsunamar (a última forma), a água é
+// mais funda e escura (o tom trevoso).
 // =============================================================
 import * as THREE from 'three';
 import { ESCUDO_INVESTIDA, DURACAO_ESCUDO, ESPERA_ESCUDO } from './gotinho.js';
@@ -68,6 +72,11 @@ const MIOLO = transp('#e6f8ff', 0.95);
 const ESCUDO = transp('#7fd4ff', 0.24);
 const POCA = transp('#2f9ee8', 0.5);
 const AZUL_ESCUDO = '#8fdcff';
+// gotas da Arena (do nascer ao fim): clara; no Tsunamar, a água funda
+const C = (h) => new THREE.Color(h);
+const BORRIFO = [C('#f2fbff'), C('#3db8ff')];
+const BORRIFO_FUNDO = [C('#bfe6ff'), C('#0f4f8a')];
+const AZUL_FX = 0x8fdcff, AZUL_FUNDO_FX = 0x2f7fd0;
 const aviso = (cor, op) => new THREE.MeshBasicMaterial({ color: cor, transparent: true, opacity: op, depthWrite: false, side: THREE.DoubleSide });
 
 export class HabilidadesGotinho {
@@ -97,6 +106,22 @@ export class HabilidadesGotinho {
     } });
   }
 
+  // água funda? (Tsunamar, a última forma)
+  funda(c) { return c?.esp?.estagio === 3; }
+  corDe(c) { return this.funda(c) ? AZUL_FUNDO_FX : AZUL_FX; }
+
+  // borrifo da Arena: gotas "sólidas" que espirram e caem (uma malha só para todas)
+  borrifo(x, y, z, n, forca = 1, c = null, dir = null) {
+    const [a, b] = this.funda(c) ? BORRIFO_FUNDO : BORRIFO;
+    for (let i = 0; i < n; i++) {
+      const ang = Math.random() * Math.PI * 2, v = (1.5 + Math.random() * 2.5) * forca;
+      let vx = Math.sin(ang) * v, vz = Math.cos(ang) * v;
+      if (dir) { vx = vx * 0.4 + dir.x * v * 1.2; vz = vz * 0.4 + dir.z * v * 1.2; }
+      this.b.fx._ponto(x, y, z, vx, (2 + Math.random() * 3) * forca, vz, a, 0.45 + Math.random() * 0.3,
+        0.3 + Math.random() * 0.25, 11, { fim: b, cresce: 0.5, solido: true });
+    }
+  }
+
   // coroa de respingo (quando um tiro acerta ou o escudo estoura)
   respingo(pos, n, forca, y = 0.6) {
     for (let i = 0; i < n; i++) {
@@ -120,6 +145,9 @@ export class HabilidadesGotinho {
     this.escudos.add(c);
     this.b.jogo.numero(`Escudo +${valor}`, c.pos.clone().setY(c.altura + 0.6), AZUL_ESCUDO, 'pequeno');
     this.respingo(c.pos, 8, 0.6, c.altura * 0.5);
+    // a bolha de água se forma: brilho em volta e uma ondinha no chão
+    this.b.fx.esfera(c.pos.x, c.altura * 0.45, c.pos.z, c.raio * 2.2, this.corDe(c), 0.35);
+    this.b.fx.onda(c.pos.x, c.pos.z, c.raio * 2.2, this.corDe(c), 0.4);
   }
 
   // O escudo segura o dano antes da vida. Devolve quanto passou.
@@ -136,6 +164,9 @@ export class HabilidadesGotinho {
   estourarEscudo(c) {
     if (!c.escudo) return;
     this.respingo(c.pos, 10, 0.8, c.altura * 0.5);
+    // a bolha se parte em cacos que brilham e espirra água
+    this.b.fx.estilhacos(c.pos.x, c.altura * 0.5, c.pos.z, 14, this.corDe(c), { tam: 0.2, vel: 5, cima: 4, vida: 0.8 });
+    this.borrifo(c.pos.x, c.altura * 0.5, c.pos.z, 16, 1, c);
     this.cena.remove(c.escudo.mesh);
     c.escudo = null;
     this.escudos.delete(c);
@@ -167,17 +198,31 @@ export class HabilidadesGotinho {
     if (p.rastro <= 0) {
       p.rastro = p.gp.visual === 'jato' ? 0.035 : 0.05;
       const v = new THREE.Vector3((Math.random() - 0.5) * 1.5, 1 + Math.random(), (Math.random() - 0.5) * 1.5);
-      this.gota(p.pos.clone(), v, p.gp.visual === 'jato' ? 0.07 : 0.11, 0.4);
+      if (Math.random() < 0.4) this.gota(p.pos.clone(), v, p.gp.visual === 'jato' ? 0.07 : 0.11, 0.4);
+      const [a, b] = this.funda(p.dono) ? BORRIFO_FUNDO : BORRIFO, n = p.gp.visual === 'jato' ? 2 : 4;
+      for (let i = 0; i < n; i++) {
+        this.b.fx._ponto(p.pos.x + (Math.random() - 0.5) * 0.3, p.pos.y + (Math.random() - 0.5) * 0.3, p.pos.z + (Math.random() - 0.5) * 0.3,
+          v.x * 0.6, v.y * 0.5, v.z * 0.6, a, 0.35, p.gp.visual === 'jato' ? 0.28 : 0.45, 6, { fim: b, cresce: 0.8, solido: true });
+      }
     }
   }
 
   // Quando o tiro para (acertou ou bateu num obstáculo)
   impacto(p, alvo) {
-    const gp = p.gp;
-    if (!gp.respingo) { this.respingo(p.pos, 6, 0.5, p.pos.y); return; }
+    const gp = p.gp, c = p.dono;
+    if (!gp.respingo) {
+      this.respingo(p.pos, 6, 0.5, p.pos.y);
+      this.borrifo(p.pos.x, p.pos.y, p.pos.z, 12, 0.7, c);
+      this.b.fx.onda(p.pos.x, p.pos.z, 1.4, this.corDe(c), 0.3);
+      return;
+    }
     // Hidrocanhão: explode e molha quem está perto
     this.respingo(p.pos, 14, 1, p.pos.y);
     this.b.efeitoAnel(p.pos, gp.respingo.raio, '#8fdcff');
+    // efeitos da Arena: coluna de água que sobe, borrifo grande e ondinha no chão
+    this.b.fx.coluna(p.pos.x, p.pos.z, gp.respingo.raio * 0.45, this.corDe(c), 3, 0.4);
+    this.borrifo(p.pos.x, p.pos.y, p.pos.z, 30, 1.2, c);
+    this.b.fx.onda(p.pos.x, p.pos.z, gp.respingo.raio * 1.3, this.corDe(c), 0.4);
     for (const o of this.b.alvosDe(p.dono)) {
       if (o === alvo) continue;
       const dx = o.pos.x - p.pos.x, dz = o.pos.z - p.pos.z, d = Math.hypot(dx, dz);
@@ -210,6 +255,8 @@ export class HabilidadesGotinho {
       if (pc.tick <= 0) {
         pc.tick = 0.5;
         this.b.efeitoAnel({ x: pc.x, z: pc.z }, cfg.raio * 0.8, '#8fdcff');
+        this.b.fx.onda(pc.x, pc.z, cfg.raio * 0.9, this.corDe(pc.dono), 0.5);
+        this.borrifo(pc.x + (Math.random() - 0.5) * cfg.raio, 0.1, pc.z + (Math.random() - 0.5) * cfg.raio, 4, 0.4, pc.dono);
         for (const o of this.b.alvosDe(pc.dono)) {
           if (Math.hypot(o.pos.x - pc.x, o.pos.z - pc.z) > cfg.raio + o.raio * 0.3) continue;
           if (Math.random() < cfg.chance) this.b.aplicarEfeito(o, 'encharcado', pc.dur, pc.dono);
@@ -239,6 +286,9 @@ export class HabilidadesGotinho {
     this.cena.add(g);
     w.mesh = g;
     w.emitir = 0;
+    w.emitirFx = 0;
+    // a água espirra para a frente quando a onda nasce
+    this.borrifo(w.orig.x, 0.3, w.orig.z, 14, 0.8, c, w.dir);
   }
 
   // O caminho entre a onda e o alvo tem obstáculo? (dá para se esconder atrás)
@@ -261,7 +311,13 @@ export class HabilidadesGotinho {
     w.mesh.position.copy(w.orig).addScaledVector(w.dir, s);
     w.mesh.scale.set(O.largura, Math.max(0.05, altura), 1.1);
     // espuma voando da crista
-    w.emitir += dt * 45;
+    w.emitir += dt * 20;
+    w.emitirFx += dt * (60 + O.largura * 15);
+    while (w.emitirFx >= 1) {
+      w.emitirFx--;
+      const p = w.mesh.position.clone().addScaledVector(w.perp, (Math.random() - 0.5) * O.largura);
+      this.borrifo(p.x, altura * (0.6 + Math.random() * 0.4), p.z, 1, 0.8, w.c, w.dir);
+    }
     while (w.emitir >= 1) {
       w.emitir--;
       const p = w.mesh.position.clone().addScaledVector(w.perp, (Math.random() - 0.5) * O.largura).setY(altura);
@@ -302,8 +358,10 @@ export class HabilidadesGotinho {
     g.add(new THREE.Mesh(GEO_PAREDE, AGUA), espuma);
     g.position.set(c.pos.x, 0, c.pos.z);
     this.cena.add(g);
-    this.aneis.push({ c, gp, efeito, t: 0, mesh: g, centro: c.pos.clone(), atingidos: new Set(), emitir: 0 });
+    this.aneis.push({ c, gp, efeito, t: 0, mesh: g, centro: c.pos.clone(), atingidos: new Set(), emitir: 0, emitirFx: 0 });
     this.respingo(c.pos, 12, 1.2, 1);
+    this.b.fx.coluna(c.pos.x, c.pos.z, c.raio * 1.2, this.corDe(c), 5, 0.5);
+    this.b.fx.onda(c.pos.x, c.pos.z, gp.anel.ate * 1.1, this.corDe(c), gp.anel.duracao + 0.2);
   }
 
   atualizarAnel(a, dt) {
@@ -313,7 +371,13 @@ export class HabilidadesGotinho {
     const altura = 2.2 * Math.sin(Math.min(1, k * 4) * Math.PI / 2) * (k > 0.75 ? (1 - k) / 0.25 : 1);
     a.mesh.scale.set(r, Math.max(0.05, altura), r);
     // espuma em volta da crista
-    a.emitir += dt * 70;
+    a.emitir += dt * 30;
+    a.emitirFx += dt * 120;
+    while (a.emitirFx >= 1) {
+      a.emitirFx--;
+      const ang = Math.random() * Math.PI * 2, s = Math.sin(ang), co = Math.cos(ang);
+      this.borrifo(a.centro.x + s * r, altura * (0.6 + Math.random() * 0.4), a.centro.z + co * r, 1, 0.9, a.c, { x: s, z: co });
+    }
     while (a.emitir >= 1) {
       a.emitir--;
       const ang = Math.random() * Math.PI * 2, s = Math.sin(ang), co = Math.cos(ang);
