@@ -307,9 +307,9 @@ export class PainelGM {
         </div>
       </div>
       <div class="gm-bloco">
-        <h3>Equipe e cristais</h3>
+        <h3>Equipe e pedras</h3>
         <div class="gm-linha"><button class="gm-btn verde" type="button" data-gm="curarTodos">Curar todos</button></div>
-        <p class="gm-info">Cristais: ${CRISTAIS.map((c) => `${c.nome} <b>${p[c.id]}</b>`).join(' · ')}</p>
+        <p class="gm-info">Pedras: ${CRISTAIS.map((c) => `${c.nome} <b>${p[c.id]}</b>`).join(' · ')}</p>
         <div class="gm-linha">
           <button class="gm-btn" type="button" data-gm="cristais" data-qtd="10">+10 de cada</button>
           <button class="gm-btn" type="button" data-gm="cristais" data-qtd="99">99 de cada</button>
@@ -398,18 +398,18 @@ export class PainelGM {
         <div class="gm-grade">
           ${this.botaoChave('invencivel', 'Invencível')}
           ${this.botaoChave('recargaZero', 'Recarga zero')}
-          ${this.botaoChave('capturaGarantida', 'Captura garantida')}
+          ${this.botaoChave('capturaGarantida', 'Selamento garantido')}
           ${this.botaoChave('parados', 'Inimigos parados')}
           <button class="gm-btn ${this.dano > 1 ? 'sim' : ''}" type="button" data-gm="dano">${this.dano > 1 ? '✓ ' : ''}Dano ×10</button>
         </div>
-        <p class="gm-dica">Valem até você desligar (também dá para mudar na gaveta do botão GM, durante a batalha). Captura garantida: qualquer cristal segura qualquer monstro, até os chefes. Invencível: sua vida não desce, nem com os efeitos e os perigos da arena.</p>
+        <p class="gm-dica">Valem até você desligar (também dá para mudar na gaveta do botão GM, durante a batalha). Selamento garantido: qualquer pedra sela qualquer monstro, até os chefes. Invencível: sua vida não desce, nem com os efeitos e os perigos da arena.</p>
       </div>`;
   }
 
   // Gaveta da batalha: só as chaves e duas ações
   renderizarGaveta() {
     const ch = (chave, nome) => `<button type="button" class="${this[chave] ? 'sim' : ''}" data-gm="chave" data-chave="${chave}">${this[chave] ? '✓ ' : ''}${nome}</button>`;
-    this.gaveta.innerHTML = `<b>GM</b>${ch('invencivel', 'Invencível')}${ch('recargaZero', 'Recarga zero')}${ch('capturaGarantida', 'Captura garantida')}${ch('parados', 'Inimigos parados')}
+    this.gaveta.innerHTML = `<b>GM</b>${ch('invencivel', 'Invencível')}${ch('recargaZero', 'Recarga zero')}${ch('capturaGarantida', 'Selamento garantido')}${ch('parados', 'Inimigos parados')}
       <button type="button" class="${this.dano > 1 ? 'sim' : ''}" data-gm="dano">${this.dano > 1 ? '✓ ' : ''}Dano ×10</button>
       <button type="button" data-gm="encher">Encher minha vida</button><button type="button" class="forte" data-gm="vencer">Vencer agora</button>`;
   }

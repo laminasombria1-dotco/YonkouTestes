@@ -188,7 +188,7 @@
     padding-block: 10px; padding-left: max(10px, env(safe-area-inset-left, 0px)); padding-right: max(10px, env(safe-area-inset-right, 0px)); }
   #tela-colecao > * { pointer-events: auto; min-width: 0; }
   .col-topo { grid-area: topo; display: flex; align-items: center; gap: 10px; }
-  .col-topo h2 { margin: 0; font-family: var(--f-runa); font-weight: 700; letter-spacing: 0.04em; font-size: 1.3rem; text-shadow: 0 2px 8px rgba(10, 6, 20, 0.7); }
+  .col-topo h2 { margin: 0; font-family: var(--f-runa); font-weight: 700; letter-spacing: 0.04em; font-size: 1.3rem; text-shadow: 0 2px 0 #3b2466, 0 0 12px rgba(17, 12, 29, 0.85); }
   .col-abas { grid-area: abas; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; touch-action: pan-x; padding-bottom: 2px; }
   .col-abas::-webkit-scrollbar { display: none; }
   .col-abas button { flex: none; display: inline-flex; align-items: center; gap: 6px; border: 2px solid transparent; border-radius: 999px; padding: 5px 12px;
@@ -249,7 +249,10 @@
   [data-nivel="baixo"] { background: var(--vida-baixa) !important; }
   .topo-dir { position: absolute; top: 10px; right: max(10px, env(safe-area-inset-right, 0px)); display: flex; gap: 8px; align-items: center; }
   .pilula { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--painel); font-weight: 800; font-variant-numeric: tabular-nums; }
-  .losango { width: 10px; height: 14px; background: var(--cristal); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); display: inline-block; }
+  /* ícone da pedra de selamento (a classe ainda se chama losango, do cristal do Cristalia): pedra de 6 lados com um ponto de runa aceso */
+  .losango { width: 11px; height: 14px; background: var(--cristal); clip-path: polygon(50% 0, 100% 24%, 100% 70%, 50% 100%, 0 70%, 0 24%); display: inline-block;
+    background-image: radial-gradient(circle at 50% 52%, rgba(255, 255, 255, 0.95) 0 14%, rgba(255, 255, 255, 0) 16% 30%, rgba(255, 255, 255, 0.55) 32% 40%, rgba(0, 0, 0, 0) 42%),
+      linear-gradient(115deg, rgba(255, 255, 255, 0.28) 0 48%, rgba(0, 0, 0, 0.25) 52%); }
   .btn-hud { border: 1px solid var(--painel-borda); border-radius: 999px; padding: 7px 14px; background: var(--painel); font-weight: 800; font-size: 0.85rem; }
   .btn-hud:active, .btn-hud.apertado { background: #3a2766; }
 
@@ -311,7 +314,7 @@
   #painel-cristais { display: flex; flex-direction: column; gap: 8px; }
   #painel-cristais .linha-cr { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
   #painel-cristais .cr { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,0.08); border: 2px solid var(--c); font-weight: 800; }
-  #painel-cristais .cr .losango { background: var(--c); }
+  #painel-cristais .cr .losango { background-color: var(--c); }
   #painel-cristais button[disabled] { opacity: 0.45; }
   #painel-cristais small { color: var(--creme-suave); }
   .grade-fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
@@ -348,11 +351,11 @@
   .acoes-topo { display: flex; flex-wrap: nowrap; width: max-content; justify-content: flex-end; gap: 6px; }
   .acoes-topo .btn-hud { pointer-events: auto; }
   #btn-cristal { --crist: var(--cristal); display: inline-flex; align-items: center; gap: 6px; border-color: var(--crist); }
-  #btn-cristal .losango { background: var(--crist); }
+  #btn-cristal .losango { background-color: var(--crist); }
   #chance-cristal { color: var(--crist); font-size: 0.75rem; }
   #btn-cristal.fraco { opacity: 0.6; border-style: dashed; }
   #btn-cristal.fraco #chance-cristal { color: #ff8a9a; }
-  .losango.forte { background: #c79bff; } .losango.supremo { background: #ffd23f; }
+  .losango.forte { background-color: #c79bff; } .losango.supremo { background-color: #f0c75a; }
   .pilula.cristais { gap: 8px; }
   .pilula.cristais span { display: inline-flex; align-items: center; gap: 4px; }
   .golpes { position: absolute; right: max(12px, calc(env(safe-area-inset-right, 0px) + 8px)); bottom: max(12px, calc(env(safe-area-inset-bottom, 0px) + 8px));
@@ -383,7 +386,7 @@
   #evo-novidades { margin: 0; font-size: 1rem; font-weight: 800; color: var(--sol); text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6); text-wrap: balance; min-height: 1.4em; }
   .apertado { transform: scale(0.92); }
 
-  /* ---------- batalha enxuta: ícones, placas sobre os inimigos e seletor de cristal ---------- */
+  /* ---------- batalha enxuta: ícones, placas sobre os inimigos e seletor de pedra ---------- */
   #hud-batalha .barra-luta.jog { width: clamp(150px, 30vw, 230px); padding: 6px 9px; gap: 3px; }
   #hud-batalha .barra-luta .vida { height: 8px; }
   .acoes-batalha { position: absolute; top: max(10px, env(safe-area-inset-top, 0px)); right: max(10px, env(safe-area-inset-right, 0px)); display: flex; gap: 8px; align-items: center; }
@@ -393,7 +396,7 @@
   .btn-icone svg { width: 55%; height: 55%; fill: none; stroke: var(--creme); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
   .btn-icone:active, .btn-icone.apertado { transform: scale(0.9); background: #3a2766; }
   #btn-cristal { --crist: var(--cristal); border-color: var(--crist); }
-  .losango.grande { width: 38%; height: 54%; background: var(--crist); box-shadow: 0 0 10px var(--crist); }
+  .losango.grande { width: 42%; height: 54%; background-color: var(--crist); filter: drop-shadow(0 0 6px var(--crist)); }
   .selo { position: absolute; right: -4px; bottom: -4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--noite);
     border: 2px solid var(--crist); font-size: 0.7rem; line-height: 16px; text-align: center; font-variant-numeric: tabular-nums; }
   #btn-cristal.fraco { opacity: 0.55; border-style: dashed; }
@@ -401,7 +404,7 @@
     display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 14px; background: var(--painel); border: 1px solid var(--painel-borda); pointer-events: auto; }
   #seletor-cristal button { display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 8px; min-width: 170px; padding: 7px 10px; border-radius: 10px;
     border: 2px solid transparent; background: rgba(255, 255, 255, 0.06); font-weight: 800; font-size: 0.82rem; text-align: left; }
-  #seletor-cristal button .losango { background: var(--c); width: 12px; height: 17px; }
+  #seletor-cristal button .losango { background-color: var(--c); width: 13px; height: 17px; }
   #seletor-cristal button.ativo { border-color: var(--c); }
   #seletor-cristal button small { color: var(--creme-suave); font-weight: 700; }
   #seletor-cristal button:disabled { opacity: 0.4; }
@@ -591,7 +594,7 @@
         <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span><span class="txt"><b>Novo jogo</b><small>Escolha seu primeiro parceiro</small></span>
       </button>
       <button id="btn-monstruario" class="menu-item" type="button">
-        <span class="ic"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5zM4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/></svg></span><span class="txt"><b>Monstruário</b><small>Todos os monstros e evoluções</small></span>
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5zM4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><circle cx="12.5" cy="10.5" r="3.2"/></svg></span><span class="txt"><b>Sealfolio</b><small>Álbum de criaturas seladas</small></span>
       </button>
       <button id="btn-instalar" class="menu-item" type="button" hidden>
         <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></span><span class="txt"><b>Instalar app</b><small>Abre direto, sem navegador</small></span>
@@ -633,7 +636,7 @@
   <section id="tela-colecao" hidden>
     <header class="col-topo">
       <button id="col-voltar" class="btn-hud" type="button">Voltar</button>
-      <h2 id="col-titulo">Monstruário</h2>
+      <h2 id="col-titulo">Sealfolio</h2>
     </header>
     <nav id="col-abas" class="col-abas" aria-label="Elementos"></nav>
     <div id="col-palco" class="col-palco"></div>
@@ -653,7 +656,7 @@
     <div id="equipe-chips"></div>
     <div class="topo-dir">
       <button id="btn-menu" class="btn-icone mini" type="button" title="Menu (Esc)" aria-label="Menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
-      <span class="pilula cristais" title="Cristais de captura: comum, forte e supremo" id="contador-cristais"></span>
+      <span class="pilula cristais" title="Pedras de selamento: azul, roxa e dourada" id="contador-cristais"></span>
       <button id="btn-monstros" class="btn-hud" type="button">Monstros</button>
       <button id="btn-equipe" class="btn-hud" type="button">Equipe</button>
       <button class="btn-icone mini btn-tela-cheia" type="button" title="Tela cheia" aria-label="Tela cheia"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>
@@ -688,12 +691,12 @@
       <div class="pe"><span id="bj-hp"></span><span id="bj-equipe"></span></div>
       <div class="status-lista" id="bj-status"></div>
     </div>
-    <!-- ações em ícones: cristal, escolher cristal, trocar, fugir, tela cheia -->
+    <!-- ações em ícones: pedra, escolher pedra, trocar, fugir, tela cheia -->
     <div class="acoes-batalha">
-      <button id="btn-cristal" class="btn-icone" data-acao="cristal" type="button" title="Lançar cristal (C)" aria-label="Lançar cristal">
+      <button id="btn-cristal" class="btn-icone" data-acao="cristal" type="button" title="Lançar pedra de selamento (C)" aria-label="Lançar pedra de selamento">
         <span class="losango grande"></span><b id="qtd-cristal" class="selo">0</b>
       </button>
-      <button id="btn-tipo-cristal" class="btn-icone mini" data-acao="tipoCristal" type="button" title="Escolher cristal (V)" aria-label="Escolher o tipo de cristal">
+      <button id="btn-tipo-cristal" class="btn-icone mini" data-acao="tipoCristal" type="button" title="Escolher pedra (V)" aria-label="Escolher a cor da pedra">
         <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
       </button>
       <button class="btn-icone" data-acao="trocar" type="button" title="Trocar monstro (Q)" aria-label="Trocar monstro">
@@ -706,7 +709,7 @@
         <svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>
       </button>
     </div>
-    <!-- escolher o cristal: aparece ao tocar na setinha -->
+    <!-- escolher a pedra: aparece ao tocar na setinha -->
     <div id="seletor-cristal" hidden></div>
     <!-- nome e vida de cada inimigo, em cima dele -->
     <div id="placas-inimigos"></div>
@@ -734,7 +737,7 @@
       </div>
       <div id="vista-equipe">
         <div id="lista-equipe" class="grade-fichas"></div>
-        <h3>Cristais</h3>
+        <h3>Pedras de selamento</h3>
         <div id="painel-cristais"></div>
       </div>
       <div id="vista-reserva" hidden>

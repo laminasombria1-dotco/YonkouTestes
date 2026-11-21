@@ -9,33 +9,33 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
 
 Só os **monstros** lutam; o Invocador não luta. O plano, etapa por etapa, fica em **[PLANO.md](PLANO.md)**.
 
-> **Hoje (ideia 1.1)** o Runeclash ainda joga igual ao Cristalia, com o nome novo, o jogo salvo separado e o visual próprio nas telas (roxo-runa e dourado, fonte Cinzel nos títulos, a pedra de selamento como emblema e ícone). O material da Arena (efeitos, peças e scripts do Blender) já está aqui, mas ainda não aparece no jogo. O resto deste README descreve o que veio do Cristalia e vai mudando a cada etapa.
+> **Hoje (ideia 1.2)** o Runeclash ainda joga igual ao Cristalia, com o nome novo, o jogo salvo separado e o visual próprio: roxo-runa e dourado, fonte Cinzel nos títulos, a pedra de selamento como emblema e ícone, o **Sealfolio** (o antigo Monstruário) e as **pedras de selamento** (azul, roxa e dourada) no lugar dos cristais. Nos textos, "capturar" virou "selar"; as regras da captura ainda são as do Cristalia (o selamento com correntes é a ideia 2.1). O material da Arena (efeitos, peças e scripts do Blender) já está aqui, mas ainda não aparece no jogo. O resto deste README descreve o que veio do Cristalia e vai mudando a cada etapa.
 
 ## Como jogar
 
 - **Só deitado:** o jogo é feito para o celular deitado. Com o celular em pé, aparece **"Vire o celular"** e tudo pausa (mapa, batalha, monstro invocado) até você virar. No PC, uma janela estreita não é bloqueada. O app Android (versão 1.2 em diante) e o app instalado pelo Chrome já abrem sempre deitados.
 - **Login (toda vez que o jogo abre):** digite o **nome de usuário** e a **senha** e toque em **Entrar** (ou **Criar conta**, se o nome é novo). Embaixo aparecem as contas que já entraram neste aparelho: **1 toque** entra, sem digitar a senha. Veja "Contas e nuvem" abaixo.
-- **Tela de início:** mostra "Olá, nome" e onde o jogo está salvo (☁ na nuvem ou ⚠ só no celular). Tem **Continuar** (mostra o seu parceiro, o nível e quantos monstros você tem), **Novo jogo** (se já existe um jogo salvo, pede um 2º toque para confirmar), **Monstruário**, **Instalar app** (só aparece quando dá para instalar), **Trocar conta** e **Sair do jogo**.
+- **Tela de início:** mostra "Olá, nome" e onde o jogo está salvo (☁ na nuvem ou ⚠ só no celular). Tem **Continuar** (mostra o seu parceiro, o nível e quantos monstros você tem), **Novo jogo** (se já existe um jogo salvo, pede um 2º toque para confirmar), **Sealfolio**, **Instalar app** (só aparece quando dá para instalar), **Trocar conta** e **Sair do jogo**.
 - **Menu de pausa:** o botão de menu (três risquinhos) no mapa, **Esc** no PC ou o botão **Voltar** do celular. Tem **Continuar jogando**, **Qualidade** (Fraco, Médio ou Forte: veja "Mapa procedural"), **Voltar ao início** e **Sair do jogo**. Tudo salva antes.
 - **Sair do jogo:** no app Android, fecha o app. No navegador, a página não pode se fechar sozinha: o jogo salva e avisa que já pode fechar a aba.
-- **Botão Voltar do celular (app Android):** fecha o que estiver aberto (painel, Monstruário, painel GM), abre o menu de pausa no mapa e fecha o app na tela de início e no login. Na batalha não faz nada (use Fugir).
+- **Botão Voltar do celular (app Android):** fecha o que estiver aberto (painel, Sealfolio, painel GM), abre o menu de pausa no mapa e fecha o app na tela de início e no login. Na batalha não faz nada (use Fugir).
 - **Começar:** em "Novo jogo", escolha um dos 9 monstros iniciais (um de cada elemento). A tela mostra a linha evolutiva inteira dele.
-- **Monstruário:** na tela inicial ou no botão **Monstros** durante o jogo. Mostra todas as linhas, as evoluções, os atributos, os golpes e as vantagens de cada um.
+- **Sealfolio (Álbum de criaturas seladas, o antigo Monstruário):** na tela inicial ou no botão **Monstros** durante o jogo. Mostra todas as linhas, as evoluções, os atributos, os golpes e as vantagens de cada um.
 - **Andar:** arraste o dedo no **lado esquerdo** da tela (joystick virtual). No PC: WASD ou setas. O andar segue a câmera: "para cima" anda para onde a câmera está olhando.
 - **Câmera (terceira pessoa):** fica um pouco afastada do personagem (no mapa e na batalha). arraste o **controle de câmera** (círculo com setinhas, do lado direito, acima da casa ou das habilidades) ou qualquer parte livre do **lado direito** da tela. Para os lados gira em volta do personagem; para cima e para baixo muda a altura. **Dois toques rápidos** no controle colocam a câmera de volta atrás do personagem. Funciona no mapa e na batalha.
 - **Câmera no PC:** arraste com o mouse para girar e use a **rodinha** para aproximar ou afastar.
 - **Encontrar monstros:** encoste num monstro selvagem para começar a batalha.
 - **Batalha em tempo real:**
   - 3 golpes: **perto** (avança e bate), **disparo** (tiro em linha reta) e **área** (explosão em volta).
-  - **Tela enxuta:** o nome e a vida de cada inimigo ficam em cima dele. Os botões do canto são ícones: **cristal** (com a quantidade), **setinha** para escolher outro cristal (mostra a chance de cada um), **setas** para trocar de monstro, **porta** para fugir e **tela cheia**.
+  - **Tela enxuta:** o nome e a vida de cada inimigo ficam em cima dele. Os botões do canto são ícones: **pedra de selamento** (com a quantidade), **setinha** para escolher outra pedra (mostra a chance de cada uma), **setas** para trocar de monstro, **porta** para fugir e **tela cheia**.
   - Os avisos da batalha ficam pequenos, no alto, e somem rápido.
   - O inimigo avisa antes de atacar: uma **faixa ou círculo vermelho no chão**. Saia dele ou use a esquiva.
   - No PC: J, K e L para os golpes. A esquiva não tem mais botão na tela, mas ainda funciona com Espaço.
 - **Monstro invocado:** veja "Monstro invocado (companheiro)" abaixo.
-- **Capturar:** enfraqueça o monstro e toque no botão do cristal (tecla C). O número ao lado é a chance de captura. A **setinha** ao lado do cristal abre a lista para escolher Comum, Forte ou Supremo (no PC, a tecla V passa para o próximo). Formas evoluídas são bem mais difíceis de capturar.
+- **Selar:** enfraqueça o monstro e toque no botão da pedra (tecla C). O número ao lado é a chance de selar. A **setinha** ao lado da pedra abre a lista para escolher a Azul, a Roxa ou a Dourada (no PC, a tecla V passa para a próxima). Formas evoluídas são bem mais difíceis de selar.
 - **Evoluir:** cada linha tem 4 formas. A forma inicial evolui no **nível 6**, a 1ª evolução no **nível 12** e a 2ª evolução no **nível 30**. Quando seu monstro chega ao nível, aparece a animação de evolução e ele ganha atributos e golpes mais fortes.
 - **Dia e noite:** um ciclo completo dura 4 minutos (2 de dia e 2 de noite). **Sol e Luz** só aparecem de dia; **Lua e Trevas**, só à noite. O relógio fica no canto superior direito.
-- **Equipe:** até 3 monstros. Com a equipe cheia, o capturado vai para a reserva.
+- **Equipe:** até 3 monstros. Com a equipe cheia, o selado vai para a reserva.
 - **Reserva:** no painel Equipe, a aba **Reserva** mostra **todos** os monstros que você tem (os da equipe aparecem marcados). Perder uma batalha nunca apaga monstros: a equipe só é curada e volta para casa.
 - **Proteção:** o jogo guarda uma cópia de cada monstro que você já teve. Se algum sumir da equipe e da reserva por qualquer motivo, ele volta sozinho para a Reserva, com um aviso.
 - **Fonte de cura:** a fonte no centro do mapa cura todos os seus monstros.
@@ -93,7 +93,7 @@ O Runeclash **ainda não tem site**: por enquanto ele roda só no computador (ve
   - **Voltar ao treinador** (botão no alto, tecla T, Esc ou o botão Voltar do celular) devolve o controle.
 - **Golpes que precisam de alvo:** no ar, o disparo do Faisquinho nunca vira **Choque** (só vira se o tiro acertar alguém), a vinha do Musguinho estica mas não puxa nada e o Pedregulho cai a 7 m à frente.
 - **Batalha:** se o treinador encostar num selvagem, o companheiro some e a batalha começa normal; depois ele volta a seguir.
-- Se o monstro desmaiar, ele volta sozinho para o cristal. Se a equipe mudar (outro na frente ou evolução), o companheiro troca sozinho.
+- Se o monstro desmaiar, ele volta sozinho para a pedra. Se a equipe mudar (outro na frente ou evolução), o companheiro troca sozinho.
 - Fica salvo se ele estava invocado (`estado.pet`).
 - **Código:** `js/companheiro.js` (seguir, botões, trocar o controle) e `js/treino.js` (o modo treino). O modo treino usa o **mesmo motor da batalha**: os golpes de todas as linhas funcionam igual, sem inimigos e sem dano. Tudo do treino fica numa "camada" centrada no treinador, como uma arena invisível de 22 m, que sobe e desce acompanhando o chão embaixo do monstro. Os obstáculos do mapa seguram o monstro e os tiros.
 - **Limite:** o mapa tem morros e a arena de batalha é plana. Num golpe longo num morro, uma parte do efeito pode entrar no chão ou flutuar um pouco.
@@ -120,12 +120,12 @@ O Runeclash **ainda não tem site**: por enquanto ele roda só no computador (ve
 - **Perseguição:** quando você chega a ~10 m de **qualquer** monstro do grupo (7 m nos acampamentos), todos vêm atrás de você, cada um na sua velocidade.
 - **Espaço entre grupos:** um grupo novo só aparece a pelo menos **40 m** dos outros, e grupos que se aproximam a menos de **32 m** se afastam.
 - **Na batalha:**
-  - lutam em **ondas de no máximo 2**: a próxima onda só entra quando **os dois** da onda atual caírem (ou forem capturados);
+  - lutam em **ondas de no máximo 2**: a próxima onda só entra quando **os dois** da onda atual caírem (ou forem selados);
   - nos grupos do mapa, os comuns vêm de 2 em 2 e o **líder entra por último, sozinho**;
   - nos **acampamentos das dungeons**, a ordem é por força: **2 fracos → 2 médios → 1 forte → o líder**;
   - seus golpes miram no inimigo mais perto (com um anel branco embaixo dele) e a área acerta todos dentro dela;
-  - dá para capturar qualquer um no meio da luta, e a batalha continua com os outros.
-- **Recompensa:** experiência de todos os vencidos (60% de cada), **2 cristais comuns + 1 Cristal Forte garantidos pelo líder** e chance de cristal pelos outros.
+  - dá para selar qualquer um no meio da luta, e a batalha continua com os outros.
+- **Recompensa:** experiência de todos os vencidos (60% de cada), **2 Pedras Azuis + 1 Pedra Roxa garantidas pelo líder** e chance de pedra pelos outros.
 - Se você fugir ou perder, os que sobraram continuam andando no mapa.
 
 ## Monstros de tipo duplo
@@ -135,8 +135,8 @@ O Runeclash **ainda não tem site**: por enquanto ele roda só no computador (ve
 - Também evoluem no Nv.6, 12 e 30 e ganham as mesmas melhorias. A partir da 2ª evolução, o **disparo também causa o efeito** do elemento dele, então eles causam dois efeitos diferentes.
 - **Golpes:** perto e área são do 1º elemento; o disparo é do 2º.
 - **Na defesa:** o golpe é comparado com os dois elementos e os multiplicadores se somam. Um monstro nunca é fraco contra o próprio elemento.
-- **Captura mais difícil:** formas inicial e 1ª evolução só com **Cristal Forte** (ou melhor); 2ª evolução e forma final só com **Cristal Supremo**.
-- Valem 50% a mais de experiência e, ao serem vencidos, deixam 1 Cristal Forte.
+- **Mais difíceis de selar:** formas inicial e 1ª evolução só com a **Pedra Roxa** (ou melhor); 2ª evolução e forma final só com a **Pedra Dourada**.
+- Valem 50% a mais de experiência e, ao serem vencidos, deixam 1 Pedra Roxa.
 
 | Tipo | Nv.1 | Nv.6 | Nv.12 | Nv.30 | Onde aparece |
 |---|---|---|---|---|---|
@@ -144,18 +144,21 @@ O Runeclash **ainda não tem site**: por enquanto ele roda só no computador (ve
 | Água + Fogo | Vaporito | Fumarolo | Gêiserão | Caldeirax | Lago, Vulcão, Campo |
 | Terra + Raio | Imanito | Magnetito | Ferrovolt | Titanvolt | Deserto, Picos Nevados, Campo |
 
-## Cristais de captura
+## Pedras de selamento
 
-| Cristal | Cor | Chance | Como conseguir |
+São os antigos "cristais de captura" do Cristalia. No código e no jogo salvo elas ainda se chamam `CRISTAIS` e `comum`, `forte` e `supremo` (assim os jogos salvos continuam valendo).
+O desenho 3D de agora é provisório (uma pedra de 6 lados com um anel de runa); o modelo do Blender vem na ideia 2.3.
+
+| Pedra | No código | Chance | Como conseguir |
 |---|---|---|---|
-| Comum | Azul | 1× | Brilhos azuis no mapa, vitórias |
-| Forte | Roxo | 1,5× | Brilhos roxos no mapa (raros), líder de grupo (+1), vencer um tipo duplo (+1), fundir 3 comuns |
-| Supremo | Dourado | 2,2× | Brilhos dourados (muito raros), tipos duplos evoluídos (às vezes), fundir 3 fortes |
+| Pedra Azul | `comum` | 1× | Brilhos azuis no mapa, vitórias |
+| Pedra Roxa | `forte` | 1,5× | Brilhos roxos no mapa (raros), líder de grupo (+1), vencer um tipo duplo (+1), fundir 3 azuis |
+| Pedra Dourada | `supremo` | 2,2× | Brilhos dourados (muito raros), tipos duplos evoluídos (às vezes), fundir 3 roxas |
 
-- **Fundir:** no painel **Equipe**, perto da sua casa, 3 cristais iguais viram 1 do tipo acima.
-- Na batalha, o jogo escolhe sozinho o cristal mais fraco que funciona no alvo; o botão **Tipo** troca na mão.
-- Os cristais do chão reaparecem 1 minuto depois, com a cor sorteada de novo.
-- São cerca de 40 espalhados pelo mapa, mais os **lugares secretos**: embaixo do arco de pedra do Deserto e na margem do oásis (Forte), ao lado do cristal de gelo gigante da Neve (Supremo) e no píer do lago escondido da Floresta (Forte).
+- **Fundir:** no painel **Equipe**, perto da sua casa, 3 pedras da mesma cor viram 1 da cor acima.
+- Na batalha, o jogo escolhe sozinho a pedra mais fraca que funciona no alvo; a **setinha** troca na mão.
+- As pedras do chão reaparecem 1 minuto depois, com a cor sorteada de novo.
+- São cerca de 40 espalhados pelo mapa, mais os **lugares secretos**: embaixo do arco de pedra do Deserto e na margem do oásis (Roxa), ao lado do cristal de gelo gigante da Neve (Dourada) e no píer do lago escondido da Floresta (Roxa).
 
 ## Caminho das Brasas (dungeon aberta da região de fogo)
 
@@ -184,8 +187,8 @@ Sai da borda do mapa pelo bioma de Lava, depois do Vulcão, seguindo a estrada d
 - Efeito do Ígneo: **Combustão**, que tira 6% da vida por segundo e impede cura.
 - Nível: 1,4× o nível da equipe + 22 (Nv.26 com equipe Nv.3).
 - Com menos da metade da vida, entra em **fúria** e ataca bem mais rápido.
-- Só é capturado com **Cristal Supremo**, e a chance é bem baixa.
-- Vencido ou capturado, deixa 3 Cristais Fortes e 2 Supremos, e vale o dobro de experiência. Ele volta no próximo amanhecer.
+- Só é selado com a **Pedra Dourada**, e a chance é bem baixa.
+- Vencido ou selado, deixa 3 Pedras Roxas e 2 Douradas, e vale o dobro de experiência. Ele volta no próximo amanhecer.
 
 ## Trilha Ancestral (dungeon aberta da Floresta)
 
@@ -211,13 +214,13 @@ Sai da borda do mapa pela Floresta, seguindo as lanternas de flor (a direção d
 - Efeito do Silvestre: **Parasita**: uma semente suga 2,5% da vida a cada meio segundo, cura quem a plantou e deixa 30% mais lento. Os três golpes dele (Galhada Ancestral, Semente Parasita e Selva Viva) causam o efeito.
 - Arena própria: **Santuário da Árvore-Mãe** (favorece Silvestre). Perigo: **raízes saem do chão** onde aparece um círculo verde; machucam e prendem (Planta e Silvestre não sentem).
 - Nível: 1,4× o nível da equipe + 22 (Nv.26 com equipe Nv.3). Com menos da metade da vida, entra em **fúria**.
-- Só é capturado com **Cristal Supremo**. Vencido ou capturado, deixa 3 Cristais Fortes e 2 Supremos e volta no próximo amanhecer.
+- Só é selado com a **Pedra Dourada**. Vencido ou selado, deixa 3 Pedras Roxas e 2 Douradas e volta no próximo amanhecer.
 
 ## Floresta (região de Planta)
 
 - Os lugares fixos da Floresta (árvores gigantes, ruína, clareiras e lago escondido) ficam em volta do centro dela, no mesmo desenho de antes (só girado para o lado da Trilha Ancestral).
 - Tem **5 árvores gigantes**, uma **ruína com arco e colunas**, cogumelos gigantes, troncos caídos, pedras com musgo, samambaias e muitas flores que brilham.
-- **Lago escondido**, cercado de árvores gigantes, com um píer de madeira. No começo do píer tem um **cristal escondido** (começa como Cristal Forte).
+- **Lago escondido**, cercado de árvores gigantes, com um píer de madeira. No começo do píer tem uma **pedra escondida** (começa como Pedra Roxa).
 - **2 clareiras** com anel de cogumelos: cada uma tem um grupo (5 + líder) que volta 2 minutos depois de vencido.
 - Enquanto você está na Floresta, aparecem **até 6 monstros a mais**, com nível um pouco maior (mais formas evoluídas).
 - À noite, **vaga-lumes** voam pela Floresta.
@@ -249,7 +252,7 @@ O mapa é **gerado por uma semente** (seed): um número que decide tudo (onde fi
   - cada tipo de objeto (árvore, pedra, cacto...) é desenhado **num lote só por chunk** (InstancedMesh);
   - o que está fora da tela não é desenhado;
   - os chunks longe têm o chão mais simples e não têm os objetos pequenos (LOD);
-  - os cristais longe não são desenhados;
+  - as pedras longe não são desenhadas;
   - a névoa esconde o fim da visão;
   - não há sombras nem pós-processamento.
 - **Nada flutua:** a altura que o jogo usa é a mesma dos triângulos desenhados, e cada objeto encosta no ponto mais baixo em volta dele. Em penhascos não nasce nenhum objeto.
@@ -321,7 +324,7 @@ Cada região tem a sua arena, com raio de 22 m e obstáculos que **bloqueiam o m
 - **Atrapalha:** o lugar enfraquece quem é fraco contra o elemento dele.
 - **Pedras e raios:** um círculo no chão avisa onde vão cair.
 - **Dia e noite:** de dia, Sol e Luz ganham +15%; à noite, Lua e Trevas.
-- **Na tela:** os bônus aparecem embaixo da barra de vida de cada monstro, e a faixa da arena fica abaixo dos botões Cristal, Trocar e Fugir.
+- **Na tela:** os bônus aparecem embaixo da barra de vida de cada monstro, e a faixa da arena fica abaixo dos botões Pedra, Trocar e Fugir.
 
 ## Melhorias a cada evolução
 
@@ -357,7 +360,7 @@ Na batalha, o botão mostra "×2" ou "×3" no disparo e uma bolinha colorida nos
 **Chance dos efeitos:** um golpe que "causa efeito" não causa sempre. A cada acerto o jogo sorteia:
 - A chance cheia vale para o golpe de **área**. O golpe de **perto** usa 70% dela, e cada **disparo** usa 50%, porque cada tiro de uma rajada sorteia de novo.
 - Os efeitos que travam o monstro (Medo, Paralisia, Sono) têm a chance mais baixa.
-- Na batalha, o botão do golpe mostra a chance (ex.: "ÁREA 30%"). O Monstruário também mostra.
+- Na batalha, o botão do golpe mostra a chance (ex.: "ÁREA 30%"). O Sealfolio também mostra.
 - Para mudar, mexa em `chance` dentro de `EFEITOS` e em `CHANCE_POR_TIPO`, no `dados.js`.
 
 Dica: trocar de monstro na batalha tira os efeitos negativos de quem saiu.
@@ -493,7 +496,7 @@ Só a **conta GM** tem o painel. O código fica em `js/gm.js` e só é baixado q
 | **Dungeons** | Para o Caminho das Brasas e a Trilha Ancestral: **ir para** a entrada, cada etapa ou o chefe; **lutar contra o acampamento** de cada etapa (na ordem 2 fracos → 2 médios → 1 forte → líder, no nível que a sua equipe enfrentaria); **lutar com o chefe** no nível escolhido; **chefe volta já** (sem esperar o amanhecer); **monstro da dungeon perto**. |
 | **Equipe** | **Copiar jogo de outra conta** deste aparelho para o GM (para testar com a equipe de verdade; a conta original não muda). Escolhe o **monstro alvo** (equipe ou reserva) e mostra nível, vida e experiência. **Adicionar XP:** +50, +500, +1 nível ou **até o nível ___**. A XP sobe como no jogo, então ele **evolui** ao chegar no nível (a animação aparece quando o painel fecha). **Evoluir agora**, **Voltar uma forma** (fica no nível logo abaixo da evolução, para não evoluir de novo sozinho), **Curar**, **subir 1 nível sem evoluir**. Também **curar todos** e mudar os cristais (+10, 99 ou zerar). |
 | **Mundo** | **Hora:** amanhecer, meio-dia, anoitecer, meia-noite ou **parar o relógio**. **Teleporte:** fonte, as 6 regiões (o lugar de cada uma vem da semente do mapa) e a casa. **Andar ×1, ×2 ou ×3.** **Invisível:** os monstros não vêm atrás de você, mas encostar neles ainda começa a batalha. **Mostrar FPS** (embaixo, no meio da tela), com os números do mapa (chunks, objetos, desenhos e triângulos por quadro, tempo para criar um chunk). **Mapa:** ver outra semente (digitada ou aleatória) e voltar à de todos: recarrega o jogo com outro mapa só neste aparelho, até fechar (pela URL `?semente=123`). |
-| **Testes** | **Invencível** (a vida não desce, nem com efeitos e perigos da arena), **recarga zero**, **captura garantida** (qualquer cristal segura qualquer monstro, até os chefes), **inimigos parados**, **dano ×10**. Na gaveta da batalha também: **encher minha vida** e **vencer agora** (derrota todos, até os que estão esperando nas ondas). |
+| **Testes** | **Invencível** (a vida não desce, nem com efeitos e perigos da arena), **recarga zero**, **selamento garantido** (qualquer pedra sela qualquer monstro, até os chefes), **inimigos parados**, **dano ×10**. Na gaveta da batalha também: **encher minha vida** e **vencer agora** (derrota todos, até os que estão esperando nas ondas). |
 
 - As chaves (invencível, dano ×10...) valem até você desligar.
 - O monstro de um "Lutar agora" só existe para aquela luta: se você fugir, ele some do mapa.
@@ -527,14 +530,14 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/modelos.js` | Os modelos 3D (o Brasito da forma inicial vem do `.glb`, por `js/modelos3d.js`): um construtor por linha que acrescenta peças a cada evolução. No fim, `juntarPecas` une as peças paradas de mesma aparência numa só (de ~24 para ~11 peças por monstro), deixando caudas, asas, pernas e peças animadas separadas |
 | `js/modelos3d.js` | Modelos feitos no Blender (`.glb`): carrega, faz uma cópia com ossos para cada monstro, toca as animações (parado, arrancada → correndo e os 3 golpes, no tempo certo de cada golpe), faz o fogo pulsar e o piscar. Hoje só o Brasito (forma inicial) |
 | `modelos/` | Os arquivos `.glb` (hoje `brasito.glb`) e um README com os detalhes de cada um |
-| `js/plataforma.js` | A vitrine 3D do Monstruário e a animação de evolução |
-| `js/mundo.js` | Mapa aberto: regiões, dia e noite, monstros selvagens e grupos (em volta do jogador), cristais, fonte, casa, colisão e câmera |
+| `js/plataforma.js` | A vitrine 3D do Sealfolio e a animação de evolução |
+| `js/mundo.js` | Mapa aberto: regiões, dia e noite, monstros selvagens e grupos (em volta do jogador), pedras de selamento, fonte, casa, colisão e câmera |
 | `js/mapa/config.js` | Configurações do mapa procedural e os perfis de qualidade |
 | `js/mapa/gerador.js` | O gerador do mapa (só matemática): ruído com semente, biomas, altura do chão, rios, lagos, pontos de interesse, lugares da Floresta e direção das dungeons |
 | `js/mapa/altura.js` | `alturaEm(x, z)`: a altura do chão igual aos triângulos desenhados (com as dungeons e a borda), e onde não dá para andar (lago fundo e lava) |
 | `js/mapa/chunks.js` | Os chunks: cria o chão, a água, a lava e os objetos de cada pedaço do mapa, carrega e apaga conforme você anda, e o LOD |
 | `js/mapa/grade.js` | Grade de obstáculos: guarda as árvores, pedras e peças em quadradinhos de 8 m, para a colisão só olhar o que está perto |
-| `js/batalha.js` | Batalha em tempo real: movimento, golpes, efeitos, IA do inimigo e captura |
+| `js/batalha.js` | Batalha em tempo real: movimento, golpes, efeitos, IA do inimigo e selamento (captura) |
 | `js/dungeon.js` | Base das dungeons abertas: a forma do corredor (`Tracado`), portões transparentes, acampamentos, monstros soltos, chefe e clima. Também o `Lote` e o `Bloco`, que juntam peças para ficar leve no celular |
 | `js/brasas.js` | Cenário do Caminho das Brasas (braseiros, forja, rio de lava, Trono de Magma, vulcão) |
 | `js/raizes.js` | Cenário da Trilha Ancestral e da Floresta (cogumelos, ruínas, lago, raízes, Árvore-Mãe, vaga-lumes, monstros extras) |

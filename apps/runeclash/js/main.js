@@ -409,7 +409,7 @@ class Jogo {
     this.colecao.modo = modo;
     this.colecao.volta = voltaPara;
     if (!this.plataforma) this.plataforma = new Plataforma(this);
-    $('#col-titulo').textContent = modo === 'inicial' ? 'Escolha seu primeiro parceiro' : 'Monstruário';
+    $('#col-titulo').textContent = modo === 'inicial' ? 'Escolha seu primeiro parceiro' : 'Sealfolio';
     $('#col-escolher').hidden = modo !== 'inicial';
     // no modo "ver" aparecem também os de tipo duplo e os raros
     const abas = [...ORDEM_ELEMENTOS, ...(modo === 'ver' ? [...ORDEM_DUPLAS, 'raros'] : [])];
@@ -458,7 +458,7 @@ class Jogo {
     const nivelForma = e.chefe ? 25 : e.raro ? 1 : [1, ...NIVEIS_EVOLUCAO][e.estagio];
     const st = statsDe(id, nivelForma);
     let evo;
-    if (e.chefe) evo = `Super raro: é o chefe ${e.onde}. Não evolui. Só um <b>Cristal Supremo</b> segura ele.`;
+    if (e.chefe) evo = `Super raro: é o chefe ${e.onde}. Não evolui. Só uma <b>Pedra Dourada</b> sela ele.`;
     else if (e.raro) evo = 'Monstro raro: não evolui.';
     else if (e.evoluiPara) {
       const prox = novidadesDaEvolucao(id, e.evoluiPara);
@@ -482,12 +482,12 @@ class Jogo {
     const forte = forteContraEspecie(e).map((x) => ELEMENTOS[x].nome).join(', ') || 'nenhum';
     const fraco = fracoContraEspecie(e).map((x) => ELEMENTOS[x].nome).join(', ') || 'nenhum';
     const captura = e.dupla
-      ? `<p class="evo duplo">Tipo duplo (raro): aparece 1 a cada 10 monstros. Só é capturado com <b style="color:${CRISTAIS[e.cristalMin].cor}">${CRISTAIS[e.cristalMin].nome}</b> ou melhor.</p>`
+      ? `<p class="evo duplo">Tipo duplo (raro): aparece 1 a cada 10 monstros. Só é selado com uma <b style="color:${CRISTAIS[e.cristalMin].cor}">${CRISTAIS[e.cristalMin].nome}</b> ou melhor.</p>`
       : '';
     let status = '';
     if (this.colecao.modo === 'ver') {
       const tem = this.estado?.capturados?.includes(id);
-      status = `<p class="status ${tem ? 'sim' : ''}">${tem ? 'Já é seu' : 'Ainda não capturado'}</p>`;
+      status = `<p class="status ${tem ? 'sim' : ''}">${tem ? 'Já é seu' : 'Ainda não selado'}</p>`;
     } else if (e.estagio > 0) {
       status = `<p class="status">Você começa com ${ESPECIES[this.colecao.ids[0]].nome}. Esta forma vem com a evolução.</p>`;
     }
@@ -654,7 +654,7 @@ class Jogo {
     if (b.chefe && vencidos.length) {
       ganho.forte += 3; ganho.supremo += 2;
       const chefe = ESPECIES[b.chefeEspecie] || ESPECIES.ignarion;
-      this.aviso(b.capturados.length ? `Você capturou ${chefe.nome}, o chefe ${chefe.onde}!` : `Você venceu ${chefe.nome}! Ele volta no próximo amanhecer.`);
+      this.aviso(b.capturados.length ? `Você selou ${chefe.nome}, o chefe ${chefe.onde}!` : `Você venceu ${chefe.nome}! Ele volta no próximo amanhecer.`);
     }
     for (const d of b.derrotados) {
       const esp = ESPECIES[d.especie];
@@ -702,7 +702,7 @@ class Jogo {
       const n = ganho[c.id] || 0;
       if (!n) continue;
       this.estado.pedras[c.id] += n;
-      partes.push(`${n} ${n > 1 ? c.plural : c.id === 'comum' ? 'cristal' : c.nome}`);
+      partes.push(`${n} ${n > 1 ? c.plural : c.nome}`);
     }
     if (partes.length) this.aviso('Você ganhou ' + partes.join(' e ') + '!');
     this.atualizarHudMundo();
@@ -725,8 +725,8 @@ class Jogo {
   htmlCristais() {
     const p = this.estado.pedras, perto = this.podeFundir();
     const contas = CRISTAIS.map((c) => `<span class="cr" style="--c:${c.cor}"><span class="losango"></span>${c.nome} <b>${p[c.id]}</b></span>`).join('');
-    const botoes = CRISTAIS.slice(0, -1).map((c, i) => `<button class="btn-hud" type="button" data-cmd="fundir" data-i="${i}" ${perto && p[c.id] >= CUSTO_FUSAO ? '' : 'disabled'}>Fundir ${CUSTO_FUSAO} ${c.curto} → 1 ${CRISTAIS[i + 1].curto}</button>`).join('');
-    const dica = perto ? 'Sua casa tem uma bancada: junte 3 cristais iguais para fazer 1 mais forte.' : 'Para fundir cristais, vá até a sua casa.';
+    const botoes = CRISTAIS.slice(0, -1).map((c, i) => `<button class="btn-hud" type="button" data-cmd="fundir" data-i="${i}" ${perto && p[c.id] >= CUSTO_FUSAO ? '' : 'disabled'}>Fundir ${CUSTO_FUSAO} ${c.curtos} → 1 ${CRISTAIS[i + 1].curto}</button>`).join('');
+    const dica = perto ? 'Sua casa tem uma bancada: junte 3 pedras da mesma cor para fazer 1 mais forte.' : 'Para fundir pedras, vá até a sua casa.';
     return `<div class="linha-cr">${contas}</div><div class="linha-cr">${botoes}</div>
       <small>${dica} Forte: 1,5× a chance. Supremo: 2,2×. Tipo duplo exige Forte (formas iniciais) ou Supremo (2ª evolução e final).</small>`;
   }
@@ -780,7 +780,7 @@ class Jogo {
       `<button data-cmd="usar" data-i="${i}" type="button">${est.equipe.length < MAX_EQUIPE ? 'Levar na equipe' : 'Trocar pelo 3º da equipe'}</button>`, 'Na reserva'));
     $('#lista-todos').innerHTML = [...daEquipe, ...guardados].join('');
     $('#painel-cristais').innerHTML = this.htmlCristais();
-    $('#info-colecao').textContent = `Você tem ${est.equipe.length + est.reserva.length} monstros · Espécies obtidas: ${est.capturados.length} de ${Object.keys(ESPECIES).length}`;
+    $('#info-colecao').textContent = `Você tem ${est.equipe.length + est.reserva.length} monstros · Espécies seladas: ${est.capturados.length} de ${Object.keys(ESPECIES).length}`;
   }
 
   comandoEquipe(cmd, i) {

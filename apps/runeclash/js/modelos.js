@@ -1118,19 +1118,34 @@ export function animarCasa(casa, t, noite) {
   u.bandeira.rotation.y = Math.sin(t * 3) * 0.3;
 }
 
-// ---------- Cristal de captura ----------
-// tipo: 0 comum (azul), 1 forte (roxo), 2 supremo (dourado)
+// ---------- Pedra de selamento (provisória, até o modelo 3D do Blender) ----------
+// Pedra facetada de 6 lados (como o emblema) com um anel de runa aceso em volta.
+// tipo: 0 azul, 1 roxa, 2 dourada. O nome criarCristal ficou do Cristalia.
+// Leve: a pedra tem 24 triângulos e o anel 72; o anel e a forma são reaproveitados por todas as pedras.
+const GEO_PEDRA = new THREE.LatheGeometry([
+  new THREE.Vector2(0, -0.36), new THREE.Vector2(0.2, -0.22), new THREE.Vector2(0.24, 0.12), new THREE.Vector2(0, 0.4),
+], 6);
+GEO_PEDRA.computeVertexNormals();
+const GEO_ANEL_PEDRA = new THREE.TorusGeometry(0.3, 0.025, 3, 24);
+const MAT_ANEL_PEDRA = CRISTAIS.map((c) => new THREE.MeshBasicMaterial({ color: c.cor, transparent: true, opacity: 0.9 }));
+
 export function criarCristal(escala = 1, tipo = 0) {
   const c = CRISTAIS[tipo];
-  const m = new THREE.Mesh(G.octa(0.28), new THREE.MeshLambertMaterial({ color: c.cor, emissive: c.emissivo, emissiveIntensity: 0.6, flatShading: true }));
-  m.scale.set(escala, escala * 1.45, escala);
+  const m = new THREE.Mesh(GEO_PEDRA, new THREE.MeshLambertMaterial({ color: c.pedra, emissive: c.emissivo, emissiveIntensity: 0.35, flatShading: true }));
+  const anel = new THREE.Mesh(GEO_ANEL_PEDRA, MAT_ANEL_PEDRA[tipo]);
+  anel.rotation.x = Math.PI / 2 - 0.25;
+  anel.position.y = -0.02;
+  m.add(anel);
+  m.userData.anel = anel;
+  m.scale.setScalar(escala);
   return m;
 }
 
 export function pintarCristal(m, tipo) {
   const c = CRISTAIS[tipo];
-  m.material.color.set(c.cor);
+  m.material.color.set(c.pedra);
   m.material.emissive.set(c.emissivo);
+  if (m.userData.anel) m.userData.anel.material = MAT_ANEL_PEDRA[tipo];
 }
 
 // Aura de tipo duplo: dois anéis girando, um de cada cor (fica em volta do monstro no mapa)

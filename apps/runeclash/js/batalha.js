@@ -1021,34 +1021,34 @@ export class Batalha {
   fecharSeletor() { this.jogo.ui.seletor.hidden = true; }
   escolherCristal(k) {
     const min = this.ini?.esp.cristalMin || 0;
-    if (k < min) { this.jogo.aviso(`Precisa de ${CRISTAIS[min].nome} ou melhor.`); return; }
-    if (this.jogo.estado.pedras[CRISTAIS[k].id] <= 0) { this.jogo.aviso(`Sem ${CRISTAIS[k].nome}.`); return; }
+    if (k < min) { this.jogo.aviso(`Precisa de uma ${CRISTAIS[min].nome} ou melhor.`); return; }
+    if (this.jogo.estado.pedras[CRISTAIS[k].id] <= 0) { this.jogo.aviso(`Sem ${CRISTAIS[k].plural}.`); return; }
     this.tipoCristal = k;
     this.cristalEscolhido = true;
     this.fecharSeletor();
   }
 
-  // Tecla V: passa para o próximo cristal que você tem
+  // Tecla V: passa para a próxima pedra que você tem
   trocarCristal() {
     const p = this.jogo.estado.pedras;
     for (let k = 1; k <= CRISTAIS.length; k++) {
       const n = (this.tipoCristal + k) % CRISTAIS.length;
       if (p[CRISTAIS[n].id] > 0) { this.tipoCristal = n; this.cristalEscolhido = true; return; }
     }
-    this.jogo.aviso('Você só tem esse tipo de cristal.');
+    this.jogo.aviso('Você só tem essa cor de pedra.');
   }
 
   lancarCristal() {
     if (this.fim || this.captura || this.jog.morto || !this.ini || this.ini.morto) return;
     const est = this.jogo.estado, tipo = CRISTAIS[this.tipoCristal];
-    const garantida = !!this.jogo.gm?.capturaGarantida; // GM: qualquer cristal segura qualquer monstro
+    const garantida = !!this.jogo.gm?.capturaGarantida; // GM: qualquer pedra sela qualquer monstro
     const min = garantida ? 0 : this.ini.esp.cristalMin || 0;
     if (this.tipoCristal < min) {
-      this.jogo.aviso(`${this.ini.esp.nome} é de tipo duplo: só um ${CRISTAIS[min].nome} (ou melhor) segura ele.`);
+      this.jogo.aviso(`${this.ini.esp.nome} é de tipo duplo: só uma ${CRISTAIS[min].nome} (ou melhor) sela ele.`);
       return;
     }
     if (est.pedras[tipo.id] <= 0) {
-      this.jogo.aviso(this.tipoCristal === 0 ? 'Sem cristais! Procure brilhos azuis pelo mapa.' : `Sem ${tipo.nome}! Junte cristais na sua casa ou vença líderes.`);
+      this.jogo.aviso(this.tipoCristal === 0 ? 'Sem pedras! Procure brilhos azuis pelo mapa.' : `Sem ${tipo.plural}! Junte pedras na sua casa ou vença líderes.`);
       return;
     }
     est.pedras[tipo.id]--;
@@ -1095,7 +1095,7 @@ export class Batalha {
             cr.material.emissive.set('#ffd23f');
             cr.material.emissiveIntensity = 1;
             this.particulas(ini.pos, '#ffd23f', 22, 1.3);
-            this.jogo.aviso(`Você capturou ${ini.esp.nome}!`);
+            this.jogo.aviso(`Você selou ${ini.esp.nome}!`);
             this.capturados.push(ini.dados);
             if (ini.dados.lider) this.liderDerrotado = true;
             // tira o capturado da arena; se ainda há inimigos, a luta continua
@@ -1117,7 +1117,7 @@ export class Batalha {
             ini.modelo.scale.setScalar(ini.escala);
             ini.rec = [0, 0, 0];
             ini.stun = 0;
-            this.jogo.aviso(`${ini.esp.nome} escapou do cristal!`);
+            this.jogo.aviso(`${ini.esp.nome} escapou da pedra!`);
             this.captura = null;
           }
         }
@@ -1182,7 +1182,7 @@ export class Batalha {
     if (!this.cristalEscolhido || this.tipoCristal < (e.esp.cristalMin || 0)) this.tipoCristal = this.cristalAutomatico();
     if (e.esp.dupla && !this.avisouDuplo?.has(e)) {
       (this.avisouDuplo ||= new Set()).add(e);
-      this.jogo.aviso(`Tipo duplo: só ${CRISTAIS[e.esp.cristalMin].nome} ou melhor.`);
+      this.jogo.aviso(`Tipo duplo: só uma ${CRISTAIS[e.esp.cristalMin].nome} ou melhor.`);
     }
   }
 
@@ -1268,7 +1268,7 @@ export class Batalha {
     }
   }
 
-  // Lista do seletor: cada cristal com a quantidade e a chance no alvo atual
+  // Lista do seletor: cada pedra com a quantidade e a chance no alvo atual
   atualizarSeletor(e) {
     const el = this.jogo.ui.seletor;
     if (el.hidden) return;
@@ -1278,7 +1278,7 @@ export class Batalha {
     const p = this.jogo.estado.pedras, min = e.esp.cristalMin || 0;
     CRISTAIS.forEach((c, k) => {
       const bt = el.children[k], [, nome, chance] = bt.children;
-      const tn = `${c.curto} ×${p[c.id]}`, tc = k < min ? 'não segura' : Math.round(chanceCaptura(e.dados, k) * 100) + '%';
+      const tn = `${c.curto} ×${p[c.id]}`, tc = k < min ? 'não sela' : Math.round(chanceCaptura(e.dados, k) * 100) + '%';
       if (nome.textContent !== tn) nome.textContent = tn;
       if (chance.textContent !== tc) chance.textContent = tc;
       bt.classList.toggle('ativo', k === this.tipoCristal);
@@ -1313,7 +1313,7 @@ export class Batalha {
       ui.qtdCristal.textContent = this.jogo.estado.pedras[cr.id];
       ui.btnCristal.style.setProperty('--crist', cr.cor);
       ui.btnCristal.classList.toggle('fraco', this.tipoCristal < min);
-      ui.btnCristal.title = `${cr.nome}: ${this.tipoCristal < min ? 'não segura este monstro' : Math.round(chanceCaptura(e.dados, this.tipoCristal) * 100) + '% de chance'}`;
+      ui.btnCristal.title = `${cr.nome}: ${this.tipoCristal < min ? 'não sela este monstro' : Math.round(chanceCaptura(e.dados, this.tipoCristal) * 100) + '% de chance'}`;
     }
     this.atualizarSeletor(e);
     const eq = this.jogo.estado.equipe;

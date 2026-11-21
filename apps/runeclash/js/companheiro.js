@@ -68,7 +68,7 @@ export class Companheiro {
     this.ativo = false;
     if (this.jogo.estado) this.jogo.estado.pet = false;
     this.atualizarBotoes();
-    if (!silencioso && nome) this.jogo.aviso(`${nome} voltou para o cristal.`);
+    if (!silencioso && nome) this.jogo.aviso(`${nome} voltou para a pedra.`);
   }
 
   // Ao entrar no mapa (continuar o jogo, trocar de conta): invoca de novo se estava invocado
@@ -173,7 +173,7 @@ export class Companheiro {
     }
     // a equipe mudou (outro na frente, evoluiu ou desmaiou): troca ou guarda o companheiro
     const d = equipe[0];
-    if (!d || d.hp <= 0) { const nome = ESPECIES[this.especie].nome; this.guardar(true); if (d) this.jogo.aviso(`${nome} precisa descansar e voltou para o cristal.`); return; }
+    if (!d || d.hp <= 0) { const nome = ESPECIES[this.especie].nome; this.guardar(true); if (d) this.jogo.aviso(`${nome} precisa descansar e voltou para a pedra.`); return; }
     if (d !== this.dados || d.especie !== this.especie) {
       const tinhaControle = !!this.treino;
       if (tinhaControle) this.voltarAoTreinador(true);

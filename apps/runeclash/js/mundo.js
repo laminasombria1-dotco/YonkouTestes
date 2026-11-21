@@ -786,7 +786,7 @@ export class Mundo {
       if (est && Math.hypot(this.pos.x - c.x, this.pos.z - c.z) < 1.4) {
         c.ativo = false; c.mesh.visible = false; c.volta = 60;
         est.pedras[CRISTAIS[c.tipo].id]++;
-        this.jogo.aviso(c.tipo === 0 ? 'Você achou um cristal de captura!' : `Você achou um ${CRISTAIS[c.tipo].nome}!`);
+        this.jogo.aviso(c.tipo === 0 ? 'Você achou uma pedra de selamento!' : `Você achou uma ${CRISTAIS[c.tipo].nome}!`);
         this.jogo.atualizarHudMundo();
         this.jogo.salvar();
       }

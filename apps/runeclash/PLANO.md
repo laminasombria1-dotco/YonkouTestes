@@ -34,7 +34,8 @@ Uma ideia por vez, sem pressa. Cada ideia é feita numa branch, com proposta ant
 ### Etapa 1: Identidade Runeclash (só o visual, as regras não mudam)
 - [x] **1.1** Telas com cara de runas: logo, cores e menus (mais sombrio que o Cristalia, sem ficar pesado).
   Feito: roxo-runa e dourado envelhecido, fonte Cinzel só no nome e nos títulos, emblema e ícone do app viraram a pedra de selamento (desenho provisório) e uma roda de runas gira atrás do nome.
-- [ ] **1.2** **Monstruário → Sealfolio** e **cristais → pedras de selamento** (azul, roxa e dourada, com desenho de pedra; o modelo 3D vem depois).
+- [x] **1.2** **Monstruário → Sealfolio** e **cristais → pedras de selamento** (azul, roxa e dourada, com desenho de pedra; o modelo 3D vem depois).
+  Feito: Pedra Azul, Roxa e Dourada (ícone de pedra de 6 lados e pedra 3D provisória com anel de runa), Sealfolio no menu e na tela, e "capturar" virou "selar" nos textos. Os ids do jogo salvo (comum, forte, supremo) ficaram iguais.
 - [ ] **1.3** O treinador vira o **Invocador**: o criador de personagem da Arena (pele, cabelo, roupa, capa, ombreiras e altura), com as peças do Blender e as animações de andar, parado e conjurar. Ele segura a pedra de selamento.
 
 ### Etapa 2: Selar e invocar (o coração da junção)

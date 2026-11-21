@@ -687,17 +687,18 @@ export function verificarEvolucao(m) {
 }
 
 // =============================================================
-// CRISTAIS DE CAPTURA
-// poder = multiplica a chance de captura
-// Monstros de tipo duplo exigem um cristal mínimo (cristalMin na espécie):
-// formas inicial e 1ª evolução -> Forte; 2ª evolução e forma final -> Supremo.
+// PEDRAS DE SELAMENTO (no código ainda se chamam CRISTAIS, herança do Cristalia)
+// Os ids (comum, forte, supremo) ficam iguais: são as chaves do jogo salvo.
+// poder = multiplica a chance de selar · cor = cor do brilho (telas e runas) · pedra = cor do corpo da pedra 3D
+// Monstros de tipo duplo exigem uma pedra mínima (cristalMin na espécie):
+// formas inicial e 1ª evolução -> Roxa; 2ª evolução e forma final -> Dourada.
 // =============================================================
 export const CRISTAIS = [
-  { id: 'comum',   nome: 'Cristal',         plural: 'cristais',          curto: 'Comum',   cor: '#8ff4ff', emissivo: '#2ab8d8', poder: 1 },
-  { id: 'forte',   nome: 'Cristal Forte',   plural: 'Cristais Fortes',   curto: 'Forte',   cor: '#c79bff', emissivo: '#7a3ad8', poder: 1.5 },
-  { id: 'supremo', nome: 'Cristal Supremo', plural: 'Cristais Supremos', curto: 'Supremo', cor: '#ffd23f', emissivo: '#e08a10', poder: 2.2 },
+  { id: 'comum',   nome: 'Pedra Azul',    plural: 'Pedras Azuis',    curto: 'Azul',    curtos: 'Azuis',    cor: '#7fc8ff', emissivo: '#2a78d8', pedra: '#4a5f80', poder: 1 },
+  { id: 'forte',   nome: 'Pedra Roxa',    plural: 'Pedras Roxas',    curto: 'Roxa',    curtos: 'Roxas',    cor: '#c79bff', emissivo: '#7a3ad8', pedra: '#5a4880', poder: 1.5 },
+  { id: 'supremo', nome: 'Pedra Dourada', plural: 'Pedras Douradas', curto: 'Dourada', curtos: 'Douradas', cor: '#f0c75a', emissivo: '#e08a10', pedra: '#7d6538', poder: 2.2 },
 ];
-// Fusão na casa: 3 cristais de um tipo viram 1 do tipo acima
+// Fusão na casa: 3 pedras de uma cor viram 1 da cor acima
 export const CUSTO_FUSAO = 3;
 
 // Chance de captura: maior quando o monstro está com pouca vida e com cristal mais forte.
