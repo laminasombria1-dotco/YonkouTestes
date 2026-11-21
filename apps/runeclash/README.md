@@ -9,7 +9,7 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
 
 Só os **monstros** lutam; o Invocador não luta. O plano, etapa por etapa, fica em **[PLANO.md](PLANO.md)**.
 
-> **Hoje (etapa 0.2)** o Runeclash ainda joga igual ao Cristalia, com o nome novo e o jogo salvo separado. O material da Arena (efeitos, peças e scripts do Blender) já está aqui, mas ainda não aparece no jogo. O resto deste README descreve o que veio do Cristalia e vai mudando a cada etapa.
+> **Hoje (ideia 1.1)** o Runeclash ainda joga igual ao Cristalia, com o nome novo, o jogo salvo separado e o visual próprio nas telas (roxo-runa e dourado, fonte Cinzel nos títulos, a pedra de selamento como emblema e ícone). O material da Arena (efeitos, peças e scripts do Blender) já está aqui, mas ainda não aparece no jogo. O resto deste README descreve o que veio do Cristalia e vai mudando a cada etapa.
 
 ## Como jogar
 
@@ -81,7 +81,7 @@ O Runeclash **ainda não tem site**: por enquanto ele roda só no computador (ve
 - **Por que ainda não:** o GitHub dá **um site só por repositório**, e esse site hoje é o do Cristalia (é ele que o app Android do Cristalia abre). Publicar o Runeclash com um workflow próprio **trocaria** o site do Cristalia. Isso fica para a etapa 6 do [PLANO.md](PLANO.md): uma publicação só, com o Cristalia no endereço de sempre e o Runeclash em `/runeclash/`.
 - Quando estiver publicado, ele vai ser um **PWA** (aplicativo web instalável) como o Cristalia: abrir no Chrome do Android e tocar em **Instalar app**.
 
-**Arquivos do app:** `manifest.webmanifest` (nome, ícone, cores do app e `"orientation": "landscape"`: o app instalado abre sempre deitado), `sw.js` (o "ajudante" que guarda o jogo e busca as atualizações) e `icones/`.
+**Arquivos do app:** `manifest.webmanifest` (nome, ícone, cores do app e `"orientation": "landscape"`: o app instalado abre sempre deitado), `sw.js` (o "ajudante" que guarda o jogo e busca as atualizações) e `icones/` (a pedra de selamento em 192, 512, 512 "máscara" do Android e 180 para iPhone).
 
 ## Monstro invocado (companheiro)
 

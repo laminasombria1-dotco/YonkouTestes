@@ -6,28 +6,34 @@
 <title>Runeclash: Sealstone Legends</title>
 <!-- App instalável (PWA): ícone, nome e cor do app no celular -->
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#14233f">
+<meta name="theme-color" content="#110c1d">
 <link rel="icon" type="image/png" sizes="192x192" href="icones/icone-192.png">
 <link rel="apple-touch-icon" href="icones/apple-touch-icon.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800&family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap">
 <style>
   /* Layout: jogo em tela cheia; o HUD flutua nas bordas e os controles ficam ao alcance dos polegares.
-     Visual único (não muda com tema claro/escuro): céu azul do jogo + painéis azul-noite translúcidos. */
+     Visual único (não muda com tema claro/escuro): painéis roxo-noite translúcidos, roxo-runa e dourado envelhecido.
+     Fontes: Cinzel (letra "entalhada em pedra") só no nome e nos títulos; Fredoka/Nunito (redondas) nos botões e textos. */
   :root {
-    --noite: #14233f;
-    --painel: rgba(18, 33, 61, 0.86);
-    --painel-borda: rgba(143, 244, 255, 0.28);
-    --creme: #fff6e3;
-    --creme-suave: #c9d6e8;
-    --cristal: #8ff4ff;
-    --sol: #ffd23f;
+    --noite: #110c1d;
+    --painel: rgba(24, 16, 40, 0.88);
+    --painel-borda: rgba(190, 150, 255, 0.32);
+    --creme: #f4eeff;
+    --creme-suave: #c9bfe0;
+    --cristal: #b98cff;      /* roxo-runa (o nome da variável ficou do Cristalia) */
+    --sol: #e9c46a;          /* dourado envelhecido */
+    --ouro-claro: #f0d084;
+    --ouro-escuro: #c99a3a;
+    --ouro-sombra: #7a5a18;
+    --runa-sombra: #5b3a9a;
     --vida-alta: #5fe08a;
     --vida-media: #ffd23f;
     --vida-baixa: #ff5470;
+    --f-runa: 'Cinzel', Georgia, 'Times New Roman', serif;
     --f-titulo: 'Fredoka', 'Trebuchet MS', system-ui, sans-serif;
     --f-corpo: 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
     --toque: clamp(60px, 13vmin, 80px);
@@ -50,15 +56,19 @@
   /* ---------- tela de início ----------
      Paisagem: marca (emblema + nome) à esquerda e menu à direita. Retrato: um embaixo do outro. */
   #tela-titulo { flex-direction: row; gap: clamp(20px, 6vw, 72px); overflow: hidden;
-    background: radial-gradient(ellipse at 30% 45%, rgba(20, 35, 63, 0.05), rgba(20, 35, 63, 0.55) 60%, rgba(12, 22, 42, 0.85)); }
-  .titulo-marca { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-  .emblema { width: clamp(64px, 15vmin, 120px); height: auto; filter: drop-shadow(0 0 18px rgba(143, 244, 255, 0.75)); animation: flutuar 3.2s ease-in-out infinite; }
+    background: radial-gradient(ellipse at 30% 45%, rgba(40, 20, 70, 0.15), rgba(17, 12, 29, 0.6) 60%, rgba(10, 6, 18, 0.9)); }
+  .titulo-marca { position: relative; isolation: isolate; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  /* roda de runas girando devagar atrás do nome (o isolation acima a deixa atrás do nome, mas na frente do fundo da tela) */
+  .roda-runas { position: absolute; z-index: -1; left: 50%; top: 50%; width: clamp(220px, 62vmin, 420px); aspect-ratio: 1; translate: -50% -52%;
+    opacity: 0.5; pointer-events: none; animation: girar-runas 40s linear infinite; }
+  @keyframes girar-runas { to { rotate: 360deg; } }
+  .emblema { width: clamp(64px, 15vmin, 120px); height: auto; filter: drop-shadow(0 0 18px rgba(185, 140, 255, 0.85)); animation: flutuar 3.2s ease-in-out infinite; }
   @keyframes flutuar { 50% { transform: translateY(-8px) rotate(3deg); } }
-  .logo { margin: 0; font-family: var(--f-titulo); font-weight: 700; font-size: clamp(3rem, 12vmin, 6.2rem); letter-spacing: 0.02em; line-height: 1;
-    color: var(--creme); text-shadow: 0 4px 0 #2a7fb0, 0 8px 24px rgba(10, 30, 60, 0.6); }
-  .logo span { color: var(--cristal); }
-  .lema { margin: 0; display: flex; align-items: center; gap: 10px; font-family: var(--f-titulo); font-weight: 600; font-size: clamp(0.9rem, 2.6vmin, 1.15rem);
-    letter-spacing: 0.18em; text-transform: uppercase; color: var(--sol); text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7); }
+  .logo { margin: 0; font-family: var(--f-runa); font-weight: 800; font-size: clamp(2.6rem, 10.5vmin, 5.4rem); letter-spacing: 0.05em; line-height: 1;
+    color: var(--creme); text-shadow: 0 0 22px rgba(185, 140, 255, 0.6), 0 3px 0 #3b2466, 0 8px 22px rgba(0, 0, 0, 0.6); }
+  .logo span { color: #c9a6ff; }
+  .lema { margin: 0; display: flex; align-items: center; gap: 10px; font-family: var(--f-runa); font-weight: 700; font-size: clamp(0.9rem, 2.6vmin, 1.15rem);
+    letter-spacing: 0.32em; text-transform: uppercase; color: var(--sol); text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7); }
   .lema i { width: 7px; height: 9px; background: var(--cristal); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
   .titulo-menu { position: relative; display: flex; flex-direction: column; gap: 10px; width: min(330px, 100%); }
   .titulo-rodape { position: absolute; left: 0; right: 0; bottom: max(8px, env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 0 16px; }
@@ -66,19 +76,19 @@
   .btn-icone.canto { position: absolute; top: max(12px, env(safe-area-inset-top, 0px)); right: max(12px, env(safe-area-inset-right, 0px)); }
   /* itens do menu: cartão com ícone, título e uma linha explicando */
   .menu-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 14px; border-radius: 16px; text-align: left;
-    border: 1px solid var(--painel-borda); background: var(--painel); box-shadow: 0 4px 0 rgba(5, 12, 26, 0.6); backdrop-filter: blur(4px);
+    border: 1px solid var(--painel-borda); background: var(--painel); box-shadow: 0 4px 0 rgba(8, 5, 16, 0.6); backdrop-filter: blur(4px);
     transition: transform 0.08s, border-color 0.15s; }
   .menu-item:hover { border-color: var(--cristal); }
-  .menu-item:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(5, 12, 26, 0.6); }
-  .menu-item .ic { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: rgba(143, 244, 255, 0.14); }
+  .menu-item:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(8, 5, 16, 0.6); }
+  .menu-item .ic { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: rgba(185, 140, 255, 0.16); }
   .menu-item .ic svg { width: 22px; height: 22px; fill: none; stroke: var(--cristal); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
   .menu-item .txt { display: flex; flex-direction: column; min-width: 0; }
   .menu-item b { font-family: var(--f-titulo); font-weight: 600; font-size: 1.12rem; line-height: 1.15; }
   .menu-item small { font-size: 0.74rem; color: var(--creme-suave); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .menu-item.principal { background: linear-gradient(135deg, #ffd23f, #ffb82e); border-color: #ffe27a; color: #3a2a00; box-shadow: 0 4px 0 #b8860b; }
+  .menu-item.principal { background: linear-gradient(135deg, var(--ouro-claro), var(--ouro-escuro)); border-color: #f6dd9c; color: #2a1b00; box-shadow: 0 4px 0 var(--ouro-sombra); }
   .menu-item.principal .ic { background: rgba(58, 42, 0, 0.14); }
   .menu-item.principal .ic svg { stroke: #3a2a00; fill: #3a2a00; }
-  .menu-item.principal small { color: #6a4f00; }
+  .menu-item.principal small { color: #5a4210; }
   .menu-item.sair .ic { background: rgba(255, 84, 112, 0.16); }
   .menu-item.sair .ic svg { stroke: #ff8a9a; }
   .menu-item.confirmar { border-color: var(--vida-baixa); }
@@ -98,18 +108,18 @@
      Paisagem: marca à esquerda e o quadro de entrar à direita. Retrato: um embaixo do outro, no alto
      (o teclado do celular cobre a parte de baixo da tela e, no app em tela cheia, a tela não encolhe). */
   #tela-login { flex-direction: row; gap: clamp(20px, 6vw, 72px); overflow-x: hidden; overflow-y: auto; touch-action: pan-y;
-    background: radial-gradient(ellipse at 30% 45%, rgba(20, 35, 63, 0.05), rgba(20, 35, 63, 0.55) 60%, rgba(12, 22, 42, 0.85)); }
+    background: radial-gradient(ellipse at 30% 45%, rgba(40, 20, 70, 0.15), rgba(17, 12, 29, 0.6) 60%, rgba(10, 6, 18, 0.9)); }
   .caixa-login { position: relative; display: flex; flex-direction: column; gap: 7px; width: min(340px, 100%); padding: 16px; border-radius: 20px; flex: none;
     background: var(--painel); border: 1px solid var(--painel-borda); text-align: left; backdrop-filter: blur(4px); }
-  .caixa-login h2 { margin: 0; font-family: var(--f-titulo); font-weight: 600; font-size: 1.35rem; }
+  .caixa-login h2 { margin: 0; font-family: var(--f-runa); font-weight: 700; font-size: 1.35rem; letter-spacing: 0.04em; }
   .caixa-login label { font-size: 0.78rem; font-weight: 800; color: var(--creme-suave); }
-  .caixa-login input { width: 100%; padding: 10px 14px; border-radius: 12px; border: 2px solid var(--painel-borda); background: rgba(5, 12, 26, 0.6);
+  .caixa-login input { width: 100%; padding: 10px 14px; border-radius: 12px; border: 2px solid var(--painel-borda); background: rgba(8, 5, 16, 0.6);
     color: var(--creme); font: 700 1.05rem var(--f-corpo); user-select: text; -webkit-user-select: text; }
   .caixa-login input:focus { outline: none; border-color: var(--cristal); }
   .botoes-login { display: flex; gap: 8px; margin-top: 2px; }
   .botoes-login button { flex: 1; border: 0; border-radius: 12px; padding: 10px; font-family: var(--f-titulo); font-weight: 600; font-size: 1.05rem;
-    background: var(--sol); color: #3a2a00; box-shadow: 0 4px 0 #b8860b; }
-  .botoes-login button.sec { background: var(--cristal); color: #0c3a48; box-shadow: 0 4px 0 #2a8fa8; }
+    background: linear-gradient(135deg, var(--ouro-claro), var(--ouro-escuro)); color: #2a1b00; box-shadow: 0 4px 0 var(--ouro-sombra); }
+  .botoes-login button.sec { background: var(--cristal); color: #1e0f3a; box-shadow: 0 4px 0 var(--runa-sombra); }
   .botoes-login button:active { transform: translateY(3px); box-shadow: none; }
   .caixa-login button:disabled { opacity: 0.55; }
   #btn-sem-nuvem { border: 1px dashed var(--creme-suave); border-radius: 12px; padding: 8px; background: transparent; font-weight: 800; font-size: 0.85rem; }
@@ -132,16 +142,16 @@
   .ola small { display: block; font-family: var(--f-corpo); font-size: 0.7rem; font-weight: 700; color: var(--creme-suave); }
   /* celular em pé: o jogo só roda deitado; esta tela cobre tudo e o jogo pausa até virar */
   #vire { position: absolute; inset: 0; z-index: 60; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px; text-align: center;
-    background: radial-gradient(ellipse at 50% 40%, rgba(20, 35, 63, 0.94), rgba(10, 18, 34, 0.99)); touch-action: none; }
+    background: radial-gradient(ellipse at 50% 40%, rgba(30, 20, 52, 0.94), rgba(12, 8, 22, 0.99)); touch-action: none; }
   #vire svg { width: 120px; height: 120px; animation: vire-girar 2.4s ease-in-out infinite; }
   @keyframes vire-girar { 0%, 20% { transform: rotate(0deg); } 50%, 80% { transform: rotate(-90deg); } 100% { transform: rotate(-90deg); } }
-  #vire h2 { margin: 0; font-family: var(--f-titulo); font-weight: 600; font-size: 1.8rem; }
+  #vire h2 { margin: 0; font-family: var(--f-runa); font-weight: 700; letter-spacing: 0.04em; font-size: 1.8rem; }
   #vire p { margin: 0; max-width: 30ch; color: var(--creme-suave); font-weight: 700; }
   @media (prefers-reduced-motion: reduce) { #vire svg { animation: none; transform: rotate(-45deg); } }
   /* menu de pausa e tela de saída */
-  .sobreposicao { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(8, 14, 28, 0.72); backdrop-filter: blur(3px); z-index: 20; }
+  .sobreposicao { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(10, 6, 20, 0.72); backdrop-filter: blur(3px); z-index: 20; }
   .caixa-menu { display: flex; flex-direction: column; gap: 10px; width: min(340px, 100%); padding: 16px; border-radius: 20px; background: var(--noite); border: 1px solid var(--painel-borda); text-align: center; }
-  .caixa-menu h2 { margin: 0 0 4px; font-family: var(--f-titulo); font-weight: 600; font-size: 1.5rem; }
+  .caixa-menu h2 { margin: 0 0 4px; font-family: var(--f-runa); font-weight: 700; letter-spacing: 0.04em; font-size: 1.5rem; }
   .caixa-menu .dica { font-size: 0.85rem; }
   @media (orientation: portrait) {
     #tela-titulo { flex-direction: column; gap: 22px; justify-content: center; padding-bottom: 70px; }
@@ -159,11 +169,11 @@
     .ola { padding: 3px 10px; font-size: 0.9rem; } .ola small { display: inline; margin-left: 6px; }
     .caixa-login { padding: 12px; gap: 5px; } .caixa-login input { padding: 8px 12px; } .conta { padding: 5px 10px; } .conta .av { width: 26px; height: 26px; }
   }
-  @media (prefers-reduced-motion: reduce) { .emblema, .brilhos i { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .emblema, .brilhos i, .roda-runas { animation: none; } }
   .btn-grande { border: 0; border-radius: 999px; padding: 14px 28px; font-family: var(--f-titulo); font-weight: 600; font-size: 1.15rem;
-    background: var(--sol); color: #3a2a00; box-shadow: 0 5px 0 #b8860b; transition: transform 0.08s; }
-  .btn-grande.sec { background: var(--cristal); color: #0c3a48; box-shadow: 0 5px 0 #2a8fa8; }
-  .btn-grande:active { transform: translateY(3px); box-shadow: 0 2px 0 #b8860b; }
+    background: linear-gradient(135deg, var(--ouro-claro), var(--ouro-escuro)); color: #2a1b00; box-shadow: 0 5px 0 var(--ouro-sombra); transition: transform 0.08s; }
+  .btn-grande.sec { background: var(--cristal); color: #1e0f3a; box-shadow: 0 5px 0 var(--runa-sombra); }
+  .btn-grande:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--ouro-sombra); }
   .btn-grande:disabled { opacity: 0.5; cursor: default; }
   .dica { margin: 0; max-width: 46ch; font-size: 0.85rem; color: var(--creme-suave); text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8); }
 
@@ -178,13 +188,13 @@
     padding-block: 10px; padding-left: max(10px, env(safe-area-inset-left, 0px)); padding-right: max(10px, env(safe-area-inset-right, 0px)); }
   #tela-colecao > * { pointer-events: auto; min-width: 0; }
   .col-topo { grid-area: topo; display: flex; align-items: center; gap: 10px; }
-  .col-topo h2 { margin: 0; font-family: var(--f-titulo); font-weight: 600; font-size: 1.3rem; text-shadow: 0 2px 8px rgba(10, 20, 40, 0.6); }
+  .col-topo h2 { margin: 0; font-family: var(--f-runa); font-weight: 700; letter-spacing: 0.04em; font-size: 1.3rem; text-shadow: 0 2px 8px rgba(10, 6, 20, 0.7); }
   .col-abas { grid-area: abas; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; touch-action: pan-x; padding-bottom: 2px; }
   .col-abas::-webkit-scrollbar { display: none; }
   .col-abas button { flex: none; display: inline-flex; align-items: center; gap: 6px; border: 2px solid transparent; border-radius: 999px; padding: 5px 12px;
     background: var(--painel); font-weight: 800; font-size: 0.8rem; }
   .col-abas button i { width: 10px; height: 10px; border-radius: 50%; background: var(--cor); }
-  .col-abas button.ativa { border-color: var(--cor); background: #23406e; }
+  .col-abas button.ativa { border-color: var(--cor); background: #3a2766; }
   .col-abas button.dupla i { background: linear-gradient(90deg, var(--cor) 50%, var(--cor2) 50%); }
   .col-detalhe .evo.duplo { border-left: 3px solid #c79bff; padding-left: 8px; }
   #rotulo .duplo { color: #e2c8ff; font-weight: 800; }
@@ -241,7 +251,7 @@
   .pilula { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--painel); font-weight: 800; font-variant-numeric: tabular-nums; }
   .losango { width: 10px; height: 14px; background: var(--cristal); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); display: inline-block; }
   .btn-hud { border: 1px solid var(--painel-borda); border-radius: 999px; padding: 7px 14px; background: var(--painel); font-weight: 800; font-size: 0.85rem; }
-  .btn-hud:active, .btn-hud.apertado { background: #23406e; }
+  .btn-hud:active, .btn-hud.apertado { background: #3a2766; }
 
   .btn-casa { position: absolute; right: max(16px, calc(env(safe-area-inset-right, 0px) + 10px)); bottom: max(16px, calc(env(safe-area-inset-bottom, 0px) + 10px));
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 84px; height: 84px; border-radius: 22px;
@@ -288,10 +298,11 @@
   .painel-caixa { width: min(720px, 100%); background: var(--noite); border: 1px solid var(--painel-borda); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
   .painel-cabeca { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
   .painel-caixa h2, .painel-caixa h3 { margin: 0; font-family: var(--f-titulo); font-weight: 600; }
+  .painel-caixa h2 { font-family: var(--f-runa); font-weight: 700; letter-spacing: 0.04em; }
   .painel-caixa h3 { font-size: 1rem; color: var(--creme-suave); }
   .abas-painel { display: flex; gap: 6px; }
   .abas-painel button { border: 2px solid transparent; border-radius: 999px; padding: 6px 16px; background: var(--painel); font-family: var(--f-titulo); font-weight: 600; font-size: 1.05rem; }
-  .abas-painel button.ativa { border-color: var(--cristal); background: #23406e; }
+  .abas-painel button.ativa { border-color: var(--cristal); background: #3a2766; }
   .abas-painel b { font-size: 0.8rem; color: var(--cristal); }
   .ficha .onde { margin-left: auto; font-size: 0.68rem; font-weight: 800; padding: 1px 7px; border-radius: 6px; background: rgba(255, 255, 255, 0.1); }
   .ficha .onde.eq { background: #2f8a4f; }
@@ -380,7 +391,7 @@
     background: var(--painel); display: inline-flex; align-items: center; justify-content: center; padding: 0; pointer-events: auto; flex: none; }
   .btn-icone.mini { --tam: clamp(32px, 6.5vmin, 40px); }
   .btn-icone svg { width: 55%; height: 55%; fill: none; stroke: var(--creme); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
-  .btn-icone:active, .btn-icone.apertado { transform: scale(0.9); background: #23406e; }
+  .btn-icone:active, .btn-icone.apertado { transform: scale(0.9); background: #3a2766; }
   #btn-cristal { --crist: var(--cristal); border-color: var(--crist); }
   .losango.grande { width: 38%; height: 54%; background: var(--crist); box-shadow: 0 0 10px var(--crist); }
   .selo { position: absolute; right: -4px; bottom: -4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--noite);
@@ -408,14 +419,14 @@
   /* ---------- joystick ---------- */
   #joystick { position: absolute; inset: 0; pointer-events: none; }
   #joystick .base { position: absolute; left: 0; top: 0; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%;
-    background: rgba(18, 33, 61, 0.35); border: 2px solid rgba(255, 246, 227, 0.35); opacity: 0.6; transition: opacity 0.15s; }
+    background: rgba(24, 16, 40, 0.35); border: 2px solid rgba(255, 246, 227, 0.35); opacity: 0.6; transition: opacity 0.15s; }
   #joystick.ativo .base { opacity: 1; }
   /* controle da câmera: do lado direito, acima da casa (mapa) ou das habilidades (batalha) */
   #camera-pad { position: absolute; right: max(18px, calc(env(safe-area-inset-right, 0px) + 12px)); bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 104px);
     width: 88px; height: 88px; border-radius: 50%; display: grid; place-items: center; touch-action: none; pointer-events: auto;
-    background: rgba(18, 33, 61, 0.35); border: 2px dashed rgba(143, 244, 255, 0.45); opacity: 0.75; transition: opacity 0.15s; }
+    background: rgba(24, 16, 40, 0.35); border: 2px dashed rgba(185, 140, 255, 0.45); opacity: 0.75; transition: opacity 0.15s; }
   #camera-pad.ativo { opacity: 1; border-style: solid; }
-  #camera-pad .manete { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: rgba(143, 244, 255, 0.25); pointer-events: none; }
+  #camera-pad .manete { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: rgba(185, 140, 255, 0.25); pointer-events: none; }
   #camera-pad svg { width: 26px; height: 26px; fill: none; stroke: var(--cristal); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
   #app.em-batalha #camera-pad { bottom: calc(max(12px, env(safe-area-inset-bottom, 0px)) + var(--toque) * 2 + clamp(6px, 1.6vmin, 12px) + 18px);
     right: max(14px, calc(env(safe-area-inset-right, 0px) + 10px)); width: 76px; height: 76px; }
@@ -467,12 +478,45 @@
   <section id="tela-login" class="tela" hidden>
     <div class="brilhos" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
     <div class="titulo-marca">
+      <!-- roda de runas girando atrás do nome -->
+      <svg class="roda-runas" viewBox="-100 -100 200 200" aria-hidden="true"><g fill="none" stroke="#b98cff" stroke-linecap="round">
+        <circle r="96" stroke-width="2"/><circle r="84" stroke-width="1"/><circle r="80" stroke-width="0.6"/><circle r="40" stroke-width="1"/>
+        <path transform="translate(90.0 0.0) rotate(90.0)" stroke-width="1.3" d="M0 -4 L0 4 M-2.5 -1 L2.5 -1"/>
+        <path transform="translate(86.9 23.3) rotate(105.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3 M0 2 L-3 4"/>
+        <path transform="translate(77.9 45.0) rotate(120.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3"/>
+        <path transform="translate(63.6 63.6) rotate(135.0)" stroke-width="1.3" d="M0 -4 L0 4 M-2.5 -1 L2.5 -1 M0 2 L-3 4"/>
+        <path transform="translate(45.0 77.9) rotate(150.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3"/>
+        <path transform="translate(23.3 86.9) rotate(165.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3 M0 2 L-3 4"/>
+        <path transform="translate(0.0 90.0) rotate(180.0)" stroke-width="1.3" d="M0 -4 L0 4 M-2.5 -1 L2.5 -1"/>
+        <path transform="translate(-23.3 86.9) rotate(195.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3 M0 2 L-3 4"/>
+        <path transform="translate(-45.0 77.9) rotate(210.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3"/>
+        <path transform="translate(-63.6 63.6) rotate(225.0)" stroke-width="1.3" d="M0 -4 L0 4 M-2.5 -1 L2.5 -1 M0 2 L-3 4"/>
+        <path transform="translate(-77.9 45.0) rotate(240.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3"/>
+        <path transform="translate(-86.9 23.3) rotate(255.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3 M0 2 L-3 4"/>
+        <path transform="translate(-90.0 0.0) rotate(270.0)" stroke-width="1.3" d="M0 -4 L0 4 M-2.5 -1 L2.5 -1"/>
+        <path transform="translate(-86.9 -23.3) rotate(285.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3 M0 2 L-3 4"/>
+        <path transform="translate(-77.9 -45.0) rotate(300.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3"/>
+        <path transform="translate(-63.6 -63.6) rotate(315.0)" stroke-width="1.3" d="M0 -4 L0 4 M-2.5 -1 L2.5 -1 M0 2 L-3 4"/>
+        <path transform="translate(-45.0 -77.9) rotate(330.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3"/>
+        <path transform="translate(-23.3 -86.9) rotate(345.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3 M0 2 L-3 4"/>
+        <path transform="translate(-0.0 -90.0) rotate(360.0)" stroke-width="1.3" d="M0 -4 L0 4 M-2.5 -1 L2.5 -1"/>
+        <path transform="translate(23.3 -86.9) rotate(375.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3 M0 2 L-3 4"/>
+        <path transform="translate(45.0 -77.9) rotate(390.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3"/>
+        <path transform="translate(63.6 -63.6) rotate(405.0)" stroke-width="1.3" d="M0 -4 L0 4 M-2.5 -1 L2.5 -1 M0 2 L-3 4"/>
+        <path transform="translate(77.9 -45.0) rotate(420.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3"/>
+        <path transform="translate(86.9 -23.3) rotate(435.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3 M0 2 L-3 4"/>
+        <path stroke-width="1.4" d="M0.0 -76.0 L65.8 38.0 L-65.8 38.0 Z M65.8 -38.0 L0.0 76.0 L-65.8 -38.0 Z"/>
+      </g></svg>
+      <!-- a pedra de selamento: pedra facetada com um círculo de runas aceso (provisório até o modelo 3D da pedra) -->
       <svg class="emblema" viewBox="0 0 100 120" aria-hidden="true">
-        <polygon points="50,4 92,44 50,116 8,44" fill="#8ff4ff"/>
-        <polygon points="50,4 50,44 8,44" fill="#e2feff"/>
-        <polygon points="50,4 92,44 50,44" fill="#b6f8ff"/>
-        <polygon points="8,44 50,44 50,116" fill="#4fd8f0"/>
-        <polygon points="50,44 92,44 50,116" fill="#2ab8d8"/>
+        <polygon points="50,6 88,30 88,82 50,114 12,82 12,30" fill="#4a3f5e"/>
+        <polygon points="50,6 88,30 50,46" fill="#6b5d84"/><polygon points="50,6 12,30 50,46" fill="#5a4d70"/>
+        <polygon points="12,30 50,46 50,114 12,82" fill="#3a3049"/><polygon points="88,30 50,46 50,114 88,82" fill="#2d2539"/>
+        <circle cx="50" cy="62" r="22" fill="none" stroke="#c9a6ff" stroke-width="3"/>
+        <circle cx="50" cy="62" r="16" fill="none" stroke="#c9a6ff" stroke-width="1.4" stroke-dasharray="3 3"/>
+        <polygon points="50,46 63,70 37,70" fill="none" stroke="#e9d8ff" stroke-width="2.2"/>
+        <polygon points="50,78 37,54 63,54" fill="none" stroke="#e9d8ff" stroke-width="2.2"/>
+        <circle cx="50" cy="62" r="4" fill="#ffffff"/>
       </svg>
       <h1 class="logo">Rune<span>clash</span></h1>
       <p class="lema">Sealstone Legends</p>
@@ -492,15 +536,48 @@
   </section>
 
   <section id="tela-titulo" class="tela" hidden>
-    <!-- brilhinhos de cristal subindo ao fundo -->
+    <!-- brilhinhos de runa subindo ao fundo -->
     <div class="brilhos" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
     <div class="titulo-marca">
+      <!-- roda de runas girando atrás do nome -->
+      <svg class="roda-runas" viewBox="-100 -100 200 200" aria-hidden="true"><g fill="none" stroke="#b98cff" stroke-linecap="round">
+        <circle r="96" stroke-width="2"/><circle r="84" stroke-width="1"/><circle r="80" stroke-width="0.6"/><circle r="40" stroke-width="1"/>
+        <path transform="translate(90.0 0.0) rotate(90.0)" stroke-width="1.3" d="M0 -4 L0 4 M-2.5 -1 L2.5 -1"/>
+        <path transform="translate(86.9 23.3) rotate(105.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3 M0 2 L-3 4"/>
+        <path transform="translate(77.9 45.0) rotate(120.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3"/>
+        <path transform="translate(63.6 63.6) rotate(135.0)" stroke-width="1.3" d="M0 -4 L0 4 M-2.5 -1 L2.5 -1 M0 2 L-3 4"/>
+        <path transform="translate(45.0 77.9) rotate(150.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3"/>
+        <path transform="translate(23.3 86.9) rotate(165.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3 M0 2 L-3 4"/>
+        <path transform="translate(0.0 90.0) rotate(180.0)" stroke-width="1.3" d="M0 -4 L0 4 M-2.5 -1 L2.5 -1"/>
+        <path transform="translate(-23.3 86.9) rotate(195.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3 M0 2 L-3 4"/>
+        <path transform="translate(-45.0 77.9) rotate(210.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3"/>
+        <path transform="translate(-63.6 63.6) rotate(225.0)" stroke-width="1.3" d="M0 -4 L0 4 M-2.5 -1 L2.5 -1 M0 2 L-3 4"/>
+        <path transform="translate(-77.9 45.0) rotate(240.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3"/>
+        <path transform="translate(-86.9 23.3) rotate(255.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3 M0 2 L-3 4"/>
+        <path transform="translate(-90.0 0.0) rotate(270.0)" stroke-width="1.3" d="M0 -4 L0 4 M-2.5 -1 L2.5 -1"/>
+        <path transform="translate(-86.9 -23.3) rotate(285.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3 M0 2 L-3 4"/>
+        <path transform="translate(-77.9 -45.0) rotate(300.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3"/>
+        <path transform="translate(-63.6 -63.6) rotate(315.0)" stroke-width="1.3" d="M0 -4 L0 4 M-2.5 -1 L2.5 -1 M0 2 L-3 4"/>
+        <path transform="translate(-45.0 -77.9) rotate(330.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3"/>
+        <path transform="translate(-23.3 -86.9) rotate(345.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3 M0 2 L-3 4"/>
+        <path transform="translate(-0.0 -90.0) rotate(360.0)" stroke-width="1.3" d="M0 -4 L0 4 M-2.5 -1 L2.5 -1"/>
+        <path transform="translate(23.3 -86.9) rotate(375.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3 M0 2 L-3 4"/>
+        <path transform="translate(45.0 -77.9) rotate(390.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3"/>
+        <path transform="translate(63.6 -63.6) rotate(405.0)" stroke-width="1.3" d="M0 -4 L0 4 M-2.5 -1 L2.5 -1 M0 2 L-3 4"/>
+        <path transform="translate(77.9 -45.0) rotate(420.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3"/>
+        <path transform="translate(86.9 -23.3) rotate(435.0)" stroke-width="1.3" d="M0 -4 L0 4 M0 0 L3 -3 M0 2 L-3 4"/>
+        <path stroke-width="1.4" d="M0.0 -76.0 L65.8 38.0 L-65.8 38.0 Z M65.8 -38.0 L0.0 76.0 L-65.8 -38.0 Z"/>
+      </g></svg>
+      <!-- a pedra de selamento: pedra facetada com um círculo de runas aceso (provisório até o modelo 3D da pedra) -->
       <svg class="emblema" viewBox="0 0 100 120" aria-hidden="true">
-        <polygon points="50,4 92,44 50,116 8,44" fill="#8ff4ff"/>
-        <polygon points="50,4 50,44 8,44" fill="#e2feff"/>
-        <polygon points="50,4 92,44 50,44" fill="#b6f8ff"/>
-        <polygon points="8,44 50,44 50,116" fill="#4fd8f0"/>
-        <polygon points="50,44 92,44 50,116" fill="#2ab8d8"/>
+        <polygon points="50,6 88,30 88,82 50,114 12,82 12,30" fill="#4a3f5e"/>
+        <polygon points="50,6 88,30 50,46" fill="#6b5d84"/><polygon points="50,6 12,30 50,46" fill="#5a4d70"/>
+        <polygon points="12,30 50,46 50,114 12,82" fill="#3a3049"/><polygon points="88,30 50,46 50,114 88,82" fill="#2d2539"/>
+        <circle cx="50" cy="62" r="22" fill="none" stroke="#c9a6ff" stroke-width="3"/>
+        <circle cx="50" cy="62" r="16" fill="none" stroke="#c9a6ff" stroke-width="1.4" stroke-dasharray="3 3"/>
+        <polygon points="50,46 63,70 37,70" fill="none" stroke="#e9d8ff" stroke-width="2.2"/>
+        <polygon points="50,78 37,54 63,54" fill="none" stroke="#e9d8ff" stroke-width="2.2"/>
+        <circle cx="50" cy="62" r="4" fill="#ffffff"/>
       </svg>
       <h1 class="logo">Rune<span>clash</span></h1>
       <p class="lema">Sealstone Legends</p>
