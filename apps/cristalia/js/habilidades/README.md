@@ -27,6 +27,7 @@ Brasito (Nv.1) > Brasalobo (Nv.6) > Fornalobo (Nv.12) > Magmalobo (Nv.30)
 - Obstáculos seguram o fogo do lança-chamas.
 - Esta linha não ganha o "disparo ×2/×3" das outras: no lugar, ganha o que está na tabela.
 - Só a linha do Brasito usa estes golpes. Vulcarapa e os tipos duplos com Fogo continuam com os golpes de Fogo de `dados.js`.
+- **Modelo do Blender (só o Brasito):** a batalha avisa o modelo quando um golpe começa (`tocarGolpe` em `../batalha.js`) e quando o giro começa (`ajustarGiro` em `brasito-batalha.js`). No `.glb`, a volta do Rabo de Fogo vem da animação, então o jogo não gira o modelo de novo, e o rabo cresce pela animação. Veja `../../modelos/README.md`.
 
 **Exemplos de mudança (em `brasito.js`):**
 - Lança-chamas mais longo no Magmalobo: `lancaChamasInfernal` → `jato.alcance`.

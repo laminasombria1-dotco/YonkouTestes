@@ -8,6 +8,7 @@
 // =============================================================
 import * as THREE from 'three';
 import { VELOCIDADE_INVESTIDA, DURACAO_VELOCIDADE } from './brasito.js';
+import { ajustarGiro } from '../modelos.js';
 
 const GEO_CHAMA = new THREE.IcosahedronGeometry(1, 0);
 const GEO_ANEL = new THREE.RingGeometry(0.9, 1, 40).rotateX(-Math.PI / 2);
@@ -140,6 +141,7 @@ export class HabilidadesBrasito {
   // ---------- Rabo de Fogo ----------
   iniciarGiro(c, gp, dir, efeito) {
     c.giro = { gp, dir: dir.clone(), t: 0, total: gp.dash ? 0.45 : 0.38, atingidos: new Set(), efeito, spin: 0, emitir: 0 };
+    ajustarGiro(c.modelo, c.giro.total); // modelo do Blender: a volta da animação dura o mesmo que o giro
     this.b.efeitoAnel(c.pos, gp.raio, gp.magma ? '#ff4a1a' : '#ffb030');
   }
 

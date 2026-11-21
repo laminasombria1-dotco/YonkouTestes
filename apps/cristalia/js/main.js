@@ -8,6 +8,7 @@ import { Controles } from './controles.js';
 import { Mundo } from './mundo.js';
 import { Batalha } from './batalha.js';
 import { Plataforma, CenaEvolucao } from './plataforma.js';
+import { carregarModelos3D } from './modelos.js';
 import {
   ESPECIES, ELEMENTOS, GOLPES, ORDEM_ELEMENTOS, RAROS, NOMES_ESTAGIO, NIVEIS_EVOLUCAO,
   criarMonstro, statsDe, xpParaProximo, xpDaVitoria, verificarEvolucao, formasDaLinha, fracoContra,
@@ -1098,7 +1099,10 @@ class Jogo {
   }
 }
 
-const iniciar = (dados) => { window.__jogo = new Jogo(dados || {}); };
+// Os modelos feitos no Blender (.glb) são baixados antes de o jogo abrir (no máximo 10 s;
+// se não chegarem, o jogo usa os modelos de formas simples)
+const modelos3D = carregarModelos3D(10000);
+const iniciar = async (dados) => { await modelos3D; window.__jogo = new Jogo(dados || {}); };
 const hot = window.claude?.hot;
 if (hot?.ready) hot.ready(iniciar);
 else iniciar(hot?.data ?? {});

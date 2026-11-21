@@ -19,7 +19,7 @@ import { HabilidadesPedrisco } from './habilidades/pedrisco-batalha.js';
 import { HabilidadesFaisquinho } from './habilidades/faisquinho-batalha.js';
 import { HabilidadesSolito } from './habilidades/solito-batalha.js';
 import { CameraOrbita } from './camera.js';
-import { criarModelo, criarCristal, criarCoroa, animarModelo, piscar, descartar } from './modelos.js';
+import { criarModelo, criarCristal, criarCoroa, animarModelo, piscar, descartar, tocarGolpe, pararGolpe } from './modelos.js';
 
 const MAX_ATIVOS = 2;      // quantos inimigos de um grupo lutam ao mesmo tempo (o próximo par só entra quando estes caírem)
 const ESCALA_LIDER = 1.3;  // o líder do grupo é maior
@@ -464,6 +464,7 @@ export class Batalha {
       c.prep = { gp, t: prep, total: prep, dir, quedas, aviso: this.pedrisco.avisoArco(quedas, gp, inimigo) };
     } else c.prep = { gp, t: prep, total: prep, dir, aviso: this.criarAviso(c, gp, dir, inimigo) };
     c.angAlvo = Math.atan2(dir.x, dir.z);
+    tocarGolpe(c.modelo, gp.tipo, prep); // modelo do Blender (.glb): toca a animação do golpe
   }
 
   criarAviso(c, gp, dir, inimigo) {
@@ -513,6 +514,7 @@ export class Batalha {
     c.prep = null;
     piscar(c.modelo, 0);
     c.brilhando = false;
+    pararGolpe(c.modelo); // modelo do Blender: a animação do golpe para
   }
 
   // Efeito que um golpe causa, conforme a evolução do monstro (ou null)
@@ -836,7 +838,8 @@ export class Batalha {
     c.ang = lerpAngulo(c.ang, c.angAlvo, 1 - Math.exp(-14 * dt));
     const m = c.modelo;
     m.position.set(c.pos.x, 0, c.pos.z);
-    m.rotation.y = c.ang + (c.dash?.esquiva ? (0.2 - c.dash.t) * 30 : 0) + (c.giro ? c.giro.spin : 0);
+    // no modelo do Blender a volta do Rabo de Fogo já está na animação
+    m.rotation.y = c.ang + (c.dash?.esquiva ? (0.2 - c.dash.t) * 30 : 0) + (c.giro && !m.userData.glb ? c.giro.spin : 0);
     if (c.morto) {
       m.rotation.z = THREE.MathUtils.lerp(m.rotation.z, 1.5, 1 - Math.exp(-6 * dt));
       m.userData.corpo.position.y = 0;

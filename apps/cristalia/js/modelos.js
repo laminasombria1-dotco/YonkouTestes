@@ -3,11 +3,13 @@
 // Cada linha evolutiva tem um "construtor" que recebe o estágio (0 a 3)
 // e vai acrescentando peças: a evolução parece o crescimento da forma anterior.
 // A frente de todo modelo aponta para +Z.
-// Quando quiser trocar por modelos feitos no Blender, é aqui que
-// carregaremos arquivos .glb no lugar dessas formas.
+// Modelos feitos no Blender (.glb) entram no lugar dessas formas pelo
+// modelos3d.js: hoje só a forma inicial do Brasito (modelos/brasito.glb).
 // =============================================================
 import * as THREE from 'three';
 import { ESPECIES, CRISTAIS } from './dados.js';
+import { temGLB, montarGLB, animarGLB, piscarGLB, descartarGLB } from './modelos3d.js';
+export { carregarModelos3D, tocarGolpe, ajustarGiro, pararGolpe } from './modelos3d.js';
 
 // ---------- peças reaproveitáveis ----------
 const GEO = {};
@@ -987,6 +989,12 @@ export function juntarPecas(raiz, fixos = new Set()) {
 }
 
 export function criarModelo(especie) {
+  if (temGLB(especie)) return criarModeloGLB(especie);
+  return criarModeloSimples(especie);
+}
+
+// Modelo de formas simples (o de sempre)
+function criarModeloSimples(especie) {
   const esp = ESPECIES[especie];
   const m = base(esp.tamanho, esp.estagio);
   const u = m.userData;
@@ -994,6 +1002,28 @@ export function criarModelo(especie) {
   else RAROS_MODELO[especie](u.corpo, u);
   u.especie = especie;
   juntarPecas(m, pecasQueMexem(u));
+  return m;
+}
+
+// Modelo do Blender (.glb), do mesmo tamanho que o modelo de formas simples da espécie
+const ALTURAS_SIMPLES = {};
+function alturaSimples(especie) {
+  if (ALTURAS_SIMPLES[especie] == null) {
+    const m = criarModeloSimples(especie);
+    m.userData.sombra.visible = false;
+    m.updateMatrixWorld(true);
+    const caixa = new THREE.Box3().setFromObject(m.userData.corpo);
+    ALTURAS_SIMPLES[especie] = caixa.max.y - caixa.min.y;
+    descartar(m);
+  }
+  return ALTURAS_SIMPLES[especie];
+}
+function criarModeloGLB(especie) {
+  const esp = ESPECIES[especie];
+  const m = base(1, esp.estagio);                // a escala já vem certa do .glb
+  m.userData.sombra.scale.setScalar(0.75 * esp.tamanho * (1 + esp.estagio * 0.15));
+  m.userData.especie = especie;
+  montarGLB(especie, m, alturaSimples(especie));
   return m;
 }
 
@@ -1122,6 +1152,7 @@ export function animarAura(g, t) {
 // ---------- Animação parada/andando ----------
 export function animarModelo(modelo, t, movendo) {
   const u = modelo.userData;
+  if (u.glb) { animarGLB(modelo, t, movendo); return; } // modelo do Blender: as animações do arquivo
   const c = u.corpo;
   const fase = t * (movendo ? 11 : 3) + u.fase;
   if (u.voa) {
@@ -1160,6 +1191,7 @@ export function animarModelo(modelo, t, movendo) {
 
 // Faz o modelo brilhar com uma cor (k de 0 a 1). Usado ao levar dano e ao preparar golpes.
 export function piscar(modelo, k, cor = '#ffffff') {
+  if (modelo.userData.glb) { piscarGLB(modelo, k, cor); return; }
   const alvo = new THREE.Color(cor);
   modelo.traverse((o) => {
     if (!o.isMesh || !o.material.emissive || o.material === MAT_SOMBRA) return;
@@ -1180,6 +1212,7 @@ export function piscar(modelo, k, cor = '#ffffff') {
 }
 
 export function descartar(obj) {
+  if (obj.userData?.glb) descartarGLB(obj);
   obj.traverse((o) => {
     if ((o.isMesh || o.isPoints) && o.material !== MAT_SOMBRA && !o.material.userData?.fixo) {
       if (Array.isArray(o.material)) o.material.forEach((m) => m.dispose());
