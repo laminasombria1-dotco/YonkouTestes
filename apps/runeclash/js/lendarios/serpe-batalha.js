@@ -34,7 +34,7 @@ export class HabilidadesSerpe {
     }
   }
 
-  aoMorder(c) {
+  aoPerto(c) {
     const [x, y, z] = this.boca(c);
     this.b.fx.clarao(x, y, z, AZUL, 0.7, 0.3);
     this.b.fx.relampago([x, y + 1.5, z], [x, y - 0.5, z], CLARO, 0.22, { galhos: 1, larg: 0.12 });

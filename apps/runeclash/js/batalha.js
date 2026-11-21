@@ -19,6 +19,7 @@ import { HabilidadesPedrisco } from './habilidades/pedrisco-batalha.js';
 import { HabilidadesFaisquinho } from './habilidades/faisquinho-batalha.js';
 import { HabilidadesSolito } from './habilidades/solito-batalha.js';
 import { HabilidadesSerpe } from './lendarios/serpe-batalha.js';
+import { HabilidadesColosso } from './lendarios/colosso-batalha.js';
 import { CameraOrbita } from './camera.js';
 import { criarModelo, criarCoroa, animarModelo, piscar, descartar, tocarGolpe, pararGolpe } from './modelos.js';
 
@@ -126,7 +127,8 @@ export class Batalha {
     this.pedrisco = new HabilidadesPedrisco(this); // pedra em arco, punho sísmico, tremor e pilares da linha do Pedrisco
     this.faisquinho = new HabilidadesFaisquinho(this); // marcas, dash elétrico, tiro que marca, choque e nuvens da linha do Faisquinho
     this.solito = new HabilidadesSolito(this); // sol que dá bônus, laser e calor da linha do Solito
-    this.serpe = new HabilidadesSerpe(this); // efeitos de raio da Serpe da Tormenta (lendário)
+    // lendários (js/lendarios/): cada um tem dele(c), atualizar(dt), aoPerto(c), aoDisparar(c, dir) e aoUsarArea(c, gp)
+    this.lendas = [new HabilidadesSerpe(this), new HabilidadesColosso(this)];
     this.periodo = jogo.mundo.periodo;
 
     this.idx = idxInicial;
@@ -364,7 +366,7 @@ export class Batalha {
     this.pedrisco.atualizar(dt);
     this.faisquinho.atualizar(dt);
     this.solito.atualizar(dt);
-    this.serpe.atualizar(dt);
+    for (const h of this.lendas) h.atualizar(dt);
     this.selo.atualizar(dt);
     this.surgimentos.atualizar(dt); // depois da física: só desce e encolhe o modelo por cima do lugar certo
     this.fx.atualizar(dt, this.camera, this.jogo.palco.clientWidth, this.jogo.palco.clientHeight);
@@ -570,7 +572,7 @@ export class Batalha {
       if (this.brasito.dele(c) && gp === GOLPES.investida) this.brasito.aoUsarInvestida(c);
       if (this.gotinho.dele(c) && gp === GOLPES.investida) this.gotinho.aoUsarInvestida(c);
       if (this.pedrisco.dele(c) && gp === GOLPES.investida) this.pedrisco.aoUsarInvestida(c);
-      if (this.serpe.dele(c)) this.serpe.aoMorder(c);
+      for (const h of this.lendas) if (h.dele(c)) h.aoPerto(c);
     } else if (gp.onda) {
       this.gotinho.iniciarOnda(c, gp, dir, this.efeitoDoGolpe(c, gp)); // onda / onda dupla
     } else if (gp.anel) {
@@ -582,7 +584,7 @@ export class Batalha {
     } else if (gp.tipo === 'projetil') {
       this.disparar(c, gp, dir, 1);
       if (this.trevas.dele(c) && gp.elemento === 'trevas') this.trevas.aoDisparar(c, dir);
-      if (this.serpe.dele(c)) this.serpe.aoDisparar(c, dir);
+      for (const h of this.lendas) if (h.dele(c)) h.aoDisparar(c, dir);
       // Evoluções disparam de novo em sequência (rajada)
       if (c.melhoria.disparos > 1) c.rajada = { gp, dir: dir.clone(), restantes: c.melhoria.disparos - 1, t: 0.16 };
     } else {
@@ -602,7 +604,7 @@ export class Batalha {
       if (sombrio) this.trevas.area(c, gp, atingidos);
       if (this.musguinho.dele(c)) this.musguinho.aoUsarArea(c, gp); // raízes, moita ou bosque
       if (this.pedrisco.dele(c)) this.pedrisco.aoUsarArea(c, gp);   // tremor e pilares
-      if (this.serpe.dele(c)) this.serpe.aoUsarArea(c, gp);         // raios caindo do céu
+      for (const h of this.lendas) if (h.dele(c)) h.aoUsarArea(c, gp); // lendários: raios do céu, terremoto...
     }
   }
 

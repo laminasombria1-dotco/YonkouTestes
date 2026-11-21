@@ -4,7 +4,7 @@
 // do mapa, fica parado esperando (encoste para lutar), luta com as regras de chefe (entra em
 // FÚRIA com metade da vida) e só é selado com a Pedra Dourada, com chance baixa.
 // Vencido ou selado, volta no próximo amanhecer (como os chefes das dungeons).
-// Hoje: a Serpe da Tormenta, no círculo de pedra rúnico da Neve.
+// Hoje: a Serpe da Tormenta, no círculo de pedra rúnico da Neve, e o Colosso de Basalto, no do Deserto.
 // =============================================================
 import { ESPECIES, criarMonstro, nivelDoChefe } from '../dados.js';
 import { criarModelo, criarCoroa } from '../modelos.js';
@@ -14,6 +14,7 @@ import { alturaEm } from '../mapa/altura.js';
 // especie | onde mora (o ponto de interesse e o bioma) | lugar = nome mostrado | zona = arena da luta
 export const LENDARIOS = [
   { especie: 'serpe', poi: 'circulo', bioma: 'raio', lugar: 'Círculo da Tormenta', zona: 'raio' },
+  { especie: 'colosso', poi: 'circulo', bioma: 'terra', lugar: 'Círculo das Dunas', zona: 'terra' },
 ];
 
 // O ponto do mapa onde o lendário mora (ou null)

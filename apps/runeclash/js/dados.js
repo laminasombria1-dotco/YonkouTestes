@@ -163,6 +163,10 @@ export const GOLPES = {
   mordidaTormenta:  { nome: 'Mordida da Tormenta', elemento: 'raio', tipo: 'corpo',  poder: 22, recarga: 1.1, alcance: 3.6 },
   raiosTormenta:    { nome: 'Raios da Tormenta', elemento: 'raio',  tipo: 'projetil', poder: 12, recarga: 1.7, velocidade: 26, raio: 0.55, quantidade: 3 },
   tempestadeSerpe:  { nome: 'Tempestade',       elemento: 'raio',   tipo: 'area',     poder: 34, recarga: 6.5, raio: 6 },
+  // Colosso de Basalto (lendário): os efeitos ficam em js/lendarios/colosso-batalha.js
+  esmagarColosso:   { nome: 'Esmagar',          elemento: 'terra',  tipo: 'corpo',    poder: 28, recarga: 1.6, alcance: 3.8 },
+  arremessoColosso: { nome: 'Arremesso',        elemento: 'terra',  tipo: 'projetil', poder: 24, recarga: 2.2, velocidade: 12, raio: 0.95 },
+  terremotoColosso: { nome: 'Terremoto',        elemento: 'terra',  tipo: 'area',     poder: 38, recarga: 7.5, raio: 6.5, lentidao: 2 },
   // Silvestre (só o chefe do Santuário)
   galhadaAncestral: { nome: 'Galhada Ancestral', elemento: 'silvestre', tipo: 'corpo',  poder: 24, recarga: 1.2, alcance: 3.6 },
   sementeParasita:  { nome: 'Semente Parasita', elemento: 'silvestre', tipo: 'projetil', poder: 13, recarga: 1.9, velocidade: 15, raio: 0.55, quantidade: 3 },
@@ -500,7 +504,14 @@ ESPECIES.serpe = {
   descricao: 'Dragão de raios que dorme no círculo de pedra da Neve. Rápida: morde, cospe raios e chama a tempestade.',
   base: { hp: 88, atk: 18, def: 13, vel: 7.0 }, golpes: ['mordidaTormenta', 'raiosTormenta', 'tempestadeSerpe'], evoluiPara: null, nivelEvolucao: null,
 };
-export const LENDARIOS_IDS = ['serpe'];
+ESPECIES.colosso = {
+  onde: 'do Deserto, no Círculo das Dunas', arena: 'terra',
+  nome: 'Colosso de Basalto', elemento: 'terra', elementos: ['terra'], linha: null, estagio: 3, raro: true, superRaro: true, chefe: true, lendario: true,
+  tamanho: 1.9, captura: 0.04, cristalMin: 2, raio: 1.8, altura: 3.8,
+  descricao: 'Gigante de pedra preta com um núcleo de magma no peito. Lento e pesado: esmaga, arremessa pedras e faz a terra tremer.',
+  base: { hp: 112, atk: 19, def: 19, vel: 4.4 }, golpes: ['esmagarColosso', 'arremessoColosso', 'terremotoColosso'], evoluiPara: null, nivelEvolucao: null,
+};
+export const LENDARIOS_IDS = ['serpe', 'colosso'];
 export const RAROS = ['vulcarapa', 'aquaraia', 'espinhal', 'ignarion', 'silvarion', ...LENDARIOS_IDS];
 for (const id of RAROS) Object.assign(ESPECIES[id], { elementos: ESPECIES[id].elementos || [ESPECIES[id].elemento], cristalMin: ESPECIES[id].cristalMin || 0 });
 
