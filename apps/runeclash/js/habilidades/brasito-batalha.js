@@ -5,10 +5,15 @@
 //  - Lança-Chamas: jato contínuo em cone saindo da boca (1 ou 2 jatos)
 //  - Rabo de Fogo: gira o corpo e bate com o rabo em volta (com mini dash nas formas finais)
 // Para ficar leve no celular: formas e materiais das chamas são criados uma vez só.
+// Etapa 3.1: o fogo usa também os efeitos da Arena (js/arena/efeitos.js, em this.b.fx): chamas que
+// brilham, crescem e mudam de amarelo para vermelho, faíscas, o brilho na boca, a roda de fogo do rabo
+// e as rachaduras de lava das formas de magma. Os pedaços sólidos de antes continuam (menos deles),
+// para o fogo não sumir no chão claro do dia.
 // =============================================================
 import * as THREE from 'three';
 import { VELOCIDADE_INVESTIDA, DURACAO_VELOCIDADE } from './brasito.js';
 import { ajustarGiro } from '../modelos.js';
+import { brilho } from '../arena/efeitos.js';
 
 const GEO_CHAMA = new THREE.IcosahedronGeometry(1, 0);
 const GEO_ANEL = new THREE.RingGeometry(0.9, 1, 40).rotateX(-Math.PI / 2);
@@ -21,6 +26,13 @@ const basico = (cor) => fixo(new THREE.MeshBasicMaterial({ color: cor }));
 const FOGO = [basico('#fff2a8'), basico('#ffc23f'), basico('#ff7a2a'), basico('#e2401f')];
 const MAGMA = [basico('#ffd27a'), basico('#ff6a1f'), basico('#d8281a'), basico('#5a1410')];
 const VERDE_VELOZ = '#7dffa0';
+// cores das chamas que brilham (do nascer ao fim da vida)
+const C = (h) => new THREE.Color(h);
+const BRILHO_FOGO = [C('#fff1b8'), C('#ff3a10')];
+const BRILHO_MAGMA = [C('#ffc070'), C('#9a0c06')];
+const FAISCA = C('#ffe27a');
+const VERDE = [C('#d8ffc0'), C('#1fb85a')];
+let idJato = 0;
 const aviso = (cor, op) => new THREE.MeshBasicMaterial({ color: cor, transparent: true, opacity: op, depthWrite: false, side: THREE.DoubleSide });
 
 export class HabilidadesBrasito {
@@ -46,6 +58,19 @@ export class HabilidadesBrasito {
     } });
   }
 
+  // chama que brilha (partícula da Arena): nasce pequena, cresce e vai de amarelo a vermelho
+  // (fogo "sólido", que não some no chão claro; 1 em cada 3 também brilha por cima, o calor)
+  fogo(pos, vel, tam, vida, magma = false) {
+    const [a, b] = magma ? BRILHO_MAGMA : BRILHO_FOGO;
+    this.b.fx._ponto(pos.x, pos.y, pos.z, vel.x, vel.y, vel.z, a, vida, tam, -2.5, { fim: b, cresce: 1.4, solido: true });
+    if (Math.random() < 0.33) this.b.fx._ponto(pos.x, pos.y, pos.z, vel.x * 0.9, vel.y, vel.z * 0.9, a, vida * 0.7, tam * 0.8, -2.5, { fim: b, cresce: 1 });
+  }
+
+  // faísca: pontinho rápido que cai
+  faisca(pos, vel, vida = 0.45) {
+    this.b.fx._ponto(pos.x, pos.y, pos.z, vel.x, vel.y, vel.z, FAISCA, vida * (0.6 + Math.random() * 0.6), 0.09, 7);
+  }
+
   boca(c, dir) {
     return new THREE.Vector3(c.pos.x, c.altura * 0.55, c.pos.z).addScaledVector(dir, c.raio * 0.9);
   }
@@ -61,7 +86,13 @@ export class HabilidadesBrasito {
 
   // ---------- Lança-Chamas ----------
   iniciarJato(c, gp, dir, efeito) {
-    c.jato = { gp, dir: dir.clone(), t: 0, proxTick: 0, ticks: 0, atingidos: new Set(), efeito, emitir: 0 };
+    c.jato = { gp, dir: dir.clone(), t: 0, proxTick: 0, ticks: 0, atingidos: new Set(), efeito, emitir: 0, emitirBrilho: 0, id: 'jato' + ++idJato };
+    // brilho quente na boca enquanto o jato sai
+    const j = c.jato, magma = gp.jato.magma, luz = brilho(magma ? 0xff5a1a : 0xffa030, 1.6 + c.raio);
+    this.b.fx._temp(luz, gp.jato.duracao + 0.1, (q, k) => {
+      luz.position.copy(this.boca(c, j.dir));
+      luz.material.opacity = 0.9 * Math.min(1, k * 8) * (1 - k * k) * (0.85 + Math.random() * 0.15);
+    }, { id: j.id });
   }
 
   // Direções dos jatos (1 jato reto ou 2 em V)
@@ -94,16 +125,25 @@ export class HabilidadesBrasito {
     const j = c.jato, J = j.gp.jato;
     j.t += dt;
     const angs = this.direcoesJato(j);
-    // chamas saindo da boca: ~120 por segundo em cada jato
-    j.emitir += dt * 120;
+    // chamas saindo da boca, em cada jato: ~40 pedaços de malha e ~110 chamas que brilham por segundo,
+    // e umas faíscas que voam mais longe e caem
     const boca = this.boca(c, j.dir);
-    const vida = 0.38, velJato = J.alcance / vida;
+    const vida = 0.38, velJato = J.alcance / vida, tam = 0.42 + Math.min(0.45, J.alcance * 0.035);
+    const direcao = (b, abre = 0.85) => {
+      const a = b + (Math.random() * 2 - 1) * J.abertura * abre;
+      return new THREE.Vector3(Math.sin(a), (Math.random() - 0.4) * 0.12, Math.cos(a)).multiplyScalar(velJato * (0.75 + Math.random() * 0.3));
+    };
+    j.emitir += dt * 40;
     while (j.emitir >= 1) {
       j.emitir--;
+      for (const b of angs) this.chama(boca.clone(), direcao(b), tam, vida, J.magma); // nasce pequena na boca e cresce
+    }
+    j.emitirBrilho += dt * 110;
+    while (j.emitirBrilho >= 1) {
+      j.emitirBrilho--;
       for (const b of angs) {
-        const a = b + (Math.random() * 2 - 1) * J.abertura * 0.85;
-        const v = new THREE.Vector3(Math.sin(a), (Math.random() - 0.4) * 0.12, Math.cos(a)).multiplyScalar(velJato * (0.75 + Math.random() * 0.3));
-        this.chama(boca.clone(), v, 0.42 + Math.min(0.45, J.alcance * 0.035), vida, J.magma); // nasce pequena na boca e cresce
+        this.fogo(boca, direcao(b), tam * 1.8, vida * (0.85 + Math.random() * 0.3), J.magma);
+        if (Math.random() < 0.22) this.faisca(boca, direcao(b, 1.1).multiplyScalar(1.15).setY(1 + Math.random() * 2));
       }
     }
     // dano em 5 "pedaços" ao longo do jato; o efeito sorteia uma vez só por alvo
@@ -115,10 +155,18 @@ export class HabilidadesBrasito {
         if (!this.dentroDoJato(c, alvo, angs, J)) continue;
         const primeira = !j.atingidos.has(alvo);
         j.atingidos.add(alvo);
+        // o fogo bate no alvo e espalha brasas
+        this.b.fx.particulas({ x: alvo.pos.x, y: alvo.altura * 0.6, z: alvo.pos.z, n: primeira ? 12 : 6, raio: alvo.raio * 0.6, cor: J.magma ? 0xff5a1a : 0xffa040, vel: 3, cima: 2, grav: 4, vida: 0.45, tam: 0.16 });
         this.b.aplicarDano(c, alvo, j.gp, j.dir, { fator: 1 / TICKS, efeito: primeira ? j.efeito : null, leve: true, primeiro: primeira });
       }
     }
-    if (j.t >= J.duracao) c.jato = null;
+    if (j.t >= J.duracao) this.pararJato(c);
+  }
+
+  pararJato(c) {
+    if (!c.jato) return;
+    this.b.fx.encerrar(c.jato.id);
+    c.jato = null;
   }
 
   // Aviso do inimigo: fatia vermelha no chão do tamanho do jato
@@ -140,9 +188,10 @@ export class HabilidadesBrasito {
 
   // ---------- Rabo de Fogo ----------
   iniciarGiro(c, gp, dir, efeito) {
-    c.giro = { gp, dir: dir.clone(), t: 0, total: gp.dash ? 0.45 : 0.38, atingidos: new Set(), efeito, spin: 0, emitir: 0 };
+    c.giro = { gp, dir: dir.clone(), t: 0, total: gp.dash ? 0.45 : 0.38, atingidos: new Set(), efeito, spin: 0, emitir: 0, emitirBrilho: 0, arco: 0, ini: c.pos.clone() };
     ajustarGiro(c.modelo, c.giro.total); // modelo do Blender: a volta da animação dura o mesmo que o giro
     this.b.efeitoAnel(c.pos, gp.raio, gp.magma ? '#ff4a1a' : '#ffb030');
+    this.b.fx.onda(c.pos.x, c.pos.z, gp.raio * 1.1, gp.magma ? 0xff4a1a : 0xff9a30, 0.3);
   }
 
   atualizarGiro(c, dt) {
@@ -155,15 +204,27 @@ export class HabilidadesBrasito {
     // o rabo cresce e pega fogo durante o giro
     const cresce = 1 + (gp.tamanhoRabo - 1) * Math.sin(k * Math.PI);
     for (const cauda of c.modelo.userData.caudas) cauda.scale.setScalar(cresce);
-    // rastro de fogo em roda, seguindo a ponta do rabo
-    g.emitir += dt * (gp.magma ? 120 : 80);
+    // rastro de fogo em roda, seguindo a ponta do rabo: pedaços sólidos, chamas que brilham e
+    // uma "roda de fogo" (arcos no ar, como o corte de uma lâmina)
     const angRabo = c.ang + Math.PI + g.spin;
-    while (g.emitir >= 1) {
-      g.emitir--;
+    const ponto = () => {
       const a = angRabo + (Math.random() - 0.5) * 0.6, r = gp.raio * (0.55 + Math.random() * 0.4);
-      const p = new THREE.Vector3(c.pos.x + Math.sin(a) * r, 0.3 + Math.random() * 0.6, c.pos.z + Math.cos(a) * r);
-      const v = new THREE.Vector3(Math.cos(a) * 1.5, 1 + Math.random() * 1.5, -Math.sin(a) * 1.5);
-      this.chama(p, v, gp.magma ? 0.42 : 0.3, 0.45, gp.magma);
+      return [new THREE.Vector3(c.pos.x + Math.sin(a) * r, 0.3 + Math.random() * 0.6, c.pos.z + Math.cos(a) * r),
+        new THREE.Vector3(Math.cos(a) * 1.5, 1 + Math.random() * 1.5, -Math.sin(a) * 1.5)];
+    };
+    g.emitir += dt * (gp.magma ? 50 : 35);
+    while (g.emitir >= 1) { g.emitir--; const [p, v] = ponto(); this.chama(p, v, gp.magma ? 0.42 : 0.3, 0.45, gp.magma); }
+    g.emitirBrilho += dt * (gp.magma ? 150 : 110);
+    while (g.emitirBrilho >= 1) {
+      g.emitirBrilho--;
+      const [p, v] = ponto();
+      this.fogo(p, v, gp.magma ? 1.05 : 0.85, 0.5, gp.magma);
+      if (Math.random() < 0.15) this.faisca(p, v.multiplyScalar(2).setY(2 + Math.random() * 2));
+    }
+    g.arco -= dt;
+    if (g.arco <= 0) {
+      g.arco = 0.05;
+      this.b.fx.arco(c.pos.x, 0.5, c.pos.z, angRabo, gp.raio * 0.95, 1.1, gp.magma ? 0xff4a1a : 0xff8a28, 0.2, 0);
     }
     // acerta cada adversário uma vez, quando ele estiver na roda
     for (const alvo of this.b.alvosDe(c)) {
@@ -182,6 +243,11 @@ export class HabilidadesBrasito {
     const gp = c.giro.gp;
     for (const cauda of c.modelo.userData.caudas) cauda.scale.setScalar(1);
     this.b.efeitoAnel(c.pos, gp.raio, gp.magma ? '#d8281a' : '#ff7a2a');
+    // no fim: brasas sobem da roda; com dash, uma faixa de fogo no caminho; o magma racha o chão
+    const fx = this.b.fx, p = c.pos, cor = gp.magma ? 0xff5a1a : 0xff9a30;
+    fx.particulas({ x: p.x, y: 0.3, z: p.z, n: gp.magma ? 34 : 22, raio: gp.raio * 0.9, cor, vel: 1.5, cima: 2.5, grav: -1, vida: 0.7, tam: 0.2 });
+    if (gp.dash) fx.faixa([c.giro.ini.x, c.giro.ini.z], [p.x, p.z], gp.raio * 0.9, cor, 0.6);
+    if (gp.magma) fx.rachadura(p.x, p.z, gp.raio * 1.1, 0xff5a1a, 1.4);
     c.giro = null;
   }
 
@@ -214,13 +280,18 @@ export class HabilidadesBrasito {
       if (l.veloz.rastro <= 0) {
         l.veloz.rastro = 0.1;
         this.chama(new THREE.Vector3(l.pos.x + (Math.random() - 0.5) * 0.5, 0.15, l.pos.z + (Math.random() - 0.5) * 0.5), new THREE.Vector3(0, 0.6, 0), 0.12, 0.35);
+        // e um rastro verde que brilha (a velocidade extra)
+        for (let i = 0; i < 4; i++) {
+          this.b.fx._ponto(l.pos.x + (Math.random() - 0.5) * l.raio * 1.4, 0.15 + Math.random() * 0.5, l.pos.z + (Math.random() - 0.5) * l.raio * 1.4,
+            0, 1, 0, VERDE[0], 0.6, 0.8, -1, { fim: VERDE[1], cresce: 1, solido: true });
+        }
       }
     }
   }
 
   // Para tudo (desmaiou, capturado...)
   parar(c) {
-    c.jato = null;
+    this.pararJato(c);
     this.terminarGiro(c);
   }
 }

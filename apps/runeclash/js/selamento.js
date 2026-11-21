@@ -10,7 +10,6 @@
 //   4b. falhou: as correntes se partem em estilhaços, o círculo fica vermelho e o monstro se solta.
 // As regras não mudaram: a chance é a mesma de antes (chanceCaptura, em dados.js).
 import * as THREE from 'three';
-import { Efeitos } from './arena/efeitos.js';
 import { criarCristal } from './modelos.js';
 import { CRISTAIS } from './dados.js';
 import { sombraRuna } from './invocacao.js';
@@ -26,7 +25,7 @@ const corHex = (c) => new THREE.Color(c).getHex();
 export class Selamento {
   constructor(batalha) {
     this.b = batalha;
-    this.fx = new Efeitos(batalha.cena); // o chão da arena de batalha é plano
+    this.fx = batalha.fx; // os efeitos da batalha (o chão da arena é plano)
     this.pedra = null;  // a pedra flutuando (só enquanto sela)
     this.sai = 0;       // a pedra sumindo depois do selo (segundos que faltam)
     this.ativo = null;  // o selamento em andamento
@@ -60,9 +59,7 @@ export class Selamento {
         if (this.sai <= 0) this.tirarPedra();
       }
     }
-    if (this.ativo) this.passo(dt);
-    const W = b.jogo.palco.clientWidth, H = b.jogo.palco.clientHeight;
-    this.fx.atualizar(dt, b.camera, W, H);
+    if (this.ativo) this.passo(dt); // (os efeitos andam em Batalha.atualizar)
   }
 
   tirarPedra() {

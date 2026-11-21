@@ -244,6 +244,53 @@ const fixa = g => {
 const GEO = {};
 const geo = (k, criar) => GEO[k] || (GEO[k] = fixa(criar()));
 
+// um grupo de particulas: posicao, cor, tamanho, velocidade e vida de cada uma
+function criarGrupo(n) {
+  return {
+    n,
+    vivas: 0,
+    pos: new Float32Array(n * 3),
+    cor: new Float32Array(n * 4),
+    tam: new Float32Array(n),
+    vel: new Float32Array(n * 3),
+    vida: new Float32Array(n),
+    max: new Float32Array(n),
+    grav: new Float32Array(n),
+    t0: new Float32Array(n),
+    cx: new Float32Array(n),
+    cz: new Float32Array(n),
+    giro: new Float32Array(n),
+    puxa: new Float32Array(n),
+    // fogo (3.1): a particula muda de cor enquanto vive (c0 -> cf) e cresce em vez de encolher
+    c0: new Float32Array(n * 3),
+    cf: new Float32Array(n * 3),
+    muda: new Uint8Array(n),
+    cresce: new Float32Array(n),
+    i: 0,
+  };
+}
+// normal = false: brilho (soma as cores, nucleo quase branco); true: mistura normal (fogo "solido")
+function criarPontos(P, normal) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(P.pos, 3));
+  g.setAttribute('cor', new THREE.BufferAttribute(P.cor, 4));
+  g.setAttribute('tam', new THREE.BufferAttribute(P.tam, 1));
+  const mat = new THREE.ShaderMaterial({
+    ...(normal ? { transparent: true, depthWrite: false } : ADD),
+    uniforms: { escala: { value: 600 } },
+    vertexShader:
+      'attribute vec4 cor; attribute float tam; varying vec4 vCor; uniform float escala; void main(){ vCor=cor; vec4 mv=modelViewMatrix*vec4(position,1.0); gl_PointSize=tam*escala/max(0.1,-mv.z); gl_Position=projectionMatrix*mv; }',
+    fragmentShader: normal
+      ? // bolinha macia, com o meio um pouco mais claro
+        'varying vec4 vCor; void main(){ float d=length(gl_PointCoord-0.5); float a=smoothstep(0.5,0.12,d)*vCor.a; if(a<0.02) discard; vec3 c=mix(vCor.rgb,vec3(1.0,0.95,0.7),smoothstep(0.25,0.0,d)*0.35); gl_FragColor=vec4(c,a*0.92); }'
+      : // nucleo quase branco e borda na cor: parece mais quente e mais brilhante
+        'varying vec4 vCor; void main(){ float d=length(gl_PointCoord-0.5); float a=smoothstep(0.5,0.05,d)*vCor.a; if(a<0.01) discard; vec3 c=mix(vCor.rgb,vec3(1.0),smoothstep(0.22,0.0,d)*0.65); gl_FragColor=vec4(c*a,a); }',
+  });
+  const pts = new THREE.Points(g, mat);
+  pts.frustumCulled = false;
+  return pts;
+}
+
 export class Efeitos {
   constructor(cena, opcoes = {}) {
     this.cena = cena;
@@ -254,37 +301,18 @@ export class Efeitos {
     this.tremor = 0;
     this.tempo = 0;
     // ---- particulas (um unico objeto Points). giro/puxa fazem a particula rodar em volta de (cx,cz) e ser puxada para o centro
-    this.P = {
-      pos: new Float32Array(MAX * 3),
-      cor: new Float32Array(MAX * 4),
-      tam: new Float32Array(MAX),
-      vel: new Float32Array(MAX * 3),
-      vida: new Float32Array(MAX),
-      max: new Float32Array(MAX),
-      grav: new Float32Array(MAX),
-      t0: new Float32Array(MAX),
-      cx: new Float32Array(MAX),
-      cz: new Float32Array(MAX),
-      giro: new Float32Array(MAX),
-      puxa: new Float32Array(MAX),
-      i: 0,
-    };
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.BufferAttribute(this.P.pos, 3));
-    g.setAttribute('cor', new THREE.BufferAttribute(this.P.cor, 4));
-    g.setAttribute('tam', new THREE.BufferAttribute(this.P.tam, 1));
-    this.matP = new THREE.ShaderMaterial({
-      ...ADD,
-      uniforms: { escala: { value: 600 } },
-      vertexShader:
-        'attribute vec4 cor; attribute float tam; varying vec4 vCor; uniform float escala; void main(){ vCor=cor; vec4 mv=modelViewMatrix*vec4(position,1.0); gl_PointSize=tam*escala/max(0.1,-mv.z); gl_Position=projectionMatrix*mv; }',
-      // nucleo quase branco e borda na cor: parece mais quente e mais brilhante
-      fragmentShader:
-        'varying vec4 vCor; void main(){ float d=length(gl_PointCoord-0.5); float a=smoothstep(0.5,0.05,d)*vCor.a; if(a<0.01) discard; vec3 c=mix(vCor.rgb,vec3(1.0),smoothstep(0.22,0.0,d)*0.65); gl_FragColor=vec4(c*a,a); }',
-    });
-    this.pontos = new THREE.Points(g, this.matP);
-    this.pontos.frustumCulled = false;
+    this.P = criarGrupo(MAX);
+    this.pontos = criarPontos(this.P, false);
+    this.matP = this.pontos.material;
     if (cena) cena.add(this.pontos);
+    // ---- fogo "solido" (3.1, opcoes.fogo = quantas): particulas com mistura normal, que nao somem no chao
+    // claro do dia como as que brilham (a soma de laranja com grama verde vira amarelo claro)
+    this.F = null;
+    if (opcoes.fogo) {
+      this.F = criarGrupo(opcoes.fogo);
+      this.pontosF = criarPontos(this.F, true);
+      if (cena) cena.add(this.pontosF);
+    }
     // ---- claroes: poucas luzes fixas, ligadas e desligadas (criar luzes na hora faria o jogo travar recompilando).
     // Padrao 0 luzes (leve no celular): o clarao vira um brilho, sem iluminar o cenario.
     this.luzes = [];
@@ -302,7 +330,7 @@ export class Efeitos {
       c = new THREE.Color(o.cor ?? 0xffffff),
       n = o.n ?? 12;
     for (let k = 0; k < n; k++) {
-      const i = (P.i = (P.i + 1) % MAX),
+      const i = (P.i = (P.i + 1) % P.n),
         a = Math.random() * Math.PI * 2,
         e = Math.acos(Math.random() * 2 - 1),
         v = (o.vel ?? 4) * (0.4 + Math.random() * 0.6),
@@ -324,12 +352,18 @@ export class Efeitos {
       P.cz[i] = o.z;
       P.giro[i] = o.giro ?? 0;
       P.puxa[i] = o.puxa ?? 0;
+      P.cresce[i] = 0;
+      P.muda[i] = 0;
     }
+    P.vivas = P.n; // tem particula viva: o proximo quadro confere todas
   }
-  // uma particula com posicao e velocidade exatas
-  _ponto(x, y, z, vx, vy, vz, c, vida, tam, grav = 0) {
-    const P = this.P,
-      i = (P.i = (P.i + 1) % MAX);
+  // uma particula com posicao e velocidade exatas.
+  // o = { fim: THREE.Color (a cor no fim da vida), cresce: quanto ela cresce (0 = encolhe, como as outras),
+  //       solido: vai para o fogo "solido" (precisa de opcoes.fogo; sem ele, brilha como as outras) }
+  _ponto(x, y, z, vx, vy, vz, c, vida, tam, grav = 0, o = null) {
+    const P = o?.solido && this.F ? this.F : this.P,
+      i = (P.i = (P.i + 1) % P.n);
+    P.vivas = P.n;
     P.pos[i * 3] = x;
     P.pos[i * 3 + 1] = y;
     P.pos[i * 3 + 2] = z;
@@ -345,6 +379,12 @@ export class Efeitos {
     P.grav[i] = grav;
     P.giro[i] = 0;
     P.puxa[i] = 0;
+    P.cresce[i] = o?.cresce || 0;
+    P.muda[i] = o?.fim ? 1 : 0;
+    if (o?.fim) {
+      P.c0[i * 3] = c.r; P.c0[i * 3 + 1] = c.g; P.c0[i * 3 + 2] = c.b;
+      P.cf[i * 3] = o.fim.r; P.cf[i * 3 + 1] = o.fim.g; P.cf[i * 3 + 2] = o.fim.b;
+    }
   }
 
   // vida = segundos; passo(o, k 0..1, dt); fim(o) roda quando o efeito termina sozinho; id permite encerrar antes da hora
@@ -1066,10 +1106,11 @@ export class Efeitos {
     }
   }
 
-  atualizar(dt, cam, largura, altura_) {
-    const P = this.P;
-    this.tempo += dt;
-    for (let i = 0; i < MAX; i++) {
+  // anda com as particulas de um grupo (e nao manda nada para a placa de video se ele esta vazio)
+  _atualizarGrupo(P, pontos, dt, altura_) {
+    if (!P.vivas) return;
+    let vivas = 0;
+    for (let i = 0; i < P.n; i++) {
       if (P.vida[i] <= 0) continue;
       P.vida[i] -= dt;
       const k = Math.max(0, P.vida[i] / P.max[i]);
@@ -1088,13 +1129,28 @@ export class Efeitos {
         P.pos[i * 3] = P.cx[i] + (dx * c - dz * s) * f;
         P.pos[i * 3 + 2] = P.cz[i] + (dx * s + dz * c) * f;
       }
-      P.cor[i * 4 + 3] = k;
-      P.tam[i] = P.t0[i] * (0.4 + 0.6 * k);
+      if (P.muda[i]) for (let c = 0; c < 3; c++) P.cor[i * 4 + c] = P.cf[i * 3 + c] + (P.c0[i * 3 + c] - P.cf[i * 3 + c]) * k;
+      if (P.cresce[i]) {
+        // fogo: nasce pequeno, cresce e some devagar
+        P.cor[i * 4 + 3] = Math.min(1, k * 1.6);
+        P.tam[i] = P.t0[i] * (0.3 + P.cresce[i] * (1 - k));
+      } else {
+        P.cor[i * 4 + 3] = k;
+        P.tam[i] = P.t0[i] * (0.4 + 0.6 * k);
+      }
       if (P.vida[i] <= 0) P.tam[i] = 0;
+      else vivas++;
     }
-    const g = this.pontos.geometry;
+    P.vivas = vivas;
+    const g = pontos.geometry;
     g.attributes.position.needsUpdate = g.attributes.cor.needsUpdate = g.attributes.tam.needsUpdate = true;
-    this.matP.uniforms.escala.value = altura_ * 0.9;
+    pontos.material.uniforms.escala.value = altura_ * 0.9;
+  }
+
+  atualizar(dt, cam, largura, altura_) {
+    this.tempo += dt;
+    this._atualizarGrupo(this.P, this.pontos, dt, altura_);
+    if (this.F) this._atualizarGrupo(this.F, this.pontosF, dt, altura_);
     for (const l of this.luzes) {
       const u = l.userData;
       if (u.vida > 0) {

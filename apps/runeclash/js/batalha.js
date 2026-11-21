@@ -27,6 +27,7 @@ const LIMITE_SELAVEL = 0.35; // com 35% de vida ou menos aparece "PODE SER SELAD
 import { Arena, RAIO_ARENA } from './arena.js';
 import { Selamento } from './selamento.js';
 import { Surgimentos } from './invocacao.js';
+import { Efeitos } from './arena/efeitos.js';
 
 export { RAIO_ARENA };
 
@@ -115,6 +116,7 @@ export class Batalha {
     this.efeitos = [];
     this.arena = new Arena(this);
     this.trevas = new VisualTrevas(this); // visual especial dos golpes de Trevas
+    this.fx = new Efeitos(this.cena, { fogo: 1500 }); // efeitos da Arena (js/arena/efeitos.js): um só para a batalha toda; o chão é plano
     this.brasito = new HabilidadesBrasito(this); // lança-chamas, rabo de fogo e velocidade da linha do Brasito
     this.gotinho = new HabilidadesGotinho(this); // jato, hidrocanhão, ondas, maremoto e escudo da linha do Gotinho
     this.musguinho = new HabilidadesMusguinho(this); // folha bumerangue, vinha que puxa, raízes, moita e bosque da linha do Musguinho
@@ -164,7 +166,7 @@ export class Batalha {
     this.tipoCristal = 0;          // 0 comum, 1 forte, 2 supremo
     this.cristalEscolhido = false; // o jogador trocou na mão? então respeita a escolha
     this.selo = new Selamento(this); // o Selamento em etapas: a pedra, as correntes e o selo (js/selamento.js)
-    this.surgimentos = new Surgimentos(this.selo.fx); // o seu monstro sobe de um círculo de runas (js/invocacao.js)
+    this.surgimentos = new Surgimentos(this.fx); // o seu monstro sobe de um círculo de runas (js/invocacao.js)
     this.invocarComRunas(this.jog);
     this.fim = null;
     this.t = 0;
@@ -360,6 +362,7 @@ export class Batalha {
     this.solito.atualizar(dt);
     this.selo.atualizar(dt);
     this.surgimentos.atualizar(dt); // depois da física: só desce e encolhe o modelo por cima do lugar certo
+    this.fx.atualizar(dt, this.camera, this.jogo.palco.clientWidth, this.jogo.palco.clientHeight);
 
     if (this.trocaAuto > 0) {
       this.trocaAuto -= dt;

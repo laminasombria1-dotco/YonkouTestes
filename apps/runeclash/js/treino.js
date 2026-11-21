@@ -17,6 +17,7 @@ import * as THREE from 'three';
 import { Batalha, Lutador } from './batalha.js';
 import { alturaEm } from './mundo.js';
 import { descartar } from './modelos.js';
+import { Efeitos } from './arena/efeitos.js';
 import { VisualTrevas } from './habilidades/trevas-batalha.js';
 import { HabilidadesBrasito } from './habilidades/brasito-batalha.js';
 import { HabilidadesGotinho } from './habilidades/gotinho-batalha.js';
@@ -41,6 +42,7 @@ export class Treino extends Batalha {
     mundo.cena.add(t.cena);
     t.camera = mundo.camera;
     t.efeitos = [];
+    t.fx = new Efeitos(t.cena, { fogo: 1500 }); // efeitos da Arena dentro da camada do treino (o chão dela é plano)
     t.projeteis = [];
     t.inimigos = [];
     t.capturados = [];
@@ -113,6 +115,7 @@ export class Treino extends Batalha {
     this.pedrisco.atualizar(dt);
     this.faisquinho.atualizar(dt);
     this.solito.atualizar(dt);
+    this.fx.atualizar(dt, this.camera, this.jogo.palco.clientWidth, this.jogo.palco.clientHeight);
     // a camada acompanha o chão embaixo do monstro
     const w = this.posMundo();
     this.cena.position.y += (alturaEm(w.x, w.z) - this.cena.position.y) * (1 - Math.exp(-10 * dt));
@@ -120,6 +123,7 @@ export class Treino extends Batalha {
 
   // Fim do treino: tira tudo da cena
   destruir() {
+    this.fx.limpar();
     this.mundo.cena.remove(this.cena);
     descartar(this.jog.modelo);
     descartar(this.cena);

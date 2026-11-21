@@ -9,7 +9,7 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
 
 Só os **monstros** lutam; o Invocador não luta. O plano, etapa por etapa, fica em **[PLANO.md](PLANO.md)**.
 
-> **Hoje (ideia 2.2)** o Runeclash joga como o Cristalia, com o nome novo, o jogo salvo separado e o visual próprio: roxo-runa e dourado, fonte Cinzel nos títulos, o **Sealfolio** (o antigo Monstruário), as **pedras de selamento** (azul, roxa e dourada) no lugar dos cristais, o **Invocador** (o Aiden, com o criador de personagem) no mapa o **Selamento** com correntes na batalha e o monstro que **sobe de um círculo de runas** quando é invocado. As regras da batalha e da chance de selar ainda são as do Cristalia.
+> **Hoje (ideia 3.1, começando pelo Brasito)** o Runeclash joga como o Cristalia, com o nome novo, o jogo salvo separado e o visual próprio: roxo-runa e dourado, fonte Cinzel nos títulos, o **Sealfolio** (o antigo Monstruário), as **pedras de selamento** (azul, roxa e dourada) no lugar dos cristais, o **Invocador** (o Aiden, com o criador de personagem) no mapa o **Selamento** com correntes na batalha e o monstro que **sobe de um círculo de runas** quando é invocado. Os golpes da linha do Brasito já usam o fogo da Arena. As regras da batalha e da chance de selar ainda são as do Cristalia.
 
 ## Como jogar
 
@@ -373,7 +373,7 @@ Dica: trocar de monstro na batalha tira os efeitos negativos de quem saiu.
 
 **Modelo do Blender:** a forma inicial (Brasito) usa o modelo `modelos/brasito.glb`, com animações de parado, arrancada → correndo e os 3 golpes. As outras formas continuam com os modelos de formas simples. Detalhes em `modelos/README.md`.
 
-A linha do Brasito tem golpes próprios. Os números ficam em `js/habilidades/brasito.js`; como funcionam e aparecem, em `js/habilidades/brasito-batalha.js`.
+A linha do Brasito tem golpes próprios. Os números ficam em `js/habilidades/brasito.js`; como funcionam e aparecem, em `js/habilidades/brasito-batalha.js`. Desde a etapa 3.1 eles usam o fogo da Arena: chamas que crescem e mudam de cor, faíscas, a roda de fogo do Rabo e o chão que racha em lava no Rabo de Magma.
 
 | Forma | Perto | Disparo | Área |
 |---|---|---|---|
@@ -560,7 +560,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/main.js` | Liga tudo: login e contas, telas, equipe, experiência, evolução, salvamento (no celular e na nuvem) |
 | `lib/three.module.min.js` | Biblioteca Three.js 0.170 (licença MIT, em `lib/THREE-LICENSE.txt`) |
 | `lib/addons/` | Peças extras do Three.js 0.170 (mesma licença): `loaders/GLTFLoader.js` (abre os `.glb`), `utils/SkeletonUtils.js` (copia um modelo com ossos) e `utils/BufferGeometryUtils.js` (usado pelo GLTFLoader). No `index.html`, o caminho `three/addons/` aponta para esta pasta |
-| `js/arena/` | **Material da Arena das Brasas** (etapa 0.2, ainda não ligado no jogo): `efeitos.js` (runas, correntes, relâmpagos, rachaduras, espinhos, chamas...), `pecas.js` (lê as peças do Blender; `LotePecas` junta muitas numa malha só) e `pecas_blender.js` (as 66 peças, gerado pelo Blender). Veja o `README.md` de lá |
+| `js/arena/` | **Material da Arena das Brasas** (etapa 0.2; hoje usado no Selamento, no Invocar com runas e no fogo do Brasito): `efeitos.js` (runas, correntes, relâmpagos, rachaduras, espinhos, chamas...), `pecas.js` (lê as peças do Blender; `LotePecas` junta muitas numa malha só) e `pecas_blender.js` (as 66 peças, gerado pelo Blender). Veja o `README.md` de lá |
 | `blender/` | O `arena_pecas.blend` e os scripts que modelam as peças (cenário, corpo do Invocador e chefes) e exportam para `js/arena/pecas_blender.js`. Veja o `README.md` de lá |
 | `PLANO.md` | O plano do Runeclash: as decisões e as etapas |
 

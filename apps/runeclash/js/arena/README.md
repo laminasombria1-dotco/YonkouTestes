@@ -1,7 +1,7 @@
 # Material da Arena das Brasas
 
 Código trazido da **Arena das Brasas** (o protótipo de combate do Lâmina) para o Runeclash na **etapa 0.2** do [PLANO.md](../../PLANO.md).
-Ele **ainda não está ligado** em nenhuma parte do jogo: é o material das próximas etapas (Selamento, Invocar, habilidades, mapas e lendários).
+Hoje ele é usado no **Selamento** (2.1), no **Invocar com runas** (2.2) e no **fogo do Brasito** (3.1); o resto é material das próximas etapas (habilidades, mapas e lendários).
 
 | Arquivo | O que é |
 |---|---|
@@ -25,7 +25,9 @@ fx.atualizar(dt, camera, largura, altura);
 
 - **`chao(x, z)`**: a altura do chão onde o efeito encosta (runas, rachaduras, espinhos...). No mapa use `alturaEm`; o padrão é 0 (chão plano).
 - **`luzes`** (padrão **0**): quantas luzes de verdade os clarões usam. Cada luz pesa em **todos** os materiais da cena, o tempo todo, mesmo apagada; por isso o padrão é 0, e o clarão vira um brilho leve. Só ligue (ex.: `luzes: 2`) onde valer a pena e o celular aguentar.
-- **Peso:** as partículas ficam num objeto só, com até **6.000** de uma vez. Na etapa 3.2 isso vai seguir a Qualidade (Fraco/Médio/Forte).
+- **Peso:** as partículas ficam num objeto só, com até **6.000** de uma vez. Na etapa 3.2 isso vai seguir a Qualidade (Fraco/Médio/Forte). Quando não há partícula viva, nada vai para a placa de vídeo.
+- **`fogo`** (ex.: `new Efeitos(cena, { fogo: 1500 })`): um segundo grupo de partículas com **mistura normal** (pinta por cima em vez de somar luz), para o fogo não virar amarelo claro e sumir no chão claro do dia. Use com `_ponto(..., { solido: true })`.
+- **`_ponto(x, y, z, vx, vy, vz, cor, vida, tam, grav, { fim, cresce, solido })`**: `fim` = a cor no fim da vida; `cresce` = quanto a partícula cresce (como uma chama), em vez de encolher.
 - `texto()` (números de dano) só funciona com `camada` e o estilo CSS `.num`; o jogo ainda usa os números de dano próprios.
 
 ## Como usar as peças

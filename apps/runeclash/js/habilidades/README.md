@@ -26,6 +26,7 @@ Brasito (Nv.1) > Brasalobo (Nv.6) > Fornalobo (Nv.12) > Magmalobo (Nv.30)
 - O lança-chamas acerta em 5 pedaços enquanto o jato dura. A queimadura é sorteada **uma vez por alvo** a cada uso (23%). O Rabo de Fogo tem 45%.
 - Obstáculos seguram o fogo do lança-chamas.
 - Esta linha não ganha o "disparo ×2/×3" das outras: no lugar, ganha o que está na tabela.
+- **Visual (etapa 3.1):** além dos pedaços de fogo, os golpes usam os efeitos da Arena (`this.b.fx`, um só por batalha): chamas "sólidas" que crescem e vão de amarelo a vermelho (`fogo()`), faíscas (`faisca()`), o brilho na boca, brasas no alvo, a roda de fogo (arcos) do Rabo, a faixa de fogo do avanço, a rachadura de lava do Rabo de Magma e o rastro verde da Investida.
 - Só a linha do Brasito usa estes golpes. Vulcarapa e os tipos duplos com Fogo continuam com os golpes de Fogo de `dados.js`.
 - **Modelo do Blender (só o Brasito):** a batalha avisa o modelo quando um golpe começa (`tocarGolpe` em `../batalha.js`) e quando o giro começa (`ajustarGiro` em `brasito-batalha.js`). No `.glb`, a volta do Rabo de Fogo vem da animação, então o jogo não gira o modelo de novo, e o rabo cresce pela animação. Veja `../../modelos/README.md`.
 

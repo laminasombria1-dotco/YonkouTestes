@@ -112,6 +112,34 @@ test('Invocar com runas: no mapa, ao entrar na batalha e na troca', async ({ pag
   semErros(erros);
 });
 
+test('Brasito: o fogo da Arena no Lança-Chamas e no Rabo de Fogo (batalha e treino)', async ({ page }) => {
+  const erros = vigiarErros(page);
+  await abrirJogo(page);
+  await entrarLocal(page);
+  await novoJogo(page, 'brasito');
+  await page.evaluate(() => window.__jogo.iniciarBatalha(window.__jogo.mundo.selvagens[0]));
+  await page.waitForFunction(() => window.__jogo.modo === 'batalha' && !!window.__jogo.batalha?.ini, null, { timeout: 30_000 });
+  await page.evaluate(() => { window.__jogo.batalha.pensarIA = () => {}; });
+  await esperar(page, 1200);
+  // Lança-Chamas: o fogo "sólido" e o brilho na boca aparecem; quando o jato acaba, o brilho some
+  await page.evaluate(() => { const b = window.__jogo.batalha; b.jog.rec = [0, 0, 0]; b.tentarGolpe(b.jog, 1, b.ini); });
+  await page.waitForFunction(() => !!window.__jogo.batalha.jog.jato, null, { timeout: 10_000 });
+  await esperar(page, 200);
+  expect(await page.evaluate(() => window.__jogo.batalha.fx.F.vivas)).toBeGreaterThan(0);
+  await foto(page, '11-lanca-chamas');
+  await page.waitForFunction(() => !window.__jogo.batalha.jog.jato, null, { timeout: 10_000 });
+  // Rabo de Fogo: gira com a roda de fogo e termina
+  await page.evaluate(() => { const b = window.__jogo.batalha; b.jog.rec = [0, 0, 0]; b.tentarGolpe(b.jog, 2, b.ini); });
+  await page.waitForFunction(() => !!window.__jogo.batalha.jog.giro, null, { timeout: 10_000 });
+  await page.waitForFunction(() => !window.__jogo.batalha.jog.giro, null, { timeout: 10_000 });
+  await page.evaluate(() => window.__jogo.batalha.fugir());
+  await page.waitForFunction(() => window.__jogo.modo === 'mundo', null, { timeout: 30_000 });
+  // no modo treino (no mapa) o mesmo fogo funciona
+  await page.evaluate(() => { const p = window.__jogo.pet; p.invocar(); p.controlar(); window.__jogo.ctrl.fila.push('golpe1'); });
+  await page.waitForFunction(() => (window.__jogo.pet.treino?.fx.F.vivas || 0) > 0, null, { timeout: 10_000 });
+  semErros(erros);
+});
+
 test('monstro invocado e golpe no modo treino', async ({ page }) => {
   const erros = vigiarErros(page);
   await abrirJogo(page);
