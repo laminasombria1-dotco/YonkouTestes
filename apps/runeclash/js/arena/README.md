@@ -44,7 +44,7 @@ for (const malha of lote.malhas()) cena.add(malha);   // tudo vira uma malha por
 ```
 
 **As 66 peças:**
-- **Cenário (19):** `arco_arenito`, `arco_ruina`, `arvore_queimada`, `braseiro`, `cristal_gelo`, `espinho_vulcao`, `obelisco`, `obelisco_quebrado`, `palmeira`, `pedra_a`, `pedra_b`, `pedra_c`, `pilar`, `pilar_quebrado`, `pinheiro`, `pinheiro_nevado`, `piso_arena`, `rocha_arenito`, `rocha_lava`.
+- **Cenário (19)** (no mapa desde a etapa 5.1: veja `js/mapa/chunks.js`, função `peca()`): `arco_arenito`, `arco_ruina`, `arvore_queimada`, `braseiro`, `cristal_gelo`, `espinho_vulcao`, `obelisco`, `obelisco_quebrado`, `palmeira`, `pedra_a`, `pedra_b`, `pedra_c`, `pilar`, `pilar_quebrado`, `pinheiro`, `pinheiro_nevado`, `piso_arena`, `rocha_arenito`, `rocha_lava`.
 - **Corpo do Invocador (`h_...`):** tronco, cabeça com rosto, braço, antebraço, coxa, canela com bota, ombreira, capa e 6 cabelos. A origem de cada peça fica na "junta" (ombro, cotovelo, joelho...), para a animação por código. Uso: etapa 1.3.
 - **Chefes, os futuros lendários:** Colosso de Basalto (`c_...`), Serpe da Tormenta (`s_...`), Sentinela de Geada (`g_...`), Arauto das Cinzas (`a_...`) e Cavaleiro Oco (`k_...`). Uso: etapa 5.4. As animações deles (o `modelos.js` da Arena) vêm junto com cada um.
 

@@ -57,7 +57,7 @@ Uma ideia por vez, sem pressa. Cada ideia é feita numa branch, com proposta ant
 - [ ] **3.3** Habilidades próprias para **Lua, Luz e Trevas**. Trevas primeiro, já no tom trevoso. *(Fica para depois: antes, testar o jogo como ele está.)*
 - [ ] **3.4** Rebalancear dano, vida e chances depois das mudanças.
 
-### Etapa 4: Personagens (os monstros)
+### Etapa 4: Personagens (os monstros) *(fica para depois, com mais calma)*
 - [ ] **4.1** **Guia de estilo "fofo → trevoso":** forma inicial fofa, última evolução imponente ou assustadora. Limite de peso por monstro, com o Brasito como medida (~3 a 5 mil faces, ~20 ossos, texturas de 1024).
 - [ ] **4.2** **Caminho para fazer cada modelo:** imagem (ComfyUI) → modelo 3D (Trellis2) → Blender (malha leve, textura, ossos e animações padrão: parado, andar, correr, 3 golpes, dano, desmaio) → `.glb` → jogo.
 - [ ] **4.3** **Brasalobo** a partir do `lobo_fogo` (hoje com 100 mil triângulos; precisa ficar com ~5 mil). É o primeiro teste do caminho.
@@ -66,7 +66,7 @@ Uma ideia por vez, sem pressa. Cada ideia é feita numa branch, com proposta ant
 - [ ] **4.6** **Modelo próprio do Aiden** (o Invocador padrão), seguindo a ficha do personagem: sobretudo longo preto com detalhes dourados e roxos, gola alta, cabelo bagunçado, olhos roxos, gema no peito e a pedra de selamento na mão. Hoje ele é montado com as peças da Arena, que não têm o sobretudo longo nem o rosto da ficha. A ficha está em `blender/referencias/aiden_ficha.jpg`.
 
 ### Etapa 5: Mapas e lendários
-- [ ] **5.1** As peças da Arena nos biomas: pinheiros nevados, palmeiras, obeliscos, arcos de arenito, cristais de gelo, espinhos de basalto e árvores queimadas.
+- [x] **5.1** As peças da Arena nos biomas: pinheiros nevados, palmeiras, obeliscos, arcos de arenito, cristais de gelo, espinhos de basalto e árvores queimadas. Floresta com o pinheiro da Arena; Deserto com rochas de arenito e, raros, obeliscos e arcos (dá para passar por baixo); oásis com palmeiras; Neve com pinheiros nevados e cristais de gelo; Lava com rochas de lava, espinhos de basalto e árvores queimadas. As peças de cada chunk viram uma malha por material (`LotePecas`).
 - [ ] **5.2** **Ruínas rúnicas** pelo mapa: círculos de pedra e altares de selo.
 - [ ] **5.3** Arenas de batalha com os 4 temas da Arena (Ruínas do Vale, Dunas de Âmbar, Lago Congelado e Cratera Ardente).
 - [ ] **5.4** **Os 5 lendários** (os chefes da Arena): lutam contra os seus monstros e só são selados com a pedra **dourada**, com chance baixa. Cada um no seu lugar do mapa (ex.: Arauto das Cinzas na Lava, Sentinela de Geada na Neve, Cavaleiro Oco só à noite). Um por vez.

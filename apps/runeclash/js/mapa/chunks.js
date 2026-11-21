@@ -11,6 +11,10 @@
 //  - objetos (árvores, pedras, cactos...) desenhados em lote (InstancedMesh):
 //    cada tipo de objeto é 1 desenho por chunk, não importa quantos tenha.
 // LOD: os chunks longe têm o chão com menos triângulos e sem objetos pequenos.
+// Etapa 5.1: as peças do Blender da Arena (js/arena/pecas.js) entram nos biomas: pinheiros na Floresta,
+// pinheiros nevados e cristais de gelo na Neve, palmeiras no oásis, rochas, obeliscos e arcos de arenito
+// no Deserto, rochas de lava, espinhos de basalto e árvores queimadas na Lava. As peças de cada chunk
+// viram poucas malhas (uma por material, com LotePecas), o que deixa leve no celular.
 // A decoração usa números aleatórios com semente: o chunk sai igual toda vez.
 // =============================================================
 import * as THREE from 'three';
@@ -21,6 +25,7 @@ import {
 } from './gerador.js';
 import { alturaVertice, alturaEm, ESPACO } from './altura.js';
 import { TRACADOS, S_LAGO, foraDungeons } from '../dungeon.js';
+import { LotePecas, colocar } from '../arena/pecas.js';
 
 const T = C.tamChunk, DIV = C.divisoes;
 
@@ -376,6 +381,12 @@ export class Chunks {
       im.computeBoundingSphere();
       this.adicionar(ch, im);
     }
+    // peças da Arena: todas do chunk juntas, uma malha por material
+    if (ch.dados.pecas.length) {
+      const lote = new LotePecas({ compartilhar: true });
+      for (const pc of ch.dados.pecas) lote.por(pc.nome, colocar(pc.x, pc.y, pc.z, pc.ry, pc.e, pc.ix || 0, pc.iz || 0));
+      for (const malha of lote.malhas()) { malha.geometry.computeBoundingSphere(); this.adicionar(ch, malha); }
+    }
   }
 
   // Um ponto do chunk pode ganhar um objeto?
@@ -397,10 +408,11 @@ export class Chunks {
   // Monta a lista de objetos do chunk (e os obstáculos). Sempre igual para o mesmo chunk.
   decorar(cx, cz) {
     const rng = aleatorio(semente3(SEMENTE ^ 0x51ed27, cx, cz));
-    const recs = [], obst = [];
+    const recs = [], obst = [], pecas = [];
     const add = (t, m, x, y, z, sx, sy, sz, rx = 0, ry = 0, rz = 0, cor = null, p = false) => recs.push({ t, m, x, y, z, sx, sy, sz, rx, ry, rz, cor, p });
     const ob = (x, z, r) => obst.push({ x, z, r });
-    const k = { add, ob, rng };
+    const pc = (nome, x, y, z, ry, e, ix = 0, iz = 0) => pecas.push({ nome, x, y, z, ry, e, ix, iz }); // peça da Arena
+    const k = { add, ob, rng, pc };
     for (const p of POIS) if (Math.floor(p.x / T) === cx && Math.floor(p.z / T) === cz) this.pontoDeInteresse(p, k);
     const G = 8, cel = T / G, dq = this.q.densidade;
     for (let a = 0; a < G; a++) for (let b = 0; b < G; b++) {
@@ -415,7 +427,7 @@ export class Chunks {
       else if (id === 'terra' && r2 > 0.93) this.arbusto(x, z, 0.6 + esc * 0.4, sorteio(rng, ['#a8743f', '#9a8a4a']), k);
       else if (id === 'raio' && r2 > 0.95) this.pedra(x, z, 0.3 + esc * 0.3, sorteio(rng, COR.pedra.raio), k, true);
     }
-    return { recs, obst };
+    return { recs, obst, pecas };
   }
 
   // Chão onde o objeto encosta (o ponto mais baixo em volta: nada fica flutuando na ladeira)
@@ -433,29 +445,51 @@ export class Chunks {
         return;
       case 'planta':
         if (r3 < 0.72) this.arvore(x, z, 0.9 + esc * 0.7, sorteio(rng, COR.copa.planta), k);
-        else if (r3 < 0.84) this.pinheiro(x, z, 0.8 + esc * 0.6, '#2f6a3a', '#3a7a44', k);
+        else if (r3 < 0.84) this.peca('pinheiro', x, z, (0.8 + esc * 0.6) * 0.62, 0.6, k);
         else if (r3 < 0.93) this.pedra(x, z, 0.5 + esc * 0.8, sorteio(rng, COR.pedra.planta), k);
         else this.arbusto(x, z, 0.8 + esc * 0.6, '#3f8f3a', k);
         return;
       case 'terra':
         if (lagoEm(x, z, 9, 'agua')?.oasis) {
-          if (r3 < 0.7) this.palmeira(x, z, 0.85 + esc * 0.4, k); else this.arbusto(x, z, 0.8, '#5cb553', k);
-        } else if (r3 < 0.45) this.cacto(x, z, 0.8 + esc * 0.6, k);
-        else if (r3 < 0.85) this.pedra(x, z, esc < 0.25 ? 1.6 + esc * 4 : 0.6 + esc * 0.9, sorteio(rng, COR.pedra.terra), k);
+          if (r3 < 0.7) this.peca('palmeira', x, z, (0.85 + esc * 0.4) * 0.72, 0.45, k, 0.06); else this.arbusto(x, z, 0.8, '#5cb553', k);
+        } else if (r3 < 0.42) this.cacto(x, z, 0.8 + esc * 0.6, k);
+        else if (r3 < 0.62) this.pedra(x, z, esc < 0.25 ? 1.6 + esc * 4 : 0.6 + esc * 0.9, sorteio(rng, COR.pedra.terra), k);
+        else if (r3 < 0.82) this.peca('rocha_arenito', x, z, esc < 0.25 ? 1.2 + esc * 2.4 : 0.55 + esc * 0.6, 0.85, k);
+        // monumentos do deserto (raros): obelisco, obelisco quebrado e arco de arenito
+        else if (r3 < 0.845) this.peca('obelisco', x, z, 0.6 + esc * 0.35, 0.9, k);
+        else if (r3 < 0.87) this.peca('obelisco_quebrado', x, z, 0.7 + esc * 0.3, 1.3, k);
+        else if (r3 < 0.89) this.arco(x, z, 0.85 + esc * 0.3, k);
         else this.arbusto(x, z, 0.6 + esc * 0.5, '#a8743f', k);
         return;
       case 'raio':
-        if (r3 < 0.55) this.pinheiro(x, z, 0.8 + esc * 0.7, '#2f5a44', '#f4f8fc', k);
+        if (r3 < 0.55) this.peca('pinheiro_nevado', x, z, (0.8 + esc * 0.7) * 0.62, 0.6, k);
         else if (r3 < 0.82) this.pedra(x, z, 0.6 + esc * 1.1, sorteio(rng, COR.pedra.raio), k);
+        else if (r3 < 0.92) this.peca('cristal_gelo', x, z, 0.45 + esc * 0.45, 0.7, k, 0.12);
         else this.cristal(x, z, 0.6 + esc * 0.8, k);
         return;
       case 'fogo':
-        if (r3 < 0.4) this.pedra(x, z, 0.6 + esc * 1.1, sorteio(rng, COR.pedra.fogo), k);
-        else if (r3 < 0.7) this.pedra(x, z, 0.5 + esc * 0.9, null, k, false, true);
-        else this.arvoreMorta(x, z, 0.8 + esc * 0.6, k);
+        if (r3 < 0.3) this.pedra(x, z, 0.6 + esc * 1.1, sorteio(rng, COR.pedra.fogo), k);
+        else if (r3 < 0.6) this.peca('rocha_lava', x, z, 0.5 + esc * 0.7, 0.9, k);
+        else if (r3 < 0.68) this.peca('espinho_vulcao', x, z, 0.45 + esc * 0.35, 0.9, k, 0.1);
+        else this.peca('arvore_queimada', x, z, (0.8 + esc * 0.6) * 0.62, 0.45, k, 0.08);
     }
   }
 
+  // Peça da Arena no chão: e = escala, raio = obstáculo (m, multiplicado pela escala),
+  // incl = quanto ela pode sair torta (palmeiras e espinhos não nascem retinhos)
+  peca(nome, x, z, e, raio, { ob, rng, pc }, incl = 0) {
+    const y = this.pe(x, z, raio * e);
+    pc(nome, x, y, z, rng() * 6.28, e, (rng() - 0.5) * incl * 2, (rng() - 0.5) * incl * 2);
+    ob(x, z, raio * e);
+  }
+  // Arco de arenito: dá para passar por baixo; só as duas colunas seguram
+  arco(x, z, e, { ob, rng, pc }) {
+    const ry = rng() * 6.28, dx = Math.cos(ry) * 2.3 * e, dz = -Math.sin(ry) * 2.3 * e;
+    const y = Math.min(this.pe(x + dx, z + dz, 0.6 * e), this.pe(x - dx, z - dz, 0.6 * e));
+    pc('arco_arenito', x, y, z, ry, e);
+    ob(x + dx, z + dz, 0.75 * e);
+    ob(x - dx, z - dz, 0.75 * e);
+  }
   arvore(x, z, e, cor, { add, ob, rng }) {
     const y = this.pe(x, z, 0.3 * e), ry = rng() * 6.28;
     add('tronco', 'base', x, y + 0.65 * e, z, e, e, e, 0, ry, 0, '#8a5a3a');

@@ -302,6 +302,31 @@ test('Qualidade: no Fraco os efeitos saem mais leves, e mudar no menu vale na ho
   semErros(erros);
 });
 
+test('Mapa: as peças da Arena nos biomas (pinheiros nevados, obeliscos, palmeiras, rochas de lava)', async ({ page }) => {
+  const erros = vigiarErros(page);
+  await abrirJogo(page);
+  await entrarLocal(page);
+  await novoJogo(page, 'pedrisco');
+  // vai até cada bioma e conta as malhas das peças da Arena (os "lotes", uma por material)
+  const lotes = await page.evaluate(async () => {
+    const G = await import('./js/mapa/gerador.js');
+    const m = window.__jogo.mundo, achou = {};
+    for (const id of ['planta', 'terra', 'raio', 'fogo']) {
+      const b = G.centroDe(id), x = b.x * 0.8, z = b.z * 0.8;
+      m.pos.set(x, 0, z); m.chunks.carregarTudoPerto(x, z);
+      const nomes = new Set();
+      m.chunks.grupo.traverse((o) => { if (o.name.startsWith('lote_')) nomes.add(o.name.slice(5)); });
+      achou[id] = [...nomes];
+    }
+    return achou;
+  });
+  expect(lotes.raio).toContain('neve');     // pinheiro nevado e cristal de gelo
+  expect(lotes.terra).toContain('arenito'); // rochas, obeliscos e arcos de arenito
+  expect(lotes.fogo).toContain('luz_lava'); // rochas de lava e espinhos de basalto
+  expect(lotes.planta).toContain('folha');  // pinheiros da Arena
+  semErros(erros);
+});
+
 test('monstro invocado e golpe no modo treino', async ({ page }) => {
   const erros = vigiarErros(page);
   await abrirJogo(page);

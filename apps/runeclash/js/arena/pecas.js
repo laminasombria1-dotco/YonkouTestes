@@ -2,7 +2,8 @@
 // PEÇAS DO BLENDER DA ARENA DAS BRASAS (trazidas para o Runeclash na etapa 0.2)
 // As 66 peças (cenário, corpo do Invocador e chefes) ficam em js/arena/pecas_blender.js,
 // gerado pelo Blender: apps/runeclash/blender/exportar_pecas.py (veja blender/README.md).
-// Ainda não está ligado em nenhuma parte do jogo: é material para as próximas etapas.
+// Usado no corpo do Invocador (js/invocador.js) e, desde a etapa 5.1, nas árvores, pedras e monumentos
+// dos biomas (js/mapa/chunks.js, com new LotePecas({ compartilhar: true })).
 //
 // peca(nome, cores)  -> uma malha solta (personagens, objetos que se mexem)
 // new LotePecas().por(nome, matriz, cores) ... .malhas()  -> junta o cenario parado em poucas malhas (uma por material),
@@ -113,10 +114,25 @@ export function peca(nome, cores = {}) {
   return grupo;
 }
 
+// material de uma cor só, o mesmo para todos que pedirem (o mapa cria e apaga pedaços o tempo todo:
+// assim não nasce um material novo a cada vez). Fica para sempre: não apague.
+const matsFixos = new Map();
+export function materialCompartilhado(slot, cor) {
+  const k = slot + '|' + cor;
+  if (!matsFixos.has(k)) {
+    const m = materialPeca(slot, cor);
+    m.userData.fixo = true;
+    matsFixos.set(k, m);
+  }
+  return matsFixos.get(k);
+}
+
 // Junta muitas copias de pecas paradas em uma malha por material+cor.
+// o.compartilhar = true: as malhas usam materiais compartilhados (materialCompartilhado), que não devem ser apagados.
 export class LotePecas {
-  constructor() {
+  constructor(o = {}) {
     this.partes = new Map();
+    this.compartilhar = !!o.compartilhar;
   }
   // m = THREE.Matrix4 com posicao/rotacao/escala da copia
   por(nome, m, cores = {}) {
@@ -143,12 +159,15 @@ export class LotePecas {
       const g = new THREE.BufferGeometry();
       g.setAttribute('position', new THREE.Float32BufferAttribute(p.pos, 3));
       g.computeVertexNormals();
-      const m = new THREE.Mesh(g, materialPeca(p.slot, p.cor));
+      const m = new THREE.Mesh(g, this.compartilhar ? materialCompartilhado(p.slot, p.cor) : materialPeca(p.slot, p.cor));
       m.name = 'lote_' + p.slot;
       lista.push(m);
     }
     this.partes.clear();
     return lista;
+  }
+  get vazio() {
+    return this.partes.size === 0;
   }
 }
 // matriz de uma copia: posicao, giro no eixo vertical, inclinacao e escala
