@@ -15,6 +15,7 @@ Só os **monstros** lutam; o Invocador não luta. O plano, etapa por etapa, fica
 
 - **Só deitado:** o jogo é feito para o celular deitado. Com o celular em pé, aparece **"Vire o celular"** e tudo pausa (mapa, batalha, monstro invocado) até você virar. No PC, uma janela estreita não é bloqueada. O app Android (versão 1.2 em diante) e o app instalado pelo Chrome já abrem sempre deitados.
 - **Login (toda vez que o jogo abre):** digite o **nome de usuário** e a **senha** e toque em **Entrar** (ou **Criar conta**, se o nome é novo). Embaixo aparecem as contas que já entraram neste aparelho: **1 toque** entra, sem digitar a senha. Veja "Contas e nuvem" abaixo.
+- **O Invocador:** é você no mapa. No **Novo jogo**, primeiro aparece **Crie seu Invocador** (pele, cabelo, olhos, penteado, roupa, detalhes, capa, ombreiras e altura, com cores em bolinhas prontas; **Aiden** volta para a aparência padrão e **Sortear** sorteia uma). Depois dá para mudar pelo menu de pausa, em **Aparência**. Ele segura a pedra de selamento na mão esquerda e a ergue ao invocar ou guardar o monstro. Na batalha ele ainda não aparece (só os monstros lutam); ele entra lá na ideia 2.1, ao selar.
 - **Tela de início:** mostra "Olá, nome" e onde o jogo está salvo (☁ na nuvem ou ⚠ só no celular). Tem **Continuar** (mostra o seu parceiro, o nível e quantos monstros você tem), **Novo jogo** (se já existe um jogo salvo, pede um 2º toque para confirmar), **Sealfolio**, **Instalar app** (só aparece quando dá para instalar), **Trocar conta** e **Sair do jogo**.
 - **Menu de pausa:** o botão de menu (três risquinhos) no mapa, **Esc** no PC ou o botão **Voltar** do celular. Tem **Continuar jogando**, **Qualidade** (Fraco, Médio ou Forte: veja "Mapa procedural"), **Voltar ao início** e **Sair do jogo**. Tudo salva antes.
 - **Sair do jogo:** no app Android, fecha o app. No navegador, a página não pode se fechar sozinha: o jogo salva e avisa que já pode fechar a aba.
@@ -531,6 +532,8 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/modelos3d.js` | Modelos feitos no Blender (`.glb`): carrega, faz uma cópia com ossos para cada monstro, toca as animações (parado, arrancada → correndo e os 3 golpes, no tempo certo de cada golpe), faz o fogo pulsar e o piscar. Hoje só o Brasito (forma inicial) |
 | `modelos/` | Os arquivos `.glb` (hoje `brasito.glb`) e um README com os detalhes de cada um |
 | `js/plataforma.js` | A vitrine 3D do Sealfolio e a animação de evolução |
+| `js/invocador.js` | O **Invocador** (o jogador no mapa): o corpo com as peças do Blender da Arena (`h_*`), as cores, os penteados, as animações (parado, andar e conjurar) e a pedra na mão. A aparência padrão é o **Aiden** |
+| `js/criador.js` | A cena 3D da tela **Crie seu Invocador** (o pedestal com runas; arrastar gira o personagem) |
 | `js/mundo.js` | Mapa aberto: regiões, dia e noite, monstros selvagens e grupos (em volta do jogador), pedras de selamento, fonte, casa, colisão e câmera |
 | `js/mapa/config.js` | Configurações do mapa procedural e os perfis de qualidade |
 | `js/mapa/gerador.js` | O gerador do mapa (só matemática): ruído com semente, biomas, altura do chão, rios, lagos, pontos de interesse, lugares da Floresta e direção das dungeons |

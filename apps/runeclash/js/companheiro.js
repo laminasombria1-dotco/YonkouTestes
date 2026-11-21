@@ -13,6 +13,7 @@ import { ESPECIES, GOLPES, ELEMENTOS } from './dados.js';
 import { criarModelo, animarModelo, descartar } from './modelos.js';
 import { alturaEm } from './mundo.js';
 import { Treino } from './treino.js';
+import { conjurar } from './invocador.js';
 
 const DIST_ATRAS = 2.2;   // metros atrás do treinador
 const DIST_LADO = 0.9;    // um pouco para o lado (não fica escondido atrás dele)
@@ -55,7 +56,7 @@ export class Companheiro {
     this.ativo = true;
     this.jogo.estado.pet = true;
     this.atualizarBotoes();
-    if (!silencioso) this.jogo.aviso(`${nome} saiu para passear com você!`);
+    if (!silencioso) { this.jogo.aviso(`${nome} saiu para passear com você!`); conjurar(m.jogador); } // o Invocador ergue a pedra
   }
 
   guardar(silencioso = false) {
@@ -68,7 +69,7 @@ export class Companheiro {
     this.ativo = false;
     if (this.jogo.estado) this.jogo.estado.pet = false;
     this.atualizarBotoes();
-    if (!silencioso && nome) this.jogo.aviso(`${nome} voltou para a pedra.`);
+    if (!silencioso && nome) { this.jogo.aviso(`${nome} voltou para a pedra.`); conjurar(this.mundo.jogador); }
   }
 
   // Ao entrar no mapa (continuar o jogo, trocar de conta): invoca de novo se estava invocado

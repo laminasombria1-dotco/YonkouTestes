@@ -12,6 +12,7 @@ Ficam **fora** de `apps/runeclash`: nada daqui vai para o jogo nem pesa no celul
 | Batalha e captura | Entra numa batalha (com o Brasito) e captura o monstro (com a "captura garantida" do GM, para não depender da sorte) | `3-batalha.png`, `4-captura.png` |
 | Monstro invocado e modo treino | Invoca o Faisquinho, passa o controle para ele e usa o golpe de área no treino | `5-treino.png` |
 | Material da Arena | Os efeitos e as 66 peças do Blender (`js/arena/`) carregam e aparecem no mapa | `6-arena-vitrine.png` |
+| Invocador | O **Novo jogo** abre o criador com o Aiden escolhido, troca cabelo e penteado, escolhe o parceiro, confere o jogo salvo, ergue a pedra ao invocar o monstro e muda a aparência pelo menu **Aparência** | `7-criador.png`, `8-invocador-mapa.png` |
 
 Todos os testes também falham se aparecer **qualquer erro** no navegador (menos o 404 do `versao.json`, que é normal no teste local).
 As fotos são do tamanho de um celular deitado (844 × 390) e ficam em `testes/runeclash/fotos/`.

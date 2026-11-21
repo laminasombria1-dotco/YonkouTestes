@@ -36,7 +36,8 @@ Uma ideia por vez, sem pressa. Cada ideia é feita numa branch, com proposta ant
   Feito: roxo-runa e dourado envelhecido, fonte Cinzel só no nome e nos títulos, emblema e ícone do app viraram a pedra de selamento (desenho provisório) e uma roda de runas gira atrás do nome.
 - [x] **1.2** **Monstruário → Sealfolio** e **cristais → pedras de selamento** (azul, roxa e dourada, com desenho de pedra; o modelo 3D vem depois).
   Feito: Pedra Azul, Roxa e Dourada (ícone de pedra de 6 lados e pedra 3D provisória com anel de runa), Sealfolio no menu e na tela, e "capturar" virou "selar" nos textos. Os ids do jogo salvo (comum, forte, supremo) ficaram iguais.
-- [ ] **1.3** O treinador vira o **Invocador**: o criador de personagem da Arena (pele, cabelo, roupa, capa, ombreiras e altura), com as peças do Blender e as animações de andar, parado e conjurar. Ele segura a pedra de selamento.
+- [x] **1.3** O treinador vira o **Invocador**: o criador de personagem da Arena (pele, cabelo, roupa, capa, ombreiras e altura), com as peças do Blender e as animações de andar, parado e conjurar. Ele segura a pedra de selamento.
+  Feito: `js/invocador.js` (corpo, animações e a pedra roxa na mão esquerda) e `js/criador.js` (a cena do criador). A aparência padrão é o **Aiden** (ficha do personagem: cabelo preto, olhos roxos, roupa preta com dourado, gema roxa no peito). Tela "Crie seu Invocador" no Novo jogo e no menu de pausa (Aparência), com cores em bolinhas prontas. A aparência fica no jogo salvo (`estado.invocador`).
 
 ### Etapa 2: Selar e invocar (o coração da junção)
 - [ ] **2.1** **A captura vira o Selamento em etapas:** "PODE SER SELADO" quando o monstro está fraco → círculo de runas e **correntes saindo da pedra** na mão do Invocador → canalização com partículas em espiral → sucesso (implosão, o monstro some na pedra) ou falha (as correntes se partem).
@@ -55,6 +56,7 @@ Uma ideia por vez, sem pressa. Cada ideia é feita numa branch, com proposta ant
 - [ ] **4.3** **Brasalobo** a partir do `lobo_fogo` (hoje com 100 mil triângulos; precisa ficar com ~5 mil). É o primeiro teste do caminho.
 - [ ] **4.4** Depois, um monstro por vez, começando pelas formas iniciais das 9 linhas.
 - [ ] **4.5** (mais tarde) Monstros trevosos novos ou versões "corrompidas".
+- [ ] **4.6** **Modelo próprio do Aiden** (o Invocador padrão), seguindo a ficha do personagem: sobretudo longo preto com detalhes dourados e roxos, gola alta, cabelo bagunçado, olhos roxos, gema no peito e a pedra de selamento na mão. Hoje ele é montado com as peças da Arena, que não têm o sobretudo longo nem o rosto da ficha.
 
 ### Etapa 5: Mapas e lendários
 - [ ] **5.1** As peças da Arena nos biomas: pinheiros nevados, palmeiras, obeliscos, arcos de arenito, cristais de gelo, espinhos de basalto e árvores queimadas.

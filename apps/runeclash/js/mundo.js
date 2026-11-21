@@ -8,11 +8,12 @@
 // Monstros selvagens passeiam; encostou, começa a batalha.
 // =============================================================
 import * as THREE from 'three';
-import { criarModelo, criarTreinador, criarCristal, pintarCristal, criarCoroa, criarCasa, animarCasa, animarModelo, criarAuraDupla, animarAura, descartar } from './modelos.js';
+import { criarModelo, criarCristal, pintarCristal, criarCoroa, criarCasa, animarCasa, animarModelo, criarAuraDupla, animarAura, descartar } from './modelos.js';
 import { CameraOrbita } from './camera.js';
 import { TRACADOS, tracadoPerto, prenderDungeons, dentroDungeonLivre, semCasaDungeons } from './dungeon.js';
 import { CaminhoDasBrasas } from './brasas.js';
 import { TrilhaAncestral, CRISTAL_ESCONDIDO } from './raizes.js';
+import { criarInvocador, animarInvocador, descartarInvocador } from './invocador.js';
 import { RAIO_MUNDO, NIVEL_AGUA, SEMENTE, LAGOA, RESERVAS, SEGREDOS, aleatorio, biomaEm, lagoEm } from './mapa/gerador.js';
 import { alturaEm, bloqueadoEm } from './mapa/altura.js';
 import { Grade, ListaObstaculos } from './mapa/grade.js';
@@ -109,7 +110,7 @@ export class Mundo {
     this.criarMontanhas();
     this.criarEstrelas();
 
-    this.jogador = criarTreinador();
+    this.jogador = criarInvocador(); // o personagem do jogador (js/invocador.js); a aparência do jogo salvo entra em vestirInvocador()
     this.cena.add(this.jogador);
     this.pos = new THREE.Vector3(0, 0, 7);
     this.ang = Math.PI;
@@ -253,6 +254,17 @@ export class Mundo {
     g.add(base, espelho, pilar, this.cristalFonte);
     this.cena.add(g);
     this.obstaculos.push({ x: 0, z: 0, r: 2.3 });
+  }
+
+  // Troca a aparência do Invocador (ao entrar num jogo salvo e ao mudar pelo menu "Aparência")
+  vestirInvocador(aparencia) {
+    const velho = this.jogador;
+    this.jogador = criarInvocador(aparencia);
+    this.jogador.position.copy(velho.position);
+    this.jogador.rotation.y = velho.rotation.y;
+    this.cena.remove(velho);
+    descartarInvocador(velho);
+    this.cena.add(this.jogador);
   }
 
   // Cristais de captura no chão: posições sorteadas pela semente, mais os
@@ -722,7 +734,7 @@ export class Mundo {
     this.pos.y = alturaEm(this.pos.x, this.pos.z);
     this.jogador.position.copy(this.pos);
     this.jogador.rotation.y = this.ang;
-    animarModelo(this.jogador, t, movendo);
+    animarInvocador(this.jogador, dt, movendo);
     this.graca = Math.max(0, this.graca - dt);
     this.avisoT = Math.max(0, this.avisoT - dt);
     this.jogador.visible = this.graca <= 0 || Math.floor(t * 10) % 2 === 0;

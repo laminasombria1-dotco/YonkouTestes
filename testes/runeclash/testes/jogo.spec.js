@@ -117,3 +117,45 @@ test('material da Arena carrega no jogo (efeitos e peças do Blender)', async ({
   await foto(page, '6-arena-vitrine');
   semErros(erros);
 });
+
+test('Invocador: criar no Novo jogo e mudar pelo menu Aparência', async ({ page }) => {
+  const erros = vigiarErros(page);
+  await abrirJogo(page);
+  await entrarLocal(page);
+  // Novo jogo abre o criador, com o Aiden (padrão) já escolhido
+  await page.click('#btn-novo');
+  await expect(page.locator('#tela-invocador')).toBeVisible();
+  await expect(page.locator('#inv-titulo')).toHaveText('Crie seu Invocador');
+  await expect(page.locator('.bola.sel[data-cor="cabelo"]')).toHaveAttribute('data-valor', '#0b0d13');
+  // troca o cabelo e o penteado
+  await page.click('.bola[data-cor="cabelo"][data-valor="#d8b26a"]');
+  await page.click('[data-penteado="1"]');
+  await esperar(page, 1200);
+  await foto(page, '7-criador');
+  await page.click('#inv-pronto');
+  // depois vem a escolha do parceiro
+  await expect(page.locator('#tela-colecao')).toBeVisible();
+  await page.click('#col-escolher');
+  await page.waitForFunction(() => window.__jogo.modo === 'mundo', null, { timeout: 60_000 });
+  const salvo = await page.evaluate(() => window.__jogo.estado.invocador);
+  expect(salvo.cabelo).toBe('#d8b26a');
+  expect(salvo.penteado).toBe(1);
+  expect(await page.evaluate(() => window.__jogo.mundo.jogador.userData.invocador)).toBe(true);
+  // invocar o monstro faz o Invocador erguer a pedra
+  await page.evaluate(() => window.__jogo.pet.invocar());
+  expect(await page.evaluate(() => window.__jogo.mundo.jogador.userData.conjurar > 0)).toBe(true);
+  await esperar(page, 1500);
+  await foto(page, '8-invocador-mapa');
+  // menu de pausa → Aparência → Aiden → Pronto: volta ao mapa com a aparência padrão salva
+  await page.evaluate(() => window.__jogo.abrirMenu());
+  await page.click('[data-menu="aparencia"]');
+  await expect(page.locator('#inv-titulo')).toHaveText('Aparência do Invocador');
+  await page.click('#inv-aiden');
+  await page.click('#inv-pronto');
+  expect(await page.evaluate(() => window.__jogo.modo)).toBe('mundo');
+  const chave = await page.evaluate(() => window.__jogo.chaveSave());
+  const doAparelho = await page.evaluate((k) => JSON.parse(localStorage.getItem(k)).estado.invocador, chave);
+  expect(doAparelho.cabelo).toBe('#0b0d13');
+  expect(doAparelho.penteado).toBe(2);
+  semErros(erros);
+});

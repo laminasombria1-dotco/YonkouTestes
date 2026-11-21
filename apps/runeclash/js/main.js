@@ -11,6 +11,8 @@ import { Batalha } from './batalha.js';
 import { Plataforma, CenaEvolucao } from './plataforma.js';
 import { carregarModelos3D } from './modelos.js';
 import { Companheiro } from './companheiro.js';
+import { CenaCriador } from './criador.js';
+import { APARENCIA_PADRAO, PALETAS, PENTEADOS, NOMES_CORES, limparAparencia, sortearAparencia } from './invocador.js';
 import {
   ESPECIES, ELEMENTOS, GOLPES, ORDEM_ELEMENTOS, RAROS, NOMES_ESTAGIO, NIVEIS_EVOLUCAO,
   criarMonstro, statsDe, xpParaProximo, xpDaVitoria, verificarEvolucao, formasDaLinha, fracoContra,
@@ -34,11 +36,13 @@ const MAX_EQUIPE = 3;
 const $ = (s) => document.querySelector(s);
 const TIPOS = { corpo: 'perto', projetil: 'disparo', area: 'área' };
 
-// Saves antigos tinham só um número de cristais: viram cristais comuns
+// Saves antigos tinham só um número de cristais: viram cristais comuns.
+// Saves de antes do Invocador (1.3) ganham a aparência padrão (o Aiden).
 function migrarEstado(e) {
   if (!e.pedras) e.pedras = { comum: e.cristais ?? 5, forte: 0, supremo: 0 };
   for (const c of CRISTAIS) e.pedras[c.id] ??= 0;
   delete e.cristais;
+  e.invocador = limparAparencia(e.invocador);
   return e;
 }
 
@@ -168,6 +172,7 @@ class Jogo {
     $('#tela-login').hidden = nome !== 'login';
     $('#tela-titulo').hidden = nome !== 'titulo';
     $('#tela-colecao').hidden = nome !== 'colecao';
+    $('#tela-invocador').hidden = nome !== 'invocador';
     $('#tela-evolucao').hidden = nome !== 'evolucao';
     $('#hud-mundo').hidden = nome !== 'mundo';
     $('#hud-batalha').hidden = nome !== 'batalha';
@@ -207,11 +212,11 @@ class Jogo {
           delete btnNovo.dataset.confirmar;
           btnNovo.classList.remove('confirmar');
           titulo.textContent = 'Novo jogo';
-          linha.textContent = 'Escolha seu primeiro parceiro';
+          linha.textContent = 'Crie seu Invocador e escolha o parceiro';
         }, 3500);
         return;
       }
-      this.abrirColecao('inicial');
+      this.abrirCriador('novo');
     });
     $('#btn-continuar').addEventListener('click', () => {
       const s = lerSave(this.chaveSave());
@@ -252,6 +257,7 @@ class Jogo {
       const acao = b.dataset.menu;
       if (acao === 'continuar') this.fecharMenu();
       else if (acao === 'inicio') this.voltarAoInicio();
+      else if (acao === 'aparencia') { this.fecharMenu(); this.abrirCriador('editar'); }
       else if (acao === 'qualidade') this.trocarQualidade();
       else if (acao === 'sair') this.sairDoJogo();
       else if (acao === 'voltar-saida') $('#tela-saida').hidden = true;
@@ -382,6 +388,7 @@ class Jogo {
     if (this.gm?.fecharPainel()) return 'ok';
     if (this.painelAberto) { this.fecharEquipe(); return 'ok'; }
     if (this.modo === 'colecao') { this.fecharColecao(); return 'ok'; }
+    if (this.modo === 'invocador') { this.fecharCriador(false); return 'ok'; }
     if (this.modo === 'mundo' && this.pet.controlando) { this.pet.voltarAoTreinador(); return 'ok'; }
     if (this.modo === 'mundo') { this.abrirMenu(); return 'ok'; }
     if (this.modo === 'titulo') { this.salvar(); this.enviarNuvem(true, true); return 'sair'; }
@@ -401,6 +408,81 @@ class Jogo {
         .then(() => screen.orientation?.lock?.('landscape').catch(() => {})) // deita a tela, se o celular deixar
         .catch(falhou);
     } catch { falhou(); }
+  }
+
+  // ---------- Crie seu Invocador (ideia 1.3) ----------
+  // modo 'novo': no Novo jogo, antes de escolher o parceiro (Pronto -> escolha do inicial).
+  // modo 'editar': pelo menu de pausa (Pronto -> volta ao mapa com a aparência nova; Voltar desiste).
+  abrirCriador(modo) {
+    if (!this.criador) {
+      this.criador = new CenaCriador(this);
+      this.ligarCriador();
+    }
+    this.criadorModo = modo;
+    this.aparenciaEditada = limparAparencia(modo === 'editar' ? this.estado?.invocador : this.aparenciaNova);
+    $('#inv-titulo').textContent = modo === 'editar' ? 'Aparência do Invocador' : 'Crie seu Invocador';
+    this.mostrarTela('invocador');
+    this.desenharCriador();
+    this.criador.mostrar(this.aparenciaEditada);
+  }
+
+  // as opções (bolinhas de cor, penteados, extras, altura e os botões do rodapé)
+  desenharCriador() {
+    const a = this.aparenciaEditada;
+    const cores = Object.keys(NOMES_CORES).map((k) => `<div class="inv-linha"><b>${NOMES_CORES[k]}</b><div class="bolas">${PALETAS[k]
+      .map((c) => `<button type="button" class="bola ${c === a[k] ? 'sel' : ''}" style="--c:${c}" data-cor="${k}" data-valor="${c}" aria-label="${NOMES_CORES[k]} ${c}"></button>`).join('')}</div></div>`);
+    cores.splice(3, 0, `<div class="inv-linha"><b>Penteado</b><div class="botoes">${PENTEADOS
+      .map((n, i) => `<button type="button" class="opcao ${i === a.penteado ? 'sel' : ''}" data-penteado="${i}">${n}</button>`).join('')}</div></div>`);
+    $('#inv-opcoes').innerHTML = `${cores.join('')}
+      <div class="inv-linha"><b>Extras</b><div class="botoes">
+        <button type="button" class="opcao ${a.capa ? 'sel' : ''}" data-extra="capa">Capa</button>
+        <button type="button" class="opcao ${a.ombreiras ? 'sel' : ''}" data-extra="ombreiras">Ombreiras</button>
+        <small class="rotulo-altura">Altura</small><input id="inv-altura" type="range" min="0.9" max="1.1" step="0.01" value="${a.altura}" aria-label="Altura"></div></div>
+      <div class="inv-rodape"><button id="inv-aiden" type="button">Aiden</button><button id="inv-sortear" type="button">Sortear</button><button id="inv-pronto" type="button">Pronto</button></div>`;
+  }
+
+  ligarCriador() {
+    const mudar = (novo, conjurar = false) => {
+      this.aparenciaEditada = limparAparencia(novo);
+      this.desenharCriador();
+      this.criador.mostrar(this.aparenciaEditada);
+      if (conjurar) this.criador.conjurar();
+    };
+    $('#inv-opcoes').addEventListener('click', (e) => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      const a = this.aparenciaEditada;
+      if (b.dataset.cor) mudar({ ...a, [b.dataset.cor]: b.dataset.valor });
+      else if (b.dataset.penteado) mudar({ ...a, penteado: Number(b.dataset.penteado) });
+      else if (b.dataset.extra) mudar({ ...a, [b.dataset.extra]: !a[b.dataset.extra] });
+      else if (b.id === 'inv-aiden') mudar(APARENCIA_PADRAO, true);
+      else if (b.id === 'inv-sortear') mudar(sortearAparencia(), true);
+      else if (b.id === 'inv-pronto') this.fecharCriador(true);
+    });
+    // a altura muda o personagem enquanto arrasta (sem redesenhar as opções, para não perder o toque)
+    $('#inv-opcoes').addEventListener('input', (e) => {
+      if (e.target.id !== 'inv-altura') return;
+      this.aparenciaEditada = limparAparencia({ ...this.aparenciaEditada, altura: Number(e.target.value) });
+      this.criador.mostrar(this.aparenciaEditada);
+    });
+  }
+
+  // pronto = true: guarda a aparência; false: desiste (Voltar)
+  fecharCriador(pronto) {
+    const a = this.aparenciaEditada;
+    if (this.criadorModo === 'editar') {
+      if (pronto && this.estado) {
+        this.estado.invocador = a;
+        this.mundo.vestirInvocador(a);
+        this.salvar();
+        this.aviso('Aparência do Invocador salva.');
+      }
+      this.mostrarTela(this.estado ? 'mundo' : 'titulo');
+      return;
+    }
+    if (!pronto) { this.mostrarTela('titulo'); return; }
+    this.aparenciaNova = a; // vai para o jogo novo quando escolher o parceiro
+    this.abrirColecao('inicial');
   }
 
   // ---------- monstruário / escolha do inicial ----------
@@ -515,7 +597,8 @@ class Jogo {
   }
 
   novoJogo(especie) {
-    this.estado = { equipe: [criarMonstro(especie, 3)], reserva: [], pedras: { comum: 5, forte: 0, supremo: 0 }, capturados: [especie], casa: null };
+    this.estado = { equipe: [criarMonstro(especie, 3)], reserva: [], pedras: { comum: 5, forte: 0, supremo: 0 }, capturados: [especie], casa: null, invocador: limparAparencia(this.aparenciaNova) };
+    this.aparenciaNova = null;
     this.mundo.hora = 0.08;
     this.entrarNoMundo();
     this.mundo.povoar();
@@ -529,6 +612,7 @@ class Jogo {
     // a casa salva volta para o lugar onde estava
     if (this.estado.casa) this.mundo.montarCasa(this.estado.casa.x, this.estado.casa.z, this.estado.casa.rot, false);
     else this.mundo.guardarCasa();
+    this.mundo.vestirInvocador(this.estado.invocador);
     this.mundo.irParaBase();
     this.mostrarTela('mundo');
     this.atualizarHudMundo();
@@ -1111,6 +1195,11 @@ class Jogo {
     if (this.nuvemPendente && this.envioT >= ENVIO_NUVEM) this.enviarNuvem();
     if (this.modo === 'titulo' || this.modo === 'login') {
       this.mundo.orbitar(this.t);
+    } else if (this.modo === 'invocador') {
+      const a = this.palco.getBoundingClientRect(), r = $('#inv-palco').getBoundingClientRect();
+      this.criador.enquadrar({ left: r.left - a.left, top: r.top - a.top, width: r.width, height: r.height });
+      this.criador.atualizar(dt);
+      cena = this.criador.cena; camera = this.criador.camera;
     } else if (this.modo === 'colecao') {
       this.enquadrarColecao();
       this.plataforma.atualizar(dt, this.t);

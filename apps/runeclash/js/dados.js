@@ -695,7 +695,7 @@ export function verificarEvolucao(m) {
 // =============================================================
 export const CRISTAIS = [
   { id: 'comum',   nome: 'Pedra Azul',    plural: 'Pedras Azuis',    curto: 'Azul',    curtos: 'Azuis',    cor: '#7fc8ff', emissivo: '#2a78d8', pedra: '#4a5f80', poder: 1 },
-  { id: 'forte',   nome: 'Pedra Roxa',    plural: 'Pedras Roxas',    curto: 'Roxa',    curtos: 'Roxas',    cor: '#c79bff', emissivo: '#7a3ad8', pedra: '#5a4880', poder: 1.5 },
+  { id: 'forte',   nome: 'Pedra Roxa',    plural: 'Pedras Roxas',    curto: 'Roxa',    curtos: 'Roxas',    cor: '#c79bff', emissivo: '#7a3ad8', pedra: '#3d3358', poder: 1.5 },
   { id: 'supremo', nome: 'Pedra Dourada', plural: 'Pedras Douradas', curto: 'Dourada', curtos: 'Douradas', cor: '#f0c75a', emissivo: '#e08a10', pedra: '#7d6538', poder: 2.2 },
 ];
 // Fusão na casa: 3 pedras de uma cor viram 1 da cor acima
