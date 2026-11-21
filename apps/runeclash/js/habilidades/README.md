@@ -120,6 +120,7 @@ Faisquinho (Nv.1) > Choquilho (Nv.6) > Trovolt (Nv.12) > Tempestor (Nv.30)
 - As nuvens se revezam: cada uma solta o 1º raio num tempo diferente e, com vários marcados, cada raio vai num deles. Sem marcados, o raio cai a até `espalha` metros do monstro, com o círculo de aviso.
 - Chances de Paralisia: nuvens 30% (0,7 s), tiro e Choque 15% (um sorteio por inimigo a cada Choque), dash do Tempestor 21%.
 - Só lutam 2 inimigos ao mesmo tempo (`MAX_ATIVOS` em `../batalha.js`), por isso o Choque liga no máximo 2; no Tempestor, no lugar de um 3º alvo, ele ficou mais forte.
+- **Visual (etapa 3.1):** os raios sólidos de sempre ganham por cima o relâmpago da Arena com galhos (`this.b.fx.relampago`), clarões, faíscas que brilham (o `estalo`), o chão que racha onde o raio cai, o anel da marca, os raios curtos e a faixa elétrica do Dash. No Tempestor o brilho é roxo de tempestade (`corDe()`).
 - Só a linha do Faisquinho usa estes golpes. O Imanito e as evoluções (Terra + Raio) continuam com os golpes de `dados.js`.
 
 **Exemplos de mudança (em `faisquinho.js`):**

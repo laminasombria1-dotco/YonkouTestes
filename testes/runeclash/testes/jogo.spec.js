@@ -140,6 +140,32 @@ test('Brasito: o fogo da Arena no Lança-Chamas e no Rabo de Fogo (batalha e tre
   semErros(erros);
 });
 
+test('Faisquinho: relâmpagos da Arena no Choque e nas nuvens', async ({ page }) => {
+  const erros = vigiarErros(page);
+  await abrirJogo(page);
+  await entrarLocal(page);
+  await novoJogo(page, 'faisquinho');
+  await page.evaluate(() => { const j = window.__jogo; j.estado.equipe = [window.D.criarMonstro('tempestor', 35)]; j.iniciarBatalha(j.mundo.selvagens[0]); });
+  await page.waitForFunction(() => window.__jogo.modo === 'batalha' && !!window.__jogo.batalha?.ini, null, { timeout: 30_000 });
+  // sem dano: o Tempestor (Nv.35) derrubaria o selvagem e a luta acabaria antes do fim do teste
+  await page.evaluate(() => { const b = window.__jogo.batalha; b.pensarIA = () => {}; b.aplicarDano = () => false; });
+  await esperar(page, 1200);
+  // Choque num marcado: a ligação sólida e o relâmpago da Arena por cima
+  await page.evaluate(() => {
+    const b = window.__jogo.batalha; b.faisquinho.marcar(b.ini);
+    b.jog.choque = { gp: b.jog.golpe(1), t: 4 }; b.jog.rec = [0, 0, 0]; b.tentarGolpe(b.jog, 1, b.ini);
+  });
+  expect(await page.evaluate(() => !!window.__jogo.batalha.jog.feixe)).toBe(true);
+  await page.waitForFunction(() => window.__jogo.batalha.fx.temp.length > 0, null, { timeout: 10_000 });
+  await foto(page, '12-choque');
+  await page.waitForFunction(() => !window.__jogo.batalha.jog.feixe, null, { timeout: 10_000 });
+  // as nuvens soltam raios e somem sozinhas
+  await page.evaluate(() => { const b = window.__jogo.batalha; b.jog.rec = [0, 0, 0]; b.tentarGolpe(b.jog, 2, b.ini); });
+  await page.waitForFunction(() => window.__jogo.batalha.faisquinho.nuvens.length === 3, null, { timeout: 10_000 });
+  await page.waitForFunction(() => window.__jogo.batalha.faisquinho.nuvens.length === 0, null, { timeout: 20_000 });
+  semErros(erros);
+});
+
 test('monstro invocado e golpe no modo treino', async ({ page }) => {
   const erros = vigiarErros(page);
   await abrirJogo(page);
