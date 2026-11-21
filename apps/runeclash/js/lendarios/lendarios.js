@@ -4,23 +4,29 @@
 // do mapa, fica parado esperando (encoste para lutar), luta com as regras de chefe (entra em
 // FÚRIA com metade da vida) e só é selado com a Pedra Dourada, com chance baixa.
 // Vencido ou selado, volta no próximo amanhecer (como os chefes das dungeons).
-// Hoje: a Serpe da Tormenta, no círculo de pedra rúnico da Neve, e o Colosso de Basalto, no do Deserto.
+// Hoje: a Serpe da Tormenta, no círculo de pedra rúnico da Neve, o Colosso de Basalto, no do Deserto,
+// e a Sentinela de Geada, na frente do Cristal Gigante da Neve.
 // =============================================================
 import { ESPECIES, criarMonstro, nivelDoChefe } from '../dados.js';
 import { criarModelo, criarCoroa } from '../modelos.js';
 import { POIS } from '../mapa/gerador.js';
 import { alturaEm } from '../mapa/altura.js';
 
-// especie | onde mora (o ponto de interesse e o bioma) | lugar = nome mostrado | zona = arena da luta
+// especie | onde mora (o ponto de interesse e o bioma; frente = quantos metros na frente dele, olhando para fora)
+// lugar = nome mostrado | zona = arena da luta
 export const LENDARIOS = [
   { especie: 'serpe', poi: 'circulo', bioma: 'raio', lugar: 'Círculo da Tormenta', zona: 'raio' },
   { especie: 'colosso', poi: 'circulo', bioma: 'terra', lugar: 'Círculo das Dunas', zona: 'terra' },
+  { especie: 'geada', poi: 'cristalGelo', frente: 5, lugar: 'Cristal Gigante', zona: 'raio' },
 ];
 
 // O ponto do mapa onde o lendário mora (ou null)
 export function casaDoLendario(cfg) {
-  const p = POIS.find((q) => q.tipo === cfg.poi && q.bioma === cfg.bioma);
-  return p ? { x: p.x, z: p.z, ang: p.ang, r: p.r } : null;
+  const p = POIS.find((q) => q.tipo === cfg.poi && (!cfg.bioma || q.bioma === cfg.bioma));
+  if (!p) return null;
+  if (!cfg.frente) return { x: p.x, z: p.z, ang: p.ang, r: p.r, giro: p.ang + Math.PI };
+  const dx = Math.cos(p.ang), dz = Math.sin(p.ang);
+  return { x: p.x + dx * cfg.frente, z: p.z + dz * cfg.frente, ang: p.ang, r: p.r - cfg.frente, giro: Math.atan2(dx, dz) };
 }
 
 export class Lendarios {
@@ -37,7 +43,7 @@ export class Lendarios {
     coroa.position.y = esp.altura + 0.4;
     modelo.add(coroa);
     const { x, z } = l.casa;
-    const ang = l.casa.ang + Math.PI; // olhando para a entrada do círculo
+    const ang = l.casa.giro; // olhando para a entrada do círculo (ou para fora do lugar)
     modelo.position.set(x, alturaEm(x, z), z);
     modelo.rotation.y = ang;
     m.cena.add(modelo);
@@ -79,7 +85,7 @@ export class Lendarios {
         l.avisado = true;
         const nome = ESPECIES[l.cfg.especie].nome;
         m.jogo.mostrarZona?.(l.cfg.lugar);
-        m.jogo.aviso(l.s ? `Lendário: ${nome} (Nv.${l.s.dados.nivel}) dorme no ${l.cfg.lugar}. Só a Pedra Dourada sela um lendário.` : `O ${l.cfg.lugar} está vazio. ${nome} volta no próximo amanhecer.`);
+        m.jogo.aviso(l.s ? `Lendário: ${nome} (Nv.${l.s.dados.nivel}) guarda o ${l.cfg.lugar}. Só a Pedra Dourada sela um lendário.` : `O ${l.cfg.lugar} está vazio. ${nome} volta no próximo amanhecer.`);
       } else if (d > 40) l.avisado = false;
     }
   }

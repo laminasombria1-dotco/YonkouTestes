@@ -11,6 +11,7 @@ import { ESPECIES, CRISTAIS } from './dados.js';
 import { temGLB, montarGLB, animarGLB, piscarGLB, descartarGLB, tocarGolpe as tocarGolpeGLB, pararGolpe as pararGolpeGLB } from './modelos3d.js';
 import { montarSerpe } from './lendarios/serpe-modelo.js';
 import { montarColosso } from './lendarios/colosso-modelo.js';
+import { montarGeada } from './lendarios/geada-modelo.js';
 export { carregarModelos3D, ajustarGiro } from './modelos3d.js';
 
 // Um golpe começou (ou parou): o modelo do Blender toca a animação; os lendários fazem a pose deles
@@ -931,8 +932,10 @@ function silvarion(c, u) {
 function serpe(c, u) { montarSerpe(c, u); }
 // LENDÁRIO: Colosso de Basalto (js/lendarios/colosso-modelo.js)
 function colosso(c, u) { montarColosso(c, u); }
+// LENDÁRIO: Sentinela de Geada (js/lendarios/geada-modelo.js)
+function geada(c, u) { montarGeada(c, u); }
 
-const RAROS_MODELO = { vulcarapa, aquaraia, espinhal, ignarion, silvarion, serpe, colosso };
+const RAROS_MODELO = { vulcarapa, aquaraia, espinhal, ignarion, silvarion, serpe, colosso, geada };
 
 // =============================================================
 // JUNTAR PEÇAS (deixa o jogo leve no celular)

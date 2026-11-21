@@ -379,8 +379,8 @@ test('Arenas de batalha com os temas da Arena (Ruínas, Dunas, Lago Congelado, C
   semErros(erros);
 });
 
-for (const [esp, bioma, pecaNome] of [['serpe', 'raio', 's_'], ['colosso', 'terra', 'c_']]) {
-  test(`Lendário ${esp}: mora no círculo de pedra do bioma, luta na arena do tema e só a Pedra Dourada sela`, async ({ page }) => {
+for (const [esp, bioma, pecaNome] of [['serpe', 'raio', 's_'], ['colosso', 'terra', 'c_'], ['geada', 'raio', 'g_']]) {
+  test(`Lendário ${esp}: mora no lugar dele no bioma, luta na arena do tema e só a Pedra Dourada sela`, async ({ page }) => {
     const erros = vigiarErros(page);
     await abrirJogo(page);
     await entrarLocal(page);
@@ -400,7 +400,7 @@ for (const [esp, bioma, pecaNome] of [['serpe', 'raio', 's_'], ['colosso', 'terr
       b.pensarIA = () => {};
       for (const i of [0, 1, 2]) { b.ini.rec = [0, 0, 0]; b.tentarGolpe(b.ini, i, b.jog); for (let k = 0; k < 40; k++) j.quadro(); }
       return {
-        bioma: G.biomaEm(l.casa.x, l.casa.z), noCirculo: G.POIS.some((p) => p.tipo === 'circulo' && Math.hypot(p.x - s.x, p.z - s.z) < 1),
+        bioma: G.biomaEm(l.casa.x, l.casa.z), noCirculo: G.POIS.some((p) => p.tipo === l.cfg.poi && Math.hypot(p.x - s.x, p.z - s.z) < (l.cfg.frente || 0) + 1),
         lendario: s.lendario && D.ESPECIES[esp].lendario, pecas, chances, zona: b.arena.zona, tema: !!b.arena.tema, inimigo: b.ini.dados.especie,
       };
     }, [esp, pecaNome]);

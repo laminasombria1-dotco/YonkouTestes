@@ -167,6 +167,10 @@ export const GOLPES = {
   esmagarColosso:   { nome: 'Esmagar',          elemento: 'terra',  tipo: 'corpo',    poder: 28, recarga: 1.6, alcance: 3.8 },
   arremessoColosso: { nome: 'Arremesso',        elemento: 'terra',  tipo: 'projetil', poder: 24, recarga: 2.2, velocidade: 12, raio: 0.95 },
   terremotoColosso: { nome: 'Terremoto',        elemento: 'terra',  tipo: 'area',     poder: 38, recarga: 7.5, raio: 6.5, lentidao: 2 },
+  // Sentinela de Geada (lendário): os efeitos ficam em js/lendarios/geada-batalha.js
+  laminasGeada:     { nome: 'Lâminas Cravadas', elemento: 'agua',   tipo: 'corpo',    poder: 24, recarga: 1.4, alcance: 3.6 },
+  estilhacosGeada:  { nome: 'Estilhaços',       elemento: 'agua',   tipo: 'projetil', poder: 11, recarga: 1.8, velocidade: 20, raio: 0.5, quantidade: 3 },
+  anelGeada:        { nome: 'Anel de Gelo',     elemento: 'agua',   tipo: 'area',     poder: 34, recarga: 7,   raio: 6.5, lentidao: 2.5 },
   // Silvestre (só o chefe do Santuário)
   galhadaAncestral: { nome: 'Galhada Ancestral', elemento: 'silvestre', tipo: 'corpo',  poder: 24, recarga: 1.2, alcance: 3.6 },
   sementeParasita:  { nome: 'Semente Parasita', elemento: 'silvestre', tipo: 'projetil', poder: 13, recarga: 1.9, velocidade: 15, raio: 0.55, quantidade: 3 },
@@ -511,7 +515,14 @@ ESPECIES.colosso = {
   descricao: 'Gigante de pedra preta com um núcleo de magma no peito. Lento e pesado: esmaga, arremessa pedras e faz a terra tremer.',
   base: { hp: 112, atk: 19, def: 19, vel: 4.4 }, golpes: ['esmagarColosso', 'arremessoColosso', 'terremotoColosso'], evoluiPara: null, nivelEvolucao: null,
 };
-export const LENDARIOS_IDS = ['serpe', 'colosso'];
+ESPECIES.geada = {
+  onde: 'da Neve, diante do Cristal Gigante', arena: 'raio',
+  nome: 'Sentinela de Geada', elemento: 'agua', elementos: ['agua'], linha: null, estagio: 3, raro: true, superRaro: true, chefe: true, lendario: true,
+  tamanho: 1.9, captura: 0.04, cristalMin: 2, raio: 1.6, altura: 3.9,
+  descricao: 'Cristal vivo de gelo e pedra que guarda o Cristal Gigante da Neve. Crava lâminas de gelo, lança estilhaços e gira abrindo anéis que deixam lento.',
+  base: { hp: 104, atk: 17, def: 17, vel: 5.0 }, golpes: ['laminasGeada', 'estilhacosGeada', 'anelGeada'], evoluiPara: null, nivelEvolucao: null,
+};
+export const LENDARIOS_IDS = ['serpe', 'colosso', 'geada'];
 export const RAROS = ['vulcarapa', 'aquaraia', 'espinhal', 'ignarion', 'silvarion', ...LENDARIOS_IDS];
 for (const id of RAROS) Object.assign(ESPECIES[id], { elementos: ESPECIES[id].elementos || [ESPECIES[id].elemento], cristalMin: ESPECIES[id].cristalMin || 0 });
 
