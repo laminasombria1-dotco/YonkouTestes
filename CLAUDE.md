@@ -18,6 +18,7 @@ Ele diz como trabalhar aqui. Se algo mudar no projeto, atualize este arquivo jun
 | Pasta | O que é |
 |---|---|
 | `apps/cristalia/` | **O jogo Cristalia** (Three.js, roda no navegador). É o projeto principal. |
+| `apps/runeclash/` | **Runeclash: Sealstone Legends**, o jogo novo: a junção do Cristalia com a Arena das Brasas. Ainda **não é publicado** (veja a seção dele abaixo). |
 | `apps/cristalia-android/` | O app Android (versão 1.2) que abre o site do jogo em tela cheia |
 | `criacao-de-imagem/`, `criacao-de-musica/`, `criacao-de-video/`, `edicao-de-video/` | Outros trabalhos (cada uma tem o seu README) |
 
@@ -73,6 +74,15 @@ Protótipo 3D low poly de caçar, capturar e evoluir monstros. **Three.js 0.170,
 - Fica em **https://claude.ai/artifact/8ux9GY7VGgGghMKBpJoVcN** e só dá para publicar pela sessão na nuvem (claude.ai/code).
 - **Leia o artifact antes** de publicar (ação `read`; para os arquivos que vai trocar, leia cada um com `path`). Publique **só os arquivos que mudaram ou são novos**: `index.html`, `js/**/*.js`, `lib/...`, `manifest.webmanifest`, `sw.js`, `icones/`.
 - O artifact **não aceita `.glb`**: lá o Brasito aparece de formas simples.
+
+## O jogo Runeclash (`apps/runeclash/`)
+
+Começou (etapa 0.1) como uma **cópia do Cristalia**, e vai recebendo da **Arena das Brasas** (protótipo do Lâmina no PC dele, em `D:\Mod Cristalia\ARENA_PROTOTIPO`, fora do repositório) o selar e invocar do Invocador, os efeitos, as peças do Blender e os chefes, que viram os primeiros lendários. **Só os monstros lutam.** As regras do código e o jeito de testar são os mesmos do Cristalia.
+- **Leia primeiro `apps/runeclash/PLANO.md`**: as decisões já tomadas (Sealfolio, pedras de selamento azul/roxa/dourada, tom fofo → trevoso...) e as etapas. **Uma ideia por vez**, e marque `[x]` no plano quando terminar.
+- **Não publique:** o GitHub dá um site só por repositório, e ele é o do Cristalia. **Nunca crie um workflow que publique só o Runeclash** (trocaria o site que o app Android abre). A publicação dos dois juntos é a etapa 6 do plano.
+- **Separado do Cristalia:** chaves no aparelho `runeclash-*`, cache `runeclash-v1` no `sw.js` e jogo salvo em `runeclash_jogadores/<uid>` no Firestore (mesmas contas do Cristalia). Não troque isso.
+- **Rodar:** dentro de `apps/runeclash`, `python -m http.server 8766` e abra `http://localhost:8766`.
+- Mudanças no Runeclash **não** mexem em `apps/cristalia/` (e vice-versa). Se uma melhoria do Cristalia tiver que vir para cá, traga na mão, quando o Lâmina pedir.
 
 ## App Android (`apps/cristalia-android/`)
 - Mudanças no **jogo não precisam de APK novo**: o app só abre o site. Só mexa no app quando for preciso (nome, ícone, endereço, giro de tela).

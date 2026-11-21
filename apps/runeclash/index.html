@@ -1,0 +1,709 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Runeclash: Sealstone Legends</title>
+<!-- App instalável (PWA): ícone, nome e cor do app no celular -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#14233f">
+<link rel="icon" type="image/png" sizes="192x192" href="icones/icone-192.png">
+<link rel="apple-touch-icon" href="icones/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap">
+<style>
+  /* Layout: jogo em tela cheia; o HUD flutua nas bordas e os controles ficam ao alcance dos polegares.
+     Visual único (não muda com tema claro/escuro): céu azul do jogo + painéis azul-noite translúcidos. */
+  :root {
+    --noite: #14233f;
+    --painel: rgba(18, 33, 61, 0.86);
+    --painel-borda: rgba(143, 244, 255, 0.28);
+    --creme: #fff6e3;
+    --creme-suave: #c9d6e8;
+    --cristal: #8ff4ff;
+    --sol: #ffd23f;
+    --vida-alta: #5fe08a;
+    --vida-media: #ffd23f;
+    --vida-baixa: #ff5470;
+    --f-titulo: 'Fredoka', 'Trebuchet MS', system-ui, sans-serif;
+    --f-corpo: 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --toque: clamp(60px, 13vmin, 80px);
+    color-scheme: dark;
+  }
+  [hidden] { display: none !important; }
+  .versao { font-size: 0.7rem; opacity: 0.7; }
+  html { height: 100%; box-sizing: border-box; }
+  *, *::before, *::after { box-sizing: inherit; }
+  body { height: 100%; margin: 0; overflow: hidden; background: var(--noite); color: var(--creme); font-family: var(--f-corpo); }
+  #app { position: relative; width: 100%; height: 100%; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+  #palco { position: absolute; inset: 0; }
+  #palco canvas { display: block; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  button:focus-visible { outline: 3px solid var(--cristal); outline-offset: 2px; }
+
+  /* ---------- telas de título e escolha ---------- */
+  .tela { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center;
+    padding-block: 20px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  /* ---------- tela de início ----------
+     Paisagem: marca (emblema + nome) à esquerda e menu à direita. Retrato: um embaixo do outro. */
+  #tela-titulo { flex-direction: row; gap: clamp(20px, 6vw, 72px); overflow: hidden;
+    background: radial-gradient(ellipse at 30% 45%, rgba(20, 35, 63, 0.05), rgba(20, 35, 63, 0.55) 60%, rgba(12, 22, 42, 0.85)); }
+  .titulo-marca { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .emblema { width: clamp(64px, 15vmin, 120px); height: auto; filter: drop-shadow(0 0 18px rgba(143, 244, 255, 0.75)); animation: flutuar 3.2s ease-in-out infinite; }
+  @keyframes flutuar { 50% { transform: translateY(-8px) rotate(3deg); } }
+  .logo { margin: 0; font-family: var(--f-titulo); font-weight: 700; font-size: clamp(3rem, 12vmin, 6.2rem); letter-spacing: 0.02em; line-height: 1;
+    color: var(--creme); text-shadow: 0 4px 0 #2a7fb0, 0 8px 24px rgba(10, 30, 60, 0.6); }
+  .logo span { color: var(--cristal); }
+  .lema { margin: 0; display: flex; align-items: center; gap: 10px; font-family: var(--f-titulo); font-weight: 600; font-size: clamp(0.9rem, 2.6vmin, 1.15rem);
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--sol); text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7); }
+  .lema i { width: 7px; height: 9px; background: var(--cristal); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+  .titulo-menu { position: relative; display: flex; flex-direction: column; gap: 10px; width: min(330px, 100%); }
+  .titulo-rodape { position: absolute; left: 0; right: 0; bottom: max(8px, env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 0 16px; }
+  .titulo-rodape .dica { font-size: 0.72rem; text-align: center; }
+  .btn-icone.canto { position: absolute; top: max(12px, env(safe-area-inset-top, 0px)); right: max(12px, env(safe-area-inset-right, 0px)); }
+  /* itens do menu: cartão com ícone, título e uma linha explicando */
+  .menu-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 14px; border-radius: 16px; text-align: left;
+    border: 1px solid var(--painel-borda); background: var(--painel); box-shadow: 0 4px 0 rgba(5, 12, 26, 0.6); backdrop-filter: blur(4px);
+    transition: transform 0.08s, border-color 0.15s; }
+  .menu-item:hover { border-color: var(--cristal); }
+  .menu-item:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(5, 12, 26, 0.6); }
+  .menu-item .ic { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: rgba(143, 244, 255, 0.14); }
+  .menu-item .ic svg { width: 22px; height: 22px; fill: none; stroke: var(--cristal); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .menu-item .txt { display: flex; flex-direction: column; min-width: 0; }
+  .menu-item b { font-family: var(--f-titulo); font-weight: 600; font-size: 1.12rem; line-height: 1.15; }
+  .menu-item small { font-size: 0.74rem; color: var(--creme-suave); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .menu-item.principal { background: linear-gradient(135deg, #ffd23f, #ffb82e); border-color: #ffe27a; color: #3a2a00; box-shadow: 0 4px 0 #b8860b; }
+  .menu-item.principal .ic { background: rgba(58, 42, 0, 0.14); }
+  .menu-item.principal .ic svg { stroke: #3a2a00; fill: #3a2a00; }
+  .menu-item.principal small { color: #6a4f00; }
+  .menu-item.sair .ic { background: rgba(255, 84, 112, 0.16); }
+  .menu-item.sair .ic svg { stroke: #ff8a9a; }
+  .menu-item.confirmar { border-color: var(--vida-baixa); }
+  .menu-item.confirmar b { color: #ff8a9a; }
+  /* brilhinhos subindo (leve: só CSS) */
+  .brilhos { position: absolute; inset: 0; pointer-events: none; }
+  .brilhos i { position: absolute; bottom: -20px; width: 8px; height: 12px; background: var(--cristal); opacity: 0; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+    box-shadow: 0 0 8px var(--cristal); animation: subir 9s linear infinite; }
+  .brilhos i:nth-child(1) { left: 6%; animation-delay: 0s; } .brilhos i:nth-child(2) { left: 14%; animation-delay: 4.5s; transform: scale(0.7); }
+  .brilhos i:nth-child(3) { left: 23%; animation-delay: 2s; } .brilhos i:nth-child(4) { left: 31%; animation-delay: 6.5s; transform: scale(1.3); }
+  .brilhos i:nth-child(5) { left: 42%; animation-delay: 1s; transform: scale(0.8); } .brilhos i:nth-child(6) { left: 51%; animation-delay: 5s; }
+  .brilhos i:nth-child(7) { left: 60%; animation-delay: 3s; transform: scale(1.2); } .brilhos i:nth-child(8) { left: 69%; animation-delay: 7.5s; }
+  .brilhos i:nth-child(9) { left: 77%; animation-delay: 0.5s; transform: scale(0.6); } .brilhos i:nth-child(10) { left: 85%; animation-delay: 4s; }
+  .brilhos i:nth-child(11) { left: 93%; animation-delay: 2.5s; transform: scale(1.1); } .brilhos i:nth-child(12) { left: 37%; animation-delay: 8s; background: var(--sol); box-shadow: 0 0 8px var(--sol); }
+  @keyframes subir { 0% { opacity: 0; translate: 0 0; } 10% { opacity: 0.85; } 80% { opacity: 0.5; } 100% { opacity: 0; translate: 30px -105vh; } }
+  /* ---------- login ----------
+     Paisagem: marca à esquerda e o quadro de entrar à direita. Retrato: um embaixo do outro, no alto
+     (o teclado do celular cobre a parte de baixo da tela e, no app em tela cheia, a tela não encolhe). */
+  #tela-login { flex-direction: row; gap: clamp(20px, 6vw, 72px); overflow-x: hidden; overflow-y: auto; touch-action: pan-y;
+    background: radial-gradient(ellipse at 30% 45%, rgba(20, 35, 63, 0.05), rgba(20, 35, 63, 0.55) 60%, rgba(12, 22, 42, 0.85)); }
+  .caixa-login { position: relative; display: flex; flex-direction: column; gap: 7px; width: min(340px, 100%); padding: 16px; border-radius: 20px; flex: none;
+    background: var(--painel); border: 1px solid var(--painel-borda); text-align: left; backdrop-filter: blur(4px); }
+  .caixa-login h2 { margin: 0; font-family: var(--f-titulo); font-weight: 600; font-size: 1.35rem; }
+  .caixa-login label { font-size: 0.78rem; font-weight: 800; color: var(--creme-suave); }
+  .caixa-login input { width: 100%; padding: 10px 14px; border-radius: 12px; border: 2px solid var(--painel-borda); background: rgba(5, 12, 26, 0.6);
+    color: var(--creme); font: 700 1.05rem var(--f-corpo); user-select: text; -webkit-user-select: text; }
+  .caixa-login input:focus { outline: none; border-color: var(--cristal); }
+  .botoes-login { display: flex; gap: 8px; margin-top: 2px; }
+  .botoes-login button { flex: 1; border: 0; border-radius: 12px; padding: 10px; font-family: var(--f-titulo); font-weight: 600; font-size: 1.05rem;
+    background: var(--sol); color: #3a2a00; box-shadow: 0 4px 0 #b8860b; }
+  .botoes-login button.sec { background: var(--cristal); color: #0c3a48; box-shadow: 0 4px 0 #2a8fa8; }
+  .botoes-login button:active { transform: translateY(3px); box-shadow: none; }
+  .caixa-login button:disabled { opacity: 0.55; }
+  #btn-sem-nuvem { border: 1px dashed var(--creme-suave); border-radius: 12px; padding: 8px; background: transparent; font-weight: 800; font-size: 0.85rem; }
+  #msg-login { margin: 0; font-size: 0.8rem; font-weight: 800; color: var(--cristal); }
+  #msg-login.erro { color: #ff8a9a; }
+  .esperando { cursor: progress; }
+  #contas-aparelho { display: flex; flex-direction: column; gap: 6px; }
+  #contas-aparelho:empty { display: none; }
+  #contas-aparelho > small { font-size: 0.72rem; font-weight: 800; color: var(--creme-suave); }
+  .conta { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 12px; border: 1px solid var(--painel-borda); background: rgba(255,255,255,0.05); text-align: left; }
+  .conta .av { flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-family: var(--f-titulo); font-weight: 700; background: var(--cor); color: #10202e; }
+  .conta .txt { display: flex; flex-direction: column; min-width: 0; }
+  .conta b { font-family: var(--f-titulo); font-weight: 600; font-size: 1rem; }
+  .conta small { font-size: 0.7rem; color: var(--creme-suave); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .conta.ultima { border-color: var(--sol); }
+  .caixa-login .nota { margin: 0; font-size: 0.7rem; color: var(--creme-suave); }
+  /* tela de início: "Olá, nome" e onde o jogo está salvo */
+  .ola { margin: 0; align-self: flex-start; max-width: 100%; padding: 4px 12px; border-radius: 12px; background: var(--painel); font-family: var(--f-titulo); font-weight: 600; font-size: 1rem; color: var(--creme); text-align: left; }
+  .ola b { color: var(--cristal); }
+  .ola small { display: block; font-family: var(--f-corpo); font-size: 0.7rem; font-weight: 700; color: var(--creme-suave); }
+  /* celular em pé: o jogo só roda deitado; esta tela cobre tudo e o jogo pausa até virar */
+  #vire { position: absolute; inset: 0; z-index: 60; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px; text-align: center;
+    background: radial-gradient(ellipse at 50% 40%, rgba(20, 35, 63, 0.94), rgba(10, 18, 34, 0.99)); touch-action: none; }
+  #vire svg { width: 120px; height: 120px; animation: vire-girar 2.4s ease-in-out infinite; }
+  @keyframes vire-girar { 0%, 20% { transform: rotate(0deg); } 50%, 80% { transform: rotate(-90deg); } 100% { transform: rotate(-90deg); } }
+  #vire h2 { margin: 0; font-family: var(--f-titulo); font-weight: 600; font-size: 1.8rem; }
+  #vire p { margin: 0; max-width: 30ch; color: var(--creme-suave); font-weight: 700; }
+  @media (prefers-reduced-motion: reduce) { #vire svg { animation: none; transform: rotate(-45deg); } }
+  /* menu de pausa e tela de saída */
+  .sobreposicao { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(8, 14, 28, 0.72); backdrop-filter: blur(3px); z-index: 20; }
+  .caixa-menu { display: flex; flex-direction: column; gap: 10px; width: min(340px, 100%); padding: 16px; border-radius: 20px; background: var(--noite); border: 1px solid var(--painel-borda); text-align: center; }
+  .caixa-menu h2 { margin: 0 0 4px; font-family: var(--f-titulo); font-weight: 600; font-size: 1.5rem; }
+  .caixa-menu .dica { font-size: 0.85rem; }
+  @media (orientation: portrait) {
+    #tela-titulo { flex-direction: column; gap: 22px; justify-content: center; padding-bottom: 70px; }
+    #tela-login { flex-direction: column; justify-content: flex-start; gap: 14px; padding-top: max(28px, env(safe-area-inset-top, 0px)); }
+    #tela-login .emblema { width: 54px; } #tela-login .logo { font-size: 2.6rem; } #tela-login .lema { display: none; }
+  }
+  /* celular deitado com o teclado aberto: só o quadro, colado no alto */
+  @media (orientation: landscape) and (max-height: 500px) {
+    #tela-login.digitando { justify-content: center; align-items: flex-start; padding-top: 6px; }
+    #tela-login.digitando .titulo-marca, #tela-login.digitando .nota, #tela-login.digitando #contas-aparelho, #tela-login.digitando h2 { display: none; }
+  }
+  @media (max-height: 430px) and (orientation: landscape) {
+    .menu-item { padding: 6px 12px; } .menu-item .ic { width: 32px; height: 32px; } .menu-item b { font-size: 1rem; }
+    .titulo-menu { gap: 7px; } .titulo-rodape .dica:first-child { display: none; }
+    .ola { padding: 3px 10px; font-size: 0.9rem; } .ola small { display: inline; margin-left: 6px; }
+    .caixa-login { padding: 12px; gap: 5px; } .caixa-login input { padding: 8px 12px; } .conta { padding: 5px 10px; } .conta .av { width: 26px; height: 26px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .emblema, .brilhos i { animation: none; } }
+  .btn-grande { border: 0; border-radius: 999px; padding: 14px 28px; font-family: var(--f-titulo); font-weight: 600; font-size: 1.15rem;
+    background: var(--sol); color: #3a2a00; box-shadow: 0 5px 0 #b8860b; transition: transform 0.08s; }
+  .btn-grande.sec { background: var(--cristal); color: #0c3a48; box-shadow: 0 5px 0 #2a8fa8; }
+  .btn-grande:active { transform: translateY(3px); box-shadow: 0 2px 0 #b8860b; }
+  .btn-grande:disabled { opacity: 0.5; cursor: default; }
+  .dica { margin: 0; max-width: 46ch; font-size: 0.85rem; color: var(--creme-suave); text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8); }
+
+  .tag { display: inline-block; padding: 1px 8px; border-radius: 999px; background: var(--cor); color: #10202e; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+
+  /* ---------- monstruário / escolha do inicial ----------
+     Paisagem: vitrine 3D à esquerda, ficha à direita. Retrato: vitrine em cima, ficha embaixo.
+     A vitrine é o próprio canvas do jogo; #col-palco só reserva o espaço vazio. */
+  #tela-colecao { position: absolute; inset: 0; display: grid; pointer-events: none; gap: 8px;
+    grid-template-columns: minmax(0, 1fr) min(360px, 44%); grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas: "topo topo" "abas abas" "palco info";
+    padding-block: 10px; padding-left: max(10px, env(safe-area-inset-left, 0px)); padding-right: max(10px, env(safe-area-inset-right, 0px)); }
+  #tela-colecao > * { pointer-events: auto; min-width: 0; }
+  .col-topo { grid-area: topo; display: flex; align-items: center; gap: 10px; }
+  .col-topo h2 { margin: 0; font-family: var(--f-titulo); font-weight: 600; font-size: 1.3rem; text-shadow: 0 2px 8px rgba(10, 20, 40, 0.6); }
+  .col-abas { grid-area: abas; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; touch-action: pan-x; padding-bottom: 2px; }
+  .col-abas::-webkit-scrollbar { display: none; }
+  .col-abas button { flex: none; display: inline-flex; align-items: center; gap: 6px; border: 2px solid transparent; border-radius: 999px; padding: 5px 12px;
+    background: var(--painel); font-weight: 800; font-size: 0.8rem; }
+  .col-abas button i { width: 10px; height: 10px; border-radius: 50%; background: var(--cor); }
+  .col-abas button.ativa { border-color: var(--cor); background: #23406e; }
+  .col-abas button.dupla i { background: linear-gradient(90deg, var(--cor) 50%, var(--cor2) 50%); }
+  .col-detalhe .evo.duplo { border-left: 3px solid #c79bff; padding-left: 8px; }
+  #rotulo .duplo { color: #e2c8ff; font-weight: 800; }
+  #tela-colecao .col-palco { grid-area: palco; pointer-events: none; }
+  .col-info { grid-area: info; background: var(--painel); border-radius: 14px; padding: 10px 12px; overflow-y: auto; touch-action: pan-y;
+    display: flex; flex-direction: column; gap: 10px; }
+  .col-formas { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 6px; }
+  .col-formas button { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 6px 8px; border-radius: 10px; border: 2px solid transparent;
+    background: rgba(255, 255, 255, 0.06); font-weight: 800; font-size: 0.82rem; text-align: left; }
+  .col-formas button small { font-size: 0.66rem; color: var(--sol); font-weight: 800; letter-spacing: 0.04em; }
+  .col-formas button.ativa { border-color: var(--cor); background: rgba(255, 255, 255, 0.12); }
+  .col-detalhe { display: flex; flex-direction: column; gap: 6px; }
+  .col-detalhe .cab { display: flex; align-items: center; gap: 8px; }
+  .col-detalhe .estagio { font-size: 0.75rem; color: var(--creme-suave); font-weight: 700; }
+  .col-detalhe h3 { margin: 0; font-family: var(--f-titulo); font-weight: 600; font-size: 1.4rem; }
+  .col-detalhe p { margin: 0; font-size: 0.82rem; line-height: 1.35; }
+  .col-detalhe .desc { color: var(--creme-suave); }
+  .col-detalhe .evo b, .col-detalhe .vant b { color: var(--sol); }
+  .col-detalhe .vant { font-size: 0.78rem; color: var(--creme-suave); }
+  .col-detalhe .status { font-size: 0.78rem; font-weight: 800; color: var(--creme-suave); }
+  .col-detalhe .status.sim { color: var(--vida-alta); }
+  .stats { display: flex; flex-direction: column; gap: 3px; }
+  .nivel-stats { font-size: 0.68rem; color: var(--creme-suave); font-weight: 700; letter-spacing: 0.04em; }
+  .stat em { min-width: 2.4em; }
+  .stat { display: grid; grid-template-columns: 4.2em 1fr 3em; align-items: center; gap: 6px; width: 100%; font-size: 0.72rem; color: var(--creme-suave); }
+  .stat i { height: 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
+  .stat b { display: block; height: 100%; background: var(--cor); }
+  .stat em { font-style: normal; text-align: right; font-variant-numeric: tabular-nums; color: var(--creme); }
+  .col-detalhe .golpes-lista small { color: var(--creme-suave); font-weight: 600; }
+  /* o botão de escolher fica sempre visível no rodapé do painel */
+  #col-escolher { align-self: stretch; position: sticky; bottom: 0; flex: none; }
+
+  /* ---------- evolução ---------- */
+  #tela-evolucao { justify-content: space-between; pointer-events: none; padding-block: 24px; }
+  #tela-evolucao h2 { margin: 0; font-family: var(--f-titulo); font-weight: 600; font-size: 1.6rem; text-wrap: balance; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6); }
+  #tela-evolucao button { pointer-events: auto; }
+
+  /* ---------- HUD do mundo ---------- */
+  .hud { position: absolute; inset: 0; pointer-events: none; }
+  .hud button { pointer-events: auto; }
+  #equipe-chips { position: absolute; top: 10px; left: max(10px, env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; gap: 6px; }
+  .chip { display: grid; grid-template-columns: auto auto; gap: 2px 8px; align-items: center; padding: 6px 10px; border-radius: 10px; background: var(--painel);
+    border-left: 4px solid var(--cor); min-width: 128px; font-size: 0.8rem; }
+  .chip .nome { font-weight: 800; }
+  .chip .nv { justify-self: end; color: var(--creme-suave); font-variant-numeric: tabular-nums; }
+  .chip .vida { grid-column: 1 / -1; }
+  .chip.desmaiado { opacity: 0.55; }
+  .vida, .xp { display: block; height: 7px; border-radius: 4px; background: rgba(0, 0, 0, 0.4); overflow: hidden; }
+  .vida b, .xp b { display: block; height: 100%; background: var(--vida-alta); transition: width 0.2s; }
+  .xp b { background: var(--cristal); }
+  [data-nivel="medio"] { background: var(--vida-media) !important; }
+  [data-nivel="baixo"] { background: var(--vida-baixa) !important; }
+  .topo-dir { position: absolute; top: 10px; right: max(10px, env(safe-area-inset-right, 0px)); display: flex; gap: 8px; align-items: center; }
+  .pilula { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--painel); font-weight: 800; font-variant-numeric: tabular-nums; }
+  .losango { width: 10px; height: 14px; background: var(--cristal); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); display: inline-block; }
+  .btn-hud { border: 1px solid var(--painel-borda); border-radius: 999px; padding: 7px 14px; background: var(--painel); font-weight: 800; font-size: 0.85rem; }
+  .btn-hud:active, .btn-hud.apertado { background: #23406e; }
+
+  .btn-casa { position: absolute; right: max(16px, calc(env(safe-area-inset-right, 0px) + 10px)); bottom: max(16px, calc(env(safe-area-inset-bottom, 0px) + 10px));
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 84px; height: 84px; border-radius: 22px;
+    border: 3px solid #d9534f; background: var(--painel); font-weight: 800; font-size: 0.72rem; line-height: 1.1; text-align: center; padding: 6px; }
+  .btn-casa:active { transform: scale(0.94); }
+  .icone-casa { width: 26px; height: 22px; position: relative; display: block; }
+  .icone-casa::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 11px; background: #d9534f; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+  .icone-casa::after { content: ""; position: absolute; left: 4px; right: 4px; bottom: 0; height: 12px; background: #f3e3c3; border-radius: 1px; }
+  /* monstro invocado: Invocar/Guardar e Controlar ficam ao lado da casa (em pé: um em cima do outro) */
+  .btn-pet { right: max(110px, calc(env(safe-area-inset-right, 0px) + 104px)); border-color: #ff8a3d; }
+  .btn-pet.guardar { border-color: #ffb27a; }
+  .btn-controlar { right: max(204px, calc(env(safe-area-inset-right, 0px) + 198px)); border-color: var(--cristal); }
+  .btn-pet svg, .btn-controlar svg { width: 28px; height: 28px; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .btn-pet svg { stroke: #ffb27a; } .btn-controlar svg { stroke: var(--cristal); }
+  /* controlando o monstro: some o que é do treinador e aparecem os golpes e o "Voltar" */
+  #hud-treino { position: absolute; inset: 0; pointer-events: none; display: none; }
+  #app.controlando #hud-treino { display: block; }
+  #app.controlando #btn-casa, #app.controlando #btn-pet, #app.controlando #btn-controlar, #app.controlando #equipe-chips,
+  #app.controlando .topo-dir > :not(.btn-tela-cheia) { display: none; }
+  #app.controlando #camera-pad { bottom: calc(max(12px, env(safe-area-inset-bottom, 0px)) + var(--toque) * 2 + clamp(6px, 1.6vmin, 12px) + 18px);
+    right: max(14px, calc(env(safe-area-inset-right, 0px) + 10px)); width: 76px; height: 76px; }
+  .treino-chip { position: absolute; top: max(10px, env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); max-width: calc(100% - 140px);
+    padding: 6px 14px; border-radius: 999px; background: var(--painel); border: 2px solid #ff8a3d; font-weight: 800; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .treino-chip small { font-weight: 700; color: var(--creme-suave); }
+  #btn-voltar-treinador { position: absolute; top: calc(max(10px, env(safe-area-inset-top, 0px)) + 46px); left: max(10px, env(safe-area-inset-left, 0px));
+    border: 2px solid var(--cristal); border-radius: 16px; background: var(--painel); padding: 8px 12px; font-weight: 800; font-size: 0.8rem; line-height: 1.15; text-align: center; pointer-events: auto; }
+  #btn-voltar-treinador:active { transform: scale(0.94); }
+  #bi-tipo.lider { color: var(--sol); font-weight: 800; }
+  .relogio { position: absolute; top: 56px; right: max(10px, env(safe-area-inset-right, 0px)); font-size: 0.8rem; }
+  .relogio .astro { width: 12px; height: 12px; border-radius: 50%; background: var(--sol); box-shadow: 0 0 8px var(--sol); }
+  .relogio.noite .astro { background: transparent; box-shadow: 4px -2px 0 0 #dcd6ff; }
+  #zona-nome { position: absolute; top: 18%; left: 50%; transform: translateX(-50%); font-family: var(--f-titulo); font-weight: 600; font-size: 1.5rem;
+    white-space: nowrap; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6); opacity: 0; pointer-events: none; }
+  #zona-nome.mostrar { animation: zona 2.6s ease-out forwards; }
+  @keyframes zona { 0% { opacity: 0; transform: translate(-50%, 8px); } 15%, 70% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; } }
+
+  #rotulo { position: absolute; left: 0; top: 0; padding: 3px 9px; border-radius: 8px; background: var(--painel); font-size: 0.78rem; font-weight: 700; white-space: nowrap; pointer-events: none; }
+  #rotulo i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
+  #rotulo b { color: var(--sol); }
+
+  /* ---------- painel da equipe ---------- */
+  #painel-equipe { position: absolute; inset: 0; background: rgba(10, 18, 34, 0.75); display: flex; justify-content: center; align-items: flex-start; overflow-y: auto; touch-action: pan-y;
+    padding-block: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .painel-caixa { width: min(720px, 100%); background: var(--noite); border: 1px solid var(--painel-borda); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+  .painel-cabeca { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .painel-caixa h2, .painel-caixa h3 { margin: 0; font-family: var(--f-titulo); font-weight: 600; }
+  .painel-caixa h3 { font-size: 1rem; color: var(--creme-suave); }
+  .abas-painel { display: flex; gap: 6px; }
+  .abas-painel button { border: 2px solid transparent; border-radius: 999px; padding: 6px 16px; background: var(--painel); font-family: var(--f-titulo); font-weight: 600; font-size: 1.05rem; }
+  .abas-painel button.ativa { border-color: var(--cristal); background: #23406e; }
+  .abas-painel b { font-size: 0.8rem; color: var(--cristal); }
+  .ficha .onde { margin-left: auto; font-size: 0.68rem; font-weight: 800; padding: 1px 7px; border-radius: 6px; background: rgba(255, 255, 255, 0.1); }
+  .ficha .onde.eq { background: #2f8a4f; }
+  .ficha.desmaiado { opacity: 0.75; }
+  .cab-onde { display: flex; margin-bottom: -2px; }
+  #painel-cristais { display: flex; flex-direction: column; gap: 8px; }
+  #painel-cristais .linha-cr { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  #painel-cristais .cr { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,0.08); border: 2px solid var(--c); font-weight: 800; }
+  #painel-cristais .cr .losango { background: var(--c); }
+  #painel-cristais button[disabled] { opacity: 0.45; }
+  #painel-cristais small { color: var(--creme-suave); }
+  .grade-fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .ficha { background: var(--painel); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 6px; border-top: 3px solid var(--cor); min-width: 0; }
+  .ficha header { display: flex; align-items: center; gap: 8px; }
+  .ficha header strong { font-family: var(--f-titulo); font-weight: 600; font-size: 1.05rem; }
+  .ficha header em { margin-left: auto; font-style: normal; color: var(--sol); font-weight: 800; }
+  .linha { display: grid; grid-template-columns: 2.6em 1fr auto; gap: 6px; align-items: center; font-size: 0.75rem; }
+  .linha small { font-variant-numeric: tabular-nums; color: var(--creme-suave); }
+  .atributos { display: flex; gap: 10px; font-size: 0.72rem; color: var(--creme-suave); flex-wrap: wrap; }
+  .atributos b { color: var(--creme); }
+  .golpes-lista { display: flex; flex-wrap: wrap; gap: 4px; }
+  .golpes-lista span { font-size: 0.7rem; padding: 2px 7px; border-radius: 6px; border: 1px solid var(--cor); }
+  .cmds { display: flex; flex-wrap: wrap; gap: 6px; }
+  .cmds button { border: 0; border-radius: 8px; padding: 6px 10px; background: #2a4a7a; font-weight: 700; font-size: 0.78rem; }
+  .lider { font-size: 0.75rem; color: var(--sol); font-weight: 700; }
+  .vazio, #info-colecao { margin: 0; font-size: 0.85rem; color: var(--creme-suave); }
+
+  /* ---------- HUD da batalha ---------- */
+  .barra-luta { position: absolute; top: 10px; width: min(40vw, 260px); padding: 7px 10px; border-radius: 12px; background: var(--painel); display: flex; flex-direction: column; gap: 4px; }
+  .barra-luta.jog { left: max(10px, env(safe-area-inset-left, 0px)); }
+  .coluna-dir { position: absolute; top: 10px; right: max(10px, env(safe-area-inset-right, 0px)); width: min(40vw, 260px);
+    display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .coluna-dir .barra-luta.ini { position: static; width: 100%; }
+  .barra-luta .topo { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; min-width: 0; }
+  .barra-luta .topo strong { font-family: var(--f-titulo); font-weight: 600; font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .barra-luta .topo span:last-child { margin-left: auto; color: var(--sol); font-weight: 800; }
+  .barra-luta .vida { height: 10px; }
+  .barra-luta .pe { display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: var(--creme-suave); font-variant-numeric: tabular-nums; }
+  #bj-equipe { display: flex; gap: 4px; }
+  #bj-equipe i { width: 9px; height: 9px; border-radius: 50%; background: var(--vida-alta); }
+  #bj-equipe i.fora { background: #55627a; }
+  #bj-equipe i.atual { box-shadow: 0 0 0 2px var(--creme); }
+  .acoes-topo { display: flex; flex-wrap: nowrap; width: max-content; justify-content: flex-end; gap: 6px; }
+  .acoes-topo .btn-hud { pointer-events: auto; }
+  #btn-cristal { --crist: var(--cristal); display: inline-flex; align-items: center; gap: 6px; border-color: var(--crist); }
+  #btn-cristal .losango { background: var(--crist); }
+  #chance-cristal { color: var(--crist); font-size: 0.75rem; }
+  #btn-cristal.fraco { opacity: 0.6; border-style: dashed; }
+  #btn-cristal.fraco #chance-cristal { color: #ff8a9a; }
+  .losango.forte { background: #c79bff; } .losango.supremo { background: #ffd23f; }
+  .pilula.cristais { gap: 8px; }
+  .pilula.cristais span { display: inline-flex; align-items: center; gap: 4px; }
+  .golpes { position: absolute; right: max(12px, calc(env(safe-area-inset-right, 0px) + 8px)); bottom: max(12px, calc(env(safe-area-inset-bottom, 0px) + 8px));
+    display: grid; grid-template-columns: repeat(2, var(--toque)); grid-template-areas: ". g2" "g1 g0"; gap: clamp(6px, 1.6vmin, 12px); }
+  .golpe, .esquiva { position: relative; width: var(--toque); height: var(--toque); border-radius: 50%; border: 3px solid var(--cor, var(--creme)); background: var(--painel);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 4px; overflow: hidden; touch-action: none; }
+  .golpe[data-acao="golpe0"] { grid-area: g0; } .golpe[data-acao="golpe1"] { grid-area: g1; } .golpe[data-acao="golpe2"] { grid-area: g2; } .esquiva { grid-area: esq; --cor: var(--creme); }
+  .golpe .nome, .esquiva .nome { font-size: 0.66rem; font-weight: 800; line-height: 1.05; text-align: center; position: relative; z-index: 1; }
+  .golpe .tipo { font-size: 0.56rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--cor); position: relative; z-index: 1; }
+  .recarga { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(rgba(5, 10, 24, 0.72) calc(var(--p, 0) * 1turn), transparent 0); pointer-events: none; }
+  .carregando { border-color: rgba(255, 255, 255, 0.25); }
+  /* golpe que causa efeito: bolinha na cor do efeito */
+  .golpe.com-efeito::after { content: ""; position: absolute; top: 7px; right: 13px; width: 10px; height: 10px; border-radius: 50%;
+    background: var(--ef); box-shadow: 0 0 6px var(--ef); z-index: 2; }
+  .golpe.bloqueado, .esquiva.bloqueado { opacity: 0.4; }
+  .status-lista { display: flex; flex-wrap: wrap; gap: 4px; }
+  .status-lista:empty { display: none; }
+  .status-lista .mod { background: rgba(255, 255, 255, 0.12); color: var(--creme); }
+  .status-lista .mod.bom { background: #2f8a4f; }
+  .status-lista .mod.ruim { background: #9a3348; }
+  #arena-info { width: 100%;
+    padding: 4px 10px; border-radius: 8px; background: var(--painel); font-size: 0.7rem; text-align: center; color: var(--creme-suave); pointer-events: none; }
+  #arena-info strong { color: var(--creme); }
+  .status-lista span { font-size: 0.66rem; font-weight: 800; padding: 1px 6px; border-radius: 6px; background: var(--cor); color: #10202e; font-variant-numeric: tabular-nums; }
+  .melhorias { margin: 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 3px; font-size: 0.78rem; line-height: 1.3; }
+  .melhorias li::marker { color: var(--sol); }
+  .melhorias.vazio { list-style: none; padding-left: 0; color: var(--creme-suave); }
+  #evo-novidades { margin: 0; font-size: 1rem; font-weight: 800; color: var(--sol); text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6); text-wrap: balance; min-height: 1.4em; }
+  .apertado { transform: scale(0.92); }
+
+  /* ---------- batalha enxuta: ícones, placas sobre os inimigos e seletor de cristal ---------- */
+  #hud-batalha .barra-luta.jog { width: clamp(150px, 30vw, 230px); padding: 6px 9px; gap: 3px; }
+  #hud-batalha .barra-luta .vida { height: 8px; }
+  .acoes-batalha { position: absolute; top: max(10px, env(safe-area-inset-top, 0px)); right: max(10px, env(safe-area-inset-right, 0px)); display: flex; gap: 8px; align-items: center; }
+  .btn-icone { --tam: clamp(40px, 8.5vmin, 52px); position: relative; width: var(--tam); height: var(--tam); border-radius: 50%; border: 2px solid var(--painel-borda);
+    background: var(--painel); display: inline-flex; align-items: center; justify-content: center; padding: 0; pointer-events: auto; flex: none; }
+  .btn-icone.mini { --tam: clamp(32px, 6.5vmin, 40px); }
+  .btn-icone svg { width: 55%; height: 55%; fill: none; stroke: var(--creme); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .btn-icone:active, .btn-icone.apertado { transform: scale(0.9); background: #23406e; }
+  #btn-cristal { --crist: var(--cristal); border-color: var(--crist); }
+  .losango.grande { width: 38%; height: 54%; background: var(--crist); box-shadow: 0 0 10px var(--crist); }
+  .selo { position: absolute; right: -4px; bottom: -4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--noite);
+    border: 2px solid var(--crist); font-size: 0.7rem; line-height: 16px; text-align: center; font-variant-numeric: tabular-nums; }
+  #btn-cristal.fraco { opacity: 0.55; border-style: dashed; }
+  #seletor-cristal { position: absolute; top: calc(max(10px, env(safe-area-inset-top, 0px)) + clamp(48px, 10vmin, 60px)); right: max(10px, env(safe-area-inset-right, 0px));
+    display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 14px; background: var(--painel); border: 1px solid var(--painel-borda); pointer-events: auto; }
+  #seletor-cristal button { display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 8px; min-width: 170px; padding: 7px 10px; border-radius: 10px;
+    border: 2px solid transparent; background: rgba(255, 255, 255, 0.06); font-weight: 800; font-size: 0.82rem; text-align: left; }
+  #seletor-cristal button .losango { background: var(--c); width: 12px; height: 17px; }
+  #seletor-cristal button.ativo { border-color: var(--c); }
+  #seletor-cristal button small { color: var(--creme-suave); font-weight: 700; }
+  #seletor-cristal button:disabled { opacity: 0.4; }
+  #placas-inimigos { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .placa-ini { position: absolute; left: 0; top: 0; padding: 2px 7px 4px; border-radius: 8px; background: var(--painel); font-size: 0.72rem; font-weight: 800;
+    text-align: center; white-space: nowrap; min-width: 64px; will-change: transform; }
+  .placa-ini i.vida { height: 5px; margin-top: 2px; }
+  .placa-ini.alvo { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85); }
+  .placa-ini.chefe, .placa-ini.lider { color: var(--sol); }
+  .placa-ini.furia { color: #ff6b81; }
+  /* avisos da batalha: pequenos, no alto, e somem rápido */
+  #app.em-batalha #avisos { top: calc(max(10px, env(safe-area-inset-top, 0px)) + 62px); bottom: auto; width: min(60vw, 360px); }
+  #app.em-batalha .aviso { padding: 4px 10px; font-size: 0.74rem; animation: entra 0.2s ease-out, sai 0.3s ease-in 1.2s forwards; }
+
+  /* ---------- joystick ---------- */
+  #joystick { position: absolute; inset: 0; pointer-events: none; }
+  #joystick .base { position: absolute; left: 0; top: 0; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%;
+    background: rgba(18, 33, 61, 0.35); border: 2px solid rgba(255, 246, 227, 0.35); opacity: 0.6; transition: opacity 0.15s; }
+  #joystick.ativo .base { opacity: 1; }
+  /* controle da câmera: do lado direito, acima da casa (mapa) ou das habilidades (batalha) */
+  #camera-pad { position: absolute; right: max(18px, calc(env(safe-area-inset-right, 0px) + 12px)); bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 104px);
+    width: 88px; height: 88px; border-radius: 50%; display: grid; place-items: center; touch-action: none; pointer-events: auto;
+    background: rgba(18, 33, 61, 0.35); border: 2px dashed rgba(143, 244, 255, 0.45); opacity: 0.75; transition: opacity 0.15s; }
+  #camera-pad.ativo { opacity: 1; border-style: solid; }
+  #camera-pad .manete { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: rgba(143, 244, 255, 0.25); pointer-events: none; }
+  #camera-pad svg { width: 26px; height: 26px; fill: none; stroke: var(--cristal); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  #app.em-batalha #camera-pad { bottom: calc(max(12px, env(safe-area-inset-bottom, 0px)) + var(--toque) * 2 + clamp(6px, 1.6vmin, 12px) + 18px);
+    right: max(14px, calc(env(safe-area-inset-right, 0px) + 10px)); width: 76px; height: 76px; }
+  #joystick .manete { position: absolute; left: 50%; top: 50%; width: 54px; height: 54px; margin: -27px 0 0 -27px; border-radius: 50%; background: rgba(255, 246, 227, 0.85); }
+
+  /* ---------- avisos e números ---------- */
+  #numeros { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .numero { position: absolute; left: 0; top: 0; font-family: var(--f-titulo); font-weight: 700; font-size: 1.5rem; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.55); white-space: nowrap; will-change: transform; }
+  .numero.grande { font-size: 2rem; }
+  .numero.pequeno { font-size: 0.95rem; }
+  #avisos { position: absolute; left: 50%; bottom: max(18px, env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; width: min(46vw, 420px); }
+  .aviso { padding: 7px 14px; border-radius: 10px; background: var(--painel); font-size: 0.85rem; font-weight: 700; text-align: center; animation: entra 0.25s ease-out, sai 0.4s ease-in 2.4s forwards; }
+  @keyframes entra { from { opacity: 0; transform: translateY(8px); } }
+  @keyframes sai { to { opacity: 0; } }
+
+  /* Celular em pé: tudo um pouco menor */
+  @media (orientation: portrait) {
+    :root { --toque: clamp(58px, 15vmin, 72px); }
+    #tela-colecao { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(180px, 36%) minmax(0, 1fr);
+      grid-template-areas: "topo" "abas" "palco" "info"; }
+    .barra-luta { width: calc(50% - 16px); }
+    .coluna-dir { width: calc(50% - 16px); }
+    .coluna-dir .btn-hud { padding: 6px 10px; font-size: 0.78rem; }
+    .acoes-topo { flex-wrap: wrap; width: auto; }
+    #avisos { width: calc(100% - 32px); bottom: 190px; }
+    .btn-pet, .btn-controlar { width: 72px; height: 72px; }
+    .btn-pet { right: max(106px, calc(env(safe-area-inset-right, 0px) + 100px)); }
+    .btn-controlar { right: max(106px, calc(env(safe-area-inset-right, 0px) + 100px)); bottom: calc(max(16px, calc(env(safe-area-inset-bottom, 0px) + 10px)) + 82px); }
+    .treino-chip { top: calc(max(10px, env(safe-area-inset-top, 0px)) + 96px); max-width: calc(100% - 24px); }
+    #btn-voltar-treinador { top: calc(max(10px, env(safe-area-inset-top, 0px)) + 140px); }
+  }
+  @media (max-height: 430px) and (orientation: landscape) {
+    .col-topo h2 { font-size: 1.1rem; }
+    #tela-colecao { gap: 6px; padding-block: 6px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .aviso { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div id="palco"></div>
+  <div id="numeros"></div>
+  <div id="rotulo" hidden></div>
+
+  <!-- Login: aparece toda vez que o jogo abre. Conta na nuvem (Firebase) com nome e senha; a conta GM fica só no aparelho -->
+  <section id="tela-login" class="tela" hidden>
+    <div class="brilhos" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="titulo-marca">
+      <svg class="emblema" viewBox="0 0 100 120" aria-hidden="true">
+        <polygon points="50,4 92,44 50,116 8,44" fill="#8ff4ff"/>
+        <polygon points="50,4 50,44 8,44" fill="#e2feff"/>
+        <polygon points="50,4 92,44 50,44" fill="#b6f8ff"/>
+        <polygon points="8,44 50,44 50,116" fill="#4fd8f0"/>
+        <polygon points="50,44 92,44 50,116" fill="#2ab8d8"/>
+      </svg>
+      <h1 class="logo">Rune<span>clash</span></h1>
+      <p class="lema">Sealstone Legends</p>
+    </div>
+    <form id="form-login" class="caixa-login" autocomplete="on" novalidate>
+      <h2>Entrar</h2>
+      <label for="nome-login">Nome de usuário</label>
+      <input id="nome-login" name="username" maxlength="16" placeholder="Seu nome" autocomplete="username" autocapitalize="words" spellcheck="false">
+      <label for="senha-login">Senha</label>
+      <input id="senha-login" name="password" type="password" placeholder="Mínimo 6 letras ou números" autocomplete="current-password">
+      <p id="msg-login" role="status" hidden></p>
+      <div class="botoes-login"><button type="submit">Entrar</button><button id="btn-criar-conta" class="sec" type="button">Criar conta</button></div>
+      <button id="btn-sem-nuvem" type="button" hidden>Jogar só neste aparelho (sem nuvem)</button>
+      <div id="contas-aparelho"></div>
+      <p class="nota">A conta fica na nuvem: entre com o mesmo nome e senha em qualquer celular.</p>
+    </form>
+  </section>
+
+  <section id="tela-titulo" class="tela" hidden>
+    <!-- brilhinhos de cristal subindo ao fundo -->
+    <div class="brilhos" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="titulo-marca">
+      <svg class="emblema" viewBox="0 0 100 120" aria-hidden="true">
+        <polygon points="50,4 92,44 50,116 8,44" fill="#8ff4ff"/>
+        <polygon points="50,4 50,44 8,44" fill="#e2feff"/>
+        <polygon points="50,4 92,44 50,44" fill="#b6f8ff"/>
+        <polygon points="8,44 50,44 50,116" fill="#4fd8f0"/>
+        <polygon points="50,44 92,44 50,116" fill="#2ab8d8"/>
+      </svg>
+      <h1 class="logo">Rune<span>clash</span></h1>
+      <p class="lema">Sealstone Legends</p>
+    </div>
+    <nav class="titulo-menu" aria-label="Menu principal">
+      <p class="ola" id="ola"></p>
+      <button id="btn-continuar" class="menu-item principal" type="button" hidden>
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg></span><span class="txt"><b>Continuar</b><small id="resumo-save"></small></span>
+      </button>
+      <button id="btn-novo" class="menu-item" type="button">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span><span class="txt"><b>Novo jogo</b><small>Escolha seu primeiro parceiro</small></span>
+      </button>
+      <button id="btn-monstruario" class="menu-item" type="button">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5zM4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/></svg></span><span class="txt"><b>Monstruário</b><small>Todos os monstros e evoluções</small></span>
+      </button>
+      <button id="btn-instalar" class="menu-item" type="button" hidden>
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></span><span class="txt"><b>Instalar app</b><small>Abre direto, sem navegador</small></span>
+      </button>
+      <button id="btn-trocar-conta" class="menu-item" type="button">
+        <span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg></span><span class="txt"><b>Trocar conta</b><small>Entrar com outro nome</small></span>
+      </button>
+      <button id="btn-sair" class="menu-item sair" type="button">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10"/></svg></span><span class="txt"><b>Sair do jogo</b><small>O progresso fica salvo</small></span>
+      </button>
+    </nav>
+    <button class="btn-icone btn-tela-cheia canto" type="button" title="Tela cheia" aria-label="Tela cheia"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>
+    <footer class="titulo-rodape">
+      <p class="dica">Lado esquerdo da tela: andar. Lado direito: girar a câmera. No PC: WASD anda, arraste o mouse para girar a câmera, rodinha aproxima, J K L golpes, Espaço esquiva, Esc menu.</p>
+      <p id="versao" class="dica versao"></p>
+    </footer>
+  </section>
+
+  <!-- Menu de pausa (botão de menu no mapa, Esc no PC ou o botão Voltar do celular) -->
+  <div id="menu-pausa" class="sobreposicao" hidden>
+    <div class="caixa-menu" role="dialog" aria-label="Pausa">
+      <h2>Pausa</h2>
+      <button class="menu-item principal" data-menu="continuar" type="button"><span class="ic"><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg></span><span class="txt"><b>Continuar jogando</b></span></button>
+      <button class="menu-item" data-menu="qualidade" type="button"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 4 3-4 6 6M3 21h18"/></svg></span><span class="txt"><b>Qualidade: <span id="menu-qualidade">Médio</span></b><small>Toque para trocar. Fraco = mais leve</small></span></button>
+      <button class="menu-item" data-menu="inicio" type="button"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7M5 10v10h14V10"/></svg></span><span class="txt"><b>Voltar ao início</b><small>O progresso é salvo</small></span></button>
+      <button class="menu-item sair" data-menu="sair" type="button"><span class="ic"><svg viewBox="0 0 24 24"><path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10"/></svg></span><span class="txt"><b>Sair do jogo</b><small>O progresso é salvo</small></span></button>
+    </div>
+  </div>
+
+  <!-- Quando o navegador não deixa a página se fechar sozinha -->
+  <div id="tela-saida" class="sobreposicao" hidden>
+    <div class="caixa-menu">
+      <h2>Progresso salvo!</h2>
+      <p class="dica">Pode fechar o jogo: use o botão de apps recentes do celular e deslize o Runeclash para fora (ou feche a aba).</p>
+      <button class="menu-item principal" data-menu="voltar-saida" type="button"><span class="ic"><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg></span><span class="txt"><b>Voltar ao jogo</b></span></button>
+    </div>
+  </div>
+
+  <section id="tela-colecao" hidden>
+    <header class="col-topo">
+      <button id="col-voltar" class="btn-hud" type="button">Voltar</button>
+      <h2 id="col-titulo">Monstruário</h2>
+    </header>
+    <nav id="col-abas" class="col-abas" aria-label="Elementos"></nav>
+    <div id="col-palco" class="col-palco"></div>
+    <aside class="col-info">
+      <div id="col-formas" class="col-formas"></div>
+      <div id="col-detalhe" class="col-detalhe"></div>
+      <button id="col-escolher" class="btn-grande" type="button" hidden>Escolher</button>
+    </aside>
+  </section>
+
+  <section id="tela-evolucao" class="tela" hidden>
+    <div class="evo-topo"><h2 id="evo-texto"></h2><p id="evo-novidades"></p></div>
+    <button id="evo-continuar" class="btn-grande" type="button" hidden>Continuar</button>
+  </section>
+
+  <div id="hud-mundo" class="hud" hidden>
+    <div id="equipe-chips"></div>
+    <div class="topo-dir">
+      <button id="btn-menu" class="btn-icone mini" type="button" title="Menu (Esc)" aria-label="Menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      <span class="pilula cristais" title="Cristais de captura: comum, forte e supremo" id="contador-cristais"></span>
+      <button id="btn-monstros" class="btn-hud" type="button">Monstros</button>
+      <button id="btn-equipe" class="btn-hud" type="button">Equipe</button>
+      <button class="btn-icone mini btn-tela-cheia" type="button" title="Tela cheia" aria-label="Tela cheia"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>
+    </div>
+    <div id="relogio" class="pilula relogio"><span class="astro"></span><span id="relogio-texto">Dia</span></div>
+    <button id="btn-casa" class="btn-casa" type="button"><i class="icone-casa"></i><span>Montar casa</span></button>
+    <!-- monstro invocado (tecla R e T no PC) -->
+    <button id="btn-pet" class="btn-casa btn-pet" type="button" title="Invocar ou guardar o 1º monstro da equipe (R)" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7" cy="9" r="2"/><circle cx="12" cy="6.5" r="2"/><circle cx="17" cy="9" r="2"/><path d="M8 17c0-3 2-5 4-5s4 2 4 5c0 1.5-1.5 2-4 2s-4-.5-4-2z"/></svg><span>Invocar</span>
+    </button>
+    <button id="btn-controlar" class="btn-casa btn-controlar" type="button" title="Controlar o monstro (T)" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9h12a4 4 0 0 1 0 8c-1.5 0-2.5-1-3-2H9c-.5 1-1.5 2-3 2a4 4 0 0 1 0-8z"/><path d="M8 11v4M6 13h4M16 12h.01M18 14h.01"/></svg><span>Controlar</span>
+    </button>
+    <!-- controlando o monstro: golpes no ar (sem dano) e o botão para voltar -->
+    <div id="hud-treino">
+      <div class="treino-chip">Controlando: <span id="treino-nome"></span> <small>· o treinador espera</small></div>
+      <button id="btn-voltar-treinador" type="button" title="Voltar ao treinador (T)">Voltar ao<br>treinador</button>
+      <div class="golpes">
+        <button class="golpe" data-acao="golpe0" type="button"><span class="recarga"></span><span class="nome"></span><span class="tipo"></span></button>
+        <button class="golpe" data-acao="golpe1" type="button"><span class="recarga"></span><span class="nome"></span><span class="tipo"></span></button>
+        <button class="golpe" data-acao="golpe2" type="button"><span class="recarga"></span><span class="nome"></span><span class="tipo"></span></button>
+      </div>
+    </div>
+    <div id="zona-nome"></div>
+  </div>
+
+  <div id="hud-batalha" class="hud" hidden>
+    <!-- seu monstro: nome, nível, vida, equipe e efeitos (só quando houver) -->
+    <div class="barra-luta jog">
+      <div class="topo"><strong id="bj-nome"></strong><span id="bj-nivel"></span></div>
+      <i class="vida" id="bj-vida"><b></b></i>
+      <div class="pe"><span id="bj-hp"></span><span id="bj-equipe"></span></div>
+      <div class="status-lista" id="bj-status"></div>
+    </div>
+    <!-- ações em ícones: cristal, escolher cristal, trocar, fugir, tela cheia -->
+    <div class="acoes-batalha">
+      <button id="btn-cristal" class="btn-icone" data-acao="cristal" type="button" title="Lançar cristal (C)" aria-label="Lançar cristal">
+        <span class="losango grande"></span><b id="qtd-cristal" class="selo">0</b>
+      </button>
+      <button id="btn-tipo-cristal" class="btn-icone mini" data-acao="tipoCristal" type="button" title="Escolher cristal (V)" aria-label="Escolher o tipo de cristal">
+        <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <button class="btn-icone" data-acao="trocar" type="button" title="Trocar monstro (Q)" aria-label="Trocar monstro">
+        <svg viewBox="0 0 24 24"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>
+      </button>
+      <button class="btn-icone" data-acao="fugir" type="button" title="Fugir (F)" aria-label="Fugir">
+        <svg viewBox="0 0 24 24"><path d="M6 21V4h10v17M4 21h16M13 12.5h.01"/></svg>
+      </button>
+      <button class="btn-icone btn-tela-cheia" type="button" title="Tela cheia" aria-label="Tela cheia">
+        <svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>
+      </button>
+    </div>
+    <!-- escolher o cristal: aparece ao tocar na setinha -->
+    <div id="seletor-cristal" hidden></div>
+    <!-- nome e vida de cada inimigo, em cima dele -->
+    <div id="placas-inimigos"></div>
+    <div class="golpes">
+      <button class="golpe" data-acao="golpe0" type="button"><span class="recarga"></span><span class="nome"></span><span class="tipo"></span></button>
+      <button class="golpe" data-acao="golpe1" type="button"><span class="recarga"></span><span class="nome"></span><span class="tipo"></span></button>
+      <button class="golpe" data-acao="golpe2" type="button"><span class="recarga"></span><span class="nome"></span><span class="tipo"></span></button>
+    </div>
+  </div>
+
+  <div id="joystick" hidden><div class="base"><div class="manete"></div></div></div>
+  <!-- controle da câmera: arraste para girar; dois toques rápidos voltam a câmera para trás do personagem -->
+  <div id="camera-pad" hidden title="Câmera: arraste para girar (dois toques: volta para trás)">
+    <div class="manete"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 0 1-14 5.3M4 12a8 8 0 0 1 14-5.3"/><path d="M18 3v4h-4M6 21v-4h4"/><circle cx="12" cy="12" r="2.2"/></svg></div>
+  </div>
+
+  <div id="painel-equipe" hidden>
+    <div class="painel-caixa">
+      <div class="painel-cabeca">
+        <div class="abas-painel">
+          <button type="button" data-aba-painel="equipe" class="ativa">Equipe</button>
+          <button type="button" data-aba-painel="reserva">Reserva <b id="n-todos"></b></button>
+        </div>
+        <button id="fechar-equipe" class="btn-hud" type="button">Fechar</button>
+      </div>
+      <div id="vista-equipe">
+        <div id="lista-equipe" class="grade-fichas"></div>
+        <h3>Cristais</h3>
+        <div id="painel-cristais"></div>
+      </div>
+      <div id="vista-reserva" hidden>
+        <p class="vazio">Todos os monstros que você tem: os da equipe e os guardados. Perder uma batalha nunca apaga nenhum deles.</p>
+        <div id="lista-todos" class="grade-fichas"></div>
+      </div>
+      <p id="info-colecao"></p>
+    </div>
+  </div>
+
+  <div id="avisos"></div>
+
+  <!-- celular em pé: pede para virar (o jogo pausa) -->
+  <div id="vire" hidden role="alert">
+    <svg viewBox="0 0 64 64" fill="none" stroke="#8ff4ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="20" y="6" width="24" height="44" rx="4"/><path d="M29 44h6"/><path d="M50 40a18 18 0 0 1-8 14" stroke="#ffd23f"/><path d="M43 50l-1 5 5 0" stroke="#ffd23f"/>
+    </svg>
+    <h2>Vire o celular</h2>
+    <p>O Runeclash é jogado com o celular deitado. O jogo fica pausado até você virar.</p>
+  </div>
+</div>
+
+<script type="importmap">{ "imports": { "three": "./lib/three.module.min.js", "three/addons/": "./lib/addons/" } }</script>
+<script type="module" src="./js/main.js"></script>
+<script>
+  // App instalável: liga o "ajudante" (sw.js) que guarda o jogo no celular e busca as atualizações.
+  // Não funciona dentro do artifact do Claude (página dentro de outra), só no site próprio.
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost') && window.top === window.self) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+  // Botão "Instalar app": o Chrome do Android avisa quando dá para instalar
+  let pedidoInstalar = null;
+  const btnInstalar = document.getElementById('btn-instalar');
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); pedidoInstalar = e; btnInstalar.hidden = false; });
+  btnInstalar.addEventListener('click', async () => {
+    if (!pedidoInstalar) return;
+    pedidoInstalar.prompt();
+    await pedidoInstalar.userChoice;
+    pedidoInstalar = null;
+    btnInstalar.hidden = true;
+  });
+  window.addEventListener('appinstalled', () => { btnInstalar.hidden = true; });
+  // Versão (o site grava versao.json a cada atualização): aparece na tela inicial
+  fetch('versao.json', { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : null)).then((v) => {
+    if (v) document.getElementById('versao').textContent = 'Versão ' + v.versao;
+  }).catch(() => {});
+</script>
+</body>
+</html>
