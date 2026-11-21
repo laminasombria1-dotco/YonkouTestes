@@ -159,6 +159,10 @@ export const GOLPES = {
   mordidaMagma:     { nome: 'Mordida de Magma', elemento: 'igneo',  tipo: 'corpo',    poder: 24, recarga: 1.2, alcance: 3.4 },
   cometaIgneo:      { nome: 'Cometa Ígneo',     elemento: 'igneo',  tipo: 'projetil', poder: 14, recarga: 1.9, velocidade: 17, raio: 0.6, quantidade: 3 },
   cataclismo:       { nome: 'Cataclismo',       elemento: 'igneo',  tipo: 'area',     poder: 36, recarga: 6.5, raio: 6 },
+  // Serpe da Tormenta (lendário): os efeitos ficam em js/lendarios/serpe-batalha.js
+  mordidaTormenta:  { nome: 'Mordida da Tormenta', elemento: 'raio', tipo: 'corpo',  poder: 22, recarga: 1.1, alcance: 3.6 },
+  raiosTormenta:    { nome: 'Raios da Tormenta', elemento: 'raio',  tipo: 'projetil', poder: 12, recarga: 1.7, velocidade: 26, raio: 0.55, quantidade: 3 },
+  tempestadeSerpe:  { nome: 'Tempestade',       elemento: 'raio',   tipo: 'area',     poder: 34, recarga: 6.5, raio: 6 },
   // Silvestre (só o chefe do Santuário)
   galhadaAncestral: { nome: 'Galhada Ancestral', elemento: 'silvestre', tipo: 'corpo',  poder: 24, recarga: 1.2, alcance: 3.6 },
   sementeParasita:  { nome: 'Semente Parasita', elemento: 'silvestre', tipo: 'projetil', poder: 13, recarga: 1.9, velocidade: 15, raio: 0.55, quantidade: 3 },
@@ -487,7 +491,17 @@ ESPECIES.silvarion = {
   descricao: 'Cervo ancestral com uma floresta inteira na galhada. Guarda a Árvore-Mãe e acorda a cada amanhecer. Sua força silvestre vence até monstros de planta.',
   base: { hp: 100, atk: 17, def: 17, vel: 6.0 }, golpes: ['galhadaAncestral', 'sementeParasita', 'selvaViva'], evoluiPara: null, nivelEvolucao: null,
 };
-export const RAROS = ['vulcarapa', 'aquaraia', 'espinhal', 'ignarion', 'silvarion'];
+// LENDÁRIOS (etapa 5.4): os chefes da Arena das Brasas. Moram num lugar fixo do mapa (js/lendarios/lendarios.js),
+// lutam como chefes (fúria com metade da vida) e só a Pedra Dourada sela, com chance baixa.
+ESPECIES.serpe = {
+  onde: 'da Neve, no Círculo da Tormenta', arena: 'raio',
+  nome: 'Serpe da Tormenta', elemento: 'raio', elementos: ['raio'], linha: null, estagio: 3, raro: true, superRaro: true, chefe: true, lendario: true,
+  tamanho: 1.9, captura: 0.04, cristalMin: 2, raio: 1.7, altura: 3.6,
+  descricao: 'Dragão de raios que dorme no círculo de pedra da Neve. Rápida: morde, cospe raios e chama a tempestade.',
+  base: { hp: 88, atk: 18, def: 13, vel: 7.0 }, golpes: ['mordidaTormenta', 'raiosTormenta', 'tempestadeSerpe'], evoluiPara: null, nivelEvolucao: null,
+};
+export const LENDARIOS_IDS = ['serpe'];
+export const RAROS = ['vulcarapa', 'aquaraia', 'espinhal', 'ignarion', 'silvarion', ...LENDARIOS_IDS];
 for (const id of RAROS) Object.assign(ESPECIES[id], { elementos: ESPECIES[id].elementos || [ESPECIES[id].elemento], cristalMin: ESPECIES[id].cristalMin || 0 });
 
 // Monstros iniciais: a primeira forma de cada linha

@@ -21,6 +21,7 @@ import {
 import { criarModelo, criarCoroa, criarAuraDupla } from './modelos.js';
 import { zonaEm, NOMES_ZONA } from './mundo.js';
 import { SEMENTE, SEMENTE_PADRAO, centroDe, LAGOS, POIS } from './mapa/gerador.js';
+import { LENDARIOS, casaDoLendario } from './lendarios/lendarios.js';
 
 const MAX_NIVEL = 50;
 const MAX_EQUIPE = 3;
@@ -42,6 +43,11 @@ for (const [tipo, k, nome] of [['circulo', 'ruina', 'Ruína'], ['altar', 'altar'
   if (p) LUGARES.push([k, nome, p.x + Math.cos(p.ang) * (p.r + 3), p.z + Math.sin(p.ang) * (p.r + 3)]);
 }
 // Arenas que dá para escolher no "Lutar agora"
+// Lendários (etapa 5.4): ir para a frente do lugar de cada um
+for (const cfg of LENDARIOS) {
+  const c = casaDoLendario(cfg);
+  if (c) LUGARES.push([cfg.especie, ESPECIES[cfg.especie].nome, c.x + Math.cos(c.ang) * (c.r + 4), c.z + Math.sin(c.ang) * (c.r + 4)]);
+}
 const NOMES_ARENA = Object.fromEntries(Object.entries(ARENAS).map(([k, a]) => [k, a.nome]));
 
 const CSS = `
@@ -532,7 +538,7 @@ export class PainelGM {
     m.cena.add(modelo);
     const s = { dados, modelo, aura, dupla: !!esp.dupla, x: p.x, z: p.z, ang: Math.random() * 6.28, estado: 'parado', t: 2, zona: zonaEm(p.x, p.z), periodo: null,
       vel: statsDe(especie, nivel).vel * 0.45, gm: true, ...extra };
-    if (esp.chefe) { s.chefe = true; s.fixo = true; s.zona = esp.elemento === 'igneo' ? 'cratera' : 'santuario'; }
+    if (esp.chefe) { s.chefe = true; s.fixo = true; s.zona = esp.arena || (esp.elemento === 'igneo' ? 'cratera' : 'santuario'); }
     m.selvagens.push(s);
     return s;
   }
@@ -546,7 +552,7 @@ export class PainelGM {
   zonaDaLuta(especie) {
     if (this.sel.arena !== 'auto') return this.sel.arena;
     const esp = ESPECIES[especie];
-    if (esp?.chefe) return esp.elemento === 'igneo' ? 'cratera' : 'santuario';
+    if (esp?.chefe) return esp.arena || (esp.elemento === 'igneo' ? 'cratera' : 'santuario');
     return zonaEm(this.mundo.pos.x, this.mundo.pos.z);
   }
 

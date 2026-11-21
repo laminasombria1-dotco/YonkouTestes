@@ -8,8 +8,19 @@
 // =============================================================
 import * as THREE from 'three';
 import { ESPECIES, CRISTAIS } from './dados.js';
-import { temGLB, montarGLB, animarGLB, piscarGLB, descartarGLB } from './modelos3d.js';
-export { carregarModelos3D, tocarGolpe, ajustarGiro, pararGolpe } from './modelos3d.js';
+import { temGLB, montarGLB, animarGLB, piscarGLB, descartarGLB, tocarGolpe as tocarGolpeGLB, pararGolpe as pararGolpeGLB } from './modelos3d.js';
+import { montarSerpe } from './lendarios/serpe-modelo.js';
+export { carregarModelos3D, ajustarGiro } from './modelos3d.js';
+
+// Um golpe começou (ou parou): o modelo do Blender toca a animação; os lendários fazem a pose deles
+export function tocarGolpe(modelo, tipo, prep = 0) {
+  if (modelo.userData.aoGolpe) modelo.userData.aoGolpe(tipo, prep);
+  else tocarGolpeGLB(modelo, tipo, prep);
+}
+export function pararGolpe(modelo) {
+  if (modelo.userData.aoParar) modelo.userData.aoParar();
+  else pararGolpeGLB(modelo);
+}
 
 // ---------- peças reaproveitáveis ----------
 const GEO = {};
@@ -915,7 +926,10 @@ function silvarion(c, u) {
   olhos(c, yC + 0.08, zC + 0.28, 0.15, 0.08, '#1fe0a0');
 }
 
-const RAROS_MODELO = { vulcarapa, aquaraia, espinhal, ignarion, silvarion };
+// LENDÁRIO: Serpe da Tormenta (peças do Blender da Arena; o modelo e a animação ficam em js/lendarios/serpe-modelo.js)
+function serpe(c, u) { montarSerpe(c, u); }
+
+const RAROS_MODELO = { vulcarapa, aquaraia, espinhal, ignarion, silvarion, serpe };
 
 // =============================================================
 // JUNTAR PEÇAS (deixa o jogo leve no celular)
@@ -1140,6 +1154,7 @@ export function animarAura(g, t) {
 export function animarModelo(modelo, t, movendo) {
   const u = modelo.userData;
   if (u.glb) { animarGLB(modelo, t, movendo); return; } // modelo do Blender: as animações do arquivo
+  if (u.animar) { u.animar(t, movendo); return; }        // lendários: animação própria (js/lendarios/)
   const c = u.corpo;
   const fase = t * (movendo ? 11 : 3) + u.fase;
   if (u.voa) {

@@ -526,7 +526,7 @@ class Jogo {
     $(`#col-abas [data-aba="${aba}"]`)?.scrollIntoView({ block: 'nearest', inline: 'center' });
     $('#col-formas').innerHTML = ids.map((id, i) => {
       const e = ESPECIES[id];
-      const nv = e.superRaro ? 'Super raro' : e.raro ? 'Raro' : `Nv.${i === 0 ? 1 : NIVEIS_EVOLUCAO[i - 1]}`;
+      const nv = e.lendario ? 'Lendário' : e.superRaro ? 'Super raro' : e.raro ? 'Raro' : `Nv.${i === 0 ? 1 : NIVEIS_EVOLUCAO[i - 1]}`;
       return `<button type="button" data-forma="${i}" style="--cor:${ELEMENTOS[e.elemento].cor}"><small>${nv}</small>${e.nome}</button>`;
     }).join('');
     $('#col-escolher').textContent = aba !== 'raros' ? `Escolher ${ESPECIES[ids[0]].nome}` : '';
@@ -545,7 +545,8 @@ class Jogo {
     const nivelForma = e.chefe ? 25 : e.raro ? 1 : [1, ...NIVEIS_EVOLUCAO][e.estagio];
     const st = statsDe(id, nivelForma);
     let evo;
-    if (e.chefe) evo = `Super raro: é o chefe ${e.onde}. Não evolui. Só uma <b>Pedra Dourada</b> sela ele.`;
+    if (e.lendario) evo = `Lendário: mora ${e.onde}. Não evolui. Só uma <b>Pedra Dourada</b> sela, com chance baixa.`;
+    else if (e.chefe) evo = `Super raro: é o chefe ${e.onde}. Não evolui. Só uma <b>Pedra Dourada</b> sela ele.`;
     else if (e.raro) evo = 'Monstro raro: não evolui.';
     else if (e.evoluiPara) {
       const prox = novidadesDaEvolucao(id, e.evoluiPara);
@@ -579,7 +580,7 @@ class Jogo {
       status = `<p class="status">Você começa com ${ESPECIES[this.colecao.ids[0]].nome}. Esta forma vem com a evolução.</p>`;
     }
     $('#col-detalhe').innerHTML = `
-      <div class="cab"><span class="tag" style="--cor:${fundoTipo(e)}">${nomeTipo(e)}</span><span class="estagio">${e.superRaro ? 'Super raro · Chefe' : e.raro ? 'Raro' : NOMES_ESTAGIO[e.estagio]}</span></div>
+      <div class="cab"><span class="tag" style="--cor:${fundoTipo(e)}">${nomeTipo(e)}</span><span class="estagio">${e.lendario ? 'Lendário' : e.superRaro ? 'Super raro · Chefe' : e.raro ? 'Raro' : NOMES_ESTAGIO[e.estagio]}</span></div>
       <h3>${e.nome}</h3>
       <p class="desc">${e.descricao}</p>
       <p class="evo">${evo}</p>
@@ -743,7 +744,8 @@ class Jogo {
     if (b.chefe && vencidos.length) {
       ganho.forte += 3; ganho.supremo += 2;
       const chefe = ESPECIES[b.chefeEspecie] || ESPECIES.ignarion;
-      this.aviso(b.capturados.length ? `Você selou ${chefe.nome}, o chefe ${chefe.onde}!` : `Você venceu ${chefe.nome}! Ele volta no próximo amanhecer.`);
+      if (chefe.lendario) this.aviso(b.capturados.length ? `Você selou o lendário ${chefe.nome}!` : `Você venceu o lendário ${chefe.nome}! Volta no próximo amanhecer.`);
+      else this.aviso(b.capturados.length ? `Você selou ${chefe.nome}, o chefe ${chefe.onde}!` : `Você venceu ${chefe.nome}! Ele volta no próximo amanhecer.`);
     }
     for (const d of b.derrotados) {
       const esp = ESPECIES[d.especie];
@@ -764,6 +766,7 @@ class Jogo {
       }
     }
     // No mapa: some quem foi vencido (num grupo, os que sobraram continuam andando)
+    if (b.selvagem.lendario && vencidos.length) b.selvagem.vencido = true; // o lendário volta no próximo amanhecer
     if (b.grupo) this.mundo.tirarDoGrupo(b.selvagem, vencidos.map((d) => d.uid));
     else if (vencidos.length) this.mundo.removerSelvagem(b.selvagem);
     this.gm?.depoisDaBatalha(b); // GM: tira do mapa o monstro do "Lutar agora" que sobrou

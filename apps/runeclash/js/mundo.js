@@ -14,6 +14,7 @@ import { TRACADOS, tracadoPerto, prenderDungeons, dentroDungeonLivre, semCasaDun
 import { CaminhoDasBrasas } from './brasas.js';
 import { TrilhaAncestral, CRISTAL_ESCONDIDO } from './raizes.js';
 import { criarInvocador, animarInvocador, descartarInvocador } from './invocador.js';
+import { Lendarios } from './lendarios/lendarios.js';
 import { RAIO_MUNDO, NIVEL_AGUA, SEMENTE, LAGOA, RESERVAS, SEGREDOS, aleatorio, biomaEm, lagoEm } from './mapa/gerador.js';
 import { alturaEm, bloqueadoEm } from './mapa/altura.js';
 import { Grade, ListaObstaculos } from './mapa/grade.js';
@@ -107,6 +108,7 @@ export class Mundo {
     this.dungeon = new CaminhoDasBrasas(this, alturaEm);
     this.floresta = new TrilhaAncestral(this, alturaEm);
     this.dungeons = [this.dungeon, this.floresta];
+    this.lendarios = new Lendarios(this); // os lendários nos lugares fixos do mapa (etapa 5.4)
     this.criarMontanhas();
     this.criarEstrelas();
 
@@ -833,6 +835,7 @@ export class Mundo {
 
     // Dungeons abertas: acampamentos, monstros soltos, chefe e clima
     for (const d of this.dungeons) d.atualizar(dt, t);
+    this.lendarios.atualizar();
 
     // Grupos: andam juntos em formação; aparecem mais conforme sua equipe fica forte
     this.timerGrupo -= dt;
@@ -902,7 +905,7 @@ export class Mundo {
     } else if (maisPerto && est) {
       const esp = ESPECIES[maisPerto.dados.especie];
       const bolinhas = esp.elementos.map((el) => `<i style="background:${ELEMENTOS[el].cor}"></i>`).join('');
-      const marca = esp.chefe ? '<span class="duplo">Chefe · </span>' : esp.dupla ? '<span class="duplo">Tipo duplo · </span>' : '';
+      const marca = esp.lendario ? '<span class="duplo">Lendário · </span>' : esp.chefe ? '<span class="duplo">Chefe · </span>' : esp.dupla ? '<span class="duplo">Tipo duplo · </span>' : '';
       this.jogo.mostrarRotulo(`${bolinhas}${marca}${esp.nome} <b>Nv.${maisPerto.dados.nivel}</b>`,
         new THREE.Vector3(maisPerto.x, maisPerto.modelo.position.y + esp.altura + 0.3, maisPerto.z), this.camera);
     } else this.jogo.mostrarRotulo(null);
