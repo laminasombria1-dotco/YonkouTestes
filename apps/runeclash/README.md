@@ -9,7 +9,7 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
 
 Só os **monstros** lutam; o Invocador não luta. O plano, etapa por etapa, fica em **[PLANO.md](PLANO.md)**.
 
-> **Hoje (etapa 0.1)** o Runeclash ainda é uma cópia do Cristalia com o nome novo e o jogo salvo separado. O resto deste README descreve o que veio do Cristalia e vai mudando a cada etapa.
+> **Hoje (etapa 0.2)** o Runeclash ainda joga igual ao Cristalia, com o nome novo e o jogo salvo separado. O material da Arena (efeitos, peças e scripts do Blender) já está aqui, mas ainda não aparece no jogo. O resto deste README descreve o que veio do Cristalia e vai mudando a cada etapa.
 
 ## Como jogar
 
@@ -549,6 +549,9 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/main.js` | Liga tudo: login e contas, telas, equipe, experiência, evolução, salvamento (no celular e na nuvem) |
 | `lib/three.module.min.js` | Biblioteca Three.js 0.170 (licença MIT, em `lib/THREE-LICENSE.txt`) |
 | `lib/addons/` | Peças extras do Three.js 0.170 (mesma licença): `loaders/GLTFLoader.js` (abre os `.glb`), `utils/SkeletonUtils.js` (copia um modelo com ossos) e `utils/BufferGeometryUtils.js` (usado pelo GLTFLoader). No `index.html`, o caminho `three/addons/` aponta para esta pasta |
+| `js/arena/` | **Material da Arena das Brasas** (etapa 0.2, ainda não ligado no jogo): `efeitos.js` (runas, correntes, relâmpagos, rachaduras, espinhos, chamas...), `pecas.js` (lê as peças do Blender; `LotePecas` junta muitas numa malha só) e `pecas_blender.js` (as 66 peças, gerado pelo Blender). Veja o `README.md` de lá |
+| `blender/` | O `arena_pecas.blend` e os scripts que modelam as peças (cenário, corpo do Invocador e chefes) e exportam para `js/arena/pecas_blender.js`. Veja o `README.md` de lá |
+| `PLANO.md` | O plano do Runeclash: as decisões e as etapas |
 
 ## Rodar no computador
 

@@ -28,7 +28,7 @@ Uma ideia por vez, sem pressa. Cada ideia é feita numa branch, com proposta ant
 
 ### Etapa 0: Montar a base
 - [x] **0.1** Criar `apps/runeclash/` como cópia do Cristalia: nome novo, jogo salvo separado (no aparelho e na nuvem), este plano e o CLAUDE.md atualizado.
-- [ ] **0.2** Trazer o material da Arena para subpastas próprias: os efeitos (`efeitos.js`), as 66 peças do Blender (`pecas.js`, `pecas_blender.js`) e os scripts do Blender. Ajustar para o Three.js r170 e reformatar em linhas legíveis, com comentários. A chave do app e as cópias antigas ficam de fora.
+- [x] **0.2** Trazer o material da Arena para subpastas próprias: os efeitos (`efeitos.js`), as 66 peças do Blender (`pecas.js`, `pecas_blender.js`) e os scripts do Blender. Ajustar para o Three.js r170 e reformatar em linhas legíveis, com comentários. A chave do app e as cópias antigas ficam de fora.
 - [ ] **0.3** Testes automáticos (Playwright, numa pasta fora do jogo): abrir, lutar, selar e salvar, e fotos do tamanho do celular deitado.
 
 ### Etapa 1: Identidade Runeclash (só o visual, as regras não mudam)

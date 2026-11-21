@@ -81,6 +81,7 @@ Começou (etapa 0.1) como uma **cópia do Cristalia**, e vai recebendo da **Aren
 - **Leia primeiro `apps/runeclash/PLANO.md`**: as decisões já tomadas (Sealfolio, pedras de selamento azul/roxa/dourada, tom fofo → trevoso...) e as etapas. **Uma ideia por vez**, e marque `[x]` no plano quando terminar.
 - **Não publique:** o GitHub dá um site só por repositório, e ele é o do Cristalia. **Nunca crie um workflow que publique só o Runeclash** (trocaria o site que o app Android abre). A publicação dos dois juntos é a etapa 6 do plano.
 - **Separado do Cristalia:** chaves no aparelho `runeclash-*`, cache `runeclash-v1` no `sw.js` e jogo salvo em `runeclash_jogadores/<uid>` no Firestore (mesmas contas do Cristalia). Não troque isso.
+- **Material da Arena:** `js/arena/` (efeitos, peças do Blender; veja o README de lá) e `blender/` (o `.blend` e os scripts que modelam e exportam as peças). Para mexer nas peças, mude no Blender e rode `exportar_pecas.py`; **não edite `pecas_blender.js` à mão**.
 - **Rodar:** dentro de `apps/runeclash`, `python -m http.server 8766` e abra `http://localhost:8766`.
 - Mudanças no Runeclash **não** mexem em `apps/cristalia/` (e vice-versa). Se uma melhoria do Cristalia tiver que vir para cá, traga na mão, quando o Lâmina pedir.
 
