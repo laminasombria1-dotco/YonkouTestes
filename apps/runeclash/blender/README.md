@@ -10,6 +10,7 @@ Trazido da Arena das Brasas na etapa 0.2 do [PLANO.md](../PLANO.md).
 | `modelar_personagens.py` | Cria `PECAS_PERSONAGENS`: as partes do corpo do Invocador (`h_...`) e do Colosso de Basalto (`c_...`) |
 | `modelar_chefes.py` | Cria `PECAS_CHEFES`: Serpe da Tormenta (`s_...`), Sentinela de Geada (`g_...`), Arauto das Cinzas (`a_...`), Cavaleiro Oco (`k_...`) e as costas do Colosso (`c_costas`) |
 | `exportar_pecas.py` | Grava **`js/arena/pecas_blender.js`** com todas as peças das 3 coleções |
+| `referencias/aiden_ficha.jpg` | A **ficha do Aiden**, o Invocador padrão (turnaround, detalhes, paleta, a pedra de selamento e as proporções). É a referência do modelo próprio dele (PLANO 4.6) e da pedra (PLANO 2.3) |
 
 ## Como mudar uma peça
 

@@ -57,7 +57,7 @@ Uma ideia por vez, sem pressa. Cada ideia é feita numa branch, com proposta ant
 - [ ] **4.3** **Brasalobo** a partir do `lobo_fogo` (hoje com 100 mil triângulos; precisa ficar com ~5 mil). É o primeiro teste do caminho.
 - [ ] **4.4** Depois, um monstro por vez, começando pelas formas iniciais das 9 linhas.
 - [ ] **4.5** (mais tarde) Monstros trevosos novos ou versões "corrompidas".
-- [ ] **4.6** **Modelo próprio do Aiden** (o Invocador padrão), seguindo a ficha do personagem: sobretudo longo preto com detalhes dourados e roxos, gola alta, cabelo bagunçado, olhos roxos, gema no peito e a pedra de selamento na mão. Hoje ele é montado com as peças da Arena, que não têm o sobretudo longo nem o rosto da ficha.
+- [ ] **4.6** **Modelo próprio do Aiden** (o Invocador padrão), seguindo a ficha do personagem: sobretudo longo preto com detalhes dourados e roxos, gola alta, cabelo bagunçado, olhos roxos, gema no peito e a pedra de selamento na mão. Hoje ele é montado com as peças da Arena, que não têm o sobretudo longo nem o rosto da ficha. A ficha está em `blender/referencias/aiden_ficha.jpg`.
 
 ### Etapa 5: Mapas e lendários
 - [ ] **5.1** As peças da Arena nos biomas: pinheiros nevados, palmeiras, obeliscos, arcos de arenito, cristais de gelo, espinhos de basalto e árvores queimadas.
