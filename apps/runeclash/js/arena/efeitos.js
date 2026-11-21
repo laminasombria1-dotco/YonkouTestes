@@ -762,10 +762,11 @@ export class Efeitos {
     });
   }
   // rachadura brilhante no chao (impactos fortes)
-  rachadura(x, z, r, cor = 0xffa040, vida = 1.6) {
+  // solida = true: pinta por cima em vez de somar luz (de dia, laranja somado com a grama vira verde-limao)
+  rachadura(x, z, r, cor = 0xffa040, vida = 1.6, solida = false) {
     const m = new THREE.Mesh(
       geo('plano', () => new THREE.PlaneGeometry(2, 2)),
-      new THREE.MeshBasicMaterial({ color: cor, map: texRachadura(), ...ADD, opacity: 0 }),
+      new THREE.MeshBasicMaterial({ color: cor, map: texRachadura(), ...(solida ? { transparent: true, depthWrite: false } : ADD), opacity: 0 }),
     );
     m.rotation.x = -Math.PI / 2;
     m.rotation.z = Math.random() * 6.28;

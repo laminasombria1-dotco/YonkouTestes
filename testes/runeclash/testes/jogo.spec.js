@@ -166,6 +166,28 @@ test('Faisquinho: relâmpagos da Arena no Choque e nas nuvens', async ({ page })
   semErros(erros);
 });
 
+test('Pedrisco: poeira, rachaduras e pilares com os efeitos da Arena', async ({ page }) => {
+  const erros = vigiarErros(page);
+  await abrirJogo(page);
+  await entrarLocal(page);
+  await novoJogo(page, 'pedrisco');
+  await page.evaluate(() => { const j = window.__jogo; j.estado.equipe = [window.D.criarMonstro('montanhar', 35)]; j.iniciarBatalha(j.mundo.selvagens[0]); });
+  await page.waitForFunction(() => window.__jogo.modo === 'batalha' && !!window.__jogo.batalha?.ini, null, { timeout: 30_000 });
+  // sem dano: o Montanhar (Nv.35) derrubaria o selvagem e a luta acabaria antes do fim do teste
+  await page.evaluate(() => { const b = window.__jogo.batalha; b.pensarIA = () => {}; b.aplicarDano = () => false; });
+  await esperar(page, 1200);
+  // Cordilheira: o tremor levanta poeira ("sólida") e os pilares sobem
+  await page.evaluate(() => { const b = window.__jogo.batalha; b.jog.rec = [0, 0, 0]; b.tentarGolpe(b.jog, 2, b.ini); });
+  await page.waitForFunction(() => window.__jogo.batalha.pedrisco.pilares.length > 0, null, { timeout: 10_000 });
+  expect(await page.evaluate(() => window.__jogo.batalha.fx.F.vivas)).toBeGreaterThan(0);
+  await foto(page, '13-cordilheira');
+  // Rocha Nevada: cai, quica e some
+  await page.evaluate(() => { const b = window.__jogo.batalha; b.jog.rec = [0, 0, 0]; b.tentarGolpe(b.jog, 1, b.ini); });
+  await page.waitForFunction(() => window.__jogo.batalha.pedrisco.pedras.length > 0, null, { timeout: 10_000 });
+  await page.waitForFunction(() => window.__jogo.batalha.pedrisco.pedras.length === 0, null, { timeout: 10_000 });
+  semErros(erros);
+});
+
 test('monstro invocado e golpe no modo treino', async ({ page }) => {
   const erros = vigiarErros(page);
   await abrirJogo(page);

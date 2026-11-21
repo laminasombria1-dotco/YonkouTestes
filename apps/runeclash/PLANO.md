@@ -49,7 +49,8 @@ Uma ideia por vez, sem pressa. Cada ideia é feita numa branch, com proposta ant
 - [ ] **3.1** Os efeitos da Arena nos golpes de hoje, **uma linha de monstros por vez** (ex.: relâmpago com galhos no Faisquinho, rachaduras e estilhaços no Pedrisco, chamas no Brasito).
   - [x] **Brasito:** chamas que crescem e mudam de cor, faíscas, brilho na boca, brasas no alvo, roda de fogo no Rabo, faixa de fogo no avanço, chão rachado em lava no Rabo de Magma e rastro verde da Investida. O fogo tem uma camada "sólida" (mistura normal) para não sumir no chão claro do dia.
   - [x] **Faisquinho:** o relâmpago da Arena (com galhos) pisca por cima de todo raio; clarões, faíscas que brilham, chão que racha onde o raio cai, anel da marca, raios curtos e faixa elétrica no Dash. O Tempestor tem brilho roxo de tempestade (aparece mais à noite).
-  - [ ] Pedrisco · [ ] Gotinho · [ ] Musguinho · [ ] Solito
+  - [x] **Pedrisco:** nuvens de poeira (neve no Montanhar), onda de choque, rachadura laranja que "pinta" o chão no Tremor e nas pedras que quicam, faixa do Punho e poeira dos pilares.
+  - [ ] Gotinho · [ ] Musguinho · [ ] Solito
 - [ ] **3.2** Os efeitos respeitam a Qualidade (Fraco/Médio/Forte) para não pesar no celular.
 - [ ] **3.3** Habilidades próprias para **Lua, Luz e Trevas**. Trevas primeiro, já no tom trevoso.
 - [ ] **3.4** Rebalancear dano, vida e chances depois das mudanças.

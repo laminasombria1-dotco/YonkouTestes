@@ -11,6 +11,9 @@
 //    por alguns segundos (seguram tiros retos e a passagem; a pedra em arco passa por cima)
 // Para ficar leve no celular: formas e materiais são criados uma vez só
 // e reaproveitados; quase tudo some em menos de 1 s (os pilares, em 4 ou 5 s).
+// Etapa 3.1: as pedras ganham os efeitos da Arena (js/arena/efeitos.js, em this.b.fx): nuvens de poeira
+// (partículas "sólidas", que aparecem no chão claro), a onda de choque no chão, a rachadura que brilha
+// (âmbar, a cor do cristal do Rochedrão) nos golpes fortes e a neve que levanta no Montanhar.
 // =============================================================
 import * as THREE from 'three';
 import { RAIO_ARENA } from '../arena.js';
@@ -44,6 +47,11 @@ const MARCA = {
   jogador: { anel: transp('#c9a46a', 0.6), disco: transp('#c9a46a', 0.18) },
 };
 const COR_TERRA = '#c9a46a';
+// poeira (do nascer ao fim) e neve: partículas "sólidas" da Arena
+const C = (h) => new THREE.Color(h);
+const POEIRA = [C('#d9c49c'), C('#86725a')];
+const NEVE_PO = [C('#ffffff'), C('#cfd8e6')];
+const BRILHO_CRISTAL = 0xffa040;
 const aviso = (cor, op) => new THREE.MeshBasicMaterial({ color: cor, transparent: true, opacity: op, depthWrite: false, side: THREE.DoubleSide });
 
 export class HabilidadesPedrisco {
@@ -80,6 +88,17 @@ export class HabilidadesPedrisco {
       const v = new THREE.Vector3(Math.sin(a) * 3 * forca, (3 + Math.random() * 4) * forca, Math.cos(a) * 3 * forca);
       const mat = i % 3 === 0 ? ROCHA_CLARA : i % 3 === 1 ? ROCHA : ROCHA_ESCURA;
       this.lasca(new THREE.Vector3(pos.x + Math.sin(a) * r, 0.2, pos.z + Math.cos(a) * r), v, 0.1 + Math.random() * 0.1, 0.7, mat);
+    }
+  }
+
+  // nuvem de poeira (efeito da Arena) num ponto do chão: n partículas que se espalham e sobem devagar
+  poeira(x, z, n, raio = 0.5, forca = 1, neve = false) {
+    const [a, b] = neve ? NEVE_PO : POEIRA;
+    for (let i = 0; i < n; i++) {
+      const ang = Math.random() * Math.PI * 2, rr = raio * Math.sqrt(Math.random()), v = (1 + Math.random() * 2) * forca;
+      this.b.fx._ponto(x + Math.sin(ang) * rr, 0.15 + Math.random() * 0.2, z + Math.cos(ang) * rr,
+        Math.sin(ang) * v, 0.4 + Math.random() * 0.8, Math.cos(ang) * v, a, 0.6 + Math.random() * 0.4,
+        (1.1 + Math.random() * 0.7) * Math.min(1.6, 0.7 + forca * 0.4), -0.2, { fim: b, cresce: 1.2, solido: true });
     }
   }
 
@@ -163,6 +182,11 @@ export class HabilidadesPedrisco {
     p.mesh.rotation.z += dt * 4;
     p.sombra.position.set(p.mesh.position.x, 0.06, p.mesh.position.z);
     p.sombra.scale.setScalar(A.tamanho * (0.6 + 0.6 * k));
+    // rastrinho de poeira atrás da pedra
+    if (Math.random() < 0.5) {
+      const [a, b] = A.neve ? NEVE_PO : POEIRA, q = p.mesh.position;
+      this.b.fx._ponto(q.x, q.y, q.z, 0, 0.3, 0, a, 0.45, 0.8 * A.tamanho + 0.4, 0, { fim: b, cresce: 1, solido: true });
+    }
     const marca = p.marcas?.userData.marcas[p.n];
     if (marca) marca.userData.disco.scale.setScalar(Math.max(0.01, A.area * k)); // o círculo enche até a pedra cair
     if (k < 1) return true;
@@ -183,6 +207,10 @@ export class HabilidadesPedrisco {
     const A = p.gp.arco, fator = p.n === 0 ? 1 : A.quiques[p.n - 1];
     this.b.efeitoAnel(q, A.area, COR_TERRA);
     this.estouro(q, 8 + Math.round(A.tamanho * 6), 0.6 + A.tamanho * 0.4, A.area * 0.4);
+    // poeira, onda de choque e, nas pedras grandes, o chão que racha brilhando
+    this.poeira(q.x, q.z, Math.round(10 + A.area * 6), A.area * 0.6, 0.8 + A.tamanho * 0.3, A.neve);
+    this.b.fx.onda(q.x, q.z, A.area * 1.6, 0xe8d4a8, 0.35);
+    if (A.tamanho >= 1.2 || A.quiques.length) this.b.fx.rachadura(q.x, q.z, A.area * 1.2, BRILHO_CRISTAL, 0.9, true);
     if (A.neve) for (let i = 0; i < 5; i++) this.lasca(q.clone().setY(0.4), new THREE.Vector3((Math.random() - 0.5) * 4, 3 + Math.random() * 2, (Math.random() - 0.5) * 4), 0.1, 0.6, NEVE);
     for (const o of this.b.alvosDe(p.c)) {
       const dx = o.pos.x - q.x, dz = o.pos.z - q.z, d = Math.hypot(dx, dz);
@@ -204,8 +232,13 @@ export class HabilidadesPedrisco {
   iniciarPunho(c, gp, dir, efeito) {
     c.punho = { gp, dir: dir.clone(), t: 0, feitos: 0, atingidos: new Set(), efeito, fim: null };
     c.modelo.rotation.order = 'YXZ';
-    // o soco no chão: poeira na frente do monstro
-    this.estouro(new THREE.Vector3(c.pos.x, 0, c.pos.z).addScaledVector(dir, c.raio), 6, 0.5, 0.3);
+    // o soco no chão: poeira na frente do monstro e uma rachadura que corre na direção dos espinhos
+    const soco = new THREE.Vector3(c.pos.x, 0, c.pos.z).addScaledVector(dir, c.raio);
+    this.estouro(soco, 6, 0.5, 0.3);
+    this.poeira(soco.x, soco.z, 10, 0.4, 0.9, gp.espinhos.neve);
+    this.b.fx.onda(soco.x, soco.z, 2, 0xe8d4a8, 0.3);
+    const fim = soco.clone().addScaledVector(dir, gp.alcance);
+    this.b.fx.faixa([soco.x, soco.z], [fim.x, fim.z], gp.espinhos.largura * 0.6, gp.espinhos.cristal ? BRILHO_CRISTAL : 0xcaa978, gp.espinhos.duracao + 0.4);
   }
 
   atualizarPunho(c, dt) {
@@ -251,6 +284,7 @@ export class HabilidadesPedrisco {
     else g.rotation.set((Math.random() - 0.5) * 0.5, Math.random() * 3, (Math.random() - 0.5) * 0.5);
     const tam = E.tamanho * (0.8 + Math.random() * 0.4);
     this.cena.add(g);
+    this.poeira(x, z, 5, 0.3, 0.6, E.neve);
     this.b.efeitos.push({ obj: g, vida: 0.6, total: 0.6, upd: (e, k) => {
       // sobe rápido, fica e afunda
       const h = k < 0.18 ? k / 0.18 : k > 0.65 ? (1 - k) / 0.35 : 1;
@@ -277,12 +311,12 @@ export class HabilidadesPedrisco {
 
   // ---------- Área: depois do dano normal da área, o visual e os pilares ----------
   aoUsarArea(c, gp) {
-    if (gp.tremor) this.tremor(c.pos, gp.raio);
+    if (gp.tremor) this.tremor(c.pos, gp.raio, !!gp.pilares?.neve);
     if (gp.pilares) this.criarPilares(c, gp);
   }
 
   // Rachaduras em estrela que abrem e fecham, e pedrinhas pulando
-  tremor(pos, raio) {
+  tremor(pos, raio, neve = false) {
     const g = new THREE.Group();
     const n = 8;
     for (let i = 0; i < n; i++) {
@@ -305,6 +339,13 @@ export class HabilidadesPedrisco {
       e.obj.scale.set(Math.max(0.01, s), 1, Math.max(0.01, s));
     } });
     this.b.efeitoAnel(pos, raio, COR_TERRA);
+    // efeitos da Arena: rachadura que brilha embaixo das escuras, onda de choque e poeira em roda
+    this.b.fx.rachadura(pos.x, pos.z, raio * 1.15, BRILHO_CRISTAL, 1.1, true);
+    this.b.fx.onda(pos.x, pos.z, raio * 1.4, 0xe8d4a8, 0.45);
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2;
+      this.poeira(pos.x + Math.sin(a) * raio * 0.8, pos.z + Math.cos(a) * raio * 0.8, 3, 0.4, 0.8, neve);
+    }
     for (let i = 0; i < 16; i++) {
       const a = Math.random() * Math.PI * 2, r = raio * Math.sqrt(Math.random());
       this.estouro({ x: pos.x + Math.sin(a) * r, z: pos.z + Math.cos(a) * r }, 1, 0.7, 0);
@@ -335,8 +376,9 @@ export class HabilidadesPedrisco {
       // vira obstáculo de verdade (o mesmo tipo das pedras da arena)
       const obst = { x, z, r: P.raio, pilar: true };
       this.b.arena.obstaculos.push(obst);
-      this.pilares.push({ mesh: g, obst, t: 0, dur: P.duracao, alt: 1 });
+      this.pilares.push({ mesh: g, obst, t: 0, dur: P.duracao, alt: 1, x, z, r: P.raio, neve: !!P.neve });
       this.estouro({ x, z }, 4, 0.6, P.raio);
+      this.poeira(x, z, 8, P.raio, 0.9, P.neve);
     }
   }
 
@@ -347,7 +389,7 @@ export class HabilidadesPedrisco {
       // sobe em 0,2 s, fica, e afunda nos últimos 0,3 s
       const s = Math.min(1, p.t / 0.2) * Math.min(1, Math.max(0, (p.dur - p.t) / 0.3));
       p.mesh.scale.set(1, Math.max(0.01, s), 1);
-      if (p.t > p.dur - 0.3 && p.obst) this.tirarObstaculo(p); // afundando já deixa passar
+      if (p.t > p.dur - 0.3 && p.obst) { this.tirarObstaculo(p); this.poeira(p.x, p.z, 6, p.r, 0.6, p.neve); } // afundando já deixa passar
       if (p.t >= p.dur) { this.cena.remove(p.mesh); this.pilares.splice(i, 1); }
     }
   }

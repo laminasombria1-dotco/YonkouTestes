@@ -96,6 +96,7 @@ Pedrisco (Nv.1) > Cascalhão (Nv.6) > Rochedrão (Nv.12) > Montanhar (Nv.30)
 - Os pilares entram na lista de obstáculos da arena (`arena.obstaculos`) enquanto estão de pé e saem dela quando começam a afundar. Pilar que cairia fora da arena não sobe.
 - Chances de Soterrado: área 45%, Punho do Montanhar 32%, pedra 23% (uma vez por inimigo a cada pedra, juntando as quedas).
 - O inimigo avisa a pedra com círculos vermelhos em cada lugar onde ela vai cair, o Punho com uma faixa vermelha e as áreas com o círculo vermelho.
+- **Visual (etapa 3.1):** os efeitos da Arena (`this.b.fx`) põem nuvens de poeira "sólidas" (`poeira()`; neve no Montanhar), a onda de choque, a rachadura laranja que pinta o chão (Tremor e pedras que quicam), a faixa do Punho e a poeira dos pilares.
 - Só a linha do Pedrisco usa estes golpes. O Imanito e as evoluções (Terra + Raio) continuam com os golpes de `dados.js`.
 
 **Exemplos de mudança (em `pedrisco.js`):**
