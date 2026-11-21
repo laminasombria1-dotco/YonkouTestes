@@ -241,6 +241,34 @@ test('Musguinho: raízes que racham o chão, vinha e o Bosque Vivo com vaga-lume
   semErros(erros);
 });
 
+test('Solito: o sol que brilha, o laser e a Supernova com os efeitos da Arena', async ({ page }) => {
+  const erros = vigiarErros(page);
+  await abrirJogo(page);
+  await entrarLocal(page);
+  await novoJogo(page, 'musguinho');
+  await page.evaluate(() => { const j = window.__jogo; j.estado.equipe = [window.D.criarMonstro('astrorei', 35)]; j.iniciarBatalha(j.mundo.selvagens[0]); });
+  await page.waitForFunction(() => window.__jogo.modo === 'batalha' && !!window.__jogo.batalha?.ini, null, { timeout: 30_000 });
+  // sem dano: o Astrorei (Nv.35) derrubaria o selvagem e a luta acabaria antes do fim do teste
+  await page.evaluate(() => { const b = window.__jogo.batalha; b.pensarIA = () => {}; b.aplicarDano = () => false; });
+  await esperar(page, 1200);
+  const golpe = (i) => page.evaluate((i) => { const b = window.__jogo.batalha; b.jog.rec = [0, 0, 0]; b.tentarGolpe(b.jog, i, b.ini); }, i);
+  // Sol Rei: nasce com o brilho da Arena em volta
+  await golpe(0);
+  await page.waitForFunction(() => !!window.__jogo.batalha.jog.sol, null, { timeout: 10_000 });
+  // Laser Real (o sol atira junto)
+  await esperar(page, 400);
+  await golpe(1);
+  await esperar(page, 400);
+  // Supernova: o calor fica em volta e explode no fim
+  await golpe(2);
+  await page.waitForFunction(() => !!window.__jogo.batalha.jog.calor, null, { timeout: 10_000 });
+  expect(await page.evaluate(() => window.__jogo.batalha.fx.F.vivas)).toBeGreaterThan(0);
+  await page.waitForFunction(() => !window.__jogo.batalha.jog.calor, null, { timeout: 15_000 });
+  await esperar(page, 150);
+  await foto(page, '16-supernova');
+  semErros(erros);
+});
+
 test('monstro invocado e golpe no modo treino', async ({ page }) => {
   const erros = vigiarErros(page);
   await abrirJogo(page);

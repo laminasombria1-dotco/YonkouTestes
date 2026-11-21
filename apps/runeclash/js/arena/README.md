@@ -1,7 +1,7 @@
 # Material da Arena das Brasas
 
 Código trazido da **Arena das Brasas** (o protótipo de combate do Lâmina) para o Runeclash na **etapa 0.2** do [PLANO.md](../../PLANO.md).
-Hoje ele é usado no **Selamento** (2.1), no **Invocar com runas** (2.2) no **fogo do Brasito**, nos **raios do Faisquinho** nas **pedras do Pedrisco** na **água do Gotinho** e nas **plantas do Musguinho** (3.1); o resto é material das próximas etapas (habilidades, mapas e lendários).
+Hoje ele é usado no **Selamento** (2.1), no **Invocar com runas** (2.2) no **fogo do Brasito**, nos **raios do Faisquinho** nas **pedras do Pedrisco** na **água do Gotinho**, nas **plantas do Musguinho** e no **sol do Solito** (3.1); o resto é material das próximas etapas (habilidades, mapas e lendários).
 
 | Arquivo | O que é |
 |---|---|

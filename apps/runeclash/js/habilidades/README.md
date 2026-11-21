@@ -145,6 +145,7 @@ Solito (Nv.1) > Solário (Nv.6) > Solaurum (Nv.12) > Astrorei (Nv.30)
 - **Sol:** `soltarSol` cria a bola ao lado e acima do monstro; enquanto ela existir, `c.sol` guarda o bônus. `batalha.js` usa o bônus no dano (`aplicarDano`) e na velocidade (`fatorVel`). O bônus vale no campo todo. Enquanto o sol existe, a recarga fica travada; quando ele some, começa a recarga de 15 s (`recarga` do golpe).
 - **Laser:** acerta todos com o corpo na faixa (largura + metade do monstro), até o primeiro obstáculo. No Astrorei, o sol solta um 2º laser do alto, no inimigo mais perto dele, com `sol.atira` da força.
 - **Calor:** um pedaço a cada `calor.intervalo` em quem está a até `raio` dele. Com `esquenta`, o pedaço número N no mesmo inimigo tem `(1 + esquenta)^N` da força. A Supernova termina com `calor.explosao`.
+- **Visual (etapa 3.1):** os efeitos da Arena (`this.b.fx`) põem o brilho e a espiral dourada do Sol, o feixe que brilha por cima do laser (`fx.feixe`) com clarões e a faixa de luz no chão, faíscas "sólidas" (`faiscas()`), brasas e ondas no Calor e a Supernova com coluna de luz e chão queimado. No Astrorei o brilho é vermelho de eclipse (`corDe()`).
 - Só a linha do Solito usa estes golpes. Os de Sol de sempre continuam em `dados.js`.
 
 **Exemplos de mudança (em `solito.js`):**

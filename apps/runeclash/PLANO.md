@@ -46,13 +46,13 @@ Uma ideia por vez, sem pressa. Cada ideia é feita numa branch, com proposta ant
 - [ ] **2.3** **Cena do Invocador** erguendo a pedra e o selo aparecendo no monstro que vai ser selado (a Lâmina vai fazer a cena), junto com o modelo 3D da pedra. O corpo do Invocador já tem a pose de segurar a pedra erguida (`canal` em `js/invocador.js`).
 
 ### Etapa 3: Habilidades melhores
-- [ ] **3.1** Os efeitos da Arena nos golpes de hoje, **uma linha de monstros por vez** (ex.: relâmpago com galhos no Faisquinho, rachaduras e estilhaços no Pedrisco, chamas no Brasito).
+- [x] **3.1** Os efeitos da Arena nos golpes de hoje, **uma linha de monstros por vez** (ex.: relâmpago com galhos no Faisquinho, rachaduras e estilhaços no Pedrisco, chamas no Brasito).
   - [x] **Brasito:** chamas que crescem e mudam de cor, faíscas, brilho na boca, brasas no alvo, roda de fogo no Rabo, faixa de fogo no avanço, chão rachado em lava no Rabo de Magma e rastro verde da Investida. O fogo tem uma camada "sólida" (mistura normal) para não sumir no chão claro do dia.
   - [x] **Faisquinho:** o relâmpago da Arena (com galhos) pisca por cima de todo raio; clarões, faíscas que brilham, chão que racha onde o raio cai, anel da marca, raios curtos e faixa elétrica no Dash. O Tempestor tem brilho roxo de tempestade (aparece mais à noite).
   - [x] **Pedrisco:** nuvens de poeira (neve no Montanhar), onda de choque, rachadura laranja que "pinta" o chão no Tremor e nas pedras que quicam, faixa do Punho e poeira dos pilares.
   - [x] **Gotinho:** borrifos de gotas "sólidas", coluna de água no Hidrocanhão e no Maremoto, ondinhas no chão, espuma na crista das ondas, escudo que se parte em cacos e bolhas na poça. Tsunamar com água mais funda.
   - [x] **Musguinho:** o chão que racha em marrom e a terra que voa nas Raízes, anel verde e folhinhas quando a Moita e o Bosque brotam, pólen na Moita, vaga-lumes no Bosque Vivo, espiral verde na cura do Florestral, rastro verde da Folha e folhas quando a Vinha agarra.
-  - [ ] Solito
+  - [x] **Solito:** espiral dourada e brilho em volta do Sol, feixe da Arena por cima do laser com clarões, faixa de luz no chão e faíscas, brasas e ondas no Calor (mais vermelhas quando esquenta) e a Supernova que explode com coluna de luz, cacos e chão queimado. O Astrorei tem brilho vermelho de eclipse (aparece mais à noite).
 - [ ] **3.2** Os efeitos respeitam a Qualidade (Fraco/Médio/Forte) para não pesar no celular.
 - [ ] **3.3** Habilidades próprias para **Lua, Luz e Trevas**. Trevas primeiro, já no tom trevoso.
 - [ ] **3.4** Rebalancear dano, vida e chances depois das mudanças.

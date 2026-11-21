@@ -9,7 +9,7 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
 
 Só os **monstros** lutam; o Invocador não luta. O plano, etapa por etapa, fica em **[PLANO.md](PLANO.md)**.
 
-> **Hoje (ideia 3.1, começando pelo Brasito)** o Runeclash joga como o Cristalia, com o nome novo, o jogo salvo separado e o visual próprio: roxo-runa e dourado, fonte Cinzel nos títulos, o **Sealfolio** (o antigo Monstruário), as **pedras de selamento** (azul, roxa e dourada) no lugar dos cristais, o **Invocador** (o Aiden, com o criador de personagem) no mapa o **Selamento** com correntes na batalha e o monstro que **sobe de um círculo de runas** quando é invocado. Os golpes das linhas do Brasito, do Faisquinho, do Pedrisco, do Gotinho e do Musguinho já usam os efeitos da Arena (fogo, relâmpagos, pedras, água e plantas). As regras da batalha e da chance de selar ainda são as do Cristalia.
+> **Hoje (ideia 3.1 pronta)** o Runeclash joga como o Cristalia, com o nome novo, o jogo salvo separado e o visual próprio: roxo-runa e dourado, fonte Cinzel nos títulos, o **Sealfolio** (o antigo Monstruário), as **pedras de selamento** (azul, roxa e dourada) no lugar dos cristais, o **Invocador** (o Aiden, com o criador de personagem) no mapa o **Selamento** com correntes na batalha e o monstro que **sobe de um círculo de runas** quando é invocado. Os golpes das linhas do Brasito, do Faisquinho, do Pedrisco, do Gotinho, do Musguinho e do Solito já usam os efeitos da Arena (fogo, relâmpagos, pedras, água, plantas e sol). As regras da batalha e da chance de selar ainda são as do Cristalia.
 
 ## Como jogar
 

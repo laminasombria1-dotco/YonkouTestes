@@ -10,8 +10,14 @@
 //    andando junto com ele; nas formas finais, "esquenta" (cada pedaço mais forte) e a
 //    Supernova explode no fim
 // Para ficar leve no celular: formas e materiais são criados uma vez só e reaproveitados.
+// Etapa 3.1: o sol ganha os efeitos da Arena (js/arena/efeitos.js, em this.b.fx): o brilho em volta
+// do sol, a espiral dourada quando ele nasce, o feixe que brilha por cima do laser com clarões na
+// boca e na ponta, a faixa de luz no chão, faíscas "sólidas" (aparecem no chão claro), as brasas e
+// as ondas do Calor e a Supernova que explode com coluna de luz e chão queimado. No Astrorei (a
+// última forma), o brilho é vermelho de eclipse (o tom trevoso).
 // =============================================================
 import * as THREE from 'three';
+import { brilho } from '../arena/efeitos.js';
 
 // formas (uma vez só)
 const GEO_NUCLEO = new THREE.IcosahedronGeometry(1, 1);
@@ -38,6 +44,15 @@ const CALOR_CHAO = [basico('#ffb02e', 0.12), basico('#ff7a1a', 0.16), basico('#f
 const BRASAS = [basico('#ffd23f'), basico('#ff9a1a'), basico('#ff5a1a')];
 const COR_SOL = '#ffab2e';
 const aviso = (cor, op) => new THREE.MeshBasicMaterial({ color: cor, transparent: true, opacity: op, depthWrite: false, side: THREE.DoubleSide });
+// efeitos da Arena: dourado; no Astrorei, vermelho de eclipse
+const BRILHO_SOL = 0xffc84a, BRILHO_ECLIPSE = 0xff4a5a;
+const C = (h) => new THREE.Color(h);
+const FAISCA_SOL = [C('#fff6c0'), C('#ff9a1a')];
+const FAISCA_ECLIPSE = [C('#ffd8b0'), C('#a01a3a')];
+// as brasas do calor do laranja ao vermelho (do nascer ao fim)
+const BRASA_FX = [[C('#ffd23f'), C('#ff7a1a')], [C('#ffb02e'), C('#ff3d1a')], [C('#ff7a1a'), C('#a0180a')]];
+const ONDA_CALOR = [0xffb02e, 0xff7a1a, 0xff3d1a];
+let idSol = 0;
 
 export class HabilidadesSolito {
   constructor(batalha) {
@@ -49,6 +64,20 @@ export class HabilidadesSolito {
   dele(c) { return c.esp.linha === 'sol'; }
   naLuta(l) { return !l.morto && l.modelo.visible && (l === this.b.jog || this.b.inimigos.includes(l)); }
   recargaDe(c, gp) { return gp.recarga * (c.lado === 'inimigo' ? (c.furia ? 0.95 : 1.4) : 1); }
+
+  // a cor do brilho da Arena para este monstro
+  eclipse(c) { return c?.esp?.estagio === 3; }
+  corDe(c) { return this.eclipse(c) ? BRILHO_ECLIPSE : BRILHO_SOL; }
+
+  // faíscas da Arena: partículas "sólidas" que voam e caem (uma malha só para todas)
+  faiscas(x, y, z, n, forca = 1, c = null) {
+    const [a, b] = this.eclipse(c) ? FAISCA_ECLIPSE : FAISCA_SOL;
+    for (let i = 0; i < n; i++) {
+      const ang = Math.random() * Math.PI * 2, v = (2 + Math.random() * 3) * forca;
+      this.b.fx._ponto(x, y, z, Math.sin(ang) * v, (1.5 + Math.random() * 3) * forca, Math.cos(ang) * v, a,
+        0.35 + Math.random() * 0.25, 0.2 + Math.random() * 0.12, 6, { fim: b, solido: true });
+    }
+  }
 
   // brasinha/partícula de calor subindo
   brasa(pos, vel, tam, vida, mat = BRASAS[Math.floor(Math.random() * 3)]) {
@@ -90,9 +119,19 @@ export class HabilidadesSolito {
     g.scale.setScalar(0.01);
     luz.position.set(pos.x, 0.06, pos.z);
     this.cena.add(g, luz);
-    c.sol = { cfg: S, gp, t: S.duracao, obj: g, coroa, halo, luz, pos, brilhoT: 0 };
+    c.sol = { cfg: S, gp, t: S.duracao, obj: g, coroa, halo, luz, pos, brilhoT: 0, id: 'sol' + ++idSol };
     c.rec[0] = 1e4; // a recarga só começa quando o sol sumir
     this.b.particulas(pos, COR_SOL, 16, 1.2);
+    // efeitos da Arena: a luz sobe numa espiral até o sol, clarão quando ele nasce e o brilho em volta
+    const cor = this.corDe(c), sol = c.sol, aura = brilho(cor, 4.2);
+    this.b.fx.espiral(c.pos.x, 0.2, c.pos.z, c.raio + 0.5, c.altura + 0.8, cor, 0.6, { n: 36, giro: 2.5, puxa: 0.2 });
+    this.b.fx.onda(c.pos.x, c.pos.z, c.raio + 1.6, cor, 0.4);
+    this.b.fx.clarao(pos.x, pos.y, pos.z, cor, 0.8, 0.4);
+    this.faiscas(pos.x, pos.y, pos.z, 14, 0.8, c);
+    this.b.fx._temp(aura, S.duracao + 1, () => {
+      aura.position.copy(sol.obj.position);
+      aura.material.opacity = 0.75 * Math.min(1, sol.obj.scale.x) * (0.9 + Math.sin(this.b.t * 6) * 0.1);
+    }, { id: sol.id });
     this.b.jogo.numero(`Sol +${Math.round(S.ataque * 100)}%`, c.pos.clone().setY(c.altura + 0.6), COR_SOL, 'pequeno');
   }
 
@@ -101,6 +140,7 @@ export class HabilidadesSolito {
     const s = c.sol;
     if (!s) return;
     this.cena.remove(s.obj, s.luz);
+    this.b.fx.encerrar(s.id);
     c.sol = null;
     if (comecarRecarga) c.rec[0] = this.recargaDe(c, s.gp);
   }
@@ -120,9 +160,9 @@ export class HabilidadesSolito {
     // brilhinhos dourados em quem está com o bônus
     s.brilhoT -= dt;
     if (s.brilhoT <= 0) {
-      s.brilhoT = 0.2;
-      const a = Math.random() * Math.PI * 2;
-      this.brasa(new THREE.Vector3(c.pos.x + Math.sin(a) * c.raio, Math.random() * c.altura, c.pos.z + Math.cos(a) * c.raio), new THREE.Vector3(0, 1.5, 0), 0.08, 0.5, BRILHO_DOURADO);
+      s.brilhoT = 0.1;
+      const a = Math.random() * Math.PI * 2, [ca, cb] = this.eclipse(c) ? FAISCA_ECLIPSE : FAISCA_SOL;
+      this.b.fx._ponto(c.pos.x + Math.sin(a) * c.raio, Math.random() * c.altura, c.pos.z + Math.cos(a) * c.raio, 0, 1.5, 0, ca, 0.6, 0.22, 0, { fim: cb, solido: true });
     }
   }
 
@@ -145,6 +185,7 @@ export class HabilidadesSolito {
       const frente = rx * dir.x + rz * dir.z, lado = Math.abs(rx * dir.z - rz * dir.x);
       if (frente < -o.raio || frente > len + o.raio * 0.5 || lado > L.largura / 2 + o.raio * 0.7) continue;
       this.b.aplicarDano(c, o, gp, dir, { fator, efeito, empurrao: 2 });
+      this.faiscas(o.pos.x, o.altura * 0.5, o.pos.z, 8, 0.7, c);
     }
     // visual: feixe da boca até o fim, marca queimada no chão e brilho na ponta
     const fim = new THREE.Vector3(origem.x + dir.x * len, Math.min(boca.y, 1), origem.z + dir.z * len);
@@ -165,7 +206,14 @@ export class HabilidadesSolito {
     chao.rotation.y = Math.atan2(dir.x, dir.z);
     this.cena.add(chao);
     this.b.efeitos.push({ obj: chao, vida: 0.9, total: 0.9, upd: (e, k) => { e.obj.scale.set(Math.max(0.01, L.largura * 0.7 * (1 - k)), 1, len); } });
-    for (let i = 0; i < 6; i++) this.brasa(fim.clone(), new THREE.Vector3((Math.random() - 0.5) * 5, 1 + Math.random() * 3, (Math.random() - 0.5) * 5), 0.1, 0.4);
+    for (let i = 0; i < 2; i++) this.brasa(fim.clone(), new THREE.Vector3((Math.random() - 0.5) * 5, 1 + Math.random() * 3, (Math.random() - 0.5) * 5), 0.1, 0.4);
+    // efeitos da Arena: o feixe que brilha por cima, a faixa de luz no chão, clarões e faíscas na ponta
+    const cor = this.corDe(c);
+    this.b.fx.feixe(boca, fim, L.largura * 1.3, cor, L.duracao + 0.05);
+    this.b.fx.faixa([origem.x, origem.z], [fim.x, fim.z], L.largura * 1.8, cor, 0.55);
+    this.b.fx.clarao(boca.x, boca.y, boca.z, cor, 0.5 + L.largura * 0.3, 0.25);
+    this.b.fx.clarao(fim.x, fim.y, fim.z, cor, 0.6 + L.largura * 0.3, 0.3);
+    this.faiscas(fim.x, fim.y, fim.z, 10 + Math.round(L.largura * 6), 0.8, c);
   }
 
   atirarLaser(c, gp, dir, efeito) {
@@ -206,8 +254,9 @@ export class HabilidadesSolito {
     g.add(chao, anel);
     g.scale.setScalar(0.01);
     this.cena.add(g);
-    c.calor = { gp, efeito, t: 0, tick: 0, mesh: g, anel, chao, contagem: new Map(), emitir: 0 };
+    c.calor = { gp, efeito, t: 0, tick: 0, mesh: g, anel, chao, contagem: new Map(), emitir: 0, emitirFx: 0 };
     this.b.efeitoAnel(c.pos, gp.raio, COR_SOL);
+    this.b.fx.onda(c.pos.x, c.pos.z, gp.raio * 1.2, ONDA_CALOR[0], 0.4);
   }
 
   atualizarCalor(c, dt) {
@@ -221,7 +270,15 @@ export class HabilidadesSolito {
     const s = Math.min(1, Q.t / 0.2) * (1 + Math.sin(this.b.t * 14) * 0.025);
     Q.mesh.scale.setScalar(Math.max(0.01, R * s));
     Q.mesh.position.set(c.pos.x, 0.07, c.pos.z);
-    Q.emitir += dt * (25 + nivel * 15);
+    Q.emitir += dt * (8 + nivel * 4);
+    // brasas da Arena subindo do chão quente (do laranja ao vermelho; mais e maiores quando esquenta)
+    Q.emitirFx += dt * (40 + nivel * 20);
+    while (Q.emitirFx >= 1) {
+      Q.emitirFx--;
+      const a = Math.random() * Math.PI * 2, r = R * Math.sqrt(Math.random()), [ca, cb] = BRASA_FX[nivel];
+      this.b.fx._ponto(c.pos.x + Math.sin(a) * r, 0.1, c.pos.z + Math.cos(a) * r, (Math.random() - 0.5) * 0.6, 1.2 + Math.random() * 1.5, (Math.random() - 0.5) * 0.6,
+        ca, 0.6 + Math.random() * 0.3, 0.42 + nivel * 0.08, 0, { fim: cb, cresce: 0.4, solido: true });
+    }
     while (Q.emitir >= 1) {
       Q.emitir--;
       const a = Math.random() * Math.PI * 2, r = R * Math.sqrt(Math.random());
@@ -230,6 +287,7 @@ export class HabilidadesSolito {
     // um pedaço de dano a cada intervalo, em quem está perto
     if (Q.t >= Q.tick) {
       Q.tick += C.intervalo;
+      this.b.fx.onda(c.pos.x, c.pos.z, R * (1 + nivel * 0.08), ONDA_CALOR[nivel], 0.45);
       for (const o of this.b.alvosDe(c)) {
         const dx = o.pos.x - c.pos.x, dz = o.pos.z - c.pos.z, d = Math.hypot(dx, dz);
         if (d > R + o.raio * 0.5) continue;
@@ -256,6 +314,14 @@ export class HabilidadesSolito {
     this.b.efeitoAnel(c.pos, E.raio, '#ffffff');
     this.b.efeitoAnel(c.pos, E.raio * 0.7, COR_SOL);
     this.b.particulas(c.pos, COR_SOL, 26, 1.8);
+    // efeitos da Arena: clarão forte, coluna de luz, onda, cacos, faíscas e o chão queimado
+    const cor = this.corDe(c);
+    this.b.fx.clarao(c.pos.x, 1.2, c.pos.z, cor, 1.6, 0.5);
+    this.b.fx.coluna(c.pos.x, c.pos.z, E.raio * 0.45, cor, 7, 0.55);
+    this.b.fx.onda(c.pos.x, c.pos.z, E.raio * 1.5, cor, 0.55);
+    this.b.fx.estilhacos(c.pos.x, 1, c.pos.z, 18, cor, { tam: 0.22, vel: 7, cima: 5, vida: 0.9 });
+    this.faiscas(c.pos.x, 1, c.pos.z, 40, 1.4, c);
+    this.b.fx.rachadura(c.pos.x, c.pos.z, E.raio * 1.1, this.eclipse(c) ? 0x5a1020 : 0x6a2a0a, 1.4, true);
     for (const o of this.b.alvosDe(c)) {
       const dx = o.pos.x - c.pos.x, dz = o.pos.z - c.pos.z, d = Math.hypot(dx, dz);
       if (d > E.raio + o.raio * 0.5) continue;
