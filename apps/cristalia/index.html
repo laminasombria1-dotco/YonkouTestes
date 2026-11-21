@@ -130,6 +130,14 @@
   .ola { margin: 0; align-self: flex-start; max-width: 100%; padding: 4px 12px; border-radius: 12px; background: var(--painel); font-family: var(--f-titulo); font-weight: 600; font-size: 1rem; color: var(--creme); text-align: left; }
   .ola b { color: var(--cristal); }
   .ola small { display: block; font-family: var(--f-corpo); font-size: 0.7rem; font-weight: 700; color: var(--creme-suave); }
+  /* celular em pé: o jogo só roda deitado; esta tela cobre tudo e o jogo pausa até virar */
+  #vire { position: absolute; inset: 0; z-index: 60; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px; text-align: center;
+    background: radial-gradient(ellipse at 50% 40%, rgba(20, 35, 63, 0.94), rgba(10, 18, 34, 0.99)); touch-action: none; }
+  #vire svg { width: 120px; height: 120px; animation: vire-girar 2.4s ease-in-out infinite; }
+  @keyframes vire-girar { 0%, 20% { transform: rotate(0deg); } 50%, 80% { transform: rotate(-90deg); } 100% { transform: rotate(-90deg); } }
+  #vire h2 { margin: 0; font-family: var(--f-titulo); font-weight: 600; font-size: 1.8rem; }
+  #vire p { margin: 0; max-width: 30ch; color: var(--creme-suave); font-weight: 700; }
+  @media (prefers-reduced-motion: reduce) { #vire svg { animation: none; transform: rotate(-45deg); } }
   /* menu de pausa e tela de saída */
   .sobreposicao { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(8, 14, 28, 0.72); backdrop-filter: blur(3px); z-index: 20; }
   .caixa-menu { display: flex; flex-direction: column; gap: 10px; width: min(340px, 100%); padding: 16px; border-radius: 20px; background: var(--noite); border: 1px solid var(--painel-borda); text-align: center; }
@@ -660,6 +668,15 @@
   </div>
 
   <div id="avisos"></div>
+
+  <!-- celular em pé: pede para virar (o jogo pausa) -->
+  <div id="vire" hidden role="alert">
+    <svg viewBox="0 0 64 64" fill="none" stroke="#8ff4ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="20" y="6" width="24" height="44" rx="4"/><path d="M29 44h6"/><path d="M50 40a18 18 0 0 1-8 14" stroke="#ffd23f"/><path d="M43 50l-1 5 5 0" stroke="#ffd23f"/>
+    </svg>
+    <h2>Vire o celular</h2>
+    <p>O Cristalia é jogado com o celular deitado. O jogo fica pausado até você virar.</p>
+  </div>
 </div>
 
 <script type="importmap">{ "imports": { "three": "./lib/three.module.min.js", "three/addons/": "./lib/addons/" } }</script>

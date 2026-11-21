@@ -21,6 +21,10 @@ import { chaveNome, problemaNome, ErroNuvem, criarConta, entrar, renovar, Nuvem,
 
 // Cada conta tem o seu jogo salvo no aparelho: cristalia-save-v1:<id da conta>
 // (o jogo salvo antigo, de antes das contas, fica em 'cristalia-save-v1' e vai para a 1ª conta que entrar)
+// O jogo só roda deitado: num celular (tela de toque) em pé aparece "Vire o celular" e tudo pausa.
+// (No PC, uma janela estreita não é bloqueada.)
+const EM_PE = window.matchMedia('(orientation: portrait) and (pointer: coarse)');
+
 const CHAVE_SAVE = 'cristalia-save-v1';
 const CHAVE_CONTAS = 'cristalia-contas';   // contas que já entraram neste aparelho (para entrar com 1 toque)
 const CHAVE_MIGRADO = 'cristalia-save-migrado';
@@ -1071,7 +1075,14 @@ class Jogo {
   // ---------- laço principal ----------
   quadro() {
     requestAnimationFrame(() => this.quadro());
-    const dt = Math.min(0.05, this.relogio.getDelta());
+    // celular em pé: mostra "Vire o celular" e o tempo do jogo para (dt = 0) até virar
+    const emPe = EM_PE.matches;
+    if (emPe !== this.emPe) {
+      this.emPe = emPe;
+      $('#vire').hidden = !emPe;
+      if (emPe) { this.ctrl.soltar(); this.ctrl.soltarCamera(); }
+    }
+    const dt = emPe ? (this.relogio.getDelta(), 0) : Math.min(0.05, this.relogio.getDelta());
     this.t += dt;
     let cena = this.mundo.cena, camera = this.mundo.camera;
     this.envioT += dt;
@@ -1093,8 +1104,9 @@ class Jogo {
       if (this.cenaEvo.pronto) $('#evo-continuar').hidden = false;
       cena = this.cenaEvo.cena; camera = this.cenaEvo.camera;
     } else if (this.modo === 'mundo') {
-      this.mundo.atualizar(dt, this.ctrl, this.t, this.painelAberto);
-      if (this.modo === 'mundo') this.pet.atualizar(dt, this.ctrl, this.t, this.painelAberto);
+      const pausado = this.painelAberto || emPe;
+      this.mundo.atualizar(dt, this.ctrl, this.t, pausado);
+      if (this.modo === 'mundo') this.pet.atualizar(dt, this.ctrl, this.t, pausado);
       this.atualizarRelogio();
       if (this.modo === 'mundo') this.atualizarBotaoCasa();
       this.salvarT = (this.salvarT || 0) + dt;

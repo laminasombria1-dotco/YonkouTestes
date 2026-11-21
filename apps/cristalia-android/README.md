@@ -5,7 +5,7 @@ App Android bem pequeno (~50 KB) que abre o jogo em tela cheia. O jogo de verdad
 
 - **Atualizações do jogo chegam sozinhas:** não é preciso instalar um APK novo quando o jogo muda.
 - **Sem internet:** abre a última versão guardada. Na primeira vez, precisa de internet.
-- **Progresso salvo:** fica dentro do app, no celular.
+- **Progresso salvo:** na nuvem (contas com nome e senha) e uma cópia dentro do app. A conta GM fica só no celular.
 
 ## Instalar no celular
 1. Baixe o `Cristalia.apk` no celular.
@@ -17,6 +17,7 @@ App Android bem pequeno (~50 KB) que abre o jogo em tela cheia. O jogo de verdad
 |---|---|
 | 1.0 | Primeira versão: abre o jogo em tela cheia |
 | 1.1 | Botão **Sair do jogo** fecha o app; o **Voltar** do celular abre o menu de pausa em vez de fechar o jogo |
+| 1.2 | **Só deitado:** o app nunca fica em pé (`sensorLandscape`), mesmo com a rotação automática do celular desligada. Ele só vira entre os dois lados deitados |
 
 ## Quando precisa de um APK novo?
 Só quando mudar algo do **app** em si (nome, ícone, endereço do site). Mudanças no **jogo** não precisam.
@@ -25,7 +26,7 @@ Só quando mudar algo do **app** em si (nome, ícone, endereço do site). Mudan�
 Todo APK é "assinado" com uma chave. Para instalar uma versão nova **por cima** da antiga, sem perder o progresso,
 a chave precisa ser **a mesma**. A chave fica nos arquivos `cristalia.jks` e `assinatura.properties`, que **não**
 ficam no repositório (ele é público). Guarde a cópia que recebeu num lugar seguro, como o Google Drive.
-Sem ela, um APK novo só instala depois de desinstalar o antigo, e o progresso salvo se perde.
+Sem ela, um APK novo só instala depois de desinstalar o antigo, e o que fica só no celular se perde (as contas na nuvem não se perdem; a conta GM, sim).
 
 ## Montar o APK (para quem for mexer no código)
 1. Coloque `cristalia.jks` e `assinatura.properties` nesta pasta.
@@ -38,5 +39,5 @@ Antes de montar um APK novo, aumente `versionCode` em `app/build.gradle`.
 |---|---|
 | `app/src/main/java/.../Principal.java` | A tela do app: abre o site em tela cheia, guarda o progresso e trata a falta de internet |
 | `app/src/main/assets/sem-internet.html` | Aviso quando não há internet na primeira vez |
-| `app/src/main/AndroidManifest.xml` | Nome, ícone, permissão de internet e giro de tela |
+| `app/src/main/AndroidManifest.xml` | Nome, ícone, permissão de internet e giro de tela (`sensorLandscape`: só deitado) |
 | `app/build.gradle` | Versão do app e assinatura |
