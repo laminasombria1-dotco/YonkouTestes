@@ -51,7 +51,8 @@ Uma ideia por vez, sem pressa. Cada ideia é feita numa branch, com proposta ant
   - [x] **Faisquinho:** o relâmpago da Arena (com galhos) pisca por cima de todo raio; clarões, faíscas que brilham, chão que racha onde o raio cai, anel da marca, raios curtos e faixa elétrica no Dash. O Tempestor tem brilho roxo de tempestade (aparece mais à noite).
   - [x] **Pedrisco:** nuvens de poeira (neve no Montanhar), onda de choque, rachadura laranja que "pinta" o chão no Tremor e nas pedras que quicam, faixa do Punho e poeira dos pilares.
   - [x] **Gotinho:** borrifos de gotas "sólidas", coluna de água no Hidrocanhão e no Maremoto, ondinhas no chão, espuma na crista das ondas, escudo que se parte em cacos e bolhas na poça. Tsunamar com água mais funda.
-  - [ ] Musguinho · [ ] Solito
+  - [x] **Musguinho:** o chão que racha em marrom e a terra que voa nas Raízes, anel verde e folhinhas quando a Moita e o Bosque brotam, pólen na Moita, vaga-lumes no Bosque Vivo, espiral verde na cura do Florestral, rastro verde da Folha e folhas quando a Vinha agarra.
+  - [ ] Solito
 - [ ] **3.2** Os efeitos respeitam a Qualidade (Fraco/Médio/Forte) para não pesar no celular.
 - [ ] **3.3** Habilidades próprias para **Lua, Luz e Trevas**. Trevas primeiro, já no tom trevoso.
 - [ ] **3.4** Rebalancear dano, vida e chances depois das mudanças.

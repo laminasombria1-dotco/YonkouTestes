@@ -216,6 +216,31 @@ test('Gotinho: borrifos, coluna de água e o escudo que se parte', async ({ page
   semErros(erros);
 });
 
+test('Musguinho: raízes que racham o chão, vinha e o Bosque Vivo com vaga-lumes', async ({ page }) => {
+  const erros = vigiarErros(page);
+  await abrirJogo(page);
+  await entrarLocal(page);
+  await novoJogo(page, 'musguinho');
+  await page.evaluate(() => { const j = window.__jogo; j.estado.equipe = [window.D.criarMonstro('florestral', 35)]; j.iniciarBatalha(j.mundo.selvagens[0]); });
+  await page.waitForFunction(() => window.__jogo.modo === 'batalha' && !!window.__jogo.batalha?.ini, null, { timeout: 30_000 });
+  // sem dano: o Florestral (Nv.35) derrubaria o selvagem e a luta acabaria antes do fim do teste
+  await page.evaluate(() => { const b = window.__jogo.batalha; b.pensarIA = () => {}; b.aplicarDano = () => false; });
+  await esperar(page, 1200);
+  // Bosque Vivo: brota com raízes e terra da Arena e fica no chão
+  await page.evaluate(() => { const b = window.__jogo.batalha; b.jog.rec = [0, 0, 0]; b.tentarGolpe(b.jog, 2, b.ini); });
+  await page.waitForFunction(() => window.__jogo.batalha.musguinho.zonas.length > 0, null, { timeout: 10_000 });
+  expect(await page.evaluate(() => window.__jogo.batalha.fx.F.vivas)).toBeGreaterThan(0);
+  await esperar(page, 600);
+  await foto(page, '15-bosque');
+  // Vinha Agarradora: estica e recolhe
+  await page.evaluate(() => { const b = window.__jogo.batalha; b.jog.rec = [0, 0, 0]; b.tentarGolpe(b.jog, 0, b.ini); });
+  await page.waitForFunction(() => !!window.__jogo.batalha.jog.vinha, null, { timeout: 10_000 });
+  await page.waitForFunction(() => !window.__jogo.batalha.jog.vinha, null, { timeout: 10_000 });
+  // e o bosque some sozinho
+  await page.waitForFunction(() => window.__jogo.batalha.musguinho.zonas.length === 0, null, { timeout: 15_000 });
+  semErros(erros);
+});
+
 test('monstro invocado e golpe no modo treino', async ({ page }) => {
   const erros = vigiarErros(page);
   await abrirJogo(page);

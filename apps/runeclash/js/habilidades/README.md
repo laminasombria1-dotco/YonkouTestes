@@ -74,6 +74,7 @@ Musguinho (Nv.1) > Moitão (Nv.6) > Troncudo (Nv.12) > Florestral (Nv.30)
 - Chances de Enraizado: área 35%, vinha do Florestral 25%, folhas 18% (uma vez por inimigo a cada uso, juntando todas as folhas e passagens).
 - A moita e o bosque somem se quem plantou desmaiar ou for trocado. A cura do Bosque não funciona com Combustão.
 - O inimigo avisa a vinha com uma **faixa vermelha estreita** e as áreas com o círculo vermelho.
+- **Visual (etapa 3.1):** os efeitos da Arena (`this.b.fx`) põem folhinhas e terra "sólidas" (`folhasFx()`), o chão que racha em marrom nas Raízes, o anel verde quando a zona brota, o pólen da Moita, os vaga-lumes do Bosque Vivo, a espiral verde da cura do Florestral e o rastro verde da Folha.
 - Só a linha do Musguinho usa estes golpes. Espinhal, Silvárion e os tipos duplos com Planta continuam com os golpes de `dados.js`.
 
 **Exemplos de mudança (em `musguinho.js`):**

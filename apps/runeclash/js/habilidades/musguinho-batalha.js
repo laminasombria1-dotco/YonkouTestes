@@ -7,6 +7,9 @@
 //  - Moita de Espinhos / Bosque Vivo: ficam no chão machucando (o Bosque cura quem plantou)
 // Para ficar leve no celular: formas e materiais são criados uma vez só
 // e reaproveitados; a moita some em 4 s e o bosque em 5 s.
+// Etapa 3.1: as plantas ganham os efeitos da Arena (js/arena/efeitos.js, em this.b.fx): folhinhas e
+// terra "sólidas" (aparecem no chão claro), o chão que racha onde as raízes saem, o pólen que sobe da
+// moita, os vaga-lumes do Bosque e a espiral verde da cura do Florestral.
 // =============================================================
 import * as THREE from 'three';
 
@@ -37,6 +40,12 @@ const MUSGO = fixo(new THREE.MeshLambertMaterial({ color: '#2f6a2a', transparent
 const CHAO_BOSQUE = fixo(new THREE.MeshLambertMaterial({ color: '#24552a', transparent: true, opacity: 0.8, flatShading: true }));
 const FLORES = [fixo(new THREE.MeshBasicMaterial({ color: '#ff9ed0' })), fixo(new THREE.MeshBasicMaterial({ color: '#ffe14a' })), fixo(new THREE.MeshBasicMaterial({ color: '#ffffff' }))];
 const aviso = (cor, op) => new THREE.MeshBasicMaterial({ color: cor, transparent: true, opacity: op, depthWrite: false, side: THREE.DoubleSide });
+// partículas da Arena (do nascer ao fim)
+const C = (h) => new THREE.Color(h);
+const VERDE_FX = [C('#c8ff8a'), C('#2f8a2a')];
+const TERRA_FX = [C('#a07a52'), C('#4a3220')];
+const POLEN = [C('#fff3a0'), C('#b8e05a')];
+const VAGALUME = C('#e8ff9a');
 
 export class HabilidadesMusguinho {
   constructor(batalha) {
@@ -60,6 +69,16 @@ export class HabilidadesMusguinho {
       e.obj.rotation.x += dt * 6;
       e.obj.scale.setScalar(1 - k * 0.6);
     } });
+  }
+
+  // folhinhas ou terra da Arena (partículas "sólidas", uma malha só para todas)
+  folhasFx(x, y, z, n, forca = 1, terra = false) {
+    const [a, b] = terra ? TERRA_FX : VERDE_FX;
+    for (let i = 0; i < n; i++) {
+      const ang = Math.random() * Math.PI * 2, v = (1 + Math.random() * 2) * forca;
+      this.b.fx._ponto(x, y, z, Math.sin(ang) * v, (1.5 + Math.random() * 2.5) * forca, Math.cos(ang) * v, a,
+        0.5 + Math.random() * 0.4, terra ? 0.5 + Math.random() * 0.4 : 0.25 + Math.random() * 0.15, terra ? 8 : 3, { fim: b, cresce: terra ? 1 : 0.3, solido: true });
+    }
   }
 
   // ---------- Folha Bumerangue ----------
@@ -111,6 +130,8 @@ export class HabilidadesMusguinho {
     if (p.rastro <= 0) {
       p.rastro = 0.07;
       this.folhinha(p.pos.clone(), new THREE.Vector3((Math.random() - 0.5), 0.4, (Math.random() - 0.5)), 0.5);
+      // rastro verde que brilha atrás da folha (efeito da Arena)
+      for (let i = 0; i < 3; i++) this.b.fx._ponto(p.pos.x, p.pos.y, p.pos.z, (Math.random() - 0.5) * 0.6, 0.2, (Math.random() - 0.5) * 0.6, VERDE_FX[0], 0.35, 0.35, 0, { fim: VERDE_FX[1], cresce: 0.6, solido: true });
     }
   }
 
@@ -172,6 +193,9 @@ export class HabilidadesMusguinho {
           if (this.b.aplicarDano(c, o, G, v.dir, { efeito: v.efeito, empurrao: 0 })) {
             o.emp.set(puxar.x * puxa * PUXAO, 0, puxar.z * puxa * PUXAO);
             for (let i = 0; i < 6; i++) this.folhinha(o.pos.clone().setY(o.altura * 0.5), new THREE.Vector3((Math.random() - 0.5) * 3, 1.5 + Math.random(), (Math.random() - 0.5) * 3), 0.6);
+            // a vinha agarra: folhas da Arena e um anel verde no chão
+            this.folhasFx(o.pos.x, o.altura * 0.5, o.pos.z, 14, 1);
+            this.b.fx.onda(o.pos.x, o.pos.z, o.raio + 1.2, 0x7dff8a, 0.3);
           }
         }
       }
@@ -240,6 +264,12 @@ export class HabilidadesMusguinho {
       const a = Math.random() * Math.PI * 2;
       this.folhinha(new THREE.Vector3(pos.x + Math.sin(a) * raio * 0.6, 0.3, pos.z + Math.cos(a) * raio * 0.6), new THREE.Vector3(Math.sin(a) * 2, 2.5, Math.cos(a) * 2), 0.7, RAIZ);
     }
+    // efeitos da Arena: o chão racha (marrom, pintado por cima) e a terra voa de onde cada raiz sai
+    this.b.fx.rachadura(pos.x, pos.z, raio * 1.1, 0x5a3a1e, 1, true);
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2;
+      this.folhasFx(pos.x + Math.sin(a) * raio * 0.6, 0.2, pos.z + Math.cos(a) * raio * 0.6, 4, 0.8, true);
+    }
   }
 
   // ---------- Moita de Espinhos e Bosque Vivo ----------
@@ -281,7 +311,9 @@ export class HabilidadesMusguinho {
     g.scale.set(0.01, 1, 0.01);
     this.cena.add(g);
     if (bosque) this.raizes(c.pos, R, 12, 1.5);
-    this.zonas.push({ c, gp, mesh: g, x: c.pos.x, z: c.pos.z, t: 0, tick: Z.intervalo, curaT: 1, primeiro: new Set() });
+    this.zonas.push({ c, gp, mesh: g, x: c.pos.x, z: c.pos.z, t: 0, tick: Z.intervalo, curaT: 1, primeiro: new Set(), emitir: 0 });
+    this.b.fx.onda(c.pos.x, c.pos.z, R * 1.2, 0x7dff8a, 0.4);
+    this.folhasFx(c.pos.x, 0.3, c.pos.z, 24, 1.2);
   }
 
   atualizarZonas(dt) {
@@ -293,6 +325,14 @@ export class HabilidadesMusguinho {
       z.mesh.scale.set(Math.max(0.01, s), Math.max(0.01, s), Math.max(0.01, s));
       const naLuta = z.c === this.b.jog || this.b.inimigos.includes(z.c);
       if (z.t >= Z.duracao || z.c.morto || !naLuta) { this.cena.remove(z.mesh); this.zonas.splice(i, 1); continue; }
+      // pólen que sobe da moita / vaga-lumes que brilham no bosque (efeitos da Arena)
+      z.emitir += dt * (Z.visual === 'bosque' ? 18 : 14);
+      while (z.emitir >= 1) {
+        z.emitir--;
+        const a = Math.random() * Math.PI * 2, d = R * Math.sqrt(Math.random()) * 0.9, x = z.x + Math.sin(a) * d, zz = z.z + Math.cos(a) * d;
+        if (Z.visual === 'bosque') this.b.fx._ponto(x, 0.3 + Math.random() * 1.2, zz, (Math.random() - 0.5) * 0.5, 0.3 + Math.random() * 0.4, (Math.random() - 0.5) * 0.5, VAGALUME, 1.2, 0.5, 0);
+        else this.b.fx._ponto(x, 0.2, zz, (Math.random() - 0.5) * 0.4, 0.6 + Math.random() * 0.5, (Math.random() - 0.5) * 0.4, POLEN[0], 1, 0.5, -0.2, { fim: POLEN[1], cresce: 0.6, solido: true });
+      }
       // machuca quem está dentro, a cada pedaço
       z.tick -= dt;
       if (z.tick <= 0) {
@@ -315,6 +355,7 @@ export class HabilidadesMusguinho {
           if (Math.hypot(c.pos.x - z.x, c.pos.z - z.z) <= R) {
             this.b.curar(c, Z.cura);
             this.b.particulas(c.pos, '#7dff8a', 6, 0.6);
+            this.b.fx.espiral(c.pos.x, 0.2, c.pos.z, c.raio + 0.6, c.altura + 0.5, 0x7dff8a, 0.7, { n: 40, giro: 3, puxa: 0.3 });
           }
         }
       }
