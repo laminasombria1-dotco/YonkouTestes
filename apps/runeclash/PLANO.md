@@ -73,6 +73,7 @@ Uma ideia por vez, sem pressa. Cada ideia é feita numa branch, com proposta ant
   - [x] **Serpe da Tormenta** (dragão de raios): mora no círculo de pedra rúnico da Neve (**Círculo da Tormenta**), luta no Lago Congelado com Mordida, Raios e Tempestade, fúria com metade da vida, volta no amanhecer. Código em `js/lendarios/`. (Para depois: ficou com ~11 mil triângulos, acima dos 8 mil do guia; faltam os raios vivos nos chifres, asas e cauda; decidir se cada lendário é único.)
   - [x] **Colosso de Basalto** (gigante de pedra, Terra): mora no círculo de pedra do Deserto (**Círculo das Dunas**), luta nas Dunas de Âmbar com Esmagar, Arremesso e Terremoto (tela treme, deixa lento). (Para depois: um pouco pequeno; o Arremesso ainda não faz o arco da Arena.)
   - [x] **Sentinela de Geada** (golem de gelo e pedra, Água): guarda o **Cristal Gigante** da Neve, luta no Lago Congelado com Lâminas Cravadas, Estilhaços e Anel de Gelo (gira como um pião, deixa lento); a neve cai em volta dela. (Para depois: muito clara na arena de gelo; os Estilhaços são bolinhas; o Solo Congelado da Arena ficou de fora.)
+  - [x] **Arauto das Cinzas** (conjurador de fogo): mora no **Altar das Cinzas**, atrás do altar de selo da Lava, luta na Cratera Ardente com Mão de Cinzas, Brasas Vivas e Chuva de Cinzas (meteoros); as cinzas sobem dele o tempo todo.
 - [ ] **5.5** Lugares fixos desenhados no Blender e dungeons nos outros biomas.
 - [ ] **5.6** Clima mais sombrio: noite mais escura e lugares amaldiçoados.
 

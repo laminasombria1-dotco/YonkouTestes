@@ -12,6 +12,7 @@ import { temGLB, montarGLB, animarGLB, piscarGLB, descartarGLB, tocarGolpe as to
 import { montarSerpe } from './lendarios/serpe-modelo.js';
 import { montarColosso } from './lendarios/colosso-modelo.js';
 import { montarGeada } from './lendarios/geada-modelo.js';
+import { montarArauto } from './lendarios/arauto-modelo.js';
 export { carregarModelos3D, ajustarGiro } from './modelos3d.js';
 
 // Um golpe começou (ou parou): o modelo do Blender toca a animação; os lendários fazem a pose deles
@@ -934,8 +935,10 @@ function serpe(c, u) { montarSerpe(c, u); }
 function colosso(c, u) { montarColosso(c, u); }
 // LENDÁRIO: Sentinela de Geada (js/lendarios/geada-modelo.js)
 function geada(c, u) { montarGeada(c, u); }
+// LENDÁRIO: Arauto das Cinzas (js/lendarios/arauto-modelo.js)
+function arauto(c, u) { montarArauto(c, u); }
 
-const RAROS_MODELO = { vulcarapa, aquaraia, espinhal, ignarion, silvarion, serpe, colosso, geada };
+const RAROS_MODELO = { vulcarapa, aquaraia, espinhal, ignarion, silvarion, serpe, colosso, geada, arauto };
 
 // =============================================================
 // JUNTAR PEÇAS (deixa o jogo leve no celular)

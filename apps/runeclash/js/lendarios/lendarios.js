@@ -5,19 +5,21 @@
 // FÚRIA com metade da vida) e só é selado com a Pedra Dourada, com chance baixa.
 // Vencido ou selado, volta no próximo amanhecer (como os chefes das dungeons).
 // Hoje: a Serpe da Tormenta, no círculo de pedra rúnico da Neve, o Colosso de Basalto, no do Deserto,
-// e a Sentinela de Geada, na frente do Cristal Gigante da Neve.
+// a Sentinela de Geada, na frente do Cristal Gigante da Neve, e o Arauto das Cinzas, atrás do altar de selo da Lava.
 // =============================================================
 import { ESPECIES, criarMonstro, nivelDoChefe } from '../dados.js';
 import { criarModelo, criarCoroa } from '../modelos.js';
 import { POIS } from '../mapa/gerador.js';
 import { alturaEm } from '../mapa/altura.js';
 
-// especie | onde mora (o ponto de interesse e o bioma; frente = quantos metros na frente dele, olhando para fora)
+// especie | onde mora (o ponto de interesse e o bioma; frente = quantos metros na frente dele, olhando para fora;
+// negativo = atrás, olhando por cima dele)
 // lugar = nome mostrado | zona = arena da luta
 export const LENDARIOS = [
   { especie: 'serpe', poi: 'circulo', bioma: 'raio', lugar: 'Círculo da Tormenta', zona: 'raio' },
   { especie: 'colosso', poi: 'circulo', bioma: 'terra', lugar: 'Círculo das Dunas', zona: 'terra' },
   { especie: 'geada', poi: 'cristalGelo', frente: 5, lugar: 'Cristal Gigante', zona: 'raio' },
+  { especie: 'arauto', poi: 'altar', bioma: 'fogo', frente: -2.2, lugar: 'Altar das Cinzas', zona: 'fogo' },
 ];
 
 // O ponto do mapa onde o lendário mora (ou null)

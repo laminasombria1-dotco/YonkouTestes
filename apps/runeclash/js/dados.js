@@ -171,6 +171,10 @@ export const GOLPES = {
   laminasGeada:     { nome: 'Lâminas Cravadas', elemento: 'agua',   tipo: 'corpo',    poder: 24, recarga: 1.4, alcance: 3.6 },
   estilhacosGeada:  { nome: 'Estilhaços',       elemento: 'agua',   tipo: 'projetil', poder: 11, recarga: 1.8, velocidade: 20, raio: 0.5, quantidade: 3 },
   anelGeada:        { nome: 'Anel de Gelo',     elemento: 'agua',   tipo: 'area',     poder: 34, recarga: 7,   raio: 6.5, lentidao: 2.5 },
+  // Arauto das Cinzas (lendário): os efeitos ficam em js/lendarios/arauto-batalha.js
+  maoCinzas:        { nome: 'Mão de Cinzas',    elemento: 'fogo',   tipo: 'corpo',    poder: 20, recarga: 1.2, alcance: 3.2 },
+  brasasVivas:      { nome: 'Brasas Vivas',     elemento: 'fogo',   tipo: 'projetil', poder: 13, recarga: 1.5, velocidade: 17, raio: 0.55, quantidade: 3 },
+  chuvaCinzas:      { nome: 'Chuva de Cinzas',  elemento: 'fogo',   tipo: 'area',     poder: 36, recarga: 6.5, raio: 7 },
   // Silvestre (só o chefe do Santuário)
   galhadaAncestral: { nome: 'Galhada Ancestral', elemento: 'silvestre', tipo: 'corpo',  poder: 24, recarga: 1.2, alcance: 3.6 },
   sementeParasita:  { nome: 'Semente Parasita', elemento: 'silvestre', tipo: 'projetil', poder: 13, recarga: 1.9, velocidade: 15, raio: 0.55, quantidade: 3 },
@@ -522,7 +526,14 @@ ESPECIES.geada = {
   descricao: 'Cristal vivo de gelo e pedra que guarda o Cristal Gigante da Neve. Crava lâminas de gelo, lança estilhaços e gira abrindo anéis que deixam lento.',
   base: { hp: 104, atk: 17, def: 17, vel: 5.0 }, golpes: ['laminasGeada', 'estilhacosGeada', 'anelGeada'], evoluiPara: null, nivelEvolucao: null,
 };
-export const LENDARIOS_IDS = ['serpe', 'colosso', 'geada'];
+ESPECIES.arauto = {
+  onde: 'da Lava, no Altar das Cinzas', arena: 'fogo',
+  nome: 'Arauto das Cinzas', elemento: 'fogo', elementos: ['fogo'], linha: null, estagio: 3, raro: true, superRaro: true, chefe: true, lendario: true,
+  tamanho: 1.9, captura: 0.04, cristalMin: 2, raio: 1.3, altura: 3.8,
+  descricao: 'Conjurador de manto rasgado que flutua atrás do altar de selo da Lava. Queima com as mãos de cinza, lança brasas vivas e faz chover meteoros.',
+  base: { hp: 84, atk: 20, def: 12, vel: 5.6 }, golpes: ['maoCinzas', 'brasasVivas', 'chuvaCinzas'], evoluiPara: null, nivelEvolucao: null,
+};
+export const LENDARIOS_IDS = ['serpe', 'colosso', 'geada', 'arauto'];
 export const RAROS = ['vulcarapa', 'aquaraia', 'espinhal', 'ignarion', 'silvarion', ...LENDARIOS_IDS];
 for (const id of RAROS) Object.assign(ESPECIES[id], { elementos: ESPECIES[id].elementos || [ESPECIES[id].elemento], cristalMin: ESPECIES[id].cristalMin || 0 });
 
