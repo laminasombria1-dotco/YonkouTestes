@@ -4,9 +4,13 @@
 // movimento e disparos, clima animado (folhas, brasas, chuva...) e um
 // perigo próprio que ajuda ou atrapalha conforme o elemento do monstro.
 // A disposição dos obstáculos muda a cada batalha.
+// Etapa 5.3: as arenas do Campo, da Floresta, do Deserto, da Neve e da Lava usam os 4 temas da Arena
+// das Brasas (Ruínas do Vale, Dunas de Âmbar, Lago Congelado e Cratera Ardente): o piso de lajotas e
+// as peças do Blender (js/arena/pecas.js), o céu e a luz de cada tema. As regras não mudam.
 // =============================================================
 import * as THREE from 'three';
 import { ARENAS, CHANCE_PERIGO } from './dados.js';
+import { LotePecas, colocar } from './arena/pecas.js';
 
 export const RAIO_ARENA = 22;
 
@@ -29,6 +33,23 @@ const POCAS = {
   pocas:    { cura: ['agua'], efeito: 'encharcado', dur: 1.2 },
   espinhos: { cura: ['planta', 'silvestre'], dano: 0.02 },
 };
+// ---------- temas da Arena das Brasas (5.3) ----------
+// Qual tema cada arena usa (as outras, como Margem do Lago e as das dungeons, ficam como eram)
+const TEMA_DA_ZONA = { campo: 'ruinas', planta: 'ruinas', terra: 'deserto', raio: 'geleira', fogo: 'vulcao', brasas: 'vulcao', cratera: 'vulcao' };
+// cores e luz (trazidas de ARENA_PROTOTIPO/js/mundo.js); marcos = em volta do círculo; fora = árvores e rochas;
+// obst = obstáculos dentro da arena: [peça, escala, raio de colisão]
+const TEMAS = {
+  ruinas: { ceu: '#8fb8de', luzCeu: '#dfeeff', luzChao: '#4a4436', sol: '#fff0d2', piso: 0x9c9484, borda: 0xffc46b, pedra: 0x8d8880, chao: ['#5f9440', '#8aa04a'], rocha: '#6f6a64',
+    folha: [0x3f7d3a, 0x4c8f3f, 0x2f6b3a], obst: [['pilar_quebrado', 0.42, 0.95], ['pilar', 0.38, 0.6], ['pedra_c', 1.1, 0.8]] },
+  deserto: { ceu: '#e9c98f', luzCeu: '#fff1d0', luzChao: '#8a6a3a', sol: '#ffe2a8', piso: 0xcbb07a, borda: 0xe0703a, pedra: 0xb89464, chao: ['#d9b56e', '#e6c98a'], rocha: '#a8814f',
+    folha: [0x7a9a3a, 0x8aa84a, 0x6a8a30], obst: [['rocha_arenito', 0.8, 1.0], ['obelisco_quebrado', 0.45, 0.9], ['obelisco', 0.32, 0.45]] },
+  geleira: { ceu: '#bcd6ea', luzCeu: '#eaf6ff', luzChao: '#6a7f96', sol: '#dcefff', piso: 0xb9d6e6, borda: 0x6fc4ff, pedra: 0x9fb4c4, chao: ['#e6eef4', '#f6fbff'], rocha: '#8ea2b4',
+    folha: [0x3f6f5e, 0x4a7f6a, 0x355f52], obst: [['cristal_gelo', 0.55, 0.75], ['pedra_a', 0.9, 0.9]] },
+  vulcao: { ceu: '#3a1c1a', luzCeu: '#ffb48a', luzChao: '#4a1408', sol: '#ff9a5a', piso: 0x3d3838, borda: 0xff5a1f, pedra: 0x322c2c, chao: ['#3a3030', '#4a3a34'], rocha: '#2a2424',
+    folha: [0x333333, 0x333333, 0x333333], obst: [['rocha_lava', 0.75, 1.0], ['espinho_vulcao', 0.3, 0.6]] },
+};
+const ESCALA_PISO = (RAIO_ARENA + 0.4) / 38.4; // o piso da Arena tem 38,4 m de raio
+const tom = (h, f) => new THREE.Color(h).multiplyScalar(f).getHex();
 const CEU_NOITE = new THREE.Color('#1b2550');
 const GEO_DISCO = new THREE.CircleGeometry(1, 32).rotateX(-Math.PI / 2);
 const GEO_ANEL = new THREE.RingGeometry(0.9, 1, 40).rotateX(-Math.PI / 2);
@@ -45,6 +66,8 @@ export class Arena {
     this.zona = ARENAS[batalha.zona] ? batalha.zona : 'campo';
     this.cfg = ARENAS[this.zona];
     this.cores = CORES[this.zona];
+    this.tema = TEMAS[TEMA_DA_ZONA[this.zona]] || null; // tema da Arena das Brasas (5.3), se esta arena tiver
+    this.fase = Math.random() * 10;
     this.noite = batalha.jogo.mundo.fatorNoite;
     this.obstaculos = [];
     this.pocas = [];
@@ -68,13 +91,14 @@ export class Arena {
 
   // ---------- construção ----------
   criarLuzes() {
-    const ceu = new THREE.Color(this.cores.ceu).lerp(CEU_NOITE, this.noite * 0.85);
+    const T = this.tema;
+    const ceu = new THREE.Color(T ? T.ceu : this.cores.ceu).lerp(CEU_NOITE, this.noite * 0.85);
     this.cena.background = ceu;
     this.ceuBase = ceu.clone();
     this.cena.fog = new THREE.Fog(ceu, 40, 95);
     this.intensidadeHemi = THREE.MathUtils.lerp(1.7, 0.85, this.noite) * (this.zona === 'raio' ? 0.8 : 1);
-    this.hemi = new THREE.HemisphereLight(new THREE.Color('#d6f0ff').lerp(new THREE.Color('#8f9fe0'), this.noite), '#5d7a3e', this.intensidadeHemi);
-    const sol = new THREE.DirectionalLight(new THREE.Color('#fff1d6').lerp(new THREE.Color('#a8b8ff'), this.noite), THREE.MathUtils.lerp(1.9, 0.6, this.noite));
+    this.hemi = new THREE.HemisphereLight(new THREE.Color(T ? T.luzCeu : '#d6f0ff').lerp(new THREE.Color('#8f9fe0'), this.noite), T ? T.luzChao : '#5d7a3e', this.intensidadeHemi);
+    const sol = new THREE.DirectionalLight(new THREE.Color(T ? T.sol : '#fff1d6').lerp(new THREE.Color('#a8b8ff'), this.noite), THREE.MathUtils.lerp(1.9, 0.6, this.noite));
     sol.position.set(20, 40, 25);
     this.sol = sol;
     this.intensidadeSol = sol.intensity;
@@ -87,11 +111,11 @@ export class Arena {
     g.rotateX(-Math.PI / 2);
     g = g.toNonIndexed();
     const p = g.attributes.position;
-    const fase = Math.random() * 10;
+    const fase = this.fase, T = this.tema;
     for (let i = 0; i < p.count; i++) {
-      const x = p.getX(i), z = p.getZ(i), r = Math.hypot(x, z);
-      const fora = Math.max(0, r - RAIO_ARENA - 1);
-      p.setY(i, fora > 0 ? fora * 0.35 + Math.sin(x * 0.3 + fase) * Math.cos(z * 0.27) * Math.min(1, fora * 0.3) : 0);
+      const x = p.getX(i), z = p.getZ(i);
+      // com tema, o piso de lajotas cobre o meio: o chão de baixo fica um pouquinho mais fundo
+      p.setY(i, T && Math.hypot(x, z) < RAIO_ARENA + 1 ? -0.06 : this.alturaFora(x, z));
     }
     const cores = new Float32Array(p.count * 3);
     const c = new THREE.Color();
@@ -100,16 +124,23 @@ export class Arena {
       const cz = (p.getZ(i) + p.getZ(i + 1) + p.getZ(i + 2)) / 3;
       const r = Math.hypot(cx, cz);
       const mancha = Math.sin(cx * 0.22 + fase) * Math.cos(cz * 0.19 - fase) > 0.55;
-      if (r > RAIO_ARENA + 1) c.set(this.cores.fora);
+      if (T && r > RAIO_ARENA + 1) {
+        // fora do círculo: o chão do tema (rocha nas encostas, fendas de lava na Cratera)
+        c.set(T.chao[0]).lerp(new THREE.Color(T.chao[1]), 0.5 + 0.5 * Math.sin(cx * 0.3 + cz * 0.21));
+        if (r > RAIO_ARENA + 9 && Math.sin(cx * 0.4 + fase) * Math.cos(cz * 0.37) > 0.6) c.set(T.rocha);
+        if (T === TEMAS.vulcao && Math.abs(Math.sin(cx * 0.23) * Math.cos(cz * 0.19) + Math.sin(cx * 0.11 + cz * 0.13)) < 0.08) c.set('#ff5a1f');
+      } else if (T) c.set(tom(T.piso, 0.5)); // por baixo das lajotas: a cor do rejunte (nas frestas não aparece grama)
+      else if (r > RAIO_ARENA + 1) c.set(this.cores.fora);
       else c.set(mancha ? this.cores.mancha : sorteia(this.cores.chao));
       for (let k = 0; k < 3; k++) { cores[(i + k) * 3] = c.r; cores[(i + k) * 3 + 1] = c.g; cores[(i + k) * 3 + 2] = c.b; }
     }
     g.setAttribute('color', new THREE.BufferAttribute(cores, 3));
     g.computeVertexNormals();
     this.cena.add(new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true })));
-    const borda = new THREE.Mesh(new THREE.RingGeometry(RAIO_ARENA + 0.1, RAIO_ARENA + 0.5, 72).rotateX(-Math.PI / 2), basico('#ffffff', 0.5));
+    const borda = new THREE.Mesh(new THREE.RingGeometry(RAIO_ARENA + 0.1, RAIO_ARENA + 0.5, 72).rotateX(-Math.PI / 2), basico(T ? T.borda : '#ffffff', T ? 0.6 : 0.5));
     borda.position.y = 0.04;
     this.cena.add(borda);
+    if (T) { this.cenarioDoTema(); return; }
 
     // Decoração em volta (fora da arena)
     for (let i = 0; i < 44; i++) {
@@ -119,6 +150,53 @@ export class Arena {
       const y = (r - RAIO_ARENA - 1) * 0.35;
       this.criarPeca(this.cores.obst === 'lava' ? 'pedra' : this.cores.obst, x, z, 0.9 + Math.random() * 0.9, y);
     }
+  }
+
+  // Altura do chão fora do círculo (o terreno sobe em volta)
+  alturaFora(x, z) {
+    const fora = Math.max(0, Math.hypot(x, z) - RAIO_ARENA - 1);
+    return fora > 0 ? fora * 0.35 + Math.sin(x * 0.3 + this.fase) * Math.cos(z * 0.27) * Math.min(1, fora * 0.3) : 0;
+  }
+
+  // ---------- tema da Arena das Brasas (5.3) ----------
+  // As cores das peças do tema (piso, pedra, dourado) e a malha juntada (uma por material)
+  coresTema(extra = {}) {
+    const T = this.tema;
+    return { piso: T.piso, piso2: tom(T.piso, 0.84), pedra: T.pedra, pedra2: tom(T.pedra, 0.78), ouro: T.borda, arenito: T.pedra, arenito2: tom(T.pedra, 0.82), ...extra };
+  }
+  juntar(lote) {
+    for (const m of lote.malhas()) { m.geometry.computeBoundingSphere(); m.userData.geometriaPropria = true; this.cena.add(m); }
+  }
+  // Piso de lajotas, os marcos em volta do círculo e as árvores e rochas de fora
+  cenarioDoTema() {
+    const T = this.tema, L = new LotePecas({ compartilhar: true }), cores = this.coresTema();
+    const nome = TEMA_DA_ZONA[this.zona];
+    L.por('piso_arena', colocar(0, -0.012, 0, 0, ESCALA_PISO), cores);
+    // marcos: 12 em volta, logo fora do círculo
+    const R = RAIO_ARENA + 2.2;
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2, x = Math.cos(a) * R, z = Math.sin(a) * R, y = this.alturaFora(x, z) - 0.05, h = Math.random(), giro = -a + (Math.random() - 0.5) * 0.3;
+      if (nome === 'ruinas') {
+        L.por(h > 0.45 ? 'pilar' : 'pilar_quebrado', colocar(x, y, z, giro, 0.55), cores);
+        if (i % 3 === 1) { const b = a + Math.PI / 12; L.por('braseiro', colocar(Math.cos(b) * (R + 0.6), this.alturaFora(Math.cos(b) * (R + 0.6), Math.sin(b) * (R + 0.6)), Math.sin(b) * (R + 0.6), Math.random() * 6, 0.75)); }
+      } else if (nome === 'deserto') L.por(h > 0.5 ? 'obelisco' : 'obelisco_quebrado', colocar(x, y, z, giro, 0.55, 0, (Math.random() - 0.5) * 0.12), cores);
+      else if (nome === 'geleira') L.por('cristal_gelo', colocar(x, y, z, Math.random() * 6, 0.6 + h * 0.4), cores);
+      else L.por('espinho_vulcao', colocar(x, y, z, Math.random() * 6, 0.4 + h * 0.3), cores);
+    }
+    // fora: árvores, arcos e rochas do tema no terreno que sobe
+    for (let i = 0; i < 46; i++) {
+      const a = Math.random() * Math.PI * 2, d = RAIO_ARENA + 5 + Math.random() * 14, x = Math.cos(a) * d, z = Math.sin(a) * d;
+      const y = this.alturaFora(x, z) - 0.15, e = 0.6 + Math.random() * 0.6, s = Math.random(), giro = Math.random() * 6;
+      const c = this.coresTema({ folha: T.folha[i % 3] });
+      let peca = null, esc = e;
+      if (nome === 'ruinas') { if (s < 0.7) [peca, esc] = ['pinheiro', e * 0.75]; else if (s < 0.78) peca = 'arco_ruina'; }
+      else if (nome === 'geleira') { if (s < 0.55) [peca, esc] = ['pinheiro_nevado', e * 0.75]; else if (s < 0.75) [peca, esc] = ['cristal_gelo', e * 0.7]; }
+      else if (nome === 'deserto') { if (s < 0.3) [peca, esc] = ['palmeira', e * 0.8]; else if (s < 0.42) [peca, esc] = ['arco_arenito', e * 0.75]; else if (s < 0.6) peca = 'rocha_arenito'; }
+      else { if (s < 0.45) peca = 'arvore_queimada'; else if (s < 0.62) peca = 'rocha_lava'; else if (s < 0.72) [peca, esc] = ['espinho_vulcao', e * 0.45]; }
+      if (!peca) [peca, esc] = [['pedra_a', 'pedra_b', 'pedra_c'][i % 3], 0.5 + Math.random() * 1.2];
+      L.por(peca, colocar(x, y, z, giro, esc), c);
+    }
+    this.juntar(L);
   }
 
   // Cria uma peça de cenário e devolve o raio de colisão dela
@@ -191,6 +269,7 @@ export class Arena {
   }
 
   criarObstaculos() {
+    if (this.tema) { this.obstaculosDoTema(); return; }
     const quer = QTD_OBST[this.zona];
     const tipo = this.cores.obst;
     for (let tent = 0; tent < 400 && this.obstaculos.length < quer; tent++) {
@@ -205,6 +284,20 @@ export class Arena {
       const r = this.criarPeca(t, x, z, esc);
       this.obstaculos.push({ x, z, r });
     }
+  }
+
+  // Obstáculos com as peças do tema (pilares quebrados, rochas, cristais...), na mesma quantidade de antes
+  obstaculosDoTema() {
+    const quer = QTD_OBST[this.zona], lista = this.tema.obst, L = new LotePecas({ compartilhar: true }), cores = this.coresTema();
+    for (let tent = 0; tent < 400 && this.obstaculos.length < quer; tent++) {
+      const a = Math.random() * Math.PI * 2, d = 3 + Math.random() * (RAIO_ARENA - 4);
+      const x = Math.cos(a) * d, z = Math.sin(a) * d, esc = 0.8 + Math.random() * 0.6;
+      const [peca, e, raio] = lista[this.obstaculos.length % lista.length];
+      if (!this.lugarLivre(x, z, 1.1 * esc)) continue;
+      L.por(peca, colocar(x, 0, z, Math.random() * 6, e * esc), cores);
+      this.obstaculos.push({ x, z, r: raio * esc });
+    }
+    this.juntar(L);
   }
 
   criarPocas() {

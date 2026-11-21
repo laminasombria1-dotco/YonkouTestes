@@ -355,6 +355,30 @@ test('Ruínas rúnicas: um círculo e um altar em cada bioma, no seco, com a run
   semErros(erros);
 });
 
+test('Arenas de batalha com os temas da Arena (Ruínas, Dunas, Lago Congelado, Cratera)', async ({ page }) => {
+  const erros = vigiarErros(page);
+  await abrirJogo(page);
+  await entrarLocal(page);
+  await novoJogo(page, 'brasito');
+  const r = [];
+  for (const [zona, marco] of [['campo', 'musgo'], ['terra', 'arenito'], ['raio', 'gelo'], ['fogo', 'luz_lava'], ['agua', null]]) {
+    await page.evaluate((zona) => {
+      const j = window.__jogo; if (j.modo === 'batalha') { j.batalha.fugir(); j.batalha = null; }
+      j.modo = 'mundo'; const s = j.mundo.selvagens[0]; s.zona = zona; j.iniciarBatalha(s);
+    }, zona);
+    await page.waitForFunction(() => window.__jogo.modo === 'batalha' && !!window.__jogo.batalha?.arena);
+    r.push(await page.evaluate(([zona, marco]) => {
+      const a = window.__jogo.batalha.arena, nomes = new Set();
+      a.cena.traverse((o) => { if (o.isMesh && o.name.startsWith('lote_')) nomes.add(o.name.slice(5)); });
+      return { zona, tema: !!a.tema, piso: nomes.has('piso'), marco: marco ? nomes.has(marco) : true, obst: a.obstaculos.length };
+    }, [zona, marco]));
+  }
+  for (const x of r.slice(0, 4)) expect(x).toEqual({ zona: x.zona, tema: true, piso: true, marco: true, obst: x.obst });
+  for (const x of r) expect(x.obst).toBeGreaterThan(0);
+  expect(r[4].tema).toBe(false); // a Margem do Lago fica como era
+  semErros(erros);
+});
+
 test('monstro invocado e golpe no modo treino', async ({ page }) => {
   const erros = vigiarErros(page);
   await abrirJogo(page);
