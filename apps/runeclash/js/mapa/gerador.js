@@ -149,6 +149,7 @@ export const PONTOS_FLORESTA = {
 // ---------- pontos de interesse (POIs) ----------
 // vulcao: no centro de cada bioma de Lava (cratera com lava)
 // arco: arco de pedra no Deserto · cristalGelo: cristal de gelo gigante na Neve
+// circulo / altar (etapa 5.2): ruínas rúnicas, um círculo de pedra e um altar de selo em cada bioma
 export const POIS = [];
 const rngPoi = aleatorio(S ^ 0x2545f491);
 for (const b of BIOMAS) {
@@ -164,7 +165,6 @@ for (const b of BIOMAS) {
     break;
   }
 }
-
 // ---------- lagos ----------
 // agua: lago normal (o do Campo, o da Floresta e um oásis no Deserto)
 // gelo: lago congelado na Neve (dá para andar em cima)
@@ -202,10 +202,34 @@ export function lagoEm(x, z, margem = 0, tipo = null) {
 }
 export function geloEm(x, z) { const L = lagoEm(x, z, 0.3, 'gelo'); return !!L; }
 
+// Ruínas rúnicas: num lugar plano e seco do bioma, longe da água, dos outros pontos, dos lugares fixos
+// da Floresta e dos caminhos das dungeons (escolhidas depois dos lagos, para não cair dentro de um)
+const rngRuina = aleatorio(S ^ 0x3c6ef372);
+for (const b of BIOMAS) {
+  for (const tipo of ['circulo', 'altar']) {
+    const r = tipo === 'circulo' ? 7.5 : 5;
+    for (let t = 0; t < 300; t++) {
+      const a = rngRuina() * Math.PI * 2, d = 18 + rngRuina() * 45;
+      const x = b.x + Math.cos(a) * d, z = b.z + Math.sin(a) * d;
+      if (biomaEm(x, z) !== b.id || Math.hypot(x, z) > RAIO_MUNDO - 30 || Math.hypot(x, z) < 60) continue;
+      if (longeDasSaidas(x, z) < 1) continue;
+      if (POIS.some((p) => Math.hypot(p.x - x, p.z - z) < p.r + r + 14)) continue;
+      if (lagoEm(x, z, r + 10)) continue;
+      if ([...PONTOS_FLORESTA.clareiras, PONTOS_FLORESTA.ruina, ...PONTOS_FLORESTA.gigantes].some((f) => Math.hypot(f.x - x, f.z - z) < (f.r || 5) + r + 6)) continue;
+      // plano: o relevo não sobe nem desce mais que 1,2 m em volta
+      const hs = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [0.7, 0.7], [-0.7, -0.7]].map(([dx, dz]) => alturaBioma(x + dx * r, z + dz * r));
+      if (Math.max(...hs) - Math.min(...hs) > 1.2 || Math.min(...hs) < NIVEL_AGUA + 1.2) continue;
+      POIS.push({ tipo, x, z, r, ang: rngRuina() * Math.PI * 2, bioma: b.id });
+      break;
+    }
+  }
+}
+
 // ---------- lugares secretos: cristais fortes escondidos ----------
 export const SEGREDOS = [];
 for (const p of POIS) {
   if (p.tipo === 'arco') SEGREDOS.push({ x: p.x, z: p.z, tipo: 1 }); // embaixo do arco
+  if (p.tipo === 'altar') SEGREDOS.push({ x: p.x + Math.cos(p.ang) * 4.2, z: p.z + Math.sin(p.ang) * 4.2, tipo: 1 }); // na frente do altar de selo
   if (p.tipo === 'cristalGelo') SEGREDOS.push({ x: p.x + Math.cos(p.ang) * 3.6, z: p.z + Math.sin(p.ang) * 3.6, tipo: 2 }); // ao lado do cristal de gelo
 }
 for (const L of LAGOS) if (L.oasis) SEGREDOS.push({ x: L.x + L.r + 3, z: L.z, tipo: 1 }); // na margem do oásis
@@ -281,6 +305,9 @@ export function alturaBase(x, z) {
   fRio *= suave(16, 28, dc) * longeDasSaidas(x, z);
   if (fRio > 0.02 && C.agua.rios > 0) {
     for (const r of SEM_RIO) { const d = Math.hypot(x - r.x, z - r.z); if (d < r.r + 14) fRio *= suave(r.r + 2, r.r + 14, d); }
+  }
+  // (a conta abaixo divide por L: com o rio zerado perto de um lugar reservado, ela dava "rio cheio")
+  if (fRio > 0.02 && C.agua.rios > 0) {
     const L = C.agua.rios * fRio;
     const k = suave(L, L * 0.3, Math.abs(fbm(x / 120, z / 120, S + 67, 3)));
     h = h * (1 - k) - 1.15 * k;

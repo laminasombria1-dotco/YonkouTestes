@@ -74,7 +74,7 @@ function glifo(g, r, s) {
 }
 
 // circulo de runas: estilo 0 = selo (hexagrama), 1 = elo (pentagrama), 2 = guerra (estrela de 8 pontas)
-function texRuna(estilo) {
+export function texRuna(estilo) {
   const k = 'runa' + estilo;
   if (TEX[k] !== undefined) return TEX[k];
   return (TEX[k] = temTela()

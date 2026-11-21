@@ -260,6 +260,7 @@ O mapa é **gerado por uma semente** (seed): um número que decide tudo (onde fi
   - a névoa esconde o fim da visão;
   - não há sombras nem pós-processamento.
 - **Peças da Arena (etapa 5.1):** parte das árvores, pedras e monumentos são as peças do Blender da Arena das Brasas: o pinheiro na Floresta; rochas de arenito, obeliscos e arcos (dá para passar por baixo) no Deserto; palmeiras no oásis; pinheiros nevados e cristais de gelo na Neve; rochas de lava, espinhos de basalto e árvores queimadas (com brasas) na Lava. As de cada chunk viram **uma malha por material** (`LotePecas` de `js/arena/pecas.js`, com materiais compartilhados).
+- **Ruínas rúnicas (etapa 5.2):** em cada bioma, um **círculo de pedra** (colunas inteiras e quebradas, arco de entrada e uma runa roxa que pulsa no chão) e um **altar de selo** (altar dourado, dois braseiros acesos e colunas nos cantos). As pedras têm a cor do bioma. Na frente de cada altar há uma pedra de selamento forte escondida. Código: `POIS` em `js/mapa/gerador.js` e `ruina()` em `js/mapa/chunks.js`.
 - **Nada flutua:** a altura que o jogo usa é a mesma dos triângulos desenhados, e cada objeto encosta no ponto mais baixo em volta dele. Em penhascos não nasce nenhum objeto.
 
 ### Qualidade (menu de pausa)

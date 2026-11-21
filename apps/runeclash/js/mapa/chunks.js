@@ -26,6 +26,7 @@ import {
 import { alturaVertice, alturaEm, ESPACO } from './altura.js';
 import { TRACADOS, S_LAGO, foraDungeons } from '../dungeon.js';
 import { LotePecas, colocar } from '../arena/pecas.js';
+import { texRuna } from '../arena/efeitos.js';
 
 const T = C.tamChunk, DIV = C.divisoes;
 
@@ -50,6 +51,19 @@ const MAT = {
   lavaViva: lambert({ color: '#ff8a3a', emissive: '#ff5a1f', emissiveIntensity: 0.9 }),
 };
 const MAT_CHAO = lambert({ vertexColors: true });
+// runa das ruínas (5.2): pintada por cima do chão de pedra, roxa como as pedras de selamento; pulsa devagar
+const MAT_RUNA = new THREE.MeshBasicMaterial({ color: '#b98cff', map: texRuna(0), transparent: true, opacity: 0.8, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
+const MAT_RUNA2 = new THREE.MeshBasicMaterial({ color: '#e6d2ff', map: texRuna(1), transparent: true, opacity: 0.6, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3 });
+const GEO_RUNA = new THREE.PlaneGeometry(2, 2).rotateX(-Math.PI / 2);
+// cor das pedras das ruínas em cada bioma (os materiais "pedra", "pedra2" e "musgo" das peças da Arena)
+const CORES_RUINA = {
+  planta: {},
+  campo: {},
+  terra: { pedra: 0xcca36b, pedra2: 0xb38554, musgo: 0xa8743f },
+  raio: { pedra: 0xb4c0cc, pedra2: 0x8794a3, musgo: 0xedf5ff },
+  fogo: { pedra: 0x4a3c38, pedra2: 0x2e2929, musgo: 0x6a2a14 },
+};
+const COR_PISO = { planta: '#8c8780', campo: '#8c8780', terra: '#c49a64', raio: '#a9b6c4', fogo: '#3a2e2a' };
 const MAT_AGUA = lambert({ color: '#4fc3f7', transparent: true, opacity: 0.82 });
 const MAT_LAVA = lambert({ color: '#ff7a2a', emissive: '#ff4a10', emissiveIntensity: 0.85 });
 
@@ -210,7 +224,7 @@ export class Chunks {
     for (const m of ch.malhas) {
       this.grupo.remove(m);
       if (m.isInstancedMesh) m.dispose(); // as peças são de todos: não apaga a geometria
-      else m.geometry.dispose();
+      else if (m.geometry !== GEO_RUNA) m.geometry.dispose();
     }
     if (ch.liquidos) this.liquidos = this.liquidos.filter((m) => !ch.liquidos.includes(m));
     ch.malhas = [];
@@ -359,6 +373,8 @@ export class Chunks {
     for (const m of this.liquidos) m.position.y = m.userData.y0 + Math.sin(t * 1.3) * 0.05;
     MAT_LAVA.emissiveIntensity = 0.75 + Math.sin(t * 2.2) * 0.15;
     MAT.lavaViva.emissiveIntensity = 0.8 + Math.sin(t * 2.6) * 0.2;
+    MAT_RUNA.opacity = 0.7 + Math.sin(t * 1.6) * 0.2;
+    MAT_RUNA2.opacity = 0.45 + Math.sin(t * 1.6 + 1.5) * 0.2;
   }
 
   // ---------- objetos ----------
@@ -381,10 +397,17 @@ export class Chunks {
       im.computeBoundingSphere();
       this.adicionar(ch, im);
     }
+    // runas das ruínas
+    for (const ru of ch.dados.runas || []) {
+      const m = new THREE.Mesh(GEO_RUNA, MAT_RUNA), m2 = new THREE.Mesh(GEO_RUNA, MAT_RUNA2);
+      m.position.set(ru.x, ru.y, ru.z); m.scale.setScalar(ru.r); m.rotation.y = ru.ang;
+      m2.position.set(ru.x, ru.y + 0.01, ru.z); m2.scale.setScalar(ru.r * 0.55); m2.rotation.y = -ru.ang;
+      this.adicionar(ch, m); this.adicionar(ch, m2);
+    }
     // peças da Arena: todas do chunk juntas, uma malha por material
     if (ch.dados.pecas.length) {
       const lote = new LotePecas({ compartilhar: true });
-      for (const pc of ch.dados.pecas) lote.por(pc.nome, colocar(pc.x, pc.y, pc.z, pc.ry, pc.e, pc.ix || 0, pc.iz || 0));
+      for (const pc of ch.dados.pecas) lote.por(pc.nome, colocar(pc.x, pc.y, pc.z, pc.ry, pc.e, pc.ix || 0, pc.iz || 0), pc.cores);
       for (const malha of lote.malhas()) { malha.geometry.computeBoundingSphere(); this.adicionar(ch, malha); }
     }
   }
@@ -411,8 +434,9 @@ export class Chunks {
     const recs = [], obst = [], pecas = [];
     const add = (t, m, x, y, z, sx, sy, sz, rx = 0, ry = 0, rz = 0, cor = null, p = false) => recs.push({ t, m, x, y, z, sx, sy, sz, rx, ry, rz, cor, p });
     const ob = (x, z, r) => obst.push({ x, z, r });
-    const pc = (nome, x, y, z, ry, e, ix = 0, iz = 0) => pecas.push({ nome, x, y, z, ry, e, ix, iz }); // peça da Arena
-    const k = { add, ob, rng, pc };
+    const pc = (nome, x, y, z, ry, e, ix = 0, iz = 0, cores = undefined) => pecas.push({ nome, x, y, z, ry, e, ix, iz, cores }); // peça da Arena
+    const runas = [];
+    const k = { add, ob, rng, pc, runas };
     for (const p of POIS) if (Math.floor(p.x / T) === cx && Math.floor(p.z / T) === cz) this.pontoDeInteresse(p, k);
     const G = 8, cel = T / G, dq = this.q.densidade;
     for (let a = 0; a < G; a++) for (let b = 0; b < G; b++) {
@@ -427,7 +451,7 @@ export class Chunks {
       else if (id === 'terra' && r2 > 0.93) this.arbusto(x, z, 0.6 + esc * 0.4, sorteio(rng, ['#a8743f', '#9a8a4a']), k);
       else if (id === 'raio' && r2 > 0.95) this.pedra(x, z, 0.3 + esc * 0.3, sorteio(rng, COR.pedra.raio), k, true);
     }
-    return { recs, obst, pecas };
+    return { recs, obst, pecas, runas };
   }
 
   // Chão onde o objeto encosta (o ponto mais baixo em volta: nada fica flutuando na ladeira)
@@ -570,6 +594,8 @@ export class Chunks {
         const a = rng() * 6.28, d = 5 + rng() * 3;
         this.pedra(p.x + Math.cos(a) * d, p.z + Math.sin(a) * d, 0.5 + rng() * 0.7, sorteio(rng, COR.pedra.terra), k);
       }
+    } else if (p.tipo === 'circulo' || p.tipo === 'altar') {
+      this.ruina(p, k);
     } else if (p.tipo === 'cristalGelo') {
       // cristal de gelo gigante cercado de cristais menores
       const y = this.pe(p.x, p.z, 1.5);
@@ -580,6 +606,62 @@ export class Chunks {
         const x = p.x + Math.cos(a) * d, z = p.z + Math.sin(a) * d;
         add('cristal', 'gelo', x, this.pe(x, z, 0.4) + 1.1, z, 0.9, 2.8, 0.9, Math.sin(a) * 0.4, rng() * 6, -Math.cos(a) * 0.4);
         ob(x, z, 0.6);
+      }
+    }
+  }
+
+  // ---------- ruínas rúnicas (etapa 5.2) ----------
+  // circulo: anel de colunas (inteiras e quebradas) com um arco de entrada e uma runa grande no chão
+  // altar: altar de selo num piso de pedra, dois braseiros acesos, colunas quebradas nos cantos e a runa
+  ruina(p, k) {
+    const { add, ob, rng, pc, runas } = k;
+    const cores = CORES_RUINA[p.bioma] || {}, corPiso = COR_PISO[p.bioma] || COR_PISO.campo;
+    const circulo = p.tipo === 'circulo', R = circulo ? 4.6 : 3.2;
+    // piso de pedra: no alto do chão em volta (afunda o resto), para a runa não ficar enterrada
+    let y = -Infinity;
+    for (let i = 0; i < 9; i++) { const a = (i / 8) * Math.PI * 2, d = i === 8 ? 0 : R; y = Math.max(y, alturaEm(p.x + Math.cos(a) * d, p.z + Math.sin(a) * d)); }
+    const topo = y + (circulo ? 0.12 : 0.45);
+    add('disco', 'base', p.x, topo - 0.2 - 2, p.z, R + 0.4, 1 + 10, R + 0.4, 0, rng(), 0, corPiso); // 4,4 m de altura: entra no chão
+    if (!circulo) add('disco', 'base', p.x, topo - 0.2 - 2 - 0.25, p.z, R + 1.1, 1 + 10, R + 1.1, 0, rng(), 0, corPiso); // degrau
+    runas.push({ x: p.x, y: topo + 0.02, z: p.z, r: R * 0.92, ang: p.ang });
+    if (circulo) {
+      // 8 lugares em volta: o arco na frente, colunas inteiras e quebradas (e um buraco, de ruína)
+      for (let i = 0; i < 8; i++) {
+        const a = p.ang + (i / 8) * Math.PI * 2, d = R + 1.6, x = p.x + Math.cos(a) * d, z = p.z + Math.sin(a) * d;
+        const yy = this.pe(x, z, 0.8);
+        if (i === 0) { // o arco de entrada (as colunas dele seguram, o meio deixa passar)
+          const giro = -a + Math.PI / 2, e = 0.72;
+          pc('arco_ruina', x, yy, z, giro, e, 0, 0, cores);
+          const lx = Math.cos(giro) * 2.1 * e, lz = -Math.sin(giro) * 2.1 * e;
+          ob(x + lx, z + lz, 0.6); ob(x - lx, z - lz, 0.6);
+          continue;
+        }
+        const s = rng();
+        if (s < 0.12) continue;
+        if (s < 0.6) pc('pilar', x, yy, z, rng() * 6.28, 0.55 + rng() * 0.12, 0, 0, cores);
+        else pc('pilar_quebrado', x, yy, z, rng() * 6.28, 0.6 + rng() * 0.15, 0, 0, cores);
+        ob(x, z, 0.75);
+      }
+      // pedrinhas caídas em volta
+      for (let i = 0; i < 4; i++) {
+        const a = rng() * 6.28, d = R + 3 + rng() * 2;
+        pc(sorteio(rng, ['pedra_a', 'pedra_b', 'pedra_c']), p.x + Math.cos(a) * d, this.pe(p.x + Math.cos(a) * d, p.z + Math.sin(a) * d, 0.5), p.z + Math.sin(a) * d, rng() * 6, 0.5 + rng() * 0.3, 0, 0, cores);
+      }
+    } else {
+      // o altar: um bloco no meio, dois braseiros acesos dos lados e colunas quebradas nos cantos
+      const dx = Math.cos(p.ang), dz = Math.sin(p.ang);
+      add('caixa', 'base', p.x, topo + 0.45, p.z, 1.6, 0.9, 1.1, 0, -p.ang, 0, corPiso);
+      add('caixa', 'base', p.x, topo + 0.95, p.z, 1.9, 0.12, 1.3, 0, -p.ang, 0, '#d9a840');
+      ob(p.x, p.z, 1);
+      for (const lado of [-1, 1]) {
+        const x = p.x - dz * 2 * lado, z = p.z + dx * 2 * lado;
+        pc('braseiro', x, topo, z, -p.ang, 0.7);
+        ob(x, z, 0.5);
+      }
+      for (let i = 0; i < 4; i++) {
+        const a = p.ang + Math.PI / 4 + (i / 4) * Math.PI * 2, d = R + 0.4, x = p.x + Math.cos(a) * d, z = p.z + Math.sin(a) * d;
+        pc(i % 2 ? 'pilar' : 'pilar_quebrado', x, topo - 0.1, z, rng() * 6.28, i % 2 ? 0.45 : 0.55, 0, 0, cores);
+        ob(x, z, 0.7);
       }
     }
   }

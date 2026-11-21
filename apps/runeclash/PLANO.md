@@ -67,7 +67,7 @@ Uma ideia por vez, sem pressa. Cada ideia é feita numa branch, com proposta ant
 
 ### Etapa 5: Mapas e lendários
 - [x] **5.1** As peças da Arena nos biomas: pinheiros nevados, palmeiras, obeliscos, arcos de arenito, cristais de gelo, espinhos de basalto e árvores queimadas. Floresta com o pinheiro da Arena; Deserto com rochas de arenito e, raros, obeliscos e arcos (dá para passar por baixo); oásis com palmeiras; Neve com pinheiros nevados e cristais de gelo; Lava com rochas de lava, espinhos de basalto e árvores queimadas. As peças de cada chunk viram uma malha por material (`LotePecas`).
-- [ ] **5.2** **Ruínas rúnicas** pelo mapa: círculos de pedra e altares de selo.
+- [x] **5.2** **Ruínas rúnicas** pelo mapa: círculos de pedra e altares de selo. Um círculo (colunas, arco de entrada e runa roxa que pulsa) e um altar de selo (altar dourado, braseiros acesos e uma pedra forte escondida na frente) em cada bioma, com as pedras na cor do bioma. No GM: teleporte **Ruína** e **Altar**. Também foi corrigido o erro que alagava os lugares reservados do mapa quando um rio passava perto (o Cristalia ainda tem esse erro).
 - [ ] **5.3** Arenas de batalha com os 4 temas da Arena (Ruínas do Vale, Dunas de Âmbar, Lago Congelado e Cratera Ardente).
 - [ ] **5.4** **Os 5 lendários** (os chefes da Arena): lutam contra os seus monstros e só são selados com a pedra **dourada**, com chance baixa. Cada um no seu lugar do mapa (ex.: Arauto das Cinzas na Lava, Sentinela de Geada na Neve, Cavaleiro Oco só à noite). Um por vez.
 - [ ] **5.5** Lugares fixos desenhados no Blender e dungeons nos outros biomas.

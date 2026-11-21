@@ -327,6 +327,34 @@ test('Mapa: as peças da Arena nos biomas (pinheiros nevados, obeliscos, palmeir
   semErros(erros);
 });
 
+test('Ruínas rúnicas: um círculo e um altar em cada bioma, no seco, com a runa no chão', async ({ page }) => {
+  const erros = vigiarErros(page);
+  await abrirJogo(page);
+  await entrarLocal(page);
+  await novoJogo(page, 'pedrisco');
+  const r = await page.evaluate(async () => {
+    const G = await import('./js/mapa/gerador.js');
+    const A = await import('./js/mapa/altura.js');
+    const ru = G.POIS.filter((p) => p.tipo === 'circulo' || p.tipo === 'altar');
+    const m = window.__jogo.mundo, p0 = ru[0];
+    m.pos.set(p0.x, 0, p0.z); m.chunks.carregarTudoPerto(p0.x, p0.z);
+    let runas = 0; m.chunks.grupo.traverse((o) => { if (o.isMesh && o.material.map && o.material.color.getHexString() === 'b98cff') runas++; });
+    return {
+      n: ru.length,
+      biomas: new Set(ru.map((p) => p.bioma)).size,
+      secos: ru.every((p) => A.alturaEm(p.x, p.z) > G.NIVEL_AGUA + 0.3 && !G.lagoEm(p.x, p.z, 2)),
+      altarComCristal: G.SEGREDOS.length >= ru.filter((p) => p.tipo === 'altar').length,
+      runas,
+    };
+  });
+  expect(r.n).toBe(8);
+  expect(r.biomas).toBe(4);
+  expect(r.secos).toBe(true);
+  expect(r.altarComCristal).toBe(true);
+  expect(r.runas).toBeGreaterThan(0);
+  semErros(erros);
+});
+
 test('monstro invocado e golpe no modo treino', async ({ page }) => {
   const erros = vigiarErros(page);
   await abrirJogo(page);

@@ -20,6 +20,7 @@ Ficam **fora** de `apps/runeclash`: nada daqui vai para o jogo nem pesa no celul
 | Sol do Solito | Astrorei: o Sol Rei nasce com o brilho da Arena, o Laser Real atira e a Supernova esquenta e explode | `16-supernova.png` |
 | Qualidade dos efeitos | No Fraco os golpes soltam menos partículas (maiores) e menos pedacinhos; trocar no menu vale na hora; no Forte os clarões têm luz de verdade | — |
 | Peças da Arena no mapa | Em cada bioma aparecem as peças do Blender da Arena (pinheiros, pinheiros nevados, arenito, lava) | — |
+| Ruínas rúnicas | 8 ruínas (um círculo de pedra e um altar de selo por bioma), no seco, com a runa roxa no chão | — |
 | Monstro invocado e modo treino | Invoca o Faisquinho, passa o controle para ele e usa o golpe de área no treino | `5-treino.png` |
 | Material da Arena | Os efeitos e as 66 peças do Blender (`js/arena/`) carregam e aparecem no mapa | `6-arena-vitrine.png` |
 | Invocador | O **Novo jogo** abre o criador com o Aiden escolhido, troca cabelo e penteado, escolhe o parceiro, confere o jogo salvo, ergue a pedra ao invocar o monstro e muda a aparência pelo menu **Aparência** | `7-criador.png`, `8-invocador-mapa.png` |

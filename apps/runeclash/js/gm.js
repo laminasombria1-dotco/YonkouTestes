@@ -36,6 +36,11 @@ const LUGARES = [
   ['fogo', 'Vulcão', ...perto(centroDe('fogo'), 16)], ['terra', 'Deserto', ...(arco ? [arco.x + Math.cos(arco.ang + 1.57) * 7, arco.z + Math.sin(arco.ang + 1.57) * 7] : perto(centroDe('terra')))],
   ['raio', 'Neve', ...perto(centroDe('raio'))],
 ];
+// ruínas rúnicas (5.2): na frente do primeiro círculo de pedra e do primeiro altar de selo
+for (const [tipo, k, nome] of [['circulo', 'ruina', 'Ruína'], ['altar', 'altar', 'Altar']]) {
+  const p = POIS.find((q) => q.tipo === tipo);
+  if (p) LUGARES.push([k, nome, p.x + Math.cos(p.ang) * (p.r + 3), p.z + Math.sin(p.ang) * (p.r + 3)]);
+}
 // Arenas que dá para escolher no "Lutar agora"
 const NOMES_ARENA = Object.fromEntries(Object.entries(ARENAS).map(([k, a]) => [k, a.nome]));
 
