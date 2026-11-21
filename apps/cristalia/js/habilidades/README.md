@@ -151,6 +151,14 @@ Solito (Nv.1) > Solário (Nv.6) > Solaurum (Nv.12) > Astrorei (Nv.30)
 ### Trevas: linha do Breuzinho (`trevas-batalha.js`)
 Só o **visual** (poça de breu, tentáculos, mãos de sombra, olhos, bocarra, cópias sombrias, morcegos e o Astro Negro). Os números dos golpes de Trevas continuam em `../dados.js` (Mordida Sombria, Bola Sombria, Vazio, Garra Abissal, Sombras, Abismo).
 
+## Modo treino (monstro invocado no mapa)
+
+Os golpes desta pasta também rodam no mapa, no modo treino (`../treino.js`), quando você controla o monstro invocado. O treino usa a mesma `Batalha`, mas sem inimigos e sem dano (`alvosDe` e `vivos` devolvem lista vazia, e `aplicarDano` não faz nada).
+
+- Tudo é desenhado numa "camada" centrada no treinador, como uma arena invisível de 22 m: as contas com `RAIO_ARENA` continuam valendo. O monstro fica preso a 20 m do treinador.
+- `this.b.arena` no treino tem `bloqueia`, `colidir` e `obstaculos` (os obstáculos do mapa mais os pilares do próprio treino) e um `escurecer` que não faz nada.
+- **Golpe novo:** se ele só usar o que a batalha já oferece (`cena`, `efeitos`, `alvosDe`, `aplicarDano`, `arena.bloqueia`...), funciona no treino sem mudar nada. Se precisar de um alvo para acontecer (como o Choque), no treino ele simplesmente não acontece.
+
 ## Como acrescentar outra linha
 1. Crie `<linha>.js` com os golpes (no mesmo formato de `brasito.js`).
 2. Em `../dados.js`, importe e coloque a linha em `HABILIDADES_DA_LINHA`.

@@ -59,7 +59,7 @@ function dist(a, b) {
 }
 
 // Um monstro dentro da batalha
-class Lutador {
+export class Lutador {
   constructor(dados, lado) {
     this.dados = dados;
     this.lado = lado;

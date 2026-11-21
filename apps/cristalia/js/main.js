@@ -9,6 +9,7 @@ import { Mundo } from './mundo.js';
 import { Batalha } from './batalha.js';
 import { Plataforma, CenaEvolucao } from './plataforma.js';
 import { carregarModelos3D } from './modelos.js';
+import { Companheiro } from './companheiro.js';
 import {
   ESPECIES, ELEMENTOS, GOLPES, ORDEM_ELEMENTOS, RAROS, NOMES_ESTAGIO, NIVEIS_EVOLUCAO,
   criarMonstro, statsDe, xpParaProximo, xpDaVitoria, verificarEvolucao, formasDaLinha, fracoContra,
@@ -109,6 +110,7 @@ class Jogo {
     this.estado = null;
     this.modo = 'titulo';
     this.mundo = new Mundo(this);
+    this.pet = new Companheiro(this); // monstro invocado que segue o treinador
     this.plataforma = null;
     this.batalha = null;
     this.cenaEvo = null;
@@ -270,6 +272,10 @@ class Jogo {
     $('#evo-continuar').addEventListener('click', () => this.fecharEvolucao());
     $('#btn-equipe').addEventListener('click', () => this.abrirEquipe());
     $('#btn-casa').addEventListener('click', () => this.acaoCasa());
+    // Monstro invocado: invocar/guardar, controlar e voltar ao treinador
+    $('#btn-pet').addEventListener('click', () => this.pet.alternar());
+    $('#btn-controlar').addEventListener('click', () => this.pet.controlar());
+    $('#btn-voltar-treinador').addEventListener('click', () => this.pet.voltarAoTreinador());
     // Tela cheia: precisa ser no "clique" (o navegador só deixa logo depois de um toque)
     document.querySelectorAll('.btn-tela-cheia').forEach((b) => b.addEventListener('click', () => this.alternarTelaCheia()));
     const marcarTela = () => document.querySelectorAll('.btn-tela-cheia').forEach((b) => b.classList.toggle('ativa', !!(document.fullscreenElement || document.webkitFullscreenElement)));
@@ -323,6 +329,7 @@ class Jogo {
   }
 
   voltarAoInicio() {
+    this.pet.voltarAoTreinador(true);
     this.salvar();
     this.enviarNuvem(true);
     this.fecharMenu();
@@ -349,6 +356,7 @@ class Jogo {
     if (this.gm?.fecharPainel()) return 'ok';
     if (this.painelAberto) { this.fecharEquipe(); return 'ok'; }
     if (this.modo === 'colecao') { this.fecharColecao(); return 'ok'; }
+    if (this.modo === 'mundo' && this.pet.controlando) { this.pet.voltarAoTreinador(); return 'ok'; }
     if (this.modo === 'mundo') { this.abrirMenu(); return 'ok'; }
     if (this.modo === 'titulo') { this.salvar(); this.enviarNuvem(true, true); return 'sair'; }
     if (this.modo === 'login') return 'sair';
@@ -498,6 +506,7 @@ class Jogo {
     this.mundo.irParaBase();
     this.mostrarTela('mundo');
     this.atualizarHudMundo();
+    this.pet.reiniciar(); // estava invocado? sai de novo
   }
 
   // ---------- casa ----------
@@ -593,6 +602,7 @@ class Jogo {
 
   // ---------- batalha ----------
   iniciarBatalha(selvagem) {
+    this.pet.voltarAoTreinador(true);
     const idx = this.estado.equipe.findIndex((m) => m.hp > 0);
     this.batalha = new Batalha(this, selvagem, idx);
     this.mostrarTela('batalha');
@@ -1008,6 +1018,7 @@ class Jogo {
   trocarConta() {
     this.salvar();
     this.enviarNuvem(true);
+    this.pet.guardar(true); // tira o monstro invocado do mapa (o "invocado" já ficou salvo)
     this.estado = null;
     this.conta = null;
     this.desativarGM();
@@ -1083,6 +1094,7 @@ class Jogo {
       cena = this.cenaEvo.cena; camera = this.cenaEvo.camera;
     } else if (this.modo === 'mundo') {
       this.mundo.atualizar(dt, this.ctrl, this.t, this.painelAberto);
+      if (this.modo === 'mundo') this.pet.atualizar(dt, this.ctrl, this.t, this.painelAberto);
       this.atualizarRelogio();
       if (this.modo === 'mundo') this.atualizarBotaoCasa();
       this.salvarT = (this.salvarT || 0) + dt;

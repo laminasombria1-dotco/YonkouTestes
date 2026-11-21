@@ -840,7 +840,9 @@ export class Mundo {
 
   posicionarCamera(k) {
     const { dist, pitch } = this.camPadrao();
-    const alvo = new THREE.Vector3(this.pos.x, this.pos.y + 1, this.pos.z);
+    // controlando o monstro invocado: a câmera segue ele (focoCamera); senão, o treinador
+    const foco = this.focoCamera?.();
+    const alvo = foco ? new THREE.Vector3(foco.x, foco.y + 1, foco.z) : new THREE.Vector3(this.pos.x, this.pos.y + 1, this.pos.z);
     const destino = alvo.clone().add(this.orbita.deslocamento(dist, pitch));
     // não deixa a câmera entrar no chão (as bordas do mapa sobem)
     destino.y = Math.max(destino.y, alturaEm(destino.x, destino.z) + 1.2);
@@ -854,7 +856,9 @@ export class Mundo {
     const giro = ctrl.consumirGiro();
     if (!pausado) this.orbita.girar(giro, this.ang + Math.PI, this.camPadrao().pitch, dt);
     this.girandoCam = !pausado && (giro.x || giro.y || giro.zoom || this.orbita.voltarPara != null);
-    const v = pausado ? { x: 0, z: 0 } : ctrl.vetorDaCamera(this.orbita.yaw);
+    // controlando o monstro invocado, o treinador fica parado (o joystick é do monstro)
+    const protegido = !!this.jogo.pet?.controlando; // e ninguém vem atrás dele
+    const v = pausado || protegido ? { x: 0, z: 0 } : ctrl.vetorDaCamera(this.orbita.yaw);
     const movendo = Math.hypot(v.x, v.z) > 0.05;
     if (movendo) {
       const vel = VEL_JOGADOR * (this.jogo.gm?.vel || 1); // GM: andar ×2 ou ×3
@@ -945,7 +949,7 @@ export class Mundo {
         else { s.estado = 'parado'; s.t = 1 + Math.random() * 2.5; }
       }
       let andando = s.estado === 'andando' && !s.fixo;
-      if (d < 7 && this.graca <= 0 && est && !naAreaSegura && !s.fixo && !this.jogo.gm?.invisivel) { s.ang = Math.atan2(dx, dz); andando = true; }
+      if (d < 7 && this.graca <= 0 && est && !naAreaSegura && !s.fixo && !this.jogo.gm?.invisivel && !protegido) { s.ang = Math.atan2(dx, dz); andando = true; }
       andando = (!s.fixo && this.fugirDaCasa(s)) || andando;
       if (andando && !pausado) this.andar(s, s.vel * dt, 0.6);
       s.modelo.position.set(s.x, alturaEm(s.x, s.z), s.z);
@@ -977,7 +981,7 @@ export class Mundo {
       for (const m of g.membros) dMembro = Math.min(dMembro, Math.hypot(this.pos.x - m.x, this.pos.z - m.z) - raioMembro(m));
       // vem atrás de você quando chega perto de QUALQUER um deles
       // (os de acampamento só de perto e sem se afastar muito da fogueira)
-      const perseguindo = !pausado && !!est && this.graca <= 0 && !naAreaSegura && !this.jogo.gm?.invisivel
+      const perseguindo = !pausado && !!est && this.graca <= 0 && !naAreaSegura && !this.jogo.gm?.invisivel && !protegido
         && dMembro < (ac ? PERSEGUE_ACAMPAMENTO : PERSEGUE_GRUPO) && longeDeCasa < 12;
       let andando = g.estado === 'andando';
       if (perseguindo) {
@@ -1003,7 +1007,7 @@ export class Mundo {
 
     // Encontro!
     const raioEncontro = maisPerto?.grupoDe ? 0.9 : 0.9 + (maisPerto ? ESPECIES[maisPerto.dados.especie].raio : 0);
-    if (maisPerto && est && !pausado && this.graca <= 0 && !naAreaSegura && menorD < raioEncontro) {
+    if (maisPerto && est && !pausado && this.graca <= 0 && !naAreaSegura && !protegido && menorD < raioEncontro) {
       if (maisPerto.grupoDe) maisPerto = maisPerto.grupoDe;
       if (this.jogo.temMonstroDePe()) {
         this.jogo.iniciarBatalha(maisPerto);

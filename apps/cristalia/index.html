@@ -242,6 +242,25 @@
   .icone-casa { width: 26px; height: 22px; position: relative; display: block; }
   .icone-casa::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 11px; background: #d9534f; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
   .icone-casa::after { content: ""; position: absolute; left: 4px; right: 4px; bottom: 0; height: 12px; background: #f3e3c3; border-radius: 1px; }
+  /* monstro invocado: Invocar/Guardar e Controlar ficam ao lado da casa (em pé: um em cima do outro) */
+  .btn-pet { right: max(110px, calc(env(safe-area-inset-right, 0px) + 104px)); border-color: #ff8a3d; }
+  .btn-pet.guardar { border-color: #ffb27a; }
+  .btn-controlar { right: max(204px, calc(env(safe-area-inset-right, 0px) + 198px)); border-color: var(--cristal); }
+  .btn-pet svg, .btn-controlar svg { width: 28px; height: 28px; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .btn-pet svg { stroke: #ffb27a; } .btn-controlar svg { stroke: var(--cristal); }
+  /* controlando o monstro: some o que é do treinador e aparecem os golpes e o "Voltar" */
+  #hud-treino { position: absolute; inset: 0; pointer-events: none; display: none; }
+  #app.controlando #hud-treino { display: block; }
+  #app.controlando #btn-casa, #app.controlando #btn-pet, #app.controlando #btn-controlar, #app.controlando #equipe-chips,
+  #app.controlando .topo-dir > :not(.btn-tela-cheia) { display: none; }
+  #app.controlando #camera-pad { bottom: calc(max(12px, env(safe-area-inset-bottom, 0px)) + var(--toque) * 2 + clamp(6px, 1.6vmin, 12px) + 18px);
+    right: max(14px, calc(env(safe-area-inset-right, 0px) + 10px)); width: 76px; height: 76px; }
+  .treino-chip { position: absolute; top: max(10px, env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); max-width: calc(100% - 140px);
+    padding: 6px 14px; border-radius: 999px; background: var(--painel); border: 2px solid #ff8a3d; font-weight: 800; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .treino-chip small { font-weight: 700; color: var(--creme-suave); }
+  #btn-voltar-treinador { position: absolute; top: calc(max(10px, env(safe-area-inset-top, 0px)) + 46px); left: max(10px, env(safe-area-inset-left, 0px));
+    border: 2px solid var(--cristal); border-radius: 16px; background: var(--painel); padding: 8px 12px; font-weight: 800; font-size: 0.8rem; line-height: 1.15; text-align: center; pointer-events: auto; }
+  #btn-voltar-treinador:active { transform: scale(0.94); }
   #bi-tipo.lider { color: var(--sol); font-weight: 800; }
   .relogio { position: absolute; top: 56px; right: max(10px, env(safe-area-inset-right, 0px)); font-size: 0.8rem; }
   .relogio .astro { width: 12px; height: 12px; border-radius: 50%; background: var(--sol); box-shadow: 0 0 8px var(--sol); }
@@ -414,6 +433,11 @@
     .coluna-dir .btn-hud { padding: 6px 10px; font-size: 0.78rem; }
     .acoes-topo { flex-wrap: wrap; width: auto; }
     #avisos { width: calc(100% - 32px); bottom: 190px; }
+    .btn-pet, .btn-controlar { width: 72px; height: 72px; }
+    .btn-pet { right: max(106px, calc(env(safe-area-inset-right, 0px) + 100px)); }
+    .btn-controlar { right: max(106px, calc(env(safe-area-inset-right, 0px) + 100px)); bottom: calc(max(16px, calc(env(safe-area-inset-bottom, 0px) + 10px)) + 82px); }
+    .treino-chip { top: calc(max(10px, env(safe-area-inset-top, 0px)) + 96px); max-width: calc(100% - 24px); }
+    #btn-voltar-treinador { top: calc(max(10px, env(safe-area-inset-top, 0px)) + 140px); }
   }
   @media (max-height: 430px) and (orientation: landscape) {
     .col-topo h2 { font-size: 1.1rem; }
@@ -550,6 +574,23 @@
     </div>
     <div id="relogio" class="pilula relogio"><span class="astro"></span><span id="relogio-texto">Dia</span></div>
     <button id="btn-casa" class="btn-casa" type="button"><i class="icone-casa"></i><span>Montar casa</span></button>
+    <!-- monstro invocado (tecla R e T no PC) -->
+    <button id="btn-pet" class="btn-casa btn-pet" type="button" title="Invocar ou guardar o 1º monstro da equipe (R)" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7" cy="9" r="2"/><circle cx="12" cy="6.5" r="2"/><circle cx="17" cy="9" r="2"/><path d="M8 17c0-3 2-5 4-5s4 2 4 5c0 1.5-1.5 2-4 2s-4-.5-4-2z"/></svg><span>Invocar</span>
+    </button>
+    <button id="btn-controlar" class="btn-casa btn-controlar" type="button" title="Controlar o monstro (T)" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9h12a4 4 0 0 1 0 8c-1.5 0-2.5-1-3-2H9c-.5 1-1.5 2-3 2a4 4 0 0 1 0-8z"/><path d="M8 11v4M6 13h4M16 12h.01M18 14h.01"/></svg><span>Controlar</span>
+    </button>
+    <!-- controlando o monstro: golpes no ar (sem dano) e o botão para voltar -->
+    <div id="hud-treino">
+      <div class="treino-chip">Controlando: <span id="treino-nome"></span> <small>· o treinador espera</small></div>
+      <button id="btn-voltar-treinador" type="button" title="Voltar ao treinador (T)">Voltar ao<br>treinador</button>
+      <div class="golpes">
+        <button class="golpe" data-acao="golpe0" type="button"><span class="recarga"></span><span class="nome"></span><span class="tipo"></span></button>
+        <button class="golpe" data-acao="golpe1" type="button"><span class="recarga"></span><span class="nome"></span><span class="tipo"></span></button>
+        <button class="golpe" data-acao="golpe2" type="button"><span class="recarga"></span><span class="nome"></span><span class="tipo"></span></button>
+      </div>
+    </div>
     <div id="zona-nome"></div>
   </div>
 

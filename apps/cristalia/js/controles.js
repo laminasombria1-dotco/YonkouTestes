@@ -6,7 +6,8 @@
 //        + botões na tela (qualquer elemento com data-acao="...").
 // Mouse: arrastar gira a câmera; a rodinha aproxima e afasta.
 // Teclado: WASD/setas andam, J K L (ou 1 2 3) golpes, Espaço esquiva,
-//          C cristal, V próximo cristal, Q trocar, F fugir.
+//          C cristal, V próximo cristal, Q trocar, F fugir,
+//          R invocar/guardar o monstro, T controlar o monstro/voltar ao treinador.
 // O andar é relativo à câmera: "para cima" anda para onde a câmera olha.
 // =============================================================
 
@@ -20,6 +21,7 @@ const SENS_TOQUE = 0.0065, SENS_MOUSE = 0.005;
 const TECLAS_ACAO = {
   KeyJ: 'golpe0', Digit1: 'golpe0', KeyK: 'golpe1', Digit2: 'golpe1', KeyL: 'golpe2', Digit3: 'golpe2',
   Space: 'esquiva', ShiftLeft: 'esquiva', KeyC: 'cristal', KeyV: 'proxCristal', KeyQ: 'trocar', KeyF: 'fugir',
+  KeyR: 'pet', KeyT: 'controlar', // monstro invocado: invocar/guardar e controlar/voltar
 };
 
 // O foco está num campo de texto? (aí W, A, S, D, C, Espaço... são letras, não atalhos)
