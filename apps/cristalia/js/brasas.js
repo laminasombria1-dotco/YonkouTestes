@@ -1,6 +1,6 @@
 // =============================================================
 // CAMINHO DAS BRASAS (dungeon aberta da região de fogo)
-// Sai da borda nordeste do mapa e sobe até a cratera.
+// Sai da borda do mapa pelo bioma de Lava (direção pela semente do mapa) e sobe até a cratera.
 // A parte comum (portões, acampamentos, soltos, chefe, clima) fica em dungeon.js;
 // aqui fica só o cenário: braseiros, árvores mortas, forja, rio de lava,
 // escadaria de obsidiana, o Trono de Magma e o vulcão gigante.

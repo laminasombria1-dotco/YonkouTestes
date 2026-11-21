@@ -5,7 +5,8 @@
 // =============================================================
 import * as THREE from 'three';
 import { Controles } from './controles.js';
-import { Mundo } from './mundo.js';
+import { Mundo, SEMENTE } from './mundo.js';
+import { QUALIDADES, ORDEM_QUALIDADES, lerQualidade, gravarQualidade } from './mapa/config.js';
 import { Batalha } from './batalha.js';
 import { Plataforma, CenaEvolucao } from './plataforma.js';
 import { carregarModelos3D } from './modelos.js';
@@ -97,7 +98,7 @@ class Jogo {
     this.app = $('#app');
     this.palco = $('#palco');
     this.renderer = new THREE.WebGLRenderer({ antialias: window.devicePixelRatio < 2, powerPreference: 'high-performance' });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, QUALIDADES[lerQualidade()].pixel)); // resolução pela qualidade gráfica
     this.palco.appendChild(this.renderer.domElement);
     this.aspecto = 1;
     this.medir();
@@ -218,8 +219,12 @@ class Jogo {
       this.estado = s.estado;
       if (s.voltaram?.length) setTimeout(() => this.aviso(`Recuperados para a reserva: ${s.voltaram.join(', ')}.`), 600);
       if (s.hora != null) this.mundo.hora = s.hora;
+      // jogo salvo em outro mapa (o mapa antigo, ou outra semente): acorda na fonte e a casa volta para a mochila
+      const outroMapa = s.semente !== SEMENTE;
+      if (outroMapa && this.estado.casa) this.estado.casa = null;
       this.entrarNoMundo();
-      if (s.pos) { this.mundo.pos.set(s.pos.x, 0, s.pos.z); this.mundo.posicionarCamera(1); }
+      if (s.pos && !outroMapa) { this.mundo.pos.set(s.pos.x, 0, s.pos.z); this.mundo.chunks.carregarTudoPerto(s.pos.x, s.pos.z); this.mundo.posicionarCamera(1); }
+      if (outroMapa) setTimeout(() => this.aviso('O mapa é novo! Você acordou na fonte e a casa voltou para a mochila.'), 900);
       // saves antigos: evolui quem já tem nível para isso
       for (const m of [...this.estado.equipe, ...this.estado.reserva]) this.registrarEvolucoes(verificarEvolucao(m));
       if (this.filaEvo.length) this.proximaEvolucao();
@@ -247,6 +252,7 @@ class Jogo {
       const acao = b.dataset.menu;
       if (acao === 'continuar') this.fecharMenu();
       else if (acao === 'inicio') this.voltarAoInicio();
+      else if (acao === 'qualidade') this.trocarQualidade();
       else if (acao === 'sair') this.sairDoJogo();
       else if (acao === 'voltar-saida') $('#tela-saida').hidden = true;
     }));
@@ -322,6 +328,7 @@ class Jogo {
     if (this.modo !== 'mundo') return;
     this.fecharEquipe();
     this.painelAberto = true; // o mundo para enquanto o menu está aberto
+    this.atualizarBotaoQualidade();
     $('#menu-pausa').hidden = false;
   }
 
@@ -330,6 +337,21 @@ class Jogo {
     if (el.hidden) return;
     el.hidden = true;
     this.painelAberto = false;
+  }
+
+  // Qualidade gráfica (Fraco → Médio → Forte): menos chunks e objetos = mais leve
+  trocarQualidade() {
+    const atual = this.mundo.chunks.nomeQ;
+    const q = ORDEM_QUALIDADES[(ORDEM_QUALIDADES.indexOf(atual) + 1) % ORDEM_QUALIDADES.length];
+    gravarQualidade(q);
+    this.mundo.aplicarQualidade(q);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, QUALIDADES[q].pixel));
+    this.medir();
+    this.atualizarBotaoQualidade();
+  }
+  atualizarBotaoQualidade() {
+    const el = $('#menu-qualidade');
+    if (el) el.textContent = QUALIDADES[this.mundo.chunks.nomeQ].nome;
   }
 
   voltarAoInicio() {
@@ -860,7 +882,7 @@ class Jogo {
     if (!this.estado || !this.conta) return;
     const voltaram = protegerColecao(this.estado);
     if (voltaram.length) { this.aviso(`Recuperados para a reserva: ${voltaram.join(', ')}.`); this.atualizarHudMundo?.(); }
-    gravarTexto(this.chaveSave(), JSON.stringify({ v: 3, t: Date.now(), estado: this.estado, pos: { x: this.mundo.pos.x, z: this.mundo.pos.z }, hora: this.mundo.hora }));
+    gravarTexto(this.chaveSave(), JSON.stringify({ v: 3, t: Date.now(), estado: this.estado, pos: { x: this.mundo.pos.x, z: this.mundo.pos.z }, hora: this.mundo.hora, semente: SEMENTE }));
     if (this.conta.nuvem) this.nuvemPendente = true;
   }
 

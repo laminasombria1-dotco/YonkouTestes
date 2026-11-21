@@ -1,6 +1,6 @@
 // =============================================================
 // TRILHA ANCESTRAL (dungeon aberta da Floresta) + ambientação da Floresta
-// Sai da borda noroeste do mapa, depois da Floresta.
+// Sai da borda do mapa pela Floresta (direção pela semente do mapa).
 // A parte comum (portões, acampamentos, soltos, chefe, clima) fica em dungeon.js.
 // Aqui fica o cenário:
 //  Etapa 1 · Bosque dos Cogumelos  — cogumelos gigantes, troncos caídos, flores que brilham
@@ -13,6 +13,7 @@
 // =============================================================
 import * as THREE from 'three';
 import { DungeonAberta, RAIZES, S_LAGO, LARG_LAGO, GEO, Bloco, desbotar, lambert } from './dungeon.js';
+import { LAGOA, PONTOS_FLORESTA, CENTRO_FLORESTA } from './mapa/gerador.js';
 import { criarModelo } from './modelos.js';
 import { PERIODO_DA_LINHA, criarMonstro, statsDe, niveisDaEtapa } from './dados.js';
 
@@ -50,16 +51,14 @@ const FLORES = [MAT.florAmarela, MAT.florRosa, MAT.florAzul];
 const S_ARVORE_MAE = 214;
 
 // ---------- lugares fixos da Floresta (o mapa principal não põe árvores comuns aqui) ----------
-export const LAGOA = { x: -60, z: -16, r: 6.5 };       // o lago escondido da Floresta
-export const CLAREIRAS = [{ x: -24, z: -56, r: 8 }, { x: -58, z: -30, r: 8 }]; // acampamentos da Floresta
-const GIGANTES = [[-44, -20, 1.1], [-16, -30, 0.95], [-71, -28, 1.05], [-38, -58, 1], [-50, -4, 0.9]];
-const RUINA = { x: -28, z: -42, r: 6 };
-export const RESERVAS_FLORESTA = [
-  { x: LAGOA.x, z: LAGOA.z, r: LAGOA.r + 5 }, ...CLAREIRAS, RUINA,
-  ...GIGANTES.map(([x, z, e]) => ({ x, z, r: 5 * e })),
-];
+// Calculados pelo gerador do mapa, em volta do centro da Floresta (mudam com a semente)
+export { LAGOA };
+export const CLAREIRAS = PONTOS_FLORESTA.clareiras; // acampamentos da Floresta
+const GIGANTES = PONTOS_FLORESTA.gigantes.map((g) => [g.x, g.z, g.e]);
+const RUINA = PONTOS_FLORESTA.ruina;
 // Um cristal escondido na ponta do píer do lago
 export const CRISTAL_ESCONDIDO = { x: LAGOA.x + LAGOA.r + 1.3, z: LAGOA.z };
+const CF = CENTRO_FLORESTA;
 const MAX_EXTRAS_FLORESTA = 6; // monstros a mais na Floresta quando você está nela
 
 export class TrilhaAncestral extends DungeonAberta {
@@ -466,7 +465,7 @@ export class TrilhaAncestral extends DungeonAberta {
     const sortearPonto = (folga) => {
       for (let t = 0; t < 80; t++) {
         const a = rng() * Math.PI * 2, r = Math.sqrt(rng()) * 36;
-        const x = -40 + Math.cos(a) * r, z = -32 + Math.sin(a) * r;
+        const x = CF.x + Math.cos(a) * r, z = CF.z + Math.sin(a) * r;
         if (naFloresta(x, z, folga)) return { x, z };
       }
       return null;
@@ -534,7 +533,7 @@ export class TrilhaAncestral extends DungeonAberta {
     const n = 160, pos = new Float32Array(n * 3);
     for (let i = 0; i < n; i++) {
       const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * 34;
-      const x = -40 + Math.cos(a) * r, z = -32 + Math.sin(a) * r;
+      const x = CF.x + Math.cos(a) * r, z = CF.z + Math.sin(a) * r;
       pos.set([x, this.y(x, z) + 0.5 + Math.random() * 3, z], i * 3);
     }
     const g = new THREE.BufferGeometry();
@@ -612,7 +611,7 @@ export class TrilhaAncestral extends DungeonAberta {
     MAT.lanterna.emissiveIntensity = 0.6 + m.fatorNoite * 0.5;
     MAT.cogBrilho.emissiveIntensity = 0.4 + m.fatorNoite * 0.7;
     // vaga-lumes da região (à noite)
-    const perto = Math.hypot(m.pos.x + 40, m.pos.z + 32) < 60;
+    const perto = Math.hypot(m.pos.x - CF.x, m.pos.z - CF.z) < 60;
     const op = m.fatorNoite * (perto ? 0.95 : 0);
     this.vagalumes.visible = op > 0.02;
     if (this.vagalumes.visible) {

@@ -13,20 +13,23 @@
 //     transparentes, acampamentos, monstros soltos, chefe, clima).
 //     O cenário de cada uma fica em brasas.js e raizes.js.
 // As medidas usam duas coordenadas:
-//  s   = distância ao longo do caminho (a partir do centro do mapa)
+//  s   = distância ao longo do caminho (a partir da "origem" do traçado)
 //  lat = distância para o lado do caminho (0 = meio)
+// No mapa procedural, cada dungeon sai pela borda do bioma dela (o Caminho
+// das Brasas pela Lava, a Trilha Ancestral pela Floresta): a direção vem da
+// semente do mapa e a origem fica numa linha do centro até a borda.
 // =============================================================
 import * as THREE from 'three';
 import { criarModelo, criarCoroa, animarModelo, criarAuraDupla } from './modelos.js';
 import { ESPECIES, ELEMENTOS, DUNGEONS, niveisDaEtapa, nivelDoChefe, criarMonstro, statsDe, formaPorNivel } from './dados.js';
+import { SAIDAS, RAIO_MUNDO } from './mapa/gerador.js';
 
-const RAIZ2 = Math.SQRT1_2;
 const MAX_SOLTOS = 7;            // monstros soltos dentro de cada dungeon
 const RESPAWN_ACAMPAMENTO = 120; // segundos até um acampamento vencido ter outro grupo
 
 // ---------- 1) o traçado do corredor ----------
 export class Tracado {
-  // cfg: { id, zona, dir, perp, curvaAmp, curvaFreq, sobe, ajusteAltura }
+  // cfg: { id, zona, dir, perp, origem, curvaAmp, curvaFreq, sobe, ajusteAltura }
   constructor(cfg) {
     Object.assign(this, {
       sInicio: 84,   // portão de entrada
@@ -36,7 +39,7 @@ export class Tracado {
       sChefe: 182,   // centro da arena do chefe
       rChefe: 17,    // raio da arena do chefe
       largura: 14,   // meia largura do corredor
-      curvaAmp: 7, curvaFreq: 1.3, sobe: 0.055, ajusteAltura: null,
+      curvaAmp: 7, curvaFreq: 1.3, sobe: 0.055, ajusteAltura: null, origem: { x: 0, z: 0 },
     }, cfg);
     this.sFim = this.sInicio + this.sEtapa * this.nEtapas; // portão do chefe
     this.centroChefe = this.ponto(this.sChefe, 0);
@@ -45,12 +48,13 @@ export class Tracado {
   // O caminho faz uma curva suave
   curva(s) { return this.curvaAmp * Math.sin(((s - this.sInicio) / 80) * Math.PI * this.curvaFreq); }
   local(x, z) {
+    x -= this.origem.x; z -= this.origem.z;
     const s = x * this.dir.x + z * this.dir.z;
     return { s, lat: x * this.perp.x + z * this.perp.z - this.curva(s) };
   }
   ponto(s, lat) {
     const l = lat + this.curva(s);
-    return { x: this.dir.x * s + this.perp.x * l, z: this.dir.z * s + this.perp.z * l };
+    return { x: this.origem.x + this.dir.x * s + this.perp.x * l, z: this.origem.z + this.dir.z * s + this.perp.z * l };
   }
   dChefe(x, z) { return Math.hypot(x - this.centroChefe.x, z - this.centroChefe.z); }
   // Quanto um ponto está "para fora" (negativo = dentro).
@@ -82,8 +86,9 @@ export class Tracado {
   // Altura do chão: o caminho sobe aos poucos; a arena do chefe é plana
   altura(x, z, h) {
     const { s, lat } = this.local(x, z);
-    if (s < this.sMin - 2) return h;
-    const k0 = Math.min(1, Math.max(0, (s - (this.sMin - 2)) / 10)); // emenda suave com o mapa
+    if (s < this.sMin - 2 || Math.abs(lat) > this.largura + 34) return h;
+    // emenda suave com o mapa (ao longo do caminho e para os lados)
+    const k0 = Math.min(1, Math.max(0, (s - (this.sMin - 2)) / 10)) * Math.min(1, (this.largura + 34 - Math.abs(lat)) / 12);
     const sobe = Math.max(0, Math.min(110, s - (this.sInicio - 10))) * this.sobe;
     let alvo = h * 0.4 + sobe;
     if (this.ajusteAltura) alvo = this.ajusteAltura(s, lat, alvo);
@@ -109,15 +114,23 @@ export class Tracado {
   }
 }
 
-// Caminho das Brasas: sai pela borda nordeste (depois do Vulcão)
-export const BRASAS = new Tracado({ id: 'brasas', zona: 'fogo', dir: { x: RAIZ2, z: -RAIZ2 }, perp: { x: RAIZ2, z: RAIZ2 } });
+// Direção de saída (ângulo a): a boca (s = sMin) fica 18 m antes da borda do mapa
+// (lado: de que lado fica o "lat" positivo; a Trilha usa o outro lado, como no mapa antigo)
+function saida(a, lado = 1) {
+  const dir = { x: Math.cos(a), z: Math.sin(a) };
+  const o = RAIO_MUNDO - 18 - 66;
+  return { dir, perp: { x: -dir.z * lado, z: dir.x * lado }, origem: { x: dir.x * o, z: dir.z * o } };
+}
 
-// Trilha Ancestral: sai pela borda noroeste (depois da Floresta). Sobe menos
+// Caminho das Brasas: sai pela borda do bioma de Lava (depois do Vulcão)
+export const BRASAS = new Tracado({ id: 'brasas', zona: 'fogo', ...saida(SAIDAS.brasas) });
+
+// Trilha Ancestral: sai pela borda da Floresta. Sobe menos
 // e, na etapa 3, o chão afunda num lago que só se atravessa pela ponte.
 export const S_LAGO = 84 + 2 * 20 + 10;  // meio do Lago Escondido
 export const LARG_LAGO = 3.2;           // meia largura do lago ao longo do caminho
 export const RAIZES = new Tracado({
-  id: 'raizes', zona: 'planta', dir: { x: -RAIZ2, z: -RAIZ2 }, perp: { x: -RAIZ2, z: RAIZ2 },
+  id: 'raizes', zona: 'planta', ...saida(SAIDAS.raizes, -1),
   curvaAmp: 6, curvaFreq: 1.6, sobe: 0.03,
   ajusteAltura(s, lat, h) {
     const ds = Math.abs(s - S_LAGO);
@@ -146,7 +159,7 @@ export const TRACADOS = [BRASAS, RAIZES];
 export function tracadoPerto(x, z) { return TRACADOS.find((t) => t.perto(x, z)) || null; }
 export function foraDungeons(x, z) { return Math.min(...TRACADOS.map((t) => t.fora(x, z))); }
 export function alturaDungeons(x, z, h) {
-  for (const t of TRACADOS) if (t.local(x, z).s > t.sMin - 2) return t.altura(x, z, h);
+  for (const t of TRACADOS) h = t.altura(x, z, h);
   return h;
 }
 export function dentroDungeonLivre(x, z, raio) { return TRACADOS.some((t) => t.livre(x, z, raio)); }

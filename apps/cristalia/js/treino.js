@@ -134,7 +134,7 @@ function criarArena(t) {
     obstaculos: local,
     bloqueia(p, raio) {
       const x = p.x + t.centro.x, z = p.z + t.centro.z;
-      for (const o of m.obstaculos) if (Math.hypot(x - o.x, z - o.z) < o.r + raio) return true;
+      if (m.obstaculoEm(x, z, raio)) return true; // árvores, pedras e peças do mapa em volta
       for (const o of local) if (Math.hypot(p.x - o.x, p.z - o.z) < o.r + raio) return true;
       return false;
     },

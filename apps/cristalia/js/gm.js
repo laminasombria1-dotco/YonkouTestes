@@ -20,15 +20,21 @@ import {
 } from './dados.js';
 import { criarModelo, criarCoroa, criarAuraDupla } from './modelos.js';
 import { zonaEm, NOMES_ZONA } from './mundo.js';
+import { SEMENTE, SEMENTE_PADRAO, centroDe, LAGOS, POIS } from './mapa/gerador.js';
 
 const MAX_NIVEL = 50;
 const MAX_EQUIPE = 3;
 const TAMANHO_GRUPO = 6; // 5 comuns + 1 líder
 
-// Lugares do teleporte (centro de cada região; o jogo procura um ponto livre perto)
+// Lugares do teleporte (o centro de cada bioma vem da semente do mapa; o jogo procura um ponto livre perto)
+const arco = POIS.find((p) => p.tipo === 'arco'); // o Deserto: ao lado do arco de pedra
+const lagoGrande = LAGOS.find((L) => L.tipo === 'agua' && !L.escondido && L.bioma === 'planta') || LAGOS[0];
+const perto = (c, d = 0) => { const a = Math.atan2(c.z, c.x); return [c.x - Math.cos(a) * d, c.z - Math.sin(a) * d]; };
 const LUGARES = [
-  ['fonte', 'Fonte', 0, 4.5], ['campo', 'Campo', 16, 16], ['planta', 'Floresta', -40, -32], ['agua', 'Lago', -34, 50],
-  ['fogo', 'Vulcão', 42, -34], ['terra', 'Pedreira', 42, 38], ['raio', 'Planalto', 0, -64],
+  ['fonte', 'Fonte', 0, 4.5], ['campo', 'Campo', 16, 16], ['planta', 'Floresta', ...perto(centroDe('planta'))],
+  ['agua', 'Lago', ...perto(lagoGrande, -(lagoGrande.r + 4))],
+  ['fogo', 'Vulcão', ...perto(centroDe('fogo'), 16)], ['terra', 'Deserto', ...(arco ? [arco.x + Math.cos(arco.ang + 1.57) * 7, arco.z + Math.sin(arco.ang + 1.57) * 7] : perto(centroDe('terra')))],
+  ['raio', 'Neve', ...perto(centroDe('raio'))],
 ];
 // Arenas que dá para escolher no "Lutar agora"
 const NOMES_ARENA = Object.fromEntries(Object.entries(ARENAS).map(([k, a]) => [k, a.nome]));
@@ -354,7 +360,31 @@ export class PainelGM {
         <h3>Celular</h3>
         <div class="gm-linha">${this.botaoChave('fps', 'Mostrar FPS')}</div>
         <p class="gm-dica">FPS = quadros por segundo. 50 a 60 é liso; abaixo de 30 o jogo começa a "travar".</p>
+        ${this.infoMapa()}
+      </div>
+      <div class="gm-bloco">
+        <h3>Mapa (semente ${SEMENTE}${SEMENTE === SEMENTE_PADRAO ? ', a de todos' : ', só neste teste'})</h3>
+        <div class="gm-linha"><input type="number" data-campo-livre="semente" value="${SEMENTE}" min="1" max="999999999" style="width:9em">
+          <button class="gm-btn" type="button" data-gm="semente">Ver esta semente</button>
+          <button class="gm-btn" type="button" data-gm="sementeAleatoria">Semente aleatória</button>
+          <button class="gm-btn" type="button" data-gm="sementePadrao">Voltar à de todos</button></div>
+        <p class="gm-dica">Trocar a semente recarrega o jogo com outro mapa, só neste aparelho e só até fechar. Com outra semente, você acorda na fonte e a casa volta para a mochila. Os jogadores sempre usam a semente ${SEMENTE_PADRAO}.</p>
       </div>`;
+  }
+
+  // Números do mapa: chunks carregados e quanto o celular desenha por quadro
+  infoMapa() {
+    const i = this.mundo.chunks.info(), r = this.jogo.renderer.info.render;
+    return `<p class="gm-dica">Mapa: ${i.chunks} chunks (qualidade ${i.qualidade}), ${i.instancias} objetos, ${i.obstaculos} obstáculos.
+      Último quadro: ${r.calls} desenhos, ${Math.round(r.triangles / 1000)} mil triângulos. Cada chunk leva ${i.msMedio} ms para ser criado (máx. ${i.msMax} ms).</p>`;
+  }
+
+  // Recarrega a página com outra semente (só para testes do GM)
+  trocarSemente(n) {
+    this.jogo.salvar();
+    const u = new URL(location.href);
+    if (n === SEMENTE_PADRAO) u.searchParams.delete('semente'); else u.searchParams.set('semente', String(n));
+    location.href = u.toString();
   }
 
   botaoChave(chave, nome) {
@@ -437,6 +467,9 @@ export class PainelGM {
       case 'grupoAleatorio': this.grupoAleatorio(); break;
       case 'limpar': this.limpar(); break;
       case 'irDungeon': this.irDungeon(d.dg, d.onde); this.fecharPainel(); return;
+      case 'semente': { const n = Math.round(Number(this.painel.querySelector('[data-campo-livre="semente"]').value)); if (n >= 1 && n <= 999999999) this.trocarSemente(n); return; }
+      case 'sementeAleatoria': this.trocarSemente(1 + Math.floor(Math.random() * 999999998)); return;
+      case 'sementePadrao': this.trocarSemente(SEMENTE_PADRAO); return;
       case 'acampamento': this.acampamento(d.dg, Number(d.etapa)); return;
       case 'chefeAgora': this.chefeAgora(d.dg); return;
       case 'chefeVolta': this.chefeVolta(d.dg); break;
@@ -721,6 +754,7 @@ export class PainelGM {
   // ---------- mundo ----------
   teleportar(x, z, ang = this.mundo.ang) {
     const m = this.mundo, p = { x, z };
+    m.chunks.carregarTudoPerto(x, z); // o chão de lá precisa existir antes de chegar
     m.colidir(p, 0.6);
     m.pos.set(p.x, 0, p.z);
     m.ang = ang;
