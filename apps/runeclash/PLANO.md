@@ -40,9 +40,10 @@ Uma ideia por vez, sem pressa. Cada ideia é feita numa branch, com proposta ant
   Feito: `js/invocador.js` (corpo, animações e a pedra roxa na mão esquerda) e `js/criador.js` (a cena do criador). A aparência padrão é o **Aiden** (ficha do personagem: cabelo preto, olhos roxos, roupa preta com dourado, gema roxa no peito). Tela "Crie seu Invocador" no Novo jogo e no menu de pausa (Aparência), com cores em bolinhas prontas. A aparência fica no jogo salvo (`estado.invocador`).
 
 ### Etapa 2: Selar e invocar (o coração da junção)
-- [ ] **2.1** **A captura vira o Selamento em etapas:** "PODE SER SELADO" quando o monstro está fraco → círculo de runas e **correntes saindo da pedra** na mão do Invocador → canalização com partículas em espiral → sucesso (implosão, o monstro some na pedra) ou falha (as correntes se partem).
+- [x] **2.1** **A captura vira o Selamento em etapas:** "PODE SER SELADO" quando o monstro está fraco → círculo de runas e **correntes saindo da pedra** na mão do Invocador → canalização com partículas em espiral → sucesso (implosão, o monstro some na pedra) ou falha (as correntes se partem).
+  Feito (`js/selamento.js`): "PODE SER SELADO" com 35% de vida ou menos; a pedra aparece flutuando ao lado do seu monstro e as correntes saem dela; 3 pulsos (sucesso) ou 1 a 3 (falha); a essência voa até a pedra. As regras e a chance não mudaram. **Decisão da Lâmina:** por enquanto o Invocador fica **fora da batalha** (a pedra aparece sozinha); a cena dele vem na 2.3.
 - [ ] **2.2** **Invocar com runas:** o monstro sobe de um círculo de runas ao entrar na batalha, ao trocar e ao ser invocado no mapa.
-- [ ] **2.3** Animação do Invocador lançando as correntes da pedra (junto com o modelo 3D da pedra).
+- [ ] **2.3** **Cena do Invocador** erguendo a pedra e o selo aparecendo no monstro que vai ser selado (a Lâmina vai fazer a cena), junto com o modelo 3D da pedra. O corpo do Invocador já tem a pose de segurar a pedra erguida (`canal` em `js/invocador.js`).
 
 ### Etapa 3: Habilidades melhores
 - [ ] **3.1** Os efeitos da Arena nos golpes de hoje, **uma linha de monstros por vez** (ex.: relâmpago com galhos no Faisquinho, rachaduras e estilhaços no Pedrisco, chamas no Brasito).

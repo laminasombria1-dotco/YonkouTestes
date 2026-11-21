@@ -184,7 +184,20 @@ export function animarInvocador(inv, dt, movendo) {
   J.bracoE.rotation.z = -0.1;
   J.bracoD.rotation.z = 0.08;
   J.corpo.position.y = Math.abs(Math.sin(f)) * 0.06 * v;
-  if (u.conjurar > 0) {
+  // selando (ideia 2.1): a pedra fica erguida, apontada para o monstro, até o selo terminar
+  u.canalK = Math.max(0, Math.min(1, (u.canalK || 0) + (u.canal ? dt / 0.3 : -dt / 0.35)));
+  if (u.canalK > 0) {
+    const k = ease(u.canalK);
+    u.conjurar = 0;
+    J.bracoE.rotation.x += (-1.75 - J.bracoE.rotation.x) * k; // braço da pedra esticado para a frente e um pouco para cima
+    J.anteE.rotation.x += (-0.15 - J.anteE.rotation.x) * k;
+    J.bracoE.rotation.z += (-0.05 - J.bracoE.rotation.z) * k;
+    J.bracoD.rotation.x += (-0.7 - J.bracoD.rotation.x) * k;  // a outra mão ajuda, mais baixa
+    J.anteD.rotation.x += (-0.9 - J.anteD.rotation.x) * k;
+    J.tronco.rotation.x += (-0.08 - J.tronco.rotation.x) * k;
+    J.pernaE.rotation.x += (-0.25 - J.pernaE.rotation.x) * k; // pé da frente firme
+    J.pernaD.rotation.x += (0.2 - J.pernaD.rotation.x) * k;
+  } else if (u.conjurar > 0) {
     u.conjurar += dt;
     const p = Math.min(1, u.conjurar / DUR_CONJURAR), sp = Math.sin(p * Math.PI);
     J.bracoE.rotation.x = -0.35 - 2.3 * ease(sp); // ergue a pedra

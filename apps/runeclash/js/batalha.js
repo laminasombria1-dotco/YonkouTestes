@@ -19,11 +19,13 @@ import { HabilidadesPedrisco } from './habilidades/pedrisco-batalha.js';
 import { HabilidadesFaisquinho } from './habilidades/faisquinho-batalha.js';
 import { HabilidadesSolito } from './habilidades/solito-batalha.js';
 import { CameraOrbita } from './camera.js';
-import { criarModelo, criarCristal, criarCoroa, animarModelo, piscar, descartar, tocarGolpe, pararGolpe } from './modelos.js';
+import { criarModelo, criarCoroa, animarModelo, piscar, descartar, tocarGolpe, pararGolpe } from './modelos.js';
 
 const MAX_ATIVOS = 2;      // quantos inimigos de um grupo lutam ao mesmo tempo (o próximo par só entra quando estes caírem)
 const ESCALA_LIDER = 1.3;  // o líder do grupo é maior
+const LIMITE_SELAVEL = 0.35; // com 35% de vida ou menos aparece "PODE SER SELADO" em cima do monstro
 import { Arena, RAIO_ARENA } from './arena.js';
+import { Selamento } from './selamento.js';
 
 export { RAIO_ARENA };
 
@@ -160,6 +162,7 @@ export class Batalha {
     this.captura = null;
     this.tipoCristal = 0;          // 0 comum, 1 forte, 2 supremo
     this.cristalEscolhido = false; // o jogador trocou na mão? então respeita a escolha
+    this.selo = new Selamento(this); // o Invocador na arena e o Selamento em etapas (js/selamento.js)
     this.fim = null;
     this.t = 0;
     this.trocaCd = 0;
@@ -352,7 +355,7 @@ export class Batalha {
     this.pedrisco.atualizar(dt);
     this.faisquinho.atualizar(dt);
     this.solito.atualizar(dt);
-    if (this.captura) this.atualizarCaptura(dt);
+    this.selo.atualizar(dt);
 
     if (this.trocaAuto > 0) {
       this.trocaAuto -= dt;
@@ -1055,76 +1058,30 @@ export class Batalha {
     const sucesso = garantida || Math.random() < chanceCaptura(this.ini.dados, this.tipoCristal);
     if (this.jog.prep) this.cancelarPreparo(this.jog);
     for (const l of this.inimigos) { if (l.prep) this.cancelarPreparo(l); l.dash = null; l.rajada = null; this.brasito.parar(l); this.gotinho.parar(l, false); this.musguinho.parar(l); this.pedrisco.parar(l); this.faisquinho.parar(l, false); }
-    const cr = criarCristal(1.1, this.tipoCristal);
-    this.cena.add(cr);
-    this.captura = {
-      fase: 'voando', t: 0, cr, sucesso,
-      balancos: sucesso ? 3 : 1 + Math.floor(Math.random() * 3), n: 0,
-      de: this.jog.pos.clone().setY(1), ate: this.ini.pos.clone(),
-    };
+    // o Selamento: o Invocador ergue a pedra, as correntes prendem o monstro e ele se debate
+    // (3 pulsos se vai dar certo; 1 a 3 se vai falhar, como os balanços da pedra do Cristalia)
+    const ini = this.ini;
+    this.captura = { selando: true }; // enquanto não acabar, ninguém age nem leva dano
+    this.selo.iniciar(ini, this.tipoCristal, sucesso, sucesso ? 3 : 1 + Math.floor(Math.random() * 3), (selou) => this.fimSelamento(ini, selou));
   }
 
-  atualizarCaptura(dt) {
-    const c = this.captura, cr = c.cr, ini = this.ini;
-    c.t += dt;
-    if (c.fase === 'voando') {
-      const k = Math.min(1, c.t / 0.55);
-      cr.position.lerpVectors(c.de, c.ate, k);
-      cr.position.y = 1 + Math.sin(k * Math.PI) * 2.5;
-      cr.rotation.y += dt * 12;
-      if (k >= 1) { c.fase = 'sugando'; c.t = 0; this.particulas(ini.pos, CRISTAIS[this.tipoCristal].cor, 12, 1); }
-    } else if (c.fase === 'sugando') {
-      const k = Math.min(1, c.t / 0.35);
-      ini.modelo.scale.setScalar(ini.escala * (1 - k));
-      cr.position.set(c.ate.x, 1.2, c.ate.z);
-      if (k >= 1) { ini.modelo.visible = false; c.fase = 'caindo'; c.t = 0; }
-    } else if (c.fase === 'caindo') {
-      const k = Math.min(1, c.t / 0.3);
-      cr.position.y = 1.2 - k * 0.8;
-      if (k >= 1) { c.fase = 'balanco'; c.t = 0; }
-    } else if (c.fase === 'balanco') {
-      const ciclo = 0.65;
-      const k = c.t / ciclo;
-      cr.rotation.z = k < 0.5 ? Math.sin(k * 2 * Math.PI * 2) * 0.45 : 0;
-      if (c.t >= ciclo) {
-        c.t = 0;
-        c.n++;
-        if (c.n >= c.balancos) {
-          if (c.sucesso) {
-            c.fase = 'sucesso';
-            cr.material.emissive.set('#ffd23f');
-            cr.material.emissiveIntensity = 1;
-            this.particulas(ini.pos, '#ffd23f', 22, 1.3);
-            this.jogo.aviso(`Você selou ${ini.esp.nome}!`);
-            this.capturados.push(ini.dados);
-            if (ini.dados.lider) this.liderDerrotado = true;
-            // tira o capturado da arena; se ainda há inimigos, a luta continua
-            this.inimigos.splice(this.inimigos.indexOf(ini), 1);
-            this.cena.remove(ini.modelo);
-            descartar(ini.modelo);
-            this.verificarFim();
-            if (!this.fim) {
-              const crCapturado = cr;
-              this.efeitos.push({ obj: crCapturado, vida: 0.8, total: 0.8, upd: (e, k) => { e.obj.position.y = 0.4 + k * 3; e.obj.scale.setScalar(1.1 * (1 - k)); } });
-              this.captura = null;
-              this.escolherAlvo();
-            }
-          } else {
-            this.particulas(ini.pos, '#8ff4ff', 16, 1.4);
-            this.cena.remove(cr);
-            cr.material.dispose();
-            ini.modelo.visible = true;
-            ini.modelo.scale.setScalar(ini.escala);
-            ini.rec = [0, 0, 0];
-            ini.stun = 0;
-            this.jogo.aviso(`${ini.esp.nome} escapou da pedra!`);
-            this.captura = null;
-          }
-        }
-      }
-    } else if (c.fase === 'sucesso') {
-      cr.rotation.y += dt * 3;
-      cr.position.y = 0.4 + Math.min(1, c.t) * 0.6;
+  // Fim do Selamento (js/selamento.js chama quando o monstro já foi selado ou se soltou)
+  fimSelamento(ini, selou) {
+    if (selou) {
+      this.capturados.push(ini.dados);
+      if (ini.dados.lider) this.liderDerrotado = true;
+      // tira o selado da arena; se ainda há inimigos, a luta continua
+      this.inimigos.splice(this.inimigos.indexOf(ini), 1);
+      this.cena.remove(ini.modelo);
+      descartar(ini.modelo);
+      this.verificarFim();
+      if (!this.fim) { this.captura = null; this.escolherAlvo(); }
+    } else {
+      ini.modelo.visible = true;
+      ini.modelo.scale.setScalar(ini.escala);
+      ini.rec = [0, 0, 0];
+      ini.stun = 0;
+      this.captura = null;
     }
   }
 
@@ -1224,6 +1181,15 @@ export class Batalha {
   }
 
   // Placa em cima de cada inimigo: só o nome e uma barrinha de vida
+  // O monstro está fraco o bastante e você tem uma pedra que sela ele? (só o aviso "PODE SER SELADO":
+  // dá para tentar selar antes, mas a chance é baixa)
+  podeSelar(l) {
+    if (l.morto || l.frac > LIMITE_SELAVEL) return false;
+    const p = this.jogo.estado.pedras;
+    for (let k = CRISTAIS.length - 1; k >= (l.esp.cristalMin || 0); k--) if (p[CRISTAIS[k].id] > 0) return true;
+    return false;
+  }
+
   atualizarPlacas() {
     const ui = this.jogo.ui, vistos = new Set();
     for (const l of this.inimigos) {
@@ -1233,7 +1199,7 @@ export class Batalha {
       if (!p) {
         const el = document.createElement('div');
         el.className = 'placa-ini';
-        el.innerHTML = `<span></span><small style="color:#f7e43a;margin-left:4px"></small><i class="vida"><b></b></i>`;
+        el.innerHTML = `<span></span><small style="color:#f7e43a;margin-left:4px"></small><i class="vida"><b></b></i><em class="selar">PODE SER SELADO</em>`;
         el.querySelector('span').textContent = l.esp.nome;
         ui.placas.appendChild(el);
         p = { el, barra: el.querySelector('b'), marca: el.querySelector('small'), txtMarca: '' };
@@ -1249,6 +1215,7 @@ export class Batalha {
       // marcas da linha do Faisquinho: "⚡2" ao lado do nome
       const txtMarca = l.marcas ? '⚡' + l.marcas.n : '';
       if (p.txtMarca !== txtMarca) { p.txtMarca = txtMarca; p.marca.textContent = txtMarca; }
+      p.el.classList.toggle('selavel', !this.captura && this.podeSelar(l));
       const pos = this.jogo.projetar(l.pos.clone().setY(l.altura + 0.6), this.camera);
       p.el.hidden = pos.atras;
       p.x = pos.x; p.y = pos.y; p.w = p.el.offsetWidth || 70; p.h = p.el.offsetHeight || 26;
@@ -1307,12 +1274,13 @@ export class Batalha {
     if (ui.bjStatus.innerHTML !== sj) ui.bjStatus.innerHTML = sj;
     this.atualizarPlacas();
     const cr = CRISTAIS[this.tipoCristal], min = e.esp.cristalMin || 0;
-    const txtCr = `${cr.id}|${this.jogo.estado.pedras[cr.id]}|${this.tipoCristal < min}`;
+    const txtCr = `${cr.id}|${this.jogo.estado.pedras[cr.id]}|${this.tipoCristal < min}|${this.podeSelar(e)}`;
     if (this.txtCristal !== txtCr) {
       this.txtCristal = txtCr;
       ui.qtdCristal.textContent = this.jogo.estado.pedras[cr.id];
       ui.btnCristal.style.setProperty('--crist', cr.cor);
       ui.btnCristal.classList.toggle('fraco', this.tipoCristal < min);
+      ui.btnCristal.classList.toggle('selavel', this.podeSelar(e) && this.tipoCristal >= min);
       ui.btnCristal.title = `${cr.nome}: ${this.tipoCristal < min ? 'não sela este monstro' : Math.round(chanceCaptura(e.dados, this.tipoCristal) * 100) + '% de chance'}`;
     }
     this.atualizarSeletor(e);

@@ -449,6 +449,13 @@
   .placa-ini.alvo { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85); }
   .placa-ini.chefe, .placa-ini.lider { color: var(--sol); }
   .placa-ini.furia { color: #ff6b81; }
+  /* Selamento (2.1): o monstro está fraco e pode ser selado */
+  .placa-ini .selar { display: none; margin-top: 2px; font-style: normal; font-size: 0.6rem; letter-spacing: 0.08em; color: #e2c8ff; text-shadow: 0 0 6px #7a2cfe; }
+  .placa-ini.selavel { box-shadow: 0 0 0 2px #b98cff, 0 0 12px rgba(185, 140, 255, 0.7); }
+  .placa-ini.selavel .selar { display: block; animation: pulsar-selo 1s ease-in-out infinite; }
+  #btn-cristal.selavel { box-shadow: 0 0 0 3px var(--crist), 0 0 16px var(--crist); animation: pulsar-selo 1s ease-in-out infinite; }
+  @keyframes pulsar-selo { 50% { opacity: 0.55; } }
+  @media (prefers-reduced-motion: reduce) { .placa-ini.selavel .selar, #btn-cristal.selavel { animation: none; } }
   /* avisos da batalha: pequenos, no alto, e somem rápido */
   #app.em-batalha #avisos { top: calc(max(10px, env(safe-area-inset-top, 0px)) + 62px); bottom: auto; width: min(60vw, 360px); }
   #app.em-batalha .aviso { padding: 4px 10px; font-size: 0.74rem; animation: entra 0.2s ease-out, sai 0.3s ease-in 1.2s forwards; }

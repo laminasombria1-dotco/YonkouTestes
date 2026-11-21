@@ -58,6 +58,31 @@ test('batalha e captura', async ({ page }) => {
   semErros(erros);
 });
 
+test('Selamento: "PODE SER SELADO", correntes e o selo que falha', async ({ page }) => {
+  const erros = vigiarErros(page);
+  await abrirJogo(page);
+  await entrarLocal(page);
+  await novoJogo(page, 'brasito');
+  await page.evaluate(() => window.__jogo.iniciarBatalha(window.__jogo.mundo.selvagens[0]));
+  await page.waitForFunction(() => window.__jogo.modo === 'batalha' && !!window.__jogo.batalha?.ini, null, { timeout: 30_000 });
+  // por enquanto o Invocador não entra na batalha, e a pedra só aparece na hora de selar
+  expect(await page.evaluate(() => !!window.__jogo.batalha.selo.pedra)).toBe(false);
+  // monstro fraco: aparece "PODE SER SELADO"
+  await page.evaluate(() => { const b = window.__jogo.batalha; b.pensarIA = () => {}; b.ini.dados.hp = 1; });
+  await expect(page.locator('.placa-ini.selavel .selar')).toBeVisible();
+  // um selo que falha (o sorteio sai sempre "não"): correntes, pulsos e o monstro se solta
+  const pedras = await page.evaluate(() => window.__jogo.estado.pedras.comum);
+  await page.evaluate(() => { const r = Math.random; Math.random = () => 0.999; window.__jogo.batalha.lancarCristal(); Math.random = r; });
+  await page.waitForFunction(() => window.__jogo.batalha.selo.ativo?.fase === 'pulsos', null, { timeout: 30_000 });
+  expect(await page.evaluate(() => !!window.__jogo.batalha.selo.pedra)).toBe(true); // a pedra flutua perto do seu monstro
+  await foto(page, '5-correntes');
+  await page.waitForFunction(() => !window.__jogo.batalha.selo.ativo, null, { timeout: 30_000 });
+  const depois = await page.evaluate(() => { const b = window.__jogo.batalha; return { captura: b.captura, visivel: b.ini.modelo.visible, selados: b.capturados.length, pedras: window.__jogo.estado.pedras.comum }; });
+  expect(depois).toEqual({ captura: null, visivel: true, selados: 0, pedras: pedras - 1 });
+  await page.waitForFunction(() => !window.__jogo.batalha.selo.pedra, null, { timeout: 10_000 }); // e depois some
+  semErros(erros);
+});
+
 test('monstro invocado e golpe no modo treino', async ({ page }) => {
   const erros = vigiarErros(page);
   await abrirJogo(page);

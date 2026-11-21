@@ -9,13 +9,13 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
 
 Só os **monstros** lutam; o Invocador não luta. O plano, etapa por etapa, fica em **[PLANO.md](PLANO.md)**.
 
-> **Hoje (ideia 1.2)** o Runeclash ainda joga igual ao Cristalia, com o nome novo, o jogo salvo separado e o visual próprio: roxo-runa e dourado, fonte Cinzel nos títulos, a pedra de selamento como emblema e ícone, o **Sealfolio** (o antigo Monstruário) e as **pedras de selamento** (azul, roxa e dourada) no lugar dos cristais. Nos textos, "capturar" virou "selar"; as regras da captura ainda são as do Cristalia (o selamento com correntes é a ideia 2.1). O material da Arena (efeitos, peças e scripts do Blender) já está aqui, mas ainda não aparece no jogo. O resto deste README descreve o que veio do Cristalia e vai mudando a cada etapa.
+> **Hoje (ideia 2.1)** o Runeclash joga como o Cristalia, com o nome novo, o jogo salvo separado e o visual próprio: roxo-runa e dourado, fonte Cinzel nos títulos, o **Sealfolio** (o antigo Monstruário), as **pedras de selamento** (azul, roxa e dourada) no lugar dos cristais, o **Invocador** (o Aiden, com o criador de personagem) no mapa e o **Selamento** com correntes na batalha. As regras da batalha e da chance de selar ainda são as do Cristalia.
 
 ## Como jogar
 
 - **Só deitado:** o jogo é feito para o celular deitado. Com o celular em pé, aparece **"Vire o celular"** e tudo pausa (mapa, batalha, monstro invocado) até você virar. No PC, uma janela estreita não é bloqueada. O app Android (versão 1.2 em diante) e o app instalado pelo Chrome já abrem sempre deitados.
 - **Login (toda vez que o jogo abre):** digite o **nome de usuário** e a **senha** e toque em **Entrar** (ou **Criar conta**, se o nome é novo). Embaixo aparecem as contas que já entraram neste aparelho: **1 toque** entra, sem digitar a senha. Veja "Contas e nuvem" abaixo.
-- **O Invocador:** é você no mapa. No **Novo jogo**, primeiro aparece **Crie seu Invocador** (pele, cabelo, olhos, penteado, roupa, detalhes, capa, ombreiras e altura, com cores em bolinhas prontas; **Aiden** volta para a aparência padrão e **Sortear** sorteia uma). Depois dá para mudar pelo menu de pausa, em **Aparência**. Ele segura a pedra de selamento na mão esquerda e a ergue ao invocar ou guardar o monstro. Na batalha ele ainda não aparece (só os monstros lutam); ele entra lá na ideia 2.1, ao selar.
+- **O Invocador:** é você no mapa. No **Novo jogo**, primeiro aparece **Crie seu Invocador** (pele, cabelo, olhos, penteado, roupa, detalhes, capa, ombreiras e altura, com cores em bolinhas prontas; **Aiden** volta para a aparência padrão e **Sortear** sorteia uma). Depois dá para mudar pelo menu de pausa, em **Aparência**. Ele segura a pedra de selamento na mão esquerda e a ergue ao invocar ou guardar o monstro. Na batalha ele não aparece (só os monstros lutam): ao selar, só a pedra aparece. A cena dele erguendo a pedra é a ideia 2.3.
 - **Tela de início:** mostra "Olá, nome" e onde o jogo está salvo (☁ na nuvem ou ⚠ só no celular). Tem **Continuar** (mostra o seu parceiro, o nível e quantos monstros você tem), **Novo jogo** (se já existe um jogo salvo, pede um 2º toque para confirmar), **Sealfolio**, **Instalar app** (só aparece quando dá para instalar), **Trocar conta** e **Sair do jogo**.
 - **Menu de pausa:** o botão de menu (três risquinhos) no mapa, **Esc** no PC ou o botão **Voltar** do celular. Tem **Continuar jogando**, **Qualidade** (Fraco, Médio ou Forte: veja "Mapa procedural"), **Voltar ao início** e **Sair do jogo**. Tudo salva antes.
 - **Sair do jogo:** no app Android, fecha o app. No navegador, a página não pode se fechar sozinha: o jogo salva e avisa que já pode fechar a aba.
@@ -33,7 +33,9 @@ Só os **monstros** lutam; o Invocador não luta. O plano, etapa por etapa, fica
   - O inimigo avisa antes de atacar: uma **faixa ou círculo vermelho no chão**. Saia dele ou use a esquiva.
   - No PC: J, K e L para os golpes. A esquiva não tem mais botão na tela, mas ainda funciona com Espaço.
 - **Monstro invocado:** veja "Monstro invocado (companheiro)" abaixo.
-- **Selar:** enfraqueça o monstro e toque no botão da pedra (tecla C). O número ao lado é a chance de selar. A **setinha** ao lado da pedra abre a lista para escolher a Azul, a Roxa ou a Dourada (no PC, a tecla V passa para a próxima). Formas evoluídas são bem mais difíceis de selar.
+- **Selar (o Selamento):** enfraqueça o monstro e toque no botão da pedra (tecla C). O número ao lado é a chance de selar. A **setinha** ao lado da pedra abre a lista para escolher a Azul, a Roxa ou a Dourada (no PC, a tecla V passa para a próxima). Formas evoluídas são bem mais difíceis de selar.
+  - Com **35% de vida ou menos**, a placa do monstro mostra **PODE SER SELADO** e o botão da pedra pisca (dá para tentar antes, com chance baixa).
+  - O Selamento (`js/selamento.js`, com os efeitos da Arena): a **pedra aparece flutuando ao lado do seu monstro** → **correntes** saem dela e prendem o monstro (runas no chão, anéis se apertando, partículas em espiral), na cor da pedra → o monstro se debate em **pulsos** (3 quando vai dar certo, 1 a 3 quando vai falhar) → **selou:** implosão, coluna de luz e a essência voa até a pedra; **falhou:** as correntes se partem e o círculo fica vermelho. Enquanto sela, ninguém age.
 - **Evoluir:** cada linha tem 4 formas. A forma inicial evolui no **nível 6**, a 1ª evolução no **nível 12** e a 2ª evolução no **nível 30**. Quando seu monstro chega ao nível, aparece a animação de evolução e ele ganha atributos e golpes mais fortes.
 - **Dia e noite:** um ciclo completo dura 4 minutos (2 de dia e 2 de noite). **Sol e Luz** só aparecem de dia; **Lua e Trevas**, só à noite. O relógio fica no canto superior direito.
 - **Equipe:** até 3 monstros. Com a equipe cheia, o selado vai para a reserva.
@@ -533,6 +535,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `modelos/` | Os arquivos `.glb` (hoje `brasito.glb`) e um README com os detalhes de cada um |
 | `js/plataforma.js` | A vitrine 3D do Sealfolio e a animação de evolução |
 | `js/invocador.js` | O **Invocador** (o jogador no mapa): o corpo com as peças do Blender da Arena (`h_*`), as cores, os penteados, as animações (parado, andar e conjurar) e a pedra na mão. A aparência padrão é o **Aiden** |
+| `js/selamento.js` | O **Selamento** na batalha: a pedra que aparece ao lado do seu monstro, as correntes, os pulsos, o selo que fecha ou quebra (usa `js/arena/efeitos.js`) |
 | `js/criador.js` | A cena 3D da tela **Crie seu Invocador** (o pedestal com runas; arrastar gira o personagem) |
 | `js/mundo.js` | Mapa aberto: regiões, dia e noite, monstros selvagens e grupos (em volta do jogador), pedras de selamento, fonte, casa, colisão e câmera |
 | `js/mapa/config.js` | Configurações do mapa procedural e os perfis de qualidade |
