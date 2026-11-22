@@ -22,6 +22,7 @@ import { HabilidadesSerpe } from './lendarios/serpe-batalha.js';
 import { HabilidadesColosso } from './lendarios/colosso-batalha.js';
 import { HabilidadesGeada } from './lendarios/geada-batalha.js';
 import { HabilidadesArauto } from './lendarios/arauto-batalha.js';
+import { HabilidadesCavaleiro } from './lendarios/cavaleiro-batalha.js';
 import { CameraOrbita } from './camera.js';
 import { criarModelo, criarCoroa, animarModelo, piscar, descartar, tocarGolpe, pararGolpe } from './modelos.js';
 
@@ -130,7 +131,7 @@ export class Batalha {
     this.faisquinho = new HabilidadesFaisquinho(this); // marcas, dash elétrico, tiro que marca, choque e nuvens da linha do Faisquinho
     this.solito = new HabilidadesSolito(this); // sol que dá bônus, laser e calor da linha do Solito
     // lendários (js/lendarios/): cada um tem dele(c), atualizar(dt), aoPerto(c), aoDisparar(c, dir) e aoUsarArea(c, gp)
-    this.lendas = [new HabilidadesSerpe(this), new HabilidadesColosso(this), new HabilidadesGeada(this), new HabilidadesArauto(this)];
+    this.lendas = [new HabilidadesSerpe(this), new HabilidadesColosso(this), new HabilidadesGeada(this), new HabilidadesArauto(this), new HabilidadesCavaleiro(this)];
     this.periodo = jogo.mundo.periodo;
 
     this.idx = idxInicial;

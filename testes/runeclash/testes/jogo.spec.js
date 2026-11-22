@@ -379,7 +379,7 @@ test('Arenas de batalha com os temas da Arena (Ruínas, Dunas, Lago Congelado, C
   semErros(erros);
 });
 
-for (const [esp, bioma, pecaNome] of [['serpe', 'raio', 's_'], ['colosso', 'terra', 'c_'], ['geada', 'raio', 'g_']]) {
+for (const [esp, bioma, pecaNome] of [['serpe', 'raio', 's_'], ['colosso', 'terra', 'c_'], ['geada', 'raio', 'g_'], ['arauto', 'fogo', 'a_']]) {
   test(`Lendário ${esp}: mora no lugar dele no bioma, luta na arena do tema e só a Pedra Dourada sela`, async ({ page }) => {
     const erros = vigiarErros(page);
     await abrirJogo(page);
@@ -400,7 +400,7 @@ for (const [esp, bioma, pecaNome] of [['serpe', 'raio', 's_'], ['colosso', 'terr
       b.pensarIA = () => {};
       for (const i of [0, 1, 2]) { b.ini.rec = [0, 0, 0]; b.tentarGolpe(b.ini, i, b.jog); for (let k = 0; k < 40; k++) j.quadro(); }
       return {
-        bioma: G.biomaEm(l.casa.x, l.casa.z), noCirculo: G.POIS.some((p) => p.tipo === l.cfg.poi && Math.hypot(p.x - s.x, p.z - s.z) < (l.cfg.frente || 0) + 1),
+        bioma: G.biomaEm(l.casa.x, l.casa.z), noCirculo: G.POIS.some((p) => p.tipo === l.cfg.poi && Math.hypot(p.x - s.x, p.z - s.z) < Math.abs(l.cfg.frente || 0) + 1),
         lendario: s.lendario && D.ESPECIES[esp].lendario, pecas, chances, zona: b.arena.zona, tema: !!b.arena.tema, inimigo: b.ini.dados.especie,
       };
     }, [esp, pecaNome]);
@@ -417,6 +417,55 @@ for (const [esp, bioma, pecaNome] of [['serpe', 'raio', 's_'], ['colosso', 'terr
     semErros(erros);
   });
 }
+
+test('Lendário cavaleiro: só existe à noite no Círculo Sombrio da Floresta, luta e só a Pedra Dourada sela', async ({ page }) => {
+  const erros = vigiarErros(page);
+  await abrirJogo(page);
+  await entrarLocal(page);
+  await novoJogo(page, 'faisquinho');
+  await page.evaluate(async () => {
+    const j = window.__jogo, m = j.mundo, l = m.lendarios.lista.find((x) => x.cfg.especie === 'cavaleiro');
+    m.hora = 0.2; m.lendarios.atualizar();
+    const deDia = !!l.s;                       // de dia o círculo fica vazio
+    m.hora = 0.7; m.lendarios.atualizar();
+    const deNoite = !!l.s;
+    // de frente para ele, a uns 7 m (para a foto do mapa)
+    await j.ativarGM();
+    const s = l.s;
+    j.gm.teleportar(s.x + Math.sin(s.ang) * 7, s.z + Math.cos(s.ang) * 7, s.ang + Math.PI);
+    for (let k = 0; k < 20; k++) j.quadro();
+    window.__r = { deDia, deNoite };
+  });
+  await foto(page, 'lendario-cavaleiro-mapa');
+  const r = await page.evaluate(async () => {
+    const D = await import('./js/dados.js');
+    const G = await import('./js/mapa/gerador.js');
+    const j = window.__jogo, m = j.mundo, l = m.lendarios.lista.find((x) => x.cfg.especie === 'cavaleiro');
+    const { deDia, deNoite } = window.__r, s = l.s;
+    let pecas = 0; s.modelo.traverse((o) => { if (o.isMesh && o.name.startsWith('k_')) pecas++; });
+    const mm = { ...s.dados, hp: 1 };
+    const chances = [0, 1, 2].map((k) => D.chanceCaptura(mm, k));
+    j.estado.equipe = [D.criarMonstro('magmalobo', 35)];
+    j.iniciarBatalha(s);
+    const b = j.batalha;
+    b.pensarIA = () => {};
+    for (const i of [0, 1, 2]) { b.ini.rec = [0, 0, 0]; b.tentarGolpe(b.ini, i, b.jog); for (let k = 0; k < 40; k++) j.quadro(); }
+    b.ini.rec = [0, 0, 0]; b.tentarGolpe(b.ini, 2, b.jog); for (let k = 0; k < 14; k++) j.quadro(); // Lâminas Cruzadas no meio, para a foto
+    return { deDia, deNoite, bioma: G.biomaEm(l.casa.x, l.casa.z), pecas, chances, zona: b.arena.zona, inimigo: b.ini.dados.especie, lendario: s.lendario && D.ESPECIES.cavaleiro.lendario };
+  });
+  await foto(page, 'lendario-cavaleiro-batalha');
+  expect(r.deDia).toBe(false);
+  expect(r.deNoite).toBe(true);
+  expect(r.bioma).toBe('planta');
+  expect(r.lendario).toBe(true);
+  expect(r.pecas).toBeGreaterThan(4);
+  expect(r.chances[0]).toBe(0);
+  expect(r.chances[1]).toBe(0);
+  expect(r.chances[2]).toBeGreaterThan(0);
+  expect(r.zona).toBe('planta');
+  expect(r.inimigo).toBe('cavaleiro');
+  semErros(erros);
+});
 
 test('monstro invocado e golpe no modo treino', async ({ page }) => {
   const erros = vigiarErros(page);

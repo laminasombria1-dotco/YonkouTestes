@@ -5,7 +5,8 @@
 // FÚRIA com metade da vida) e só é selado com a Pedra Dourada, com chance baixa.
 // Vencido ou selado, volta no próximo amanhecer (como os chefes das dungeons).
 // Hoje: a Serpe da Tormenta, no círculo de pedra rúnico da Neve, o Colosso de Basalto, no do Deserto,
-// a Sentinela de Geada, na frente do Cristal Gigante da Neve, e o Arauto das Cinzas, atrás do altar de selo da Lava.
+// a Sentinela de Geada, na frente do Cristal Gigante da Neve, o Arauto das Cinzas, atrás do altar de selo da Lava, e o Cavaleiro Oco, no círculo de pedra da Floresta (só à noite:
+// de dia o círculo fica vazio, e quem foi vencido volta na próxima noite).
 // =============================================================
 import { ESPECIES, criarMonstro, nivelDoChefe } from '../dados.js';
 import { criarModelo, criarCoroa } from '../modelos.js';
@@ -14,12 +15,13 @@ import { alturaEm } from '../mapa/altura.js';
 
 // especie | onde mora (o ponto de interesse e o bioma; frente = quantos metros na frente dele, olhando para fora;
 // negativo = atrás, olhando por cima dele)
-// lugar = nome mostrado | zona = arena da luta
+// lugar = nome mostrado | zona = arena da luta | noite = só existe à noite
 export const LENDARIOS = [
   { especie: 'serpe', poi: 'circulo', bioma: 'raio', lugar: 'Círculo da Tormenta', zona: 'raio' },
   { especie: 'colosso', poi: 'circulo', bioma: 'terra', lugar: 'Círculo das Dunas', zona: 'terra' },
   { especie: 'geada', poi: 'cristalGelo', frente: 5, lugar: 'Cristal Gigante', zona: 'raio' },
   { especie: 'arauto', poi: 'altar', bioma: 'fogo', frente: -2.2, lugar: 'Altar das Cinzas', zona: 'fogo' },
+  { especie: 'cavaleiro', poi: 'circulo', bioma: 'planta', lugar: 'Círculo Sombrio', zona: 'planta', noite: true },
 ];
 
 // O ponto do mapa onde o lendário mora (ou null)
@@ -49,7 +51,7 @@ export class Lendarios {
     modelo.position.set(x, alturaEm(x, z), z);
     modelo.rotation.y = ang;
     m.cena.add(modelo);
-    l.s = { dados, modelo, chefe: true, lendario: true, fixo: true, x, z, ang, estado: 'parado', t: 99, zona: l.cfg.zona, periodo: null, vel: 0 };
+    l.s = { dados, modelo, chefe: true, lendario: true, fixo: true, x, z, ang, estado: 'parado', t: 99, zona: l.cfg.zona, periodo: l.cfg.noite ? 'noite' : null, vel: 0 };
     m.selvagens.push(l.s);
   }
 
@@ -66,6 +68,7 @@ export class Lendarios {
     const m = this.m;
     for (const l of this.lista) {
       if (!l.casa) continue;
+      const hora = !l.cfg.noite || m.periodo === 'noite'; // a hora dele (os de noite só existem à noite)
       if (l.s && !m.selvagens.includes(l.s)) {
         // vencido ou selado: volta no próximo amanhecer. (Se sumiu por outro motivo, volta já.)
         l.espera = !!l.s.vencido;
@@ -74,20 +77,20 @@ export class Lendarios {
       }
       if (!l.s && l.espera && m.periodo !== l.periodoVisto) {
         l.periodoVisto = m.periodo;
-        if (m.periodo === 'dia') {
+        if (m.periodo === (l.cfg.noite ? 'noite' : 'dia')) {
           l.espera = false;
           this.aparecer(l);
           if (m.jogo.estado) m.jogo.aviso(`${ESPECIES[l.cfg.especie].nome} voltou ao ${l.cfg.lugar}.`);
         }
       }
-      if (!l.s && !l.espera) this.aparecer(l);
+      if (!l.s && !l.espera && hora) this.aparecer(l);
       // aviso quando o jogador chega perto do lugar
       const d = Math.hypot(m.pos.x - l.casa.x, m.pos.z - l.casa.z);
       if (d < 26 && !l.avisado && m.jogo.estado) {
         l.avisado = true;
         const nome = ESPECIES[l.cfg.especie].nome;
         m.jogo.mostrarZona?.(l.cfg.lugar);
-        m.jogo.aviso(l.s ? `Lendário: ${nome} (Nv.${l.s.dados.nivel}) guarda o ${l.cfg.lugar}. Só a Pedra Dourada sela um lendário.` : `O ${l.cfg.lugar} está vazio. ${nome} volta no próximo amanhecer.`);
+        m.jogo.aviso(l.s ? `Lendário: ${nome} (Nv.${l.s.dados.nivel}) guarda o ${l.cfg.lugar}. Só a Pedra Dourada sela um lendário.` : l.cfg.noite && !l.espera ? `O ${l.cfg.lugar} está vazio de dia. ${nome} só aparece à noite.` : `O ${l.cfg.lugar} está vazio. ${nome} volta ${l.cfg.noite ? 'na próxima noite' : 'no próximo amanhecer'}.`);
       } else if (d > 40) l.avisado = false;
     }
   }

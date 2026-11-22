@@ -175,6 +175,10 @@ export const GOLPES = {
   maoCinzas:        { nome: 'Mão de Cinzas',    elemento: 'fogo',   tipo: 'corpo',    poder: 20, recarga: 1.2, alcance: 3.2 },
   brasasVivas:      { nome: 'Brasas Vivas',     elemento: 'fogo',   tipo: 'projetil', poder: 13, recarga: 1.5, velocidade: 17, raio: 0.55, quantidade: 3 },
   chuvaCinzas:      { nome: 'Chuva de Cinzas',  elemento: 'fogo',   tipo: 'area',     poder: 36, recarga: 6.5, raio: 7 },
+  // Cavaleiro Oco (lendário): os efeitos ficam em js/lendarios/cavaleiro-batalha.js
+  sequenciaOca:     { nome: 'Sequência Oca',    elemento: 'trevas', tipo: 'corpo',    poder: 22, recarga: 1.1, alcance: 3.4 },
+  estocadaSombria:  { nome: 'Estocada Sombria', elemento: 'trevas', tipo: 'projetil', poder: 28, recarga: 2.4, velocidade: 24, raio: 0.7, quantidade: 1 },
+  laminasCruzadas:  { nome: 'Lâminas Cruzadas', elemento: 'trevas', tipo: 'area',     poder: 34, recarga: 6.5, raio: 5.5 },
   // Silvestre (só o chefe do Santuário)
   galhadaAncestral: { nome: 'Galhada Ancestral', elemento: 'silvestre', tipo: 'corpo',  poder: 24, recarga: 1.2, alcance: 3.6 },
   sementeParasita:  { nome: 'Semente Parasita', elemento: 'silvestre', tipo: 'projetil', poder: 13, recarga: 1.9, velocidade: 15, raio: 0.55, quantidade: 3 },
@@ -533,7 +537,14 @@ ESPECIES.arauto = {
   descricao: 'Conjurador de manto rasgado que flutua atrás do altar de selo da Lava. Queima com as mãos de cinza, lança brasas vivas e faz chover meteoros.',
   base: { hp: 84, atk: 20, def: 12, vel: 5.6 }, golpes: ['maoCinzas', 'brasasVivas', 'chuvaCinzas'], evoluiPara: null, nivelEvolucao: null,
 };
-export const LENDARIOS_IDS = ['serpe', 'colosso', 'geada', 'arauto'];
+ESPECIES.cavaleiro = {
+  onde: 'da Floresta, no Círculo Sombrio (só à noite)', arena: 'planta',
+  nome: 'Cavaleiro Oco', elemento: 'trevas', elementos: ['trevas'], linha: null, estagio: 3, raro: true, superRaro: true, chefe: true, lendario: true,
+  tamanho: 1.9, captura: 0.04, cristalMin: 2, raio: 1.0, altura: 3.4,
+  descricao: 'Armadura vazia de elmo com chifres e visor roxo aceso. Só aparece à noite no círculo de pedra da Floresta. Corta em sequência, avança com a estocada e gira as lâminas em volta.',
+  base: { hp: 92, atk: 21, def: 15, vel: 5.4 }, golpes: ['sequenciaOca', 'estocadaSombria', 'laminasCruzadas'], evoluiPara: null, nivelEvolucao: null,
+};
+export const LENDARIOS_IDS = ['serpe', 'colosso', 'geada', 'arauto', 'cavaleiro'];
 export const RAROS = ['vulcarapa', 'aquaraia', 'espinhal', 'ignarion', 'silvarion', ...LENDARIOS_IDS];
 for (const id of RAROS) Object.assign(ESPECIES[id], { elementos: ESPECIES[id].elementos || [ESPECIES[id].elemento], cristalMin: ESPECIES[id].cristalMin || 0 });
 
