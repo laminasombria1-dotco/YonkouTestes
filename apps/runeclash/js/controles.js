@@ -5,24 +5,50 @@
 //        Dois toques rápidos no controle de câmera: volta a câmera para trás do personagem.
 //        + botões na tela (qualquer elemento com data-acao="...").
 // Mouse: arrastar gira a câmera; a rodinha aproxima e afasta.
-// Teclado: WASD/setas andam, J K L (ou 1 2 3) golpes, Espaço esquiva,
+// Teclado (padrão; dá para trocar no menu de pausa → Teclas, veja js/teclas.js):
+//          WASD/setas andam, J K L (ou 1 2 3) golpes, Espaço esquiva,
 //          C cristal, V próximo cristal, Q trocar, F fugir,
 //          R invocar/guardar o monstro, T controlar o monstro/voltar ao treinador.
 // O andar é relativo à câmera: "para cima" anda para onde a câmera olha.
 // =============================================================
 
-const TECLAS_MOV = {
-  KeyW: [0, -1], ArrowUp: [0, -1], KeyS: [0, 1], ArrowDown: [0, 1],
-  KeyA: [-1, 0], ArrowLeft: [-1, 0], KeyD: [1, 0], ArrowRight: [1, 0],
-};
+// Cada ação tem 2 teclas (a 2ª pode ficar vazia). e.code = a tecla física (no teclado ABNT, "KeyQ" é o Q).
+// mov = direção de andar (x = direita, z = para baixo na tela); as outras entram na fila de ações.
+export const ACOES_TECLADO = [
+  { id: 'frente', nome: 'Andar para frente', mov: [0, -1], padrao: ['KeyW', 'ArrowUp'] },
+  { id: 'tras', nome: 'Andar para trás', mov: [0, 1], padrao: ['KeyS', 'ArrowDown'] },
+  { id: 'esquerda', nome: 'Andar para a esquerda', mov: [-1, 0], padrao: ['KeyA', 'ArrowLeft'] },
+  { id: 'direita', nome: 'Andar para a direita', mov: [1, 0], padrao: ['KeyD', 'ArrowRight'] },
+  { id: 'golpe0', nome: '1º golpe', padrao: ['KeyJ', 'Digit1'] },
+  { id: 'golpe1', nome: '2º golpe', padrao: ['KeyK', 'Digit2'] },
+  { id: 'golpe2', nome: '3º golpe', padrao: ['KeyL', 'Digit3'] },
+  { id: 'esquiva', nome: 'Esquiva', padrao: ['Space', 'ShiftLeft'] },
+  { id: 'cristal', nome: 'Jogar a pedra (selar)', padrao: ['KeyC', ''] },
+  { id: 'proxCristal', nome: 'Próxima pedra', padrao: ['KeyV', ''] },
+  { id: 'trocar', nome: 'Trocar de monstro', padrao: ['KeyQ', ''] },
+  { id: 'fugir', nome: 'Fugir', padrao: ['KeyF', ''] },
+  { id: 'pet', nome: 'Invocar / guardar o monstro', padrao: ['KeyR', ''] },
+  { id: 'controlar', nome: 'Controlar o monstro / voltar', padrao: ['KeyT', ''] },
+];
+const CHAVE_TECLAS = 'runeclash-teclas';
+// Teclas que não podem virar atalho (Esc abre o menu; as outras são do sistema)
+export const TECLAS_PROIBIDAS = ['Escape', 'Tab', 'MetaLeft', 'MetaRight', 'ContextMenu', 'F5', 'F11', 'F12'];
+
+// As teclas escolhidas: { acao: [tecla1, tecla2] } (o que faltar vem do padrão)
+export function lerTeclas() {
+  let salvo = {};
+  try { salvo = JSON.parse(localStorage.getItem(CHAVE_TECLAS)) || {}; } catch { /* nada guardado */ }
+  const t = {};
+  for (const a of ACOES_TECLADO) {
+    const v = salvo[a.id];
+    t[a.id] = Array.isArray(v) && v.length === 2 ? v.map((x) => (typeof x === 'string' ? x : '')) : [...a.padrao];
+  }
+  return t;
+}
+function gravarTeclas(t) { try { localStorage.setItem(CHAVE_TECLAS, JSON.stringify(t)); } catch { /* sem armazenamento */ } }
 // Sensibilidade da câmera (radianos por pixel arrastado)
 const SENS_TOQUE = 0.0065, SENS_MOUSE = 0.005;
 
-const TECLAS_ACAO = {
-  KeyJ: 'golpe0', Digit1: 'golpe0', KeyK: 'golpe1', Digit2: 'golpe1', KeyL: 'golpe2', Digit3: 'golpe2',
-  Space: 'esquiva', ShiftLeft: 'esquiva', KeyC: 'cristal', KeyV: 'proxCristal', KeyQ: 'trocar', KeyF: 'fugir',
-  KeyR: 'pet', KeyT: 'controlar', // monstro invocado: invocar/guardar e controlar/voltar
-};
 
 // O foco está num campo de texto? (aí W, A, S, D, C, Espaço... são letras, não atalhos)
 const digitando = (e) => !!e.target?.closest?.('input, select, textarea');
@@ -32,6 +58,9 @@ export class Controles {
     this.app = app;
     this.fila = [];
     this.teclas = new Set();
+    this.escolhidas = lerTeclas();
+    this.montarMapa();
+    this.capturar = null; // a tela de Teclas espera a próxima tecla apertada (veja esperarTecla)
     this.joy = { id: null, ox: 0, oy: 0, dx: 0, dy: 0 };
     this.raio = 55;
     this.el = document.getElementById('joystick');
@@ -62,16 +91,57 @@ export class Controles {
       setTimeout(() => b.classList.remove('apertado'), 130);
     });
 
+    // a tela de Teclas pega a tecla antes de todo mundo (fase de captura), até o Esc (que aí cancela)
+    window.addEventListener('keydown', (e) => {
+      if (!this.capturar) return;
+      e.preventDefault(); e.stopImmediatePropagation();
+      if (e.repeat) return;
+      const f = this.capturar; this.capturar = null; f(e.code);
+    }, { capture: true });
     window.addEventListener('keydown', (e) => {
       if (digitando(e)) return; // escrevendo num campo (login, painel GM): as teclas são letras, não atalhos
-      if (TECLAS_MOV[e.code]) { this.teclas.add(e.code); e.preventDefault(); }
-      const a = TECLAS_ACAO[e.code];
+      if (this.mapaMov[e.code]) { this.teclas.add(e.code); e.preventDefault(); }
+      const a = this.mapaAcao[e.code];
       if (a) { e.preventDefault(); if (!e.repeat) this.fila.push(a); }
     });
     window.addEventListener('keyup', (e) => this.teclas.delete(e.code));
     window.addEventListener('blur', () => { this.teclas.clear(); this.soltar(); this.soltarCamera(); });
     this.repousar();
   }
+
+  // ---------- teclas escolhidas pelo jogador ----------
+  montarMapa() {
+    this.mapaMov = {}; this.mapaAcao = {};
+    for (const a of ACOES_TECLADO) for (const k of this.escolhidas[a.id]) {
+      if (!k) continue;
+      if (a.mov) this.mapaMov[k] = a.mov; else this.mapaAcao[k] = a.id;
+    }
+    this.teclas.clear();
+  }
+
+  // Põe a tecla "codigo" na ação (vaga 0 ou 1). Se ela já era de outra ação, sai de lá. "" deixa a vaga vazia.
+  // Devolve o nome da ação que perdeu a tecla (ou null).
+  definirTecla(acao, vaga, codigo) {
+    let tirouDe = null;
+    if (codigo) for (const a of ACOES_TECLADO) {
+      const l = this.escolhidas[a.id];
+      for (let i = 0; i < 2; i++) if (l[i] === codigo && !(a.id === acao && i === vaga)) { l[i] = ''; if (a.id !== acao) tirouDe = a.nome; }
+    }
+    this.escolhidas[acao][vaga] = codigo;
+    gravarTeclas(this.escolhidas);
+    this.montarMapa();
+    return tirouDe;
+  }
+
+  restaurarTeclas() {
+    for (const a of ACOES_TECLADO) this.escolhidas[a.id] = [...a.padrao];
+    gravarTeclas(this.escolhidas);
+    this.montarMapa();
+  }
+
+  // A próxima tecla apertada vai para "f(codigo)" (e não faz nada no jogo). cancelar() desiste.
+  esperarTecla(f) { this.capturar = f; }
+  cancelarEspera() { this.capturar = null; }
 
   posLocal(e) {
     const r = this.app.getBoundingClientRect();
@@ -172,7 +242,7 @@ export class Controles {
   vetor() {
     let x = 0, z = 0;
     for (const k of this.teclas) {
-      const v = TECLAS_MOV[k];
+      const v = this.mapaMov[k];
       if (v) { x += v[0]; z += v[1]; }
     }
     if (this.joy.id !== null) {

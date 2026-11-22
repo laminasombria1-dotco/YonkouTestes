@@ -467,6 +467,48 @@ test('Lendário cavaleiro: só existe à noite no Círculo Sombrio da Floresta, 
   semErros(erros);
 });
 
+test('Teclas: escolher no menu a tecla de cada atalho, trocar quando já é de outro e guardar no aparelho', async ({ page }) => {
+  const erros = vigiarErros(page);
+  await abrirJogo(page);
+  await entrarLocal(page);
+  await novoJogo(page, 'brasito');
+  await page.keyboard.press('Escape');                       // Esc abre o menu de pausa
+  await page.click('[data-menu="teclas"]');
+  await expect(page.locator('#menu-teclas')).toBeVisible();
+  // 1º golpe: J → U
+  await page.click('[data-tecla="golpe0:0"]');
+  await page.keyboard.press('KeyU');
+  // 2º golpe: K → L (o L era do 3º golpe: sai de lá)
+  await page.click('[data-tecla="golpe1:0"]');
+  await page.keyboard.press('KeyL');
+  const msg = await page.textContent('#teclas-msg');
+  // Esc no meio da escolha desiste (e não fecha a tela)
+  await page.click('[data-tecla="esquiva:0"]');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#menu-teclas')).toBeVisible();
+  await foto(page, 'teclas');
+  const r = await page.evaluate(() => {
+    const c = window.__jogo.ctrl;
+    return { u: c.mapaAcao.KeyU, j: c.mapaAcao.KeyJ ?? null, l: c.mapaAcao.KeyL, golpe2: c.escolhidas.golpe2, esquiva: c.escolhidas.esquiva[0],
+      salvo: JSON.parse(localStorage.getItem('runeclash-teclas')).golpe0[0] };
+  });
+  expect(r).toEqual({ u: 'golpe0', j: null, l: 'golpe1', golpe2: ['', 'Digit3'], esquiva: 'Space', salvo: 'KeyU' });
+  expect(msg).toContain('3º golpe');
+  // Pronto volta ao menu; Esc fecha o menu; a tecla nova funciona no jogo
+  await page.click('[data-menu="fechar-teclas"]');
+  await expect(page.locator('#menu-pausa')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#menu-pausa')).toBeHidden();
+  await page.evaluate(() => { window.__jogo.ctrl.fila.length = 0; });
+  await page.keyboard.down('KeyU');
+  expect(await page.evaluate(() => window.__jogo.ctrl.fila.includes('golpe0'))).toBe(true);
+  await page.keyboard.up('KeyU');
+  // Padrão: tudo volta
+  await page.evaluate(() => window.__jogo.ctrl.restaurarTeclas());
+  expect(await page.evaluate(() => window.__jogo.ctrl.mapaAcao.KeyJ)).toBe('golpe0');
+  semErros(erros);
+});
+
 test('monstro invocado e golpe no modo treino', async ({ page }) => {
   const erros = vigiarErros(page);
   await abrirJogo(page);

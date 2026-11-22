@@ -5,6 +5,7 @@
 // =============================================================
 import * as THREE from 'three';
 import { Controles } from './controles.js';
+import { PainelTeclas } from './teclas.js';
 import { Mundo, SEMENTE } from './mundo.js';
 import { QUALIDADES, ORDEM_QUALIDADES, lerQualidade, gravarQualidade } from './mapa/config.js';
 import { Batalha } from './batalha.js';
@@ -116,6 +117,7 @@ class Jogo {
       rotulo: $('#rotulo'), numeros: $('#numeros'), avisos: $('#avisos'),
     };
     this.ctrl = new Controles(this.app, this.palco);
+    this.teclas = new PainelTeclas(this.ctrl, $('#menu-teclas'));
     this.estado = null;
     this.modo = 'titulo';
     this.mundo = new Mundo(this);
@@ -259,6 +261,8 @@ class Jogo {
       else if (acao === 'inicio') this.voltarAoInicio();
       else if (acao === 'aparencia') { this.fecharMenu(); this.abrirCriador('editar'); }
       else if (acao === 'qualidade') this.trocarQualidade();
+      else if (acao === 'teclas') { $('#menu-pausa').hidden = true; this.teclas.abrir(); }
+      else if (acao === 'fechar-teclas') this.fecharTeclas();
       else if (acao === 'sair') this.sairDoJogo();
       else if (acao === 'voltar-saida') $('#tela-saida').hidden = true;
     }));
@@ -338,7 +342,16 @@ class Jogo {
     $('#menu-pausa').hidden = false;
   }
 
+  // Tela de Teclas: volta para o menu de pausa
+  fecharTeclas() {
+    if (!this.teclas.aberto) return false;
+    this.teclas.fechar();
+    $('#menu-pausa').hidden = false;
+    return true;
+  }
+
   fecharMenu() {
+    if (this.teclas.aberto) this.teclas.fechar();
     const el = $('#menu-pausa');
     if (el.hidden) return;
     el.hidden = true;
@@ -389,6 +402,7 @@ class Jogo {
   // Devolve 'sair' quando não há mais nada para fechar (o app Android então fecha).
   voltar() {
     if (!$('#tela-saida').hidden) { $('#tela-saida').hidden = true; return 'ok'; }
+    if (this.fecharTeclas()) return 'ok';
     if (!$('#menu-pausa').hidden) { this.fecharMenu(); return 'ok'; }
     if (this.gm?.fecharPainel()) return 'ok';
     if (this.painelAberto) { this.fecharEquipe(); return 'ok'; }

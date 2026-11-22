@@ -32,6 +32,7 @@ Só os **monstros** lutam; o Invocador não luta. O plano, etapa por etapa, fica
   - Os avisos da batalha ficam pequenos, no alto, e somem rápido.
   - O inimigo avisa antes de atacar: uma **faixa ou círculo vermelho no chão**. Saia dele ou use a esquiva.
   - No PC: J, K e L para os golpes. A esquiva não tem mais botão na tela, mas ainda funciona com Espaço.
+  - **Teclas (menu de pausa → Teclas):** cada atalho do teclado (andar, os 3 golpes, esquiva, pedra, trocar, fugir, invocar e controlar o monstro) tem 2 teclas. Toque numa e aperte a tecla nova (Esc desiste, Backspace deixa vazia). Se a tecla já era de outro atalho, sai de lá. **Padrão** volta tudo. Fica guardado no aparelho (`runeclash-teclas`).
 - **Monstro invocado:** veja "Monstro invocado (companheiro)" abaixo.
 - **Selar (o Selamento):** enfraqueça o monstro e toque no botão da pedra (tecla C). O número ao lado é a chance de selar. A **setinha** ao lado da pedra abre a lista para escolher a Azul, a Roxa ou a Dourada (no PC, a tecla V passa para a próxima). Formas evoluídas são bem mais difíceis de selar.
   - Com **35% de vida ou menos**, a placa do monstro mostra **PODE SER SELADO** e o botão da pedra pisca (dá para tentar antes, com chance baixa).
@@ -563,6 +564,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/treino.js` | O modo treino: os golpes do monstro invocado no mapa, "no ar", usando o mesmo motor da batalha (sem inimigos e sem dano) |
 | `js/gm.js` | Painel GM (só para a conta GM): fazer monstros, grupos, acampamentos e chefes aparecerem, XP, evolução, teleporte, hora e as chaves de teste da batalha. Só é baixado quando a conta GM entra |
 | `js/controles.js` | Joystick de toque (lado esquerdo), câmera (lado direito, controle de câmera e mouse), botões e teclado (R invoca, T controla o monstro). Enquanto você escreve num campo (login, painel GM), as teclas não viram atalhos |
+| `js/teclas.js` | A tela de Teclas do menu de pausa: escolher a tecla de cada atalho (a lista dos atalhos e as teclas padrão ficam em `js/controles.js`, em `ACOES_TECLADO`) |
 | `js/camera.js` | Câmera em terceira pessoa: gira em volta do personagem, sobe e desce, aproxima e afasta |
 | `js/main.js` | Liga tudo: login e contas, telas, equipe, experiência, evolução, salvamento (no celular e na nuvem) |
 | `lib/three.module.min.js` | Biblioteca Three.js 0.170 (licença MIT, em `lib/THREE-LICENSE.txt`) |
