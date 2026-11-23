@@ -121,7 +121,7 @@ O Reino fica **fora da borda do mapa**, como as dungeons, mas não é dungeon: �
 - **O platô:** redondo (62 m de raio), plano, cercado de montanhas verdes, com uma **muralha** de torres de telhado azul e um **portão**.
 - **Castelo** no meio (torre do meio, alas e duas torres redondas, telhados azuis), com a **praça e a fonte de cura** na frente. É ali que você nasce e acorda.
 - **Vila:** casas de pedra e madeira com telhado azul e janelas acesas. Uma delas é a **loja de poções** (placa pendurada e barraca listrada azul e branca). Comprar ainda não funciona: vem na próxima parte.
-- **Arena fechada** (coliseu de telhado vermelho): parede de 2 andares de arcos, arquibancada em degraus com **plateia** (~320 bonequinhos coloridos), túnel do portão até a areia (sem teto, para a câmera passar), e o **palco** com as 5 bandeiras. Dentro dela a câmera chega mais perto e fica mais alta. As lutas com os treinadores vêm na próxima parte.
+- **Arena fechada** (coliseu de telhado vermelho): parede de 2 andares de arcos, arquibancada em degraus com **plateia** (~320 bonequinhos coloridos), túnel do portão até a areia (sem teto, para a câmera passar), e o **palco** com as 5 bandeiras. Dentro dela a câmera chega mais perto e fica mais alta.
 - **Os treinadores** ficam **dentro da arena, cada um na sua plataforma** de pedra (com a cor do elemento e a bandeira dele), espalhadas pela areia em zigue-zague do portão até o palco. Cada plataforma é mais alta que a anterior, e a do Campeão tem uma coroa dourada em volta. Na ordem da luta:
 
   | # | Treinador | Elemento | Níveis dos monstros (1ª vez) | Onde fica |
@@ -133,6 +133,28 @@ O Reino fica **fora da borda do mapa**, como as dungeons, mas não é dungeon: �
   | 5 | **Julius** (o Rei, Campeão) | Planta | 46 a 50 (o mais forte) | no fundo, na frente do palco, na plataforma mais alta |
 
   Depois que a arena é dominada (os 5 vencidos uma vez), **todos passam a lutar no nível 50**. Os números ficam em `TREINADORES` e `NIVEL_REVANCHE`, no `js/reino.js`.
+
+### Lutas da arena
+
+- **Para lutar:** chegue perto de um treinador (aparece uma placa com o nome, o elemento, os níveis e "sua vez!", "vencido ✓" ou "depois") e **encoste na frente do degrau da plataforma**. Ele fala e a luta começa. Para chamar de novo, afaste-se um pouco e volte.
+- **Ordem:** só luta quem é a sua vez. Os outros dizem quem você precisa vencer antes.
+- **Equipes** (entram **um de cada vez**, como nas ondas dos grupos):
+
+  | Treinador | Monstros (1ª vez) |
+  |---|---|
+  | Gill | linha do Fogo Nv.20, Vulcarapa Nv.22, linha do Fogo Nv.24 |
+  | Cris | linha de Trevas Nv.25, linha da Lua Nv.27, linha de Trevas Nv.29 |
+  | Lana | linha da Luz Nv.30, linha do Sol Nv.32, linha da Luz Nv.34 |
+  | Sheyla | linha da Água Nv.40, Aquaraia Nv.43, linha da Água Nv.45 |
+  | Rei Julius | linha da Planta Nv.46, Espinhal Nv.48, linha da Planta Nv.49 e Nv.50 (4 monstros) |
+
+  A forma de cada linha depende do nível (Nv.20 da linha do Fogo é um Fornalobo, por exemplo).
+- **Regras da luta:** não dá para capturar (os botões de cristal somem), e **Fugir = desistir**: você sai pelo portão da arena.
+- **A Arena do Reino da batalha:** o mesmo coliseu, em volta da areia de 22 m, com a plateia (~1000 bonequinhos) e o treinador assistindo da plataforma dele, do lado de lá. Cai confete. Não tem perigo e não favorece nenhum elemento. **A plateia pula** quando um monstro do treinador desmaia, e de novo no mapa quando você vence.
+- **Vencer:** experiência cheia (sem o desconto de grupo) e cristais. Na 1ª vez: Gill e Cris dão 3 comuns + 1 Forte, Lana 3 comuns + 2 Fortes, Sheyla 3 Fortes e o Rei 3 Fortes + 2 Supremos. Nas revanches: 1 Forte (o Rei dá mais 1 Supremo).
+- **Perder:** você acorda na fonte do castelo, com todos curados. Os treinadores que você já venceu **continuam vencidos**.
+- **Dominar a arena:** vencendo o Rei Julius, você vira o **Campeão do Reino** (aparece "👑 Campeão do Reino" no resumo do jogo salvo, na tela de início). Daí em diante todos lutam no Nv.50, em qualquer ordem. O Ovo Misterioso do Campeão vem na próxima parte (o jogo já guarda que você tem um para receber).
+- **Fica salvo** em `estado.arena`: `vencidos` (0 a 5), `dominada` e `ovoPendente`.
 - Lá dentro não aparecem monstros, não nascem árvores do mapa e não dá para montar a casa.
 - **Leve no celular:** todas as peças paradas do Reino viram **3 malhas** (cores normais, peças vistas dos dois lados e o que brilha), e a plateia é **1 lote**. A colisão usa círculos na `mundo.grade`, como o resto.
 - **Código:** a forma (corredor + platô) é o `REINO` em `js/dungeon.js` (`TracadoReino`, com `paraMundo` e `paraLocal`), a direção e a Estrada Real ficam em `js/mapa/gerador.js` (`ANG_REINO`, `ESTRADA`, `naEstradaReal`) e o cenário em `js/reino.js`.
@@ -520,7 +542,7 @@ Só a **conta GM** tem o painel. O código fica em `js/gm.js` e só é baixado q
 | **Monstros** | Escolhe qualquer espécie (todas as 53, separadas por linha) e o nível (1 a 50). **Aparecer perto** (8 m na sua frente), **Lutar agora** (na arena escolhida ou na da região), **Grupo (5 + líder)** no mapa, **Lutar com grupo** e **Dar para mim** (vai para a equipe ou a reserva). Atalhos: selvagem, tipo duplo ou grupo aleatório, e **limpar o mapa** (os chefes e os acampamentos ficam). |
 | **Dungeons** | Para o Caminho das Brasas e a Trilha Ancestral: **ir para** a entrada, cada etapa ou o chefe; **lutar contra o acampamento** de cada etapa (na ordem 2 fracos → 2 médios → 1 forte → líder, no nível que a sua equipe enfrentaria); **lutar com o chefe** no nível escolhido; **chefe volta já** (sem esperar o amanhecer); **monstro da dungeon perto**. |
 | **Equipe** | **Copiar jogo de outra conta** deste aparelho para o GM (para testar com a equipe de verdade; a conta original não muda). Escolhe o **monstro alvo** (equipe ou reserva) e mostra nível, vida e experiência. **Adicionar XP:** +50, +500, +1 nível ou **até o nível ___**. A XP sobe como no jogo, então ele **evolui** ao chegar no nível (a animação aparece quando o painel fecha). **Evoluir agora**, **Voltar uma forma** (fica no nível logo abaixo da evolução, para não evoluir de novo sozinho), **Curar**, **subir 1 nível sem evoluir**. Também **curar todos** e mudar os cristais (+10, 99 ou zerar). |
-| **Mundo** | **Hora:** amanhecer, meio-dia, anoitecer, meia-noite ou **parar o relógio**. **Teleporte:** castelo (a fonte), arena do Reino, Estrada Real, as 6 regiões (o lugar de cada uma vem da semente do mapa) e a casa. **Andar ×1, ×2 ou ×3.** **Invisível:** os monstros não vêm atrás de você, mas encostar neles ainda começa a batalha. **Mostrar FPS** (embaixo, no meio da tela), com os números do mapa (chunks, objetos, desenhos e triângulos por quadro, tempo para criar um chunk). **Mapa:** ver outra semente (digitada ou aleatória) e voltar à de todos: recarrega o jogo com outro mapa só neste aparelho, até fechar (pela URL `?semente=123`). |
+| **Mundo** | **Arena do Reino:** lutar com qualquer treinador na hora (sem a ordem), **dominar a arena** ou **zerar a arena**. **Hora:** amanhecer, meio-dia, anoitecer, meia-noite ou **parar o relógio**. **Teleporte:** castelo (a fonte), arena do Reino, Estrada Real, as 6 regiões (o lugar de cada uma vem da semente do mapa) e a casa. **Andar ×1, ×2 ou ×3.** **Invisível:** os monstros não vêm atrás de você, mas encostar neles ainda começa a batalha. **Mostrar FPS** (embaixo, no meio da tela), com os números do mapa (chunks, objetos, desenhos e triângulos por quadro, tempo para criar um chunk). **Mapa:** ver outra semente (digitada ou aleatória) e voltar à de todos: recarrega o jogo com outro mapa só neste aparelho, até fechar (pela URL `?semente=123`). |
 | **Testes** | **Invencível** (a vida não desce, nem com efeitos e perigos da arena), **recarga zero**, **captura garantida** (qualquer cristal segura qualquer monstro, até os chefes), **inimigos parados**, **dano ×10**. Na gaveta da batalha também: **encher minha vida** e **vencer agora** (derrota todos, até os que estão esperando nas ondas). |
 
 - As chaves (invencível, dano ×10...) valem até você desligar.

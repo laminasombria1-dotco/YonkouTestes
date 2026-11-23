@@ -11,6 +11,7 @@ import { Batalha } from './batalha.js';
 import { Plataforma, CenaEvolucao } from './plataforma.js';
 import { carregarModelos3D } from './modelos.js';
 import { Companheiro } from './companheiro.js';
+import { TREINADORES, equipeDoTreinador } from './reino.js';
 import {
   ESPECIES, ELEMENTOS, GOLPES, ORDEM_ELEMENTOS, RAROS, NOMES_ESTAGIO, NIVEIS_EVOLUCAO,
   criarMonstro, statsDe, xpParaProximo, xpDaVitoria, verificarEvolucao, formasDaLinha, fracoContra,
@@ -320,7 +321,7 @@ class Jogo {
     if (!s) return;
     const lider = s.estado.equipe[0], esp = ESPECIES[lider.especie];
     const total = s.estado.equipe.length + s.estado.reserva.length;
-    $('#resumo-save').textContent = `${esp.nome} Nv.${lider.nivel} · ${total} ${total === 1 ? 'monstro' : 'monstros'}`;
+    $('#resumo-save').textContent = `${esp.nome} Nv.${lider.nivel} · ${total} ${total === 1 ? 'monstro' : 'monstros'}${s.estado.arena?.dominada ? ' · 👑 Campeão do Reino' : ''}`;
   }
 
   // ---------- menu de pausa e sair ----------
@@ -637,6 +638,52 @@ class Jogo {
   }
 
   // ---------- batalha ----------
+  // ---------- arena do Reino ----------
+  // Quantos treinadores você já venceu (em ordem) e se a arena já foi dominada
+  progressoArena() { return (this.estado.arena ||= { vencidos: 0, dominada: false }); }
+
+  // O jogador encostou na frente da plataforma de um treinador
+  encostouNoTreinador(i) {
+    const prog = this.progressoArena(), tr = TREINADORES[i];
+    if (!this.temMonstroDePe()) { this.aviso(`${tr.nome}: Sua equipe está desmaiada. Cure na fonte do castelo e volte!`); return; }
+    if (!prog.dominada && i > prog.vencidos) { this.aviso(`${tr.nome}: Primeiro vença ${TREINADORES[prog.vencidos].nome}.`); return; }
+    if (!prog.dominada && i < prog.vencidos) { this.aviso(`${tr.nome}: Você já me venceu. Agora é com ${TREINADORES[prog.vencidos].nome}!`); return; }
+    this.lutarComTreinador(i);
+  }
+
+  // Começa a luta (depois de dominar a arena, é revanche: todos no Nv.50)
+  lutarComTreinador(i) {
+    const tr = TREINADORES[i], revanche = !!this.progressoArena().dominada;
+    this.aviso(tr.fala);
+    const membros = equipeDoTreinador(tr, revanche).map((dados) => ({ dados }));
+    this.iniciarBatalha({ treinador: tr, indice: i, revanche, membros, zona: 'reino' });
+  }
+
+  // Fim de uma luta de treinador: progresso, prêmio e para onde o jogador vai
+  fimLutaTreinador(tipo, b) {
+    const tr = b.treinador, i = b.selvagem.indice, prog = this.progressoArena();
+    if (tipo === 'vitoria') {
+      const primeira = !prog.dominada && i === prog.vencidos;
+      this.aviso(`Você venceu ${tr.campeao ? 'o Rei ' : ''}${tr.nome}${primeira ? '' : ' de novo'}!`);
+      this.ganharCristais({ comum: 0, forte: 0, supremo: 0, ...(primeira ? tr.premio : tr.campeao ? { forte: 1, supremo: 1 } : { forte: 1 }) });
+      if (primeira) prog.vencidos = i + 1;
+      if (primeira && tr.campeao) {
+        prog.dominada = true;
+        prog.ovoPendente = true; // o Ovo Misterioso (próxima parte)
+        this.aviso('Você dominou a arena! Agora você é o Campeão do Reino!');
+        this.aviso('Nas revanches, todos os treinadores lutam no nível 50.');
+      } else if (primeira) this.aviso(`Próximo desafio: ${TREINADORES[i + 1].nome}.`);
+      this.mundo.reino.festa(5); // a plateia comemora
+      this.mundo.graca = 2.5;
+    } else if (tipo === 'derrota') {
+      this.curarEquipe();
+      this.mundo.irParaFonte();
+      this.aviso(`${tr.nome} venceu. Vocês acordaram na fonte do castelo, curados.`);
+      if (prog.vencidos && !prog.dominada) this.aviso('Os treinadores que você já venceu continuam vencidos.');
+    } else this.mundo.sairDaArena(); // desistiu: sai pelo portão da arena
+    this.mundo.reino.desarmar(i); // só luta de novo depois de se afastar da plataforma
+  }
+
   iniciarBatalha(selvagem) {
     this.pet.voltarAoTreinador(true);
     const idx = this.estado.equipe.findIndex((m) => m.hp > 0);
@@ -651,7 +698,7 @@ class Jogo {
     if (vencidos.length && ativo.hp > 0) {
       // tipo duplo vale 50% a mais
       const bonus = (d) => (ESPECIES[d.especie].chefe ? 2 : ESPECIES[d.especie].dupla ? 1.5 : 1);
-      const xp = Math.round(vencidos.reduce((s, d) => s + xpDaVitoria(d.nivel) * bonus(d), 0) * (b.grupo ? 0.6 : 1));
+      const xp = Math.round(vencidos.reduce((s, d) => s + xpDaVitoria(d.nivel) * bonus(d), 0) * (b.grupo && !b.treinador ? 0.6 : 1));
       const subiu = this.ganharXp(ativo, xp);
       this.aviso(`${nomeAtivo} ganhou ${xp} de experiência.`);
       if (subiu) this.aviso(`${nomeAtivo} subiu para o nível ${ativo.nivel}!`);
@@ -666,7 +713,7 @@ class Jogo {
       const chefe = ESPECIES[b.chefeEspecie] || ESPECIES.ignarion;
       this.aviso(b.capturados.length ? `Você capturou ${chefe.nome}, o chefe ${chefe.onde}!` : `Você venceu ${chefe.nome}! Ele volta no próximo amanhecer.`);
     }
-    for (const d of b.derrotados) {
+    for (const d of b.treinador ? [] : b.derrotados) { // treinador: o prêmio é fixo (fimLutaTreinador)
       const esp = ESPECIES[d.especie];
       if (esp.dupla) { ganho.forte++; if (esp.estagio >= 2 && Math.random() < 0.35) ganho.supremo++; }
       else if (Math.random() < (b.grupo ? 0.2 : 0.35)) ganho.comum++;
@@ -685,12 +732,14 @@ class Jogo {
       }
     }
     // No mapa: some quem foi vencido (num grupo, os que sobraram continuam andando)
-    if (b.grupo) this.mundo.tirarDoGrupo(b.selvagem, vencidos.map((d) => d.uid));
+    if (b.treinador) { /* os monstros do treinador não estão no mapa */ }
+    else if (b.grupo) this.mundo.tirarDoGrupo(b.selvagem, vencidos.map((d) => d.uid));
     else if (vencidos.length) this.mundo.removerSelvagem(b.selvagem);
     this.gm?.depoisDaBatalha(b); // GM: tira do mapa o monstro do "Lutar agora" que sobrou
     b.descartarTudo();
     this.batalha = null;
-    if (tipo === 'derrota') {
+    if (b.treinador) this.fimLutaTreinador(tipo, b);
+    else if (tipo === 'derrota') {
       // Na casa: só os desmaiados levantam, com 1/4 da vida. Sem casa: acorda na fonte do castelo, curado.
       if (this.mundo.casaPos) this.levantarDesmaiados(0.25);
       else this.curarEquipe();

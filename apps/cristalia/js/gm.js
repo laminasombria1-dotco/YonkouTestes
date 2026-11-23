@@ -21,7 +21,7 @@ import {
 import { criarModelo, criarCoroa, criarAuraDupla } from './modelos.js';
 import { zonaEm, NOMES_ZONA, NASCER, ANG_NASCER } from './mundo.js';
 import { REINO } from './dungeon.js';
-import { ARENA_REINO } from './reino.js';
+import { ARENA_REINO, TREINADORES } from './reino.js';
 import { ESTRADA } from './mapa/gerador.js';
 import { SEMENTE, SEMENTE_PADRAO, centroDe, LAGOS, POIS } from './mapa/gerador.js';
 
@@ -358,6 +358,13 @@ export class PainelGM {
         <p class="gm-dica">As dungeons e os chefes ficam na aba Dungeons.</p>
       </div>
       <div class="gm-bloco">
+        <h3>Arena do Reino (vencidos: ${this.jogo.progressoArena?.().vencidos ?? 0}/5${this.jogo.progressoArena?.().dominada ? ', dominada' : ''})</h3>
+        <div class="gm-grade">${TREINADORES.map((t, i) => `<button class="gm-btn" type="button" data-gm="treinador" data-i="${i}">Lutar: ${t.nome}</button>`).join('')}
+          <button class="gm-btn" type="button" data-gm="arenaProg" data-v="dominar">Dominar a arena</button>
+          <button class="gm-btn" type="button" data-gm="arenaProg" data-v="zerar">Zerar a arena</button></div>
+        <p class="gm-dica">"Lutar" começa a luta na hora (sem precisar da ordem). Dominada, todos lutam no Nv.50.</p>
+      </div>
+      <div class="gm-bloco">
         <h3>Andar</h3>
         <div class="gm-linha"><small>Velocidade:</small>${vel}${this.botaoChave('invisivel', 'Invisível (não te perseguem)')}</div>
         <p class="gm-dica">Invisível: os monstros não vêm atrás de você, mas encostar neles ainda começa a batalha.</p>
@@ -497,6 +504,13 @@ export class PainelGM {
       }
       case 'hora': this.mundo.hora = Number(d.h); this.mundo.atualizarCeu(0); break;
       case 'ir': this.ir(d.onde); this.fecharPainel(); return;
+      case 'treinador': this.fecharPainel(); this.jogo.lutarComTreinador(Number(d.i)); return;
+      case 'arenaProg': {
+        const p = this.jogo.progressoArena();
+        if (d.v === 'dominar') { p.vencidos = 5; p.dominada = true; p.ovoPendente = true; this.jogo.aviso('GM: arena dominada.'); }
+        else { p.vencidos = 0; p.dominada = false; delete p.ovoPendente; this.jogo.aviso('GM: arena zerada.'); }
+        this.jogo.salvar(); break;
+      }
       case 'vel': this.vel = Number(d.v); break;
       case 'chave': this[d.chave] = !this[d.chave]; if (d.chave === 'fps') this.elFps.hidden = !this.fps; break;
       case 'dano': this.dano = this.dano > 1 ? 1 : 10; break;

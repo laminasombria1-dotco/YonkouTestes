@@ -13,7 +13,7 @@ import { CameraOrbita } from './camera.js';
 import { TRACADOS, REINO, tracadoPerto, prenderDungeons, dentroDungeonLivre, semCasaDungeons } from './dungeon.js';
 import { CaminhoDasBrasas } from './brasas.js';
 import { TrilhaAncestral, CRISTAL_ESCONDIDO } from './raizes.js';
-import { Reino, FONTE_REINO, NASCER_REINO } from './reino.js';
+import { Reino, FONTE_REINO, NASCER_REINO, ARENA_REINO } from './reino.js';
 import { RAIO_MUNDO, NIVEL_AGUA, SEMENTE, LAGOA, RESERVAS, SEGREDOS, ESTRADA, aleatorio, biomaEm, lagoEm, naEstradaReal } from './mapa/gerador.js';
 import { alturaEm, bloqueadoEm } from './mapa/altura.js';
 import { Grade, ListaObstaculos } from './mapa/grade.js';
@@ -671,6 +671,16 @@ export class Mundo {
     descartar(s.modelo);
   }
 
+  // Sai pelo portão da arena do Reino (quando desiste de uma luta)
+  sairDaArena() {
+    const fora = REINO.paraMundo(ARENA_REINO.x + 25, ARENA_REINO.z), dentro = REINO.paraMundo(ARENA_REINO.x, ARENA_REINO.z);
+    this.pos.set(fora.x, 0, fora.z);
+    this.ang = Math.atan2(fora.x - dentro.x, fora.z - dentro.z);
+    this.orbita.yaw = this.ang + Math.PI;
+    this.graca = 2.5;
+    this.posicionarCamera(1);
+  }
+
   // Acorda na praça do castelo, de frente para a fonte
   irParaFonte() {
     this.pos.set(NASCER.x, 0, NASCER.z);
@@ -891,6 +901,15 @@ export class Mundo {
       }
     }
 
+    // Treinadores da arena do Reino: encostou na frente da plataforma, ele fala (ou começa a luta)
+    this.reino.atualizar(dt, t);
+    const tp = est ? this.reino.treinadorPerto(this.pos.x, this.pos.z) : null;
+    if (tp && tp.d < 1.4 && this.reino.armado[tp.i] && !pausado && this.graca <= 0 && !protegido) {
+      this.reino.desarmar(tp.i);
+      this.jogo.encostouNoTreinador(tp.i);
+      if (this.jogo.batalha) return;
+    }
+
     // Encontro!
     const raioEncontro = maisPerto?.grupoDe ? 0.9 : 0.9 + (maisPerto ? ESPECIES[maisPerto.dados.especie].raio : 0);
     if (maisPerto && est && !pausado && this.graca <= 0 && !naAreaSegura && !protegido && menorD < raioEncontro) {
@@ -918,6 +937,13 @@ export class Mundo {
       const marca = esp.chefe ? '<span class="duplo">Chefe · </span>' : esp.dupla ? '<span class="duplo">Tipo duplo · </span>' : '';
       this.jogo.mostrarRotulo(`${bolinhas}${marca}${esp.nome} <b>Nv.${maisPerto.dados.nivel}</b>`,
         new THREE.Vector3(maisPerto.x, maisPerto.modelo.position.y + esp.altura + 0.3, maisPerto.z), this.camera);
+    } else if (tp) {
+      // placa em cima do treinador: nome, elemento, níveis e se já foi vencido
+      const prog = this.jogo.progressoArena(), tr = tp.tr;
+      const nv = prog.dominada ? 'Nv.50' : `Nv.${tr.niveis[0]}–${tr.niveis[1]}`;
+      const marca = prog.dominada ? ' · revanche' : tp.i < prog.vencidos ? ' · vencido ✓' : tp.i === prog.vencidos ? ' · sua vez!' : ' · depois';
+      this.jogo.mostrarRotulo(`<i style="background:${tr.cor}"></i>${tr.campeao ? 'Rei ' : ''}${tr.nome} · ${ELEMENTOS[tr.elemento].nome} <b>${nv}</b>${marca}`,
+        new THREE.Vector3(tp.topo.x, tp.topo.y, tp.topo.z), this.camera);
     } else this.jogo.mostrarRotulo(null);
 
     this.posicionarCamera(1 - Math.exp((this.girandoCam ? -18 : -6) * dt)); // girando: responde na hora

@@ -15,6 +15,7 @@
 import * as THREE from 'three';
 import { REINO } from './dungeon.js';
 import { ESTRADA, naEstradaReal, aleatorio } from './mapa/gerador.js';
+import { ESPECIES, criarMonstro, formaPorNivel } from './dados.js';
 
 // ---------- medidas do Reino (locais) ----------
 export const FONTE_REINO = { x: 0, z: 15 };          // a fonte de cura, na praça
@@ -28,15 +29,34 @@ const ARENA = { r0: 9, deg: 7, passo: 1.2, palco: 0.87, porta: 0.16 }; // areia,
 //  Cada um fica na sua plataforma, espalhadas pela areia em zigue-zague do portão
 //  até o palco, cada uma mais alta que a anterior:
 //  ang = ângulo em volta do meio da arena (0 = portão), r = distância do meio, alt = altura.
+//  equipe: os monstros, na ordem em que entram ("L:fogo" = da linha de Fogo, na forma do nível).
+//  fala: o que ele diz antes da luta. premio: cristais da 1ª vitória (revanche: 1 Forte, e o Rei dá +1 Supremo).
 export const TREINADORES = [
-  { id: 'gill', nome: 'Gill', elemento: 'fogo', cor: '#d94a4a', niveis: [20, 24], ang: 55, r: 6.3, alt: 0.5 },
-  { id: 'cris', nome: 'Cris', elemento: 'trevas', cor: '#8a4ad9', niveis: [25, 29], ang: -55, r: 6.3, alt: 0.8 },
-  { id: 'lana', nome: 'Lana', elemento: 'luz', cor: '#e0b030', niveis: [30, 34], ang: 125, r: 6.3, alt: 1.1 },
-  { id: 'sheyla', nome: 'Sheyla', elemento: 'agua', cor: '#3d7bd9', niveis: [40, 45], ang: -125, r: 6.3, alt: 1.4 },
-  { id: 'julius', nome: 'Julius', elemento: 'planta', cor: '#3faf5a', niveis: [46, 50], ang: 180, r: 6.6, alt: 2, campeao: true },
+  { id: 'gill', nome: 'Gill', elemento: 'fogo', cor: '#d94a4a', niveis: [20, 24], ang: 55, r: 6.3, alt: 0.5,
+    equipe: [['L:fogo', 20], ['vulcarapa', 22], ['L:fogo', 24]], fala: 'Gill: Ha! Vamos ver se você aguenta o calor!', premio: { comum: 3, forte: 1 } },
+  { id: 'cris', nome: 'Cris', elemento: 'trevas', cor: '#8a4ad9', niveis: [25, 29], ang: -55, r: 6.3, alt: 0.8,
+    equipe: [['L:trevas', 25], ['L:lua', 27], ['L:trevas', 29]], fala: 'Cris: As sombras já sabem como isso termina...', premio: { comum: 3, forte: 1 } },
+  { id: 'lana', nome: 'Lana', elemento: 'luz', cor: '#e0b030', niveis: [30, 34], ang: 125, r: 6.3, alt: 1.1,
+    equipe: [['L:luz', 30], ['L:sol', 32], ['L:luz', 34]], fala: 'Lana: Prepare os olhos. Vai brilhar!', premio: { comum: 3, forte: 2 } },
+  { id: 'sheyla', nome: 'Sheyla', elemento: 'agua', cor: '#3d7bd9', niveis: [40, 45], ang: -125, r: 6.3, alt: 1.4,
+    equipe: [['L:agua', 40], ['aquaraia', 43], ['L:agua', 45]], fala: 'Sheyla: A maré está do meu lado. Venha!', premio: { forte: 3 } },
+  { id: 'julius', nome: 'Julius', elemento: 'planta', cor: '#3faf5a', niveis: [46, 50], ang: 180, r: 6.6, alt: 2, campeao: true,
+    equipe: [['L:planta', 46], ['espinhal', 48], ['L:planta', 49], ['L:planta', 50]], fala: 'Rei Julius: Chegou longe. Mostre que merece esta coroa!', premio: { forte: 3, supremo: 2 } },
 ];
 // Depois que a arena for dominada (todos vencidos 1 vez), todos lutam no nível 50
 export const NIVEL_REVANCHE = 50;
+
+// Monta a equipe de um treinador (dados de monstros novos, com a vida cheia)
+export function equipeDoTreinador(tr, revanche) {
+  return tr.equipe.map(([e, nv], i) => {
+    const nivel = revanche ? NIVEL_REVANCHE : nv;
+    const especie = e.startsWith('L:') ? formaPorNivel(e.slice(2), nivel) : e;
+    const d = criarMonstro(especie, nivel);
+    d.onda = i + 1; // entram um de cada vez, nesta ordem
+    return d;
+  });
+}
+export const nomeEspecie = (id) => ESPECIES[id]?.nome || id;
 
 // ---------- cores ----------
 const PEDRA = '#e8dcc4', PEDRA2 = '#cbbfa6', AZUL = '#3a5aa8', AZUL2 = '#2d4a8c', ARDOSIA = '#34508f';
@@ -87,6 +107,7 @@ function material(tipo) {
     MATS[tipo] = tipo === 'brilho'
       ? new THREE.MeshBasicMaterial({ vertexColors: true })
       : new THREE.MeshLambertMaterial({ vertexColors: true, side: tipo === 'duplo' ? THREE.DoubleSide : THREE.FrontSide });
+    MATS[tipo].userData.fixo = true; // são do Reino inteiro: o fim da batalha não pode apagar
   }
   return MATS[tipo];
 }
@@ -119,6 +140,7 @@ function assar(rascunho, cena) {
     g.computeVertexNormals(); // sem índice: cada triângulo fica com a sua cor de luz (low poly)
     g.computeBoundingSphere();
     const malha = new THREE.Mesh(g, material(tipo));
+    malha.userData.geometriaPropria = true;
     cena.add(malha);
     malhas.push(malha);
   }
@@ -370,7 +392,9 @@ export class Reino {
       duplo(p, caixa(0.06, 0.9, 1.4), tr.cor, [-2.6, 14.1, z + 0.75]);
     });
     // a plataforma de cada treinador, na areia, e ele em cima, de frente para o meio da arena
-    this.posTreinadores = [];
+    this.posTreinadores = [];   // onde o jogador encosta para lutar (na frente do degrau)
+    this.topoTreinadores = [];  // em cima da cabeça dele (para a placa com o nome)
+    this.armado = TREINADORES.map(() => true);
     for (const tr of TREINADORES) {
       const a = (tr.ang * Math.PI) / 180, x = Math.cos(a) * tr.r, z = Math.sin(a) * tr.r, h = tr.alt;
       const rb = tr.campeao ? 1.7 : 1.45;                                        // raio da plataforma
@@ -392,6 +416,7 @@ export class Reino {
       desenharTreinador(g, tr.id, [x, 0.33 + h, z], virar);
       this.obst(ARENA_REINO.x + x, ARENA_REINO.z + z, rb + 0.25);
       this.posTreinadores.push(REINO.paraMundo(ARENA_REINO.x + x + dx * 1.6, ARENA_REINO.z + z + dz * 1.6)); // onde o jogador fala com ele
+      this.topoTreinadores.push({ ...REINO.paraMundo(ARENA_REINO.x + x, ARENA_REINO.z + z), y: REINO.h + 0.33 + h + 1.75 });
     }
     // estandartes coloridos do lado de fora
     for (let i = 1; i < N; i += 3) {
@@ -494,33 +519,32 @@ export class Reino {
   // ---------- plateia: bonequinhos nos degraus (2 lotes: corpos e cabeças) ----------
   criarPlateia() {
     const { r0, deg, passo, palco: PALCO, porta: PORTA } = ARENA;
-    const rng = aleatorio(11), lugares = [];
-    for (let i = 0; i < deg; i++) {
-      const r = r0 + i * passo + 0.55, y = 0.7 + i * 0.7, n = Math.floor((2 * Math.PI * r) / 0.85);
-      for (let j = 0; j < n; j++) {
-        const a = (j / n) * Math.PI * 2; // 0 = +z do Lathe
-        const d1 = Math.abs(((a - Math.PI / 2 + Math.PI * 3) % (Math.PI * 2)) - Math.PI);   // longe do portão
-        const d2 = Math.abs(((a - Math.PI * 1.5 + Math.PI * 3) % (Math.PI * 2)) - Math.PI); // longe do palco
-        if (d1 < PORTA + 0.06 || d2 < PALCO + 0.04 || rng() < 0.25) continue;
-        lugares.push([ARENA_REINO.x + Math.sin(a) * r, y, ARENA_REINO.z + Math.cos(a) * r, a]);
-      }
-    }
-    const CORES = ['#d94a4a', '#3d7bd9', '#5fbf4a', '#e0b030', '#8a4ad9', '#f08a3a', '#f2f2f2', '#4ac0c0'];
-    const PELES = ['#f2c9a0', '#c98f62', '#8a5a3a', '#f6d8b8'];
-    const mat = new THREE.MeshLambertMaterial({ flatShading: true });
-    const corpos = new THREE.InstancedMesh(new THREE.BoxGeometry(0.42, 0.55, 0.32), mat, lugares.length);
-    const cabecas = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.17, 0), mat, lugares.length);
-    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), c = new THREE.Color(), um = new THREE.Vector3(1, 1, 1), v = new THREE.Vector3();
-    lugares.forEach(([x, y, z, a], k) => {
-      q.setFromEuler(e.set(0, a + Math.PI, 0));
-      corpos.setMatrixAt(k, m4.compose(v.set(x, y + 0.28, z), q, um));
-      corpos.setColorAt(k, c.set(CORES[Math.floor(rng() * CORES.length)]));
-      cabecas.setMatrixAt(k, m4.compose(v.set(x, y + 0.72, z), q, um));
-      cabecas.setColorAt(k, c.set(PELES[Math.floor(rng() * PELES.length)]));
-    });
-    this.vivo.add(corpos, cabecas);
-    this.plateia = { corpos, cabecas, lugares };
+    this.plateia = criarPlateia(this.vivo, { x: ARENA_REINO.x, z: ARENA_REINO.z, r0: r0 + 0.55, deg, passo, subida: 0.7, buracos: [[Math.PI / 2, PORTA + 0.06], [Math.PI * 1.5, PALCO + 0.04]], espaco: 0.85, semente: 11 });
+    this.festaT = 0;
   }
+  // A plateia pula por alguns segundos (quando você vence alguém na arena)
+  festa(seg) { this.festaT = Math.max(this.festaT, seg); }
+  atualizar(dt, t) {
+    if (this.festaT > 0 || this.plateia.pulando) {
+      this.festaT = Math.max(0, this.festaT - dt);
+      animarPlateia(this.plateia, this.festaT, t);
+    }
+  }
+
+  // ---------- os treinadores no mapa: placa com o nome e encostar para lutar ----------
+  // Devolve o treinador mais perto (até 8 m da plataforma) e a que distância o jogador está da frente da plataforma dele
+  treinadorPerto(x, z) {
+    // o mais perto é o da plataforma mais perto (os pontos de encostar ficam perto do meio da arena)
+    let melhor = null, md = 8;
+    this.topoTreinadores.forEach((c, i) => {
+      const dc = Math.hypot(x - c.x, z - c.z);
+      if (dc < md) { md = dc; const p = this.posTreinadores[i]; melhor = { i, tr: TREINADORES[i], d: Math.hypot(x - p.x, z - p.z), topo: c }; }
+    });
+    // depois de falar ou lutar, só chama de novo quando o jogador se afasta um pouco
+    this.posTreinadores.forEach((p, i) => { if (!this.armado[i] && Math.hypot(x - p.x, z - p.z) > 3) this.armado[i] = true; });
+    return melhor;
+  }
+  desarmar(i) { this.armado[i] = false; }
 
   // ---------- a Estrada Real: lanternas e bandeiras, e a placa no Campo ----------
   estrada() {
@@ -551,4 +575,88 @@ export class Reino {
     this.m.obstaculos.push({ x: 0, z: 0, r: 1.3 });
     this.malhasEstrada = assar(g, this.m.cena);
   }
+}
+
+// ---------- plateia (usada no mapa e na batalha) ----------
+// c: { x, z, r0, deg, passo, subida, buracos: [[ângulo, meia abertura]], espaco, semente }
+// (os ângulos seguem o Lathe: 0 = +z, PI/2 = +x)
+const CORES_PLATEIA = ['#d94a4a', '#3d7bd9', '#5fbf4a', '#e0b030', '#8a4ad9', '#f08a3a', '#f2f2f2', '#4ac0c0'];
+const PELES_PLATEIA = ['#f2c9a0', '#c98f62', '#8a5a3a', '#f6d8b8'];
+export function criarPlateia(pai, c) {
+  const rng = aleatorio(c.semente), lugares = [];
+  const longe = (a, b) => Math.abs(((a - b + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
+  for (let i = 0; i < c.deg; i++) {
+    const r = c.r0 + i * c.passo, y = c.subida * (i + 1), n = Math.floor((2 * Math.PI * r) / c.espaco);
+    for (let j = 0; j < n; j++) {
+      const a = (j / n) * Math.PI * 2;
+      if (c.buracos.some(([b, w]) => longe(a, b) < w) || rng() < 0.25) continue;
+      lugares.push([c.x + Math.sin(a) * r, y, c.z + Math.cos(a) * r, a, rng() * 6.28]);
+    }
+  }
+  const mat = new THREE.MeshLambertMaterial({ flatShading: true });
+  const corpos = new THREE.InstancedMesh(new THREE.BoxGeometry(0.42, 0.55, 0.32), mat, lugares.length);
+  const cabecas = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.17, 0), mat, lugares.length);
+  corpos.userData.geometriaPropria = cabecas.userData.geometriaPropria = true;
+  const cor = new THREE.Color();
+  lugares.forEach((_, k) => {
+    corpos.setColorAt(k, cor.set(CORES_PLATEIA[Math.floor(rng() * CORES_PLATEIA.length)]));
+    cabecas.setColorAt(k, cor.set(PELES_PLATEIA[Math.floor(rng() * PELES_PLATEIA.length)]));
+  });
+  const p = { corpos, cabecas, lugares, pulando: true };
+  animarPlateia(p, 0, 0);
+  pai.add(corpos, cabecas);
+  return p;
+}
+// Põe cada bonequinho no lugar; com festa > 0 eles pulam e balançam os braços (só enquanto dura)
+const _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _v = new THREE.Vector3(), _um = new THREE.Vector3(1, 1, 1);
+export function animarPlateia(p, festa, t) {
+  const forca = Math.min(1, festa);
+  p.lugares.forEach(([x, y, z, a, fase], k) => {
+    const pulo = forca > 0 ? Math.abs(Math.sin(t * 9 + fase)) * 0.45 * forca : 0;
+    _q.setFromEuler(_e.set(0, a + Math.PI, forca > 0 ? Math.sin(t * 12 + fase) * 0.25 * forca : 0));
+    p.corpos.setMatrixAt(k, _m4.compose(_v.set(x, y + 0.28 + pulo, z), _q, _um));
+    p.cabecas.setMatrixAt(k, _m4.compose(_v.set(x, y + 0.72 + pulo, z), _q, _um));
+  });
+  p.corpos.instanceMatrix.needsUpdate = p.cabecas.instanceMatrix.needsUpdate = true;
+  p.pulando = forca > 0; // depois da festa, uma última vez para todos voltarem a sentar
+}
+
+// ---------- o coliseu da batalha (Arena do Reino) ----------
+// O mesmo coliseu do mapa, maior, em volta da areia da batalha (raio = RAIO_ARENA).
+// O treinador fica na plataforma dele, do lado de lá (-z), assistindo.
+export function coliseuDeBatalha(cena, raio, treinadorId) {
+  const g = new THREE.Group();
+  const r0 = raio + 1, deg = 6, passo = 1.7, sub = 0.95, R = r0 + deg * passo, H = sub * deg, RP = R + 1;
+  const BURACO = 0.2; // abertura atrás do treinador
+  const pts = [new THREE.Vector2(r0, 0)];
+  for (let i = 0; i < deg; i++) { pts.push(new THREE.Vector2(r0 + i * passo, sub * (i + 1))); pts.push(new THREE.Vector2(r0 + (i + 1) * passo, sub * (i + 1))); }
+  pts.push(new THREE.Vector2(R, H + 1.4), new THREE.Vector2(R + 0.8, H + 1.4), new THREE.Vector2(R + 0.8, 0));
+  duplo(g, new THREE.LatheGeometry(pts, 40, Math.PI + BURACO, Math.PI * 2 - 2 * BURACO), PEDRA);
+  const N = 40, w = (2 * Math.PI * RP) / N + 0.15;
+  for (let i = 0; i < N; i++) {
+    const a = (i / N) * Math.PI * 2, x = Math.cos(a) * RP, z = Math.sin(a) * RP, rot = [0, -a + Math.PI / 2, 0];
+    duplo(g, painelArco(w, 4.8, 1.3, 3), PEDRA, [x, 0, z], rot);
+    duplo(g, painelArco(w, 4.4, 1.2, 2.7), PEDRA, [x, 4.8, z], rot);
+    if (i % 4 === 2) duplo(g, caixa(1, 2.2, 0.08), TREINADORES[(i / 4 | 0) % 5].cor, [Math.cos(a) * (RP - 0.2), H + 3.2, Math.sin(a) * (RP - 0.2)], rot);
+  }
+  duplo(g, new THREE.CylinderGeometry(RP + 0.05, RP + 0.05, 9.4, N * 2, 1, true), PEDRA2, [0, 4.7, 0]);
+  duplo(g, new THREE.LatheGeometry([new THREE.Vector2(R - 4, 12.6), new THREE.Vector2(RP + 1.2, 10.4)], 40), TELHA);
+  for (let i = 0; i < 24; i++) {
+    const a = (i / 24) * Math.PI * 2;
+    peca(g, cil(0.25, 0.25, 12.4 - H, 5), '#f2ead8', [Math.sin(a) * (R - 3.7), H + (12.4 - H) / 2 - 0.4, Math.cos(a) * (R - 3.7)]);
+  }
+  // a plataforma do treinador, atrás do lado dele (-z)
+  const tr = TREINADORES.find((t) => t.id === treinadorId);
+  if (tr) {
+    const zt = -(raio + 2.4);
+    peca(g, cil(1.9, 2.1, 2.2, 10), PEDRA, [0, 1.1, zt]);
+    brilho(g, cil(1.95, 1.95, 0.14, 10), tr.cor, [0, 2.1, zt]);
+    peca(g, cil(1.4, 1.4, 0.06, 10), tr.cor, [0, 2.23, zt]);
+    peca(g, cil(0.07, 0.07, 3.6, 4), MAD, [0, 4, zt - 1.5]);
+    duplo(g, caixa(1.6, 1.1, 0.06), tr.cor, [0.85, 5.2, zt - 1.5]);
+    desenharTreinador(g, tr.id, [0, 2.26, zt], 0);
+  }
+  const malhas = assar(g, cena);
+  const plateia = criarPlateia(cena, { x: 0, z: 0, r0: r0 + 0.6, deg, passo, subida: sub, buracos: [[Math.PI, BURACO + 0.05]], espaco: 0.95, semente: 23 });
+  return { malhas, plateia };
 }

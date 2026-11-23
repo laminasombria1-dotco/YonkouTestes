@@ -131,6 +131,7 @@ export class Batalha {
     const membros = selvagem.membros ? selvagem.membros.map((m) => m.dados) : [selvagem.dados];
     this.grupo = membros.length > 1;
     this.chefe = !!selvagem.chefe;
+    this.treinador = selvagem.treinador || null; // luta na Arena do Reino: os monstros dele entram um de cada vez e não dá para capturar
     // Ondas: entram 2 de cada vez, e a próxima onda só entra quando a anterior inteira cair.
     // Grupos de dungeon vêm em ordem de força (onda 1: 2 fracos, 2: 2 médios, 3: o forte, 4: o líder).
     // Os outros grupos: os comuns de 2 em 2 e o líder sozinho no fim.
@@ -166,7 +167,12 @@ export class Batalha {
     this.trocaAuto = 0;
     this.posicionarCamera(1);
     this.montarHud();
-    if (this.grupo) {
+    if (this.treinador) {
+      const tr = this.treinador;
+      jogo.aviso(`${tr.nome} vai lutar com ${this.total} monstros${selvagem.revanche ? ' (revanche, Nv.50)' : ''}!`);
+      jogo.aviso(`${tr.nome} mandou ${this.ini.esp.nome} Nv.${this.ini.dados.nivel}!`);
+      jogo.aviso('Monstros de treinador não podem ser capturados.');
+    } else if (this.grupo) {
       const lider = membros.find((m) => m.lider);
       jogo.aviso(`Um grupo de ${this.total} monstros atacou!`);
       if (lider) jogo.aviso(`O líder é um ${ESPECIES[lider.especie].nome} Nv.${lider.nivel}. Ele entra por último.`);
@@ -282,7 +288,7 @@ export class Batalha {
     if (!this.fim && liberado) {
       if (ctrl.consumir('fugir')) this.fugir();
       if (ctrl.consumir('cristal')) { this.fecharSeletor(); this.lancarCristal(); }
-      if (ctrl.consumir('tipoCristal')) this.abrirSeletor();
+      if (ctrl.consumir('tipoCristal') && !this.treinador) this.abrirSeletor();
       if (ctrl.consumir('proxCristal')) this.trocarCristal();
       for (let k = 0; k < CRISTAIS.length; k++) if (ctrl.consumir('cristal' + k)) this.escolherCristal(k);
       if (ctrl.consumir('trocar')) this.trocar(false);
@@ -331,7 +337,8 @@ export class Batalha {
       if (this.reforcoT > 1.2) {
         this.reforcoT = 0;
         const onda = this.ondas.shift();
-        if (!onda[0].lider) this.jogo.aviso(onda.length > 1 ? `Mais ${onda.length} entraram na luta!` : `Mais um ${ESPECIES[onda[0].especie].nome} entrou na luta!`);
+        if (this.treinador) this.jogo.aviso(`${this.treinador.nome} mandou ${ESPECIES[onda[0].especie].nome} Nv.${onda[0].nivel}!`);
+        else if (!onda[0].lider) this.jogo.aviso(onda.length > 1 ? `Mais ${onda.length} entraram na luta!` : `Mais um ${ESPECIES[onda[0].especie].nome} entrou na luta!`);
         for (const _ of onda) this.entrarInimigo(null);
       }
     }
@@ -728,7 +735,10 @@ export class Batalha {
       this.derrotados.push(l.dados);
       if (l.dados.lider) this.liderDerrotado = true;
       const resta = this.restantes();
-      this.jogo.aviso(l.dados.lider ? `O líder ${l.esp.nome} desmaiou!` : `${l.esp.nome} selvagem desmaiou!` + (this.grupo && resta ? ` Restam ${resta}.` : ''));
+      if (this.treinador) {
+        this.jogo.aviso(`${l.esp.nome} de ${this.treinador.nome} desmaiou!` + (resta ? ` Faltam ${resta}.` : ''));
+        this.arena.festa(resta ? 1.4 : 4); // a plateia comemora
+      } else this.jogo.aviso(l.dados.lider ? `O líder ${l.esp.nome} desmaiou!` : `${l.esp.nome} selvagem desmaiou!` + (this.grupo && resta ? ` Restam ${resta}.` : ''));
       this.verificarFim();
     } else {
       this.jogo.aviso(`${l.esp.nome} desmaiou!`);
@@ -1040,6 +1050,7 @@ export class Batalha {
 
   lancarCristal() {
     if (this.fim || this.captura || this.jog.morto || !this.ini || this.ini.morto) return;
+    if (this.treinador) { this.jogo.aviso('Não dá para capturar o monstro de um treinador!'); return; }
     const est = this.jogo.estado, tipo = CRISTAIS[this.tipoCristal];
     const garantida = !!this.jogo.gm?.capturaGarantida; // GM: qualquer cristal segura qualquer monstro
     const min = garantida ? 0 : this.ini.esp.cristalMin || 0;
@@ -1169,7 +1180,7 @@ export class Batalha {
 
   fugir() {
     if (this.fim || this.captura) return;
-    this.jogo.aviso('Você fugiu da batalha.');
+    this.jogo.aviso(this.treinador ? `Você desistiu da luta com ${this.treinador.nome}.` : 'Você fugiu da batalha.');
     this.fim = { tipo: 'fuga', t: 0.5 };
   }
 
@@ -1188,6 +1199,10 @@ export class Batalha {
 
   montarHud() {
     this.jogo.ui.placas.innerHTML = '';
+    // luta de treinador: sem cristais (os botões somem)
+    this.jogo.ui.btnCristal.hidden = !!this.treinador;
+    const tipo = document.getElementById('btn-tipo-cristal');
+    if (tipo) tipo.hidden = !!this.treinador;
     this.placas = new Map();
     this.fecharSeletor();
     this.montarHudInimigo();
@@ -1324,6 +1339,9 @@ export class Batalha {
   // Libera a memória dos materiais da arena quando a batalha acaba
   descartarTudo() {
     this.jogo.ui.placas.innerHTML = '';
+    this.jogo.ui.btnCristal.hidden = false;
+    const tipo = document.getElementById('btn-tipo-cristal');
+    if (tipo) tipo.hidden = false;
     this.fecharSeletor();
     descartar(this.cena);
   }

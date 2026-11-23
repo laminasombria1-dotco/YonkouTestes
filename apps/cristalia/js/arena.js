@@ -7,6 +7,7 @@
 // =============================================================
 import * as THREE from 'three';
 import { ARENAS, CHANCE_PERIGO } from './dados.js';
+import { coliseuDeBatalha, animarPlateia } from './reino.js';
 
 export const RAIO_ARENA = 22;
 
@@ -20,9 +21,10 @@ const CORES = {
   cratera:{ chao: ['#3a2420', '#2a1a16', '#4a2a22'], mancha: '#ff5a1f', fora: '#1f1210', ceu: '#a04a3a', obst: 'lava',   copa: ['#1f1210', '#2a1a16', '#3a2420'] },
   raio:   { chao: ['#7a7a9a', '#6c6c8c', '#86869f'], mancha: '#5a5a7a', fora: '#4a4a6a', ceu: '#6a6f95', obst: 'cristal', copa: ['#55557a', '#64648a', '#5a5a7a'] },
   raizes: { chao: ['#3f7a3a', '#4a8a40', '#36703a'], mancha: '#6a5236', fora: '#1f4a2a', ceu: '#6a9a80', obst: 'arvore', copa: ['#1f5a2a', '#2f7a3a', '#3a6a2a'] },
+  reino:  { chao: ['#e6cf98', '#dcc58e', '#e9d6a2'], mancha: '#d9bd80', fora: '#cbbfa6', ceu: '#a8e0ff', obst: 'pedra', copa: ['#cbbfa6', '#b8ad96', '#d8ccb4'] },
   santuario: { chao: ['#4f6e48', '#5a7a52', '#46663f'], mancha: '#2c6a2e', fora: '#183a24', ceu: '#3f6a5a', obst: 'menir', copa: ['#1f5a2a', '#2f7a3a', '#1d4a28'] },
 };
-const QTD_OBST = { campo: 7, planta: 12, fogo: 7, agua: 6, terra: 9, raio: 7, brasas: 9, cratera: 6, raizes: 10, santuario: 7 };
+const QTD_OBST = { reino: 0, campo: 7, planta: 12, fogo: 7, agua: 6, terra: 9, raio: 7, brasas: 9, cratera: 6, raizes: 10, santuario: 7 };
 // Poças do chão: quem é de casa se cura; os outros sofrem o efeito (ou dano, nos espinhos)
 const POCAS = {
   lava:     { cura: ['fogo', 'igneo'], efeito: 'queimadura', dur: 1.5 },
@@ -64,7 +66,12 @@ export class Arena {
     this.criarObstaculos();
     this.criarPocas();
     this.criarClima();
+    // Arena do Reino: o coliseu com a plateia e o treinador na plataforma dele
+    if (this.zona === 'reino') { this.coliseu = coliseuDeBatalha(this.cena, RAIO_ARENA, batalha.treinador?.id); this.festaT = 0; }
   }
+
+  // A plateia pula por alguns segundos (só na Arena do Reino)
+  festa(seg) { if (this.coliseu) this.festaT = Math.max(this.festaT, seg); }
 
   // ---------- construção ----------
   criarLuzes() {
@@ -111,8 +118,8 @@ export class Arena {
     borda.position.y = 0.04;
     this.cena.add(borda);
 
-    // Decoração em volta (fora da arena)
-    for (let i = 0; i < 44; i++) {
+    // Decoração em volta (fora da arena; na Arena do Reino quem fica em volta é o coliseu)
+    for (let i = 0; i < (this.zona === 'reino' ? 0 : 44); i++) {
       const a = (i / 44) * Math.PI * 2 + Math.random() * 0.1;
       const r = RAIO_ARENA + 3 + Math.random() * 9;
       const x = Math.cos(a) * r, z = Math.sin(a) * r;
@@ -244,7 +251,7 @@ export class Arena {
       campo: ['#ffffff', '#fff3a0'], planta: ['#5fbf4a', '#9fd35a', '#e0a040'], fogo: ['#ffb030', '#ff6a1f', '#ffe14a'],
       agua: ['#cfefff', '#9fd8ff'], terra: ['#e8d4a8', '#c9a46a'], raio: ['#fff07a', '#ffffff'],
       brasas: ['#ffb030', '#ff6a1f', '#ffe14a'], cratera: ['#ff3d6a', '#ff6a1f', '#6a5a5a', '#8a7a7a'],
-      raizes: ['#d8ff7a', '#4ea64a', '#9fd35a', '#e0a040'], santuario: ['#1fe0a0', '#d8ff7a', '#7affd8', '#4ea64a'],
+      raizes: ['#d8ff7a', '#4ea64a', '#9fd35a', '#e0a040'], reino: ['#ff5a5a', '#5a8aff', '#ffd23f', '#5fdf7a', '#c07aff', '#ffffff'], santuario: ['#1fe0a0', '#d8ff7a', '#7affd8', '#4ea64a'],
     };
     const c = new THREE.Color();
     for (let i = 0; i < n; i++) {
@@ -257,7 +264,7 @@ export class Arena {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     g.setAttribute('color', new THREE.BufferAttribute(cor, 3));
-    const tam = { campo: 0.18, planta: 0.32, fogo: 0.2, agua: 0.12, terra: 0.25, raio: 0.16, brasas: 0.22, cratera: 0.26, raizes: 0.26, santuario: 0.28 }[this.zona];
+    const tam = { reino: 0.22, campo: 0.18, planta: 0.32, fogo: 0.2, agua: 0.12, terra: 0.25, raio: 0.16, brasas: 0.22, cratera: 0.26, raizes: 0.26, santuario: 0.28 }[this.zona];
     this.clima = new THREE.Points(g, new THREE.PointsMaterial({ size: tam, vertexColors: true, transparent: true, opacity: this.zona === 'terra' ? 0.55 : 0.9, depthWrite: false }));
     this.cena.add(this.clima);
   }
@@ -284,6 +291,10 @@ export class Arena {
   // ---------- quadro a quadro ----------
   atualizar(dt, t) {
     this.atualizarClima(dt, t);
+    if (this.coliseu && (this.festaT > 0 || this.coliseu.plateia.pulando)) {
+      this.festaT = Math.max(0, this.festaT - dt);
+      animarPlateia(this.coliseu.plateia, this.festaT, t);
+    }
     for (const pc of this.pocas) pc.mesh.position.y = 0.05 + Math.sin(t * 2 + pc.x) * 0.02;
     if (this.flash > 0) this.flash = Math.max(0, this.flash - dt);
     // escuridão do Astro Negro: entra rápido, segura e volta devagar
@@ -336,6 +347,7 @@ export class Arena {
         case 'fogo': a[k + 1] += (1.5 + (i % 5) * 0.3) * dt; a[k] += Math.sin(t * 2 + i) * 0.8 * dt; break;
         case 'agua': a[k + 1] -= 22 * dt; a[k] += 1.5 * dt; break;
         case 'terra': a[k] += Math.cos(t * 0.3) * 2 * dt; a[k + 2] += Math.sin(t * 0.25) * 2 * dt; a[k + 1] += Math.sin(t + i) * 0.3 * dt; break;
+        case 'reino': a[k + 1] -= (0.9 + (i % 4) * 0.25) * dt; a[k] += Math.sin(t * 2.2 + i) * 1.2 * dt; a[k + 2] += Math.cos(t * 1.7 + i) * 0.8 * dt; break; // confete
         case 'raio': a[k + 1] -= 4 * dt; a[k] += (Math.random() - 0.5) * 2 * dt; break;
         default: a[k] += 0.6 * dt; a[k + 1] += Math.sin(t * 1.5 + i) * 0.4 * dt; break;
       }

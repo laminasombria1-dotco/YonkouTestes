@@ -536,6 +536,8 @@ export const ARENAS = {
             descricaoPerigo: 'Raízes saem do chão (um círculo verde avisa): machucam e prendem. Planta e Silvestre não sentem.' },
   raizes: { nome: 'Trilha Ancestral',    clima: 'Vaga-lumes',       favorece: 'planta', perigo: 'espinhos',
             descricaoPerigo: 'Moitas de espinhos machucam quem pisa, mas curam monstros de Planta.' },
+  reino:  { nome: 'Arena do Reino',      clima: 'Confete no ar',    favorece: null,     perigo: null,
+            descricaoPerigo: '' },
   campo:  { nome: 'Campo Aberto',        clima: 'Pólen no ar',      favorece: null,     perigo: null,
             descricaoPerigo: '' },
   planta: { nome: 'Coração da Floresta', clima: 'Vento de folhas',  favorece: 'planta', perigo: 'vento',
