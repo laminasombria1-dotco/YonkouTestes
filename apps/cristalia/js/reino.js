@@ -20,7 +20,7 @@ import { ESPECIES, criarMonstro, formaPorNivel } from './dados.js';
 // ---------- medidas do Reino (locais) ----------
 export const FONTE_REINO = { x: 0, z: 15 };          // a fonte de cura, na praça
 export const NASCER_REINO = { x: 0, z: 21 };         // onde o jogador aparece (de frente para o castelo)
-export const ARENA_REINO = { x: -36, z: -4 };        // centro da arena
+export const ARENA_REINO = { x: -34, z: 14 };        // centro da arena (o portão abre para a praça da fonte)
 export const RAIO_MURALHA = 58;
 const ARENA = { r0: 9, deg: 7, passo: 1.2, palco: 0.87, porta: 0.16 }; // areia, degraus, aberturas (radianos)
 
@@ -241,6 +241,7 @@ export class Reino {
     this.vivo.rotation.y = REINO.giro;
     mundo.cena.add(this.vivo);
     this.criarPlateia();
+    this.criarPortas();
     this.estrada();
   }
 
@@ -274,7 +275,7 @@ export class Reino {
     peca(R, caixa(6, 0.1, 36), CALCADA, [0, 0.05, 45]);
     peca(R, cil(12, 12, 0.12, 24), AREIA, [0, 0.06, 15]);
     peca(R, cil(11, 11, 0.13, 24), '#e3d2a2', [0, 0.065, 15]);
-    peca(R, caixa(5, 0.1, 20), CALCADA, [-13, 0.05, 3], [0, 0.53, 0]);
+    peca(R, caixa(6, 0.1, 5), CALCADA, [-12.8, 0.05, 14]); // do portão da arena até a praça
     this.castelo();
     this.fonte();
     this.arena();
@@ -351,6 +352,20 @@ export class Reino {
       duplo(g, painelArco(w, 4, 1.15, 2.5), PEDRA, [x, 4.5, z], rot);
       peca(g, caixa(0.5, 8.5, 0.9), PEDRA2, [Math.cos(a + Math.PI / N) * (RP + 0.45), 4.25, Math.sin(a + Math.PI / N) * (RP + 0.45)], rot);
     }
+    // o portão: 2 torres com telhado vermelho dos lados, a faixa com as cores dos treinadores
+    // em cima do arco e as 2 portas de madeira (elas abrem quando você chega perto: criarPortas)
+    for (const zt of [-3.4, 3.4]) {
+      peca(g, caixa(2.6, 11, 2.6), PEDRA2, [RP + 0.9, 5.5, zt]);
+      peca(g, cone(2.2, 3.4, 4), TELHA, [RP + 0.9, 12.7, zt], [0, Math.PI / 4, 0]);
+      for (const [dx, dz] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) peca(g, caixa(0.6, 0.7, 0.6), PEDRA, [RP + 0.9 + dx * 1.05, 11.3, zt + dz * 1.05]);
+      peca(g, caixa(0.2, 1.6, 0.7), VIDRO, [RP + 2.25, 7.5, zt]);
+      duplo(g, caixa(0.06, 2.6, 1.2), TELHA, [RP + 2.25, 4.6, zt]);   // estandarte vermelho na torre
+    }
+    TREINADORES.forEach((tr, i) => duplo(g, caixa(0.06, 1.3, 0.62), tr.cor, [RP + 0.78, 6.9, (i - 2) * 0.64]));
+    peca(g, caixa(0.5, 0.35, 3.6), PEDRA2, [RP + 0.85, 7.7, 0]);
+    this.obst(ARENA_REINO.x + RP + 0.9, ARENA_REINO.z - 3.4, 1.8);
+    this.obst(ARENA_REINO.x + RP + 0.9, ARENA_REINO.z + 3.4, 1.8);
+    this.portaoArena = { x: RP + 0.75, abre: 0 };
     // faixas e o "sótão" liso no alto (anéis abertos: só a parede, sem tampa)
     for (const [r, h, y, cor] of [[RP + 0.75, 0.35, 4.5, PEDRA2], [RP + 0.75, 1.2, 9.1, PEDRA], [RP + 0.8, 0.3, 9.8, PEDRA2], [RP + 0.05, 9.9, 4.95, PEDRA2]])
       duplo(g, new THREE.CylinderGeometry(r, r, h, N * 2, 1, true), cor, [0, y, 0]);
@@ -477,7 +492,8 @@ export class Reino {
   }
   vila() {
     this.casa(9, 32, -0.4, 1.15, true);
-    for (const [x, z, r, e] of [[-10, 30, 0.5, 1], [-18, 38, 0.3, 0.9], [17, 42, -0.6, 0.95], [-24, 22, 1.1, 1], [24, 26, -1.2, 1.05], [30, 10, -1.5, 0.9], [-8, 46, 0.1, 0.85], [12, 50, -0.2, 0.9]])
+    // (nenhuma casa do lado da arena: as que ficavam lá foram para o lado leste da vila)
+    for (const [x, z, r, e] of [[38, 20, -1.3, 1], [40, 34, -1, 0.9], [20, -38, -2.6, 1], [17, 42, -0.6, 0.95], [24, 26, -1.2, 1.05], [30, 10, -1.5, 0.9], [-8, 46, 0.1, 0.85], [12, 50, -0.2, 0.9]])
       this.casa(x, z, r, e);
     this.casa(28, 38, -0.9, 1, false, true); // a casa com torre
     // lago com jardim
@@ -509,7 +525,7 @@ export class Reino {
     for (let i = 0; i < 60; i++) {
       const a = rng() * Math.PI * 2, d = 20 + rng() * 34, x = Math.cos(a) * d, z = Math.sin(a) * d;
       if (Math.hypot(x - ARENA_REINO.x, z - ARENA_REINO.z) < 23 || (Math.abs(x) < 15 && z > -16 && z < 60) || Math.hypot(x, z + 4) < 18 || Math.hypot(x - 36, z + 26) < 12) continue;
-      if (Math.hypot(x - 22, z - 30) < 22) continue; // a vila
+      if (Math.hypot(x - 22, z - 30) < 22 || Math.hypot(x - 20, z + 38) < 8) continue; // a vila
       const e = 0.8 + rng() * 0.5;
       peca(this.raiz, cil(0.3 * e, 0.4 * e, 1.6 * e, 5), MAD, [x, 0.8 * e, z]);
       peca(this.raiz, cone(1.8 * e, 4 * e, 6), rng() < 0.5 ? '#3f8a3a' : '#4a9a40', [x, 3.4 * e, z]);
@@ -523,9 +539,39 @@ export class Reino {
     this.plateia = criarPlateia(this.vivo, { x: ARENA_REINO.x, z: ARENA_REINO.z, r0: r0 + 0.55, deg, passo, subida: 0.7, buracos: [[Math.PI / 2, PORTA + 0.06], [Math.PI * 1.5, PALCO + 0.04]], espaco: 0.85, semente: 11 });
     this.festaT = 0;
   }
+  // As 2 portas de madeira do portão da arena (presas nas dobradiças dos lados do arco)
+  criarPortas() {
+    const madeira = new THREE.MeshLambertMaterial({ color: '#7a4b2c', flatShading: true });
+    const ferro = new THREE.MeshLambertMaterial({ color: '#3a3a44', flatShading: true });
+    const tabua = new THREE.BoxGeometry(0.2, 4.7, 1.7), faixa = new THREE.BoxGeometry(0.26, 0.16, 1.74), argola = new THREE.TorusGeometry(0.16, 0.04, 4, 8);
+    this.portas = [];
+    for (const lado of [-1, 1]) {
+      const pivo = new THREE.Group();
+      pivo.position.set(ARENA_REINO.x + this.portaoArena.x, 0, ARENA_REINO.z + lado * 1.7); // a dobradiça
+      const porta = new THREE.Mesh(tabua, madeira); porta.position.set(0, 2.35, -lado * 0.85);
+      pivo.add(porta);
+      for (const y of [0.9, 2.4, 3.9]) { const f = new THREE.Mesh(faixa, ferro); f.position.set(0, y, -lado * 0.85); pivo.add(f); }
+      const a = new THREE.Mesh(argola, ferro); a.position.set(0.14, 2.2, -lado * 1.45); a.rotation.y = Math.PI / 2; pivo.add(a);
+      pivo.userData.lado = lado;
+      this.vivo.add(pivo);
+      this.portas.push(pivo);
+    }
+    this.meioPortao = REINO.paraMundo(ARENA_REINO.x + this.portaoArena.x + 1, ARENA_REINO.z);
+  }
+  // Abre quando o jogador chega a 13 m do portão (ou está dentro da arena) e fecha quando ele se afasta
+  animarPortas(dt) {
+    const m = this.m, d = Math.hypot(m.pos.x - this.meioPortao.x, m.pos.z - this.meioPortao.z);
+    const alvo = d < 13 || this.dentroArena(m.pos.x, m.pos.z) ? 1 : 0, p = this.portaoArena;
+    if (Math.abs(alvo - p.abre) < 0.001) return;
+    p.abre += (alvo - p.abre) * Math.min(1, dt * 3);
+    if (Math.abs(alvo - p.abre) < 0.002) p.abre = alvo;
+    for (const pv of this.portas) pv.rotation.y = -pv.userData.lado * p.abre * 1.75; // abrem para fora
+  }
+
   // A plateia pula por alguns segundos (quando você vence alguém na arena)
   festa(seg) { this.festaT = Math.max(this.festaT, seg); }
   atualizar(dt, t) {
+    this.animarPortas(dt);
     if (this.festaT > 0 || this.plateia.pulando) {
       this.festaT = Math.max(0, this.festaT - dt);
       animarPlateia(this.plateia, this.festaT, t);
