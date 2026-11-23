@@ -1016,9 +1016,9 @@ export class Mundo {
 
   // Câmera girando devagar em volta do castelo, para a tela de título
   orbitar(t) {
-    const a = t * 0.08, c = REINO.paraMundo(0, -2), y = REINO.h;
-    this.camera.position.set(c.x + Math.sin(a) * 58, y + 26, c.z + Math.cos(a) * 58);
-    this.camera.lookAt(c.x, y + 6, c.z);
+    const a = t * 0.08, c = REINO.paraMundo(0, -12), y = REINO.h;
+    this.camera.position.set(c.x + Math.sin(a) * 62, y + 30, c.z + Math.cos(a) * 62);
+    this.camera.lookAt(c.x, y + 10, c.z);
     this.chunks.atualizar(c.x, c.z);
     this.chunks.animar(t);
     for (const s of this.selvagens) animarModelo(s.modelo, t, false);

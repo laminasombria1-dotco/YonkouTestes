@@ -107,14 +107,16 @@ function material(tipo) {
   if (!MATS[tipo]) {
     MATS[tipo] = tipo === 'brilho'
       ? new THREE.MeshBasicMaterial({ vertexColors: true })
-      : new THREE.MeshLambertMaterial({ vertexColors: true, side: tipo === 'duplo' ? THREE.DoubleSide : THREE.FrontSide });
+      : tipo === 'claro' // paredes brancas do castelo: um pouco de luz própria
+        ? new THREE.MeshLambertMaterial({ vertexColors: true, emissive: '#77746c' })
+        : new THREE.MeshLambertMaterial({ vertexColors: true, side: tipo === 'duplo' ? THREE.DoubleSide : THREE.FrontSide });
     MATS[tipo].userData.fixo = true; // são do Reino inteiro: o fim da batalha não pode apagar
   }
   return MATS[tipo];
 }
 function assar(rascunho, cena) {
   rascunho.updateMatrixWorld(true);
-  const baldes = { normal: [], duplo: [], brilho: [] };
+  const baldes = { normal: [], duplo: [], brilho: [], claro: [] };
   rascunho.traverse((o) => { if (o.isMesh) baldes[o.userData.tipo].push(o); });
   const c = new THREE.Color(), malhas = [];
   for (const [tipo, lista] of Object.entries(baldes)) {
@@ -284,35 +286,133 @@ export class Reino {
     this.arvores();
   }
 
-  // ---------- castelo (referência do desenho: torre do meio, 2 torres redondas, alas) ----------
+  // ---------- castelo (referência: castelo branco de conto de fadas) ----------
+  // Muralha branca em quadrado com ameias, 4 torres redondas nos cantos (telhado pontudo
+  // cinza-azulado com ponta dourada), o palácio no meio com janelinhas no telhado, a torre
+  // de menagem e 2 torres altas e finas, a entrada com arco, varanda e escada, e a base de
+  // pedra com grama e pinheiros. A frente (+z) dá para a praça da fonte.
   castelo() {
     const g = new THREE.Group(); this.raiz.add(g);
-    peca(g, caixa(22, 1, 14), PEDRA2, [0, 0.5, -6]);
-    peca(g, caixa(9, 15, 9), PEDRA, [0, 8, -6]);
-    peca(g, cone(7.2, 12, 4), ARDOSIA, [0, 21.5, -6], [0, Math.PI / 4, 0]);
-    peca(g, cil(0.15, 0.15, 3, 4), ARDOSIA, [0, 28.5, -6]);
-    for (const x of [-3.6, 3.6]) { peca(g, cil(0.9, 0.9, 4, 6), PEDRA, [x, 16, -1.8]); peca(g, cone(1.2, 2.5, 6), ARDOSIA, [x, 19.2, -1.8]); }
-    for (let i = -3; i <= 3; i++) peca(g, caixa(0.7, 0.8, 0.5), PEDRA2, [i * 1.3, 15.8, -1.4]);
-    for (const x of [-6.5, 6.5]) {
-      peca(g, caixa(5, 10, 7), PEDRA, [x, 5.5, -6]);
-      peca(g, prisma(7.4, 5, 4), ARDOSIA, [x, 10.5, -6]).rotation.y = Math.PI / 2;
-      for (const y of [4, 8]) brilho(g, caixa(1, 1.8, 0.2), LUZ, [x, y, -2.45]);
+    const BR = '#f4f1e8', BR2 = '#dcd6c8', TETO = '#56637a', OURO = '#e0b84a', ROCHA = '#9a9488', GRAMA = '#5f9a44';
+    // as paredes brancas usam o material "claro" (brilha um pouco: fica branco até na sombra)
+    const pc = (pai, geo, cor, pos, rot) => peca(pai, geo, cor, pos, rot, cor === BR || cor === BR2 ? 'claro' : 'normal');
+    const F = 1, T = -29, MX = 14;   // frente (z), fundo (z) e lado (x) da muralha
+    const cz = (F + T) / 2;
+    // ponta dourada no alto de cada telhado
+    const ponta = (x, y, z, e = 1) => { pc(g, cil(0.06 * e, 0.06 * e, 1.2 * e, 4), OURO, [x, y + 0.6 * e, z]); brilho(g, ico(0.16 * e), OURO, [x, y + 1.25 * e, z]); };
+    // telhado cônico com ponta (n lados)
+    const coneTeto = (x, y, z, r, h, n = 10) => { pc(g, cone(r, h, n), TETO, [x, y + h / 2, z]); ponta(x, y + h, z, Math.max(0.7, r / 2.6)); };
+    // ameias em cima de uma parede reta (de a até b, na altura y)
+    const ameias = (x1, z1, x2, z2, y) => {
+      const n = Math.round(Math.hypot(x2 - x1, z2 - z1) / 1.3);
+      for (let i = 0; i <= n; i++) pc(g, caixa(0.6, 0.7, 0.6), BR, [x1 + ((x2 - x1) * i) / n, y + 0.35, z1 + ((z2 - z1) * i) / n]);
+    };
+    // janelas em fila numa fachada
+    const janelas = (x0, y, z, n, passo, eixo = 'x', acesas = false) => {
+      for (let i = 0; i < n; i++) {
+        const o = (i - (n - 1) / 2) * passo;
+        const pos = eixo === 'x' ? [x0 + o, y, z] : [x0, y, z + o];
+        (acesas ? brilho : peca)(g, eixo === 'x' ? caixa(0.6, 1.2, 0.15) : caixa(0.15, 1.2, 0.6), acesas ? LUZ : VIDRO, pos);
+      }
+    };
+
+    // a base de pedra com grama e pedras em volta
+    pc(g, caixa(2 * MX + 6, 1.2, F - T + 6), ROCHA, [0, 0.6, cz]);
+    pc(g, caixa(2 * MX + 5, 0.1, F - T + 5), GRAMA, [0, 1.25, cz]);
+    const rng = aleatorio(77);
+    for (let i = 0; i < 26; i++) {
+      const lado = i % 4, k = rng() * 2 - 1;
+      const x = lado < 2 ? k * (MX + 2.5) : (lado === 2 ? -1 : 1) * (MX + 3.2), z = lado < 2 ? (lado === 0 ? F + 3.2 : T - 3.2) : cz + k * ((F - T) / 2 + 2.5);
+      if (lado === 0 && Math.abs(x) < 5) continue; // a escada da entrada
+      const e = 0.8 + rng() * 1.1;
+      pc(g, ico(e), rng() < 0.5 ? ROCHA : '#8a857a', [x, e * 0.5, z], [rng(), rng(), rng()]);
     }
-    for (const x of [-10.5, 10.5]) {
-      peca(g, cil(2.6, 2.8, 15, 10), PEDRA, [x, 7.5, -4]);
-      peca(g, cone(3.4, 8, 10), ARDOSIA, [x, 19, -4]);
-      peca(g, cil(0.12, 0.12, 2, 4), ARDOSIA, [x, 23.8, -4]);
-      for (const y of [5, 9, 13]) peca(g, caixa(0.9, 1.6, 0.2), VIDRO, [x, y, -1.2]);
-      duplo(g, caixa(1.4, 0.8, 0.05), AZUL, [x + 0.7, 24.2, -4]); // bandeira
+    for (const [x, z] of [[-MX - 1.2, F + 1.2], [MX + 1.2, F + 1.2], [-MX - 1.5, T - 1.5], [MX + 1.5, T - 1.5], [-7, F + 2.3], [7, F + 2.3]]) {
+      pc(g, cil(0.25, 0.3, 1.2, 5), MAD, [x, 1.8, z]);
+      pc(g, cone(1.3, 3.6, 6), '#3f7a3a', [x, 4, z]);
+      pc(g, cone(1, 2.6, 6), '#4a8a40', [x, 5.4, z]);
     }
-    peca(g, caixa(2.6, 4, 0.3), MAD, [0, 2.5, -1.4]);
-    peca(g, cil(1.3, 1.3, 0.3, 10), MAD, [0, 4.5, -1.4], [Math.PI / 2, 0, 0]);
-    peca(g, caixa(4, 0.4, 1.4), PEDRA2, [0, 7, -1]);
-    for (const y of [9.5, 12.5]) brilho(g, caixa(1.3, 2.2, 0.2), LUZ, [0, y, -1.45]);
-    peca(g, caixa(5, 0.5, 3), PEDRA2, [0, 0.25, 0.2]);
-    // colisão: o castelo inteiro e as duas torres
-    this.retangulo(0, -6, 22, 14, 0, 1.8);
-    for (const x of [-10.5, 10.5]) this.obst(x, -4, 2.9);
+
+    // a muralha branca (4 paredes) com ameias
+    const H = 7, y0 = 1.2;
+    pc(g, caixa(2 * MX, H, 1.4), BR, [0, y0 + H / 2, F]);
+    pc(g, caixa(2 * MX, H, 1.4), BR, [0, y0 + H / 2, T]);
+    for (const x of [-MX, MX]) pc(g, caixa(1.4, H, F - T), BR, [x, y0 + H / 2, cz]);
+    ameias(-MX + 2.5, F + 0.5, MX - 2.5, F + 0.5, y0 + H);
+    ameias(-MX + 2.5, T - 0.5, MX - 2.5, T - 0.5, y0 + H);
+    for (const x of [-MX - 0.5, MX + 0.5]) ameias(x, F - 2.5, x, T + 2.5, y0 + H);
+    // arcos baixos na muralha da frente (como na referência)
+    for (const x of [-9, -5.5, 5.5, 9]) { pc(g, caixa(1.6, 2.4, 0.3), MADE, [x, y0 + 1.2, F + 0.72]); pc(g, cil(0.8, 0.8, 0.3, 8), MADE, [x, y0 + 2.4, F + 0.72], [Math.PI / 2, 0, 0]); }
+
+    // as 4 torres redondas dos cantos
+    for (const x of [-MX, MX]) for (const z of [F, T]) {
+      pc(g, cil(2.6, 2.8, 16, 12), BR, [x, y0 + 8, z]);
+      pc(g, cil(3, 2.6, 1.2, 12), BR2, [x, y0 + 16.4, z]);                   // a "saia" de pedra no alto
+      for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2; pc(g, caixa(0.5, 0.6, 0.5), BR, [x + Math.cos(a) * 2.75, y0 + 17.3, z + Math.sin(a) * 2.75]); }
+      coneTeto(x, y0 + 17, z, 3.2, 8);
+      for (const y of [6, 11]) pc(g, caixa(0.6, 1.3, 0.15), VIDRO, [x, y0 + y, z + Math.sign(F - z + 0.1) * 2.75]);
+    }
+
+    // o palácio do meio (telhado de duas águas com janelinhas) e a ala da direita
+    const palacio = (x, z, w, d, h, rot = 0) => {
+      const p = new THREE.Group(); p.position.set(x, 0, z); p.rotation.y = rot; g.add(p);
+      pc(p, caixa(w, h, d), BR, [0, y0 + h / 2, 0]);
+      const t = pc(p, prisma(d + 0.6, w + 0.4, d * 0.55), TETO, [0, y0 + h, 0]);
+      for (let i = 0; i < Math.floor(w / 3); i++) { // janelinhas no telhado
+        const xx = (i - (Math.floor(w / 3) - 1) / 2) * 3;
+        pc(p, caixa(0.9, 1.1, 0.9), BR, [xx, y0 + h + 0.9, d / 2 - 0.9]);
+        pc(p, prisma(1.1, 1.1, 0.7), TETO, [xx, y0 + h + 1.45, d / 2 - 0.9]).rotation.y = Math.PI / 2;
+        pc(p, caixa(0.5, 0.6, 0.1), VIDRO, [xx, y0 + h + 0.9, d / 2 - 0.42]);
+      }
+      for (const y of [3, 6.5, 10]) if (y < h - 1) for (let i = 0; i < Math.floor(w / 2.2); i++) {
+        const xx = (i - (Math.floor(w / 2.2) - 1) / 2) * 2.2;
+        (y === 3 ? brilho : peca)(p, caixa(0.6, 1.3, 0.15), y === 3 ? LUZ : VIDRO, [xx, y0 + y, d / 2 + 0.05]);
+      }
+      return t;
+    };
+    palacio(-3, -16, 15, 9, 12);
+    palacio(7.5, -7.5, 9, 6, 9, -Math.PI / 2 + 0.0001);
+    palacio(-8.5, -7, 6, 6, 8);
+
+    // a torre de menagem (quadrada) e as 2 torres altas e finas
+    pc(g, caixa(5, 22, 5), BR, [3.5, y0 + 11, -15]);
+    pc(g, caixa(5.8, 1, 5.8), BR2, [3.5, y0 + 22.2, -15]);
+    ameias(1, -12.3, 6, -12.3, y0 + 22.7); ameias(1, -17.7, 6, -17.7, y0 + 22.7);
+    pc(g, cone(3.8, 9, 4), TETO, [3.5, y0 + 27.2, -15], [0, Math.PI / 4, 0]); ponta(3.5, y0 + 31.7, -15, 1.2);
+    for (let i = 0; i < 4; i++) pc(g, caixa(0.7, 1.6, 0.15), VIDRO, [3.5, y0 + 8 + i * 3.4, -12.45]);
+    for (const [x, z, h] of [[-4, -10.5, 27], [10, -16, 24]]) {
+      pc(g, cil(1.5, 1.6, h, 10), BR, [x, y0 + h / 2, z]);
+      pc(g, cil(1.85, 1.5, 1, 10), BR2, [x, y0 + h + 0.2, z]);
+      coneTeto(x, y0 + h + 0.6, z, 1.9, 7);
+      for (let i = 0; i < 3; i++) pc(g, caixa(0.5, 1.2, 0.15), VIDRO, [x, y0 + 8 + i * 5, z + 1.5]);
+    }
+    // torrinhas finas nos cantos do palácio
+    for (const [x, z] of [[-10.5, -11.5], [4.5, -11.5], [-10.5, -20.5], [12, -4.5], [3, -4.5]]) {
+      pc(g, cil(0.8, 0.8, 4, 8), BR, [x, y0 + 12, z]);
+      coneTeto(x, y0 + 14, z, 1, 3.4, 8);
+    }
+
+    // a entrada da frente: torre do portão com arco, varanda de madeira e 2 torrinhas
+    pc(g, caixa(7, 12, 3.4), BR, [0, y0 + 6, F + 0.6]);
+    pc(g, prisma(3.8, 7.4, 2.4), TETO, [0, y0 + 12, F + 0.6]).rotation.y = Math.PI / 2;
+    pc(g, caixa(2.8, 4, 0.3), MADE, [0, y0 + 2, F + 2.35]);                    // a porta
+    pc(g, cil(1.4, 1.4, 0.3, 10), MADE, [0, y0 + 4, F + 2.35], [Math.PI / 2, 0, 0]);
+    pc(g, caixa(4.4, 0.4, 1.6), MAD, [0, y0 + 6.6, F + 2.9]);                  // varanda
+    for (let i = 0; i < 7; i++) pc(g, caixa(0.12, 1, 0.12), MAD, [-2 + i * 0.66, y0 + 7.3, F + 3.6]);
+    pc(g, caixa(4.4, 0.12, 0.14), MAD, [0, y0 + 7.8, F + 3.6]);
+    janelas(0, y0 + 9.4, F + 2.36, 3, 1.4, 'x', true);
+    for (const x of [-3.9, 3.9]) { pc(g, cil(1.1, 1.1, 13, 8), BR, [x, y0 + 6.5, F + 1.8]); coneTeto(x, y0 + 13, F + 1.8, 1.4, 4.5, 8); }
+    pc(g, cil(1.25, 1.25, 0.1, 10), OURO, [0, y0 + 10.9, F + 2.37], [Math.PI / 2, 0, 0]); // brasão dourado
+    duplo(g, caixa(1.4, 2.2, 0.06), AZUL, [0, y0 + 10.9, F + 2.4]);
+    // a escada até a praça
+    for (let i = 0; i < 4; i++) pc(g, caixa(6 - i * 0.2, 0.3, 1.1), BR2, [0, 0.15 + i * 0.3, F + 6.3 - i * 1.05]);
+    // bandeiras azuis nas torres da frente
+    for (const x of [-MX, MX]) { pc(g, cil(0.06, 0.06, 2.2, 4), MAD, [x, y0 + 27.5, F]); duplo(g, caixa(1.3, 0.8, 0.05), AZUL, [x + 0.7, y0 + 28.1, F]); }
+
+    // colisão: o castelo inteiro (com a base) e as torres dos cantos
+    this.retangulo(0, cz, 2 * MX + 4, F - T + 4, 0, 1.8);
+    for (const x of [-MX, MX]) for (const z of [F, T]) this.obst(x, z, 3.2);
+    this.obst(0, F + 3.2, 2.2); // a escada (você para na frente dela)
   }
 
   fonte() {
@@ -524,7 +624,7 @@ export class Reino {
     const rng = this.rng;
     for (let i = 0; i < 60; i++) {
       const a = rng() * Math.PI * 2, d = 20 + rng() * 34, x = Math.cos(a) * d, z = Math.sin(a) * d;
-      if (Math.hypot(x - ARENA_REINO.x, z - ARENA_REINO.z) < 23 || (Math.abs(x) < 15 && z > -16 && z < 60) || Math.hypot(x, z + 4) < 18 || Math.hypot(x - 36, z + 26) < 12) continue;
+      if (Math.hypot(x - ARENA_REINO.x, z - ARENA_REINO.z) < 23 || (Math.abs(x) < 15 && z > -16 && z < 60) || (Math.abs(x) < 21 && z > -36 && z < 8) || Math.hypot(x - 36, z + 26) < 12) continue;
       if (Math.hypot(x - 22, z - 30) < 22 || Math.hypot(x - 20, z + 38) < 8) continue; // a vila
       const e = 0.8 + rng() * 0.5;
       peca(this.raiz, cil(0.3 * e, 0.4 * e, 1.6 * e, 5), MAD, [x, 0.8 * e, z]);
