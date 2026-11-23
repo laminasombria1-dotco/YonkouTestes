@@ -1074,35 +1074,57 @@ export function criarCoroa(escala = 1) {
 }
 
 // ---------- Casa portátil (base) ----------
-export function criarCasa() {
+// nivel: 1 = a casa simples; 2 = maior, com 2º andar e telhado azul; 3 = igual à 2 + a lojinha (barraca listrada do lado)
+export function criarCasa(nivel = 1) {
   const g = new THREE.Group();
-  const parede = mat('#f3e3c3'), madeira = mat('#8a5a3a'), telhado = mat('#d9534f'), pedra = mat('#c9c0ad');
+  const parede = mat('#f3e3c3'), madeira = mat('#8a5a3a'), pedra = mat('#c9c0ad');
+  const telhado = mat(nivel >= 2 ? '#3a5aa8' : '#d9534f');
+  const vidro = () => mat('#9fe0ff', { emissive: '#ffd37a', emissiveIntensity: 0.1 });
+  const andar = nivel >= 2 ? 1.7 : 0; // altura do 2º andar
   p(g, G.caixa(4.4, 0.3, 3.8), pedra, [0, 0.15, 0]);
   p(g, G.caixa(3.6, 2.2, 3.0), parede, [0, 1.4, 0]);
-  const teto = p(g, G.cone(3.1, 1.7, 4), telhado, [0, 3.35, 0], [0, Math.PI / 4, 0]);
+  const janelas = [];
+  if (nivel >= 2) {
+    // 2º andar, um pouco para fora, com madeira cruzada e 2 janelas
+    p(g, G.caixa(3.8, andar, 3.2), parede, [0, 2.5 + andar / 2, 0]);
+    for (const x of [-1.9, 0, 1.9]) p(g, G.caixa(0.16, andar, 3.25), madeira, [x, 2.5 + andar / 2, 0]);
+    p(g, G.caixa(3.9, 0.16, 3.3), madeira, [0, 2.5, 0]);
+    for (const x of [-0.95, 0.95]) janelas.push(p(g, G.caixa(0.6, 0.6, 0.08), vidro(), [x, 2.5 + andar / 2, 1.62]));
+  }
+  const teto = p(g, G.cone(nivel >= 2 ? 3.3 : 3.1, 1.7, 4), telhado, [0, 3.35 + andar, 0], [0, Math.PI / 4, 0]);
   teto.scale.set(1, 1, 0.88);
   // vigas nos cantos
   for (const [x, z] of [[-1.8, 1.5], [1.8, 1.5], [-1.8, -1.5], [1.8, -1.5]]) p(g, G.caixa(0.2, 2.2, 0.2), madeira, [x, 1.4, z]);
   p(g, G.caixa(0.95, 1.45, 0.1), madeira, [0, 1.03, 1.52]);
   p(g, G.esf(0.06), mat('#ffd23f'), [0.3, 1.0, 1.59]);
-  const janelas = [];
   for (const x of [-1.15, 1.15]) {
-    const j = p(g, G.caixa(0.7, 0.6, 0.08), mat('#9fe0ff', { emissive: '#ffd37a', emissiveIntensity: 0.1 }), [x, 1.6, 1.52]);
+    const j = p(g, G.caixa(0.7, 0.6, 0.08), vidro(), [x, 1.6, 1.52]);
     p(g, G.caixa(0.8, 0.08, 0.12), madeira, [x, 1.26, 1.55]);
     janelas.push(j);
   }
-  p(g, G.caixa(0.45, 1.2, 0.45), pedra, [1.0, 3.6, -0.5]);
-  // sinal de cura (cruz verde) acima da porta
-  const cruz = brilho('#5fe08a', 0.8);
-  p(g, G.caixa(0.5, 0.15, 0.08), cruz, [0, 2.15, 1.55]);
-  p(g, G.caixa(0.15, 0.5, 0.08), cruz, [0, 2.15, 1.55]);
+  p(g, G.caixa(0.45, 1.2, 0.45), pedra, [1.0, 3.6 + andar, -0.5]);
+  // sinal da casa acima da porta (cruz verde no nível 1; estrela dourada nos níveis maiores)
+  const sinal = brilho(nivel >= 2 ? '#ffd23f' : '#5fe08a', 0.8);
+  p(g, G.caixa(0.5, 0.15, 0.08), sinal, [0, 2.15, 1.55]);
+  p(g, G.caixa(0.15, 0.5, 0.08), sinal, [0, 2.15, 1.55]);
   p(g, G.caixa(1.2, 0.04, 0.7), mat('#c9533a'), [0, 0.32, 2.3]);
   // bandeira no telhado
-  p(g, G.cil(0.03, 0.03, 1.2, 4), madeira, [-1.0, 4.0, 0.2]);
-  const bandeira = p(g, G.caixa(0.6, 0.35, 0.03), mat('#8ff4ff'), [-0.7, 4.4, 0.2]);
+  p(g, G.cil(0.03, 0.03, 1.2, 4), madeira, [-1.0, 4.0 + andar, 0.2]);
+  const bandeira = p(g, G.caixa(0.6, 0.35, 0.03), mat(nivel >= 2 ? '#ffd23f' : '#8ff4ff'), [-0.7, 4.4 + andar, 0.2]);
+  if (nivel >= 3) {
+    // a lojinha: barraca listrada azul e branca do lado direito, com as poções
+    const b = new THREE.Group(); b.position.set(3.5, 0, 0.9); g.add(b);
+    p(b, G.caixa(2.2, 0.9, 0.9), madeira, [0, 0.45, 0]);
+    for (const x of [-1.05, 1.05]) p(b, G.caixa(0.12, 2.3, 0.12), madeira, [x, 1.15, -0.35]);
+    for (let i = 0; i < 5; i++) p(b, G.caixa(0.46, 0.08, 1.3), mat(i % 2 ? '#ffffff' : '#3a5aa8'), [-0.92 + i * 0.46, 2.3, -0.05], [0.3, 0, 0]);
+    for (const [c, x] of [['#e8474a', -0.6], ['#e8474a', -0.25], ['#ffd23f', 0.25], ['#ffd23f', 0.6]]) {
+      p(b, G.esf(0.17), brilho(c, 0.55), [x, 1.08, 0]);
+      p(b, G.cil(0.05, 0.05, 0.18, 4), mat('#ffffff'), [x, 1.3, 0]);
+    }
+  }
   const fumacas = [];
-  for (let i = 0; i < 3; i++) fumacas.push(p(g, G.ico(0.22, 0), mat('#e0e0e0', { transparent: true, opacity: 0.7, depthWrite: false }), [1.0, 4.3, -0.5]));
-  g.userData = { janelas, fumacas, bandeira };
+  for (let i = 0; i < 3; i++) fumacas.push(p(g, G.ico(0.22, 0), mat('#e0e0e0', { transparent: true, opacity: 0.7, depthWrite: false }), [1.0, 4.3 + andar, -0.5]));
+  g.userData = { janelas, fumacas, bandeira, nivel, yChamine: 4.3 + andar };
   return g;
 }
 
@@ -1110,7 +1132,7 @@ export function animarCasa(casa, t, noite) {
   const u = casa.userData;
   u.fumacas.forEach((f, i) => {
     const k = (t * 0.35 + i / 3) % 1;
-    f.position.set(1.0 + k * 0.4, 4.3 + k * 1.6, -0.5);
+    f.position.set(1.0 + k * 0.4, u.yChamine + k * 1.6, -0.5);
     f.scale.setScalar(0.6 + k * 1.2);
     f.material.opacity = 0.7 * (1 - k);
   });

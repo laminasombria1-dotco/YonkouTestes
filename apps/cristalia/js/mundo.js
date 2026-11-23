@@ -540,15 +540,36 @@ export class Mundo {
     for (const [dx, dz] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) {
       if (alturaEm(x + dx * RAIO_CASA, z + dz * RAIO_CASA) < NIVEL_AGUA + 0.3) return false;
     }
-    const r = RAIO_CASA + 0.8;
-    return !this.grade.cada(x, z, r, (o) => o !== this.casaObst && Math.hypot(x - o.x, z - o.z) < o.r + r);
+    const r = RAIO_CASA + (this.nivelCasa >= 3 ? 2.6 : 0.8); // nível 3: a lojinha do lado também precisa caber
+    return !this.grade.cada(x, z, r, (o) => o !== this.casaObst && o !== this.lojinhaObst && Math.hypot(x - o.x, z - o.z) < o.r + r);
+  }
+
+  // Nível da casa (1 a 3: ver bolsa.js). Ao evoluir, o desenho da casa troca.
+  get nivelCasa() { return this.jogo.estado?.casaNivel || 1; }
+  trocarModeloCasa() {
+    if (this.casa.userData.nivel === this.nivelCasa) return;
+    const vis = this.casa.visible, pos = this.casa.position.clone(), rot = this.casa.rotation.y;
+    this.cena.remove(this.casa);
+    descartar(this.casa);
+    this.casa = criarCasa(this.nivelCasa);
+    this.casa.position.copy(pos); this.casa.rotation.y = rot; this.casa.visible = vis;
+    this.cena.add(this.casa);
+    if (this.casaPos) this.montarCasa(this.casaPos.x, this.casaPos.z, this.casaPos.rot); // a animação de montar, com o desenho novo
+  }
+  // Um ponto em volta da casa (lx, lz no desenho da casa) no mapa
+  pontoDaCasa(lx, lz) {
+    const { x, z, rot } = this.casaPos, c = Math.cos(rot), s = Math.sin(rot);
+    return { x: x + lx * c + lz * s, z: z - lx * s + lz * c };
   }
 
   montarCasa(x, z, rot, animar = true) {
+    if (this.casa.userData.nivel !== this.nivelCasa) { this.cena.remove(this.casa); descartar(this.casa); this.casa = criarCasa(this.nivelCasa); this.cena.add(this.casa); }
     if (this.casaObst) this.obstaculos.tirar(this.casaObst);
+    if (this.lojinhaObst) { this.obstaculos.tirar(this.lojinhaObst); this.lojinhaObst = null; }
     this.casaPos = { x, z, rot };
     this.casaObst = { x, z, r: RAIO_CASA };
     this.obstaculos.push(this.casaObst);
+    if (this.nivelCasa >= 3) { this.lojinhaObst = { ...this.pontoDaCasa(3.5, 0.6), r: 1.3 }; this.obstaculos.push(this.lojinhaObst); }
     this.casa.position.set(x, alturaEm(x, z), z);
     this.casa.rotation.y = rot;
     this.casa.visible = true;
@@ -560,6 +581,7 @@ export class Mundo {
 
   guardarCasa() {
     if (this.casaObst) this.obstaculos.tirar(this.casaObst);
+    if (this.lojinhaObst) { this.obstaculos.tirar(this.lojinhaObst); this.lojinhaObst = null; }
     this.casaObst = null;
     this.casaPos = null;
     this.casa.visible = false;
@@ -805,6 +827,17 @@ export class Mundo {
         this.casa.scale.set(k + pulo, k * (1 + pulo), k + pulo);
       } else this.casa.scale.setScalar(1);
       animarCasa(this.casa, t, this.fatorNoite);
+      // Nível 2 ou mais: encostar na casa levanta os desmaiados com 2/3 da vida
+      if (est && this.nivelCasa >= 2 && this.distanciaCasa() < 4.6 && [...est.equipe, ...est.reserva].some((m) => m.hp <= 0)) {
+        this.jogo.levantarDesmaiados(2 / 3);
+        this.jogo.aviso('Sua casa levantou os desmaiados com 2/3 da vida!');
+      }
+      // Nível 3: a lojinha do lado da casa (mais cara que a do Reino)
+      if (est && this.nivelCasa >= 3) {
+        const lj = this.pontoDaCasa(3.5, 2.3), d = Math.hypot(this.pos.x - lj.x, this.pos.z - lj.z);
+        if (d > 3) this.lojinhaArmada = true;
+        if (d < 1.3 && this.lojinhaArmada !== false && !pausado) { this.lojinhaArmada = false; this.jogo.bolsa.abrirLoja(true); }
+      }
     }
 
     // Cristais no chão (só os perto são desenhados)

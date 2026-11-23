@@ -12,7 +12,7 @@ import { Plataforma, CenaEvolucao } from './plataforma.js';
 import { carregarModelos3D } from './modelos.js';
 import { Companheiro } from './companheiro.js';
 import { TREINADORES, equipeDoTreinador } from './reino.js';
-import { Bolsa, MOEDAS } from './bolsa.js';
+import { Bolsa, MOEDAS, madeiraDe } from './bolsa.js';
 import { Ovo } from './ovo.js';
 import {
   ESPECIES, ELEMENTOS, GOLPES, ORDEM_ELEMENTOS, RAROS, NOMES_ESTAGIO, NIVEIS_EVOLUCAO,
@@ -522,7 +522,7 @@ class Jogo {
 
   novoJogo(especie) {
     this.estado = { equipe: [criarMonstro(especie, 3)], reserva: [], pedras: { comum: 5, forte: 0, supremo: 0 }, capturados: [especie], casa: null,
-      moedas: 0, pocoes: { cura: 3, reviver: 1 } };
+      moedas: 0, pocoes: { cura: 3, reviver: 1 }, madeira: 0, casaNivel: 1 };
     this.mundo.hora = 0.08;
     this.entrarNoMundo();
     this.mundo.povoar();
@@ -729,6 +729,8 @@ class Jogo {
       let moedas = b.chefe && vencidos.length ? MOEDAS.chefe : 0;
       if (!b.chefe) for (const d of b.derrotados) moedas += b.grupo ? (d.lider ? MOEDAS.liderGrupo : MOEDAS.comumGrupo) : MOEDAS.selvagem[0] + Math.floor(Math.random() * (MOEDAS.selvagem[1] - MOEDAS.selvagem[0] + 1));
       this.bolsa.ganharMoedas(moedas);
+      // Madeira Rara: só chefes e monstros fortes (Nv.30 para cima)
+      this.bolsa.ganharMadeira(vencidos.reduce((s, d) => s + madeiraDe(d), 0));
     }
     for (const novo of b.capturados) {
       novo.hp = Math.max(1, novo.hp);
@@ -752,10 +754,10 @@ class Jogo {
     if (b.treinador) this.fimLutaTreinador(tipo, b);
     else if (tipo === 'derrota') {
       // Na casa: só os desmaiados levantam, com 1/4 da vida. Sem casa: acorda na fonte do castelo, curado.
-      if (this.mundo.casaPos) this.levantarDesmaiados(0.25);
+      if (this.mundo.casaPos) this.levantarDesmaiados((this.estado.casaNivel || 1) >= 2 ? 2 / 3 : 0.25); // nível 2+: 2/3
       else this.curarEquipe();
       this.mundo.irParaBase();
-      this.aviso(this.mundo.casaPos ? 'Sua equipe desmaiou. Vocês acordaram em casa: os desmaiados voltaram com 1/4 da vida.' : 'Sua equipe desmaiou. Vocês acordaram na fonte do castelo, curados.');
+      this.aviso(this.mundo.casaPos ? `Sua equipe desmaiou. Vocês acordaram em casa: os desmaiados voltaram com ${(this.estado.casaNivel || 1) >= 2 ? '2/3' : '1/4'} da vida.` : 'Sua equipe desmaiou. Vocês acordaram na fonte do castelo, curados.');
       this.aviso('Ninguém foi perdido: todos os seus monstros estão em Equipe → Reserva.');
     } else {
       this.mundo.graca = 2.5;

@@ -363,7 +363,9 @@ export class PainelGM {
           <button class="gm-btn" type="button" data-gm="arenaProg" data-v="dominar">Dominar a arena</button>
           <button class="gm-btn" type="button" data-gm="arenaProg" data-v="zerar">Zerar a arena</button>
           <button class="gm-btn" type="button" data-gm="moedas">+1000 moedas</button>
-          <button class="gm-btn" type="button" data-gm="chocar">Chocar o ovo agora</button></div>
+          <button class="gm-btn" type="button" data-gm="chocar">Chocar o ovo agora</button>
+          <button class="gm-btn" type="button" data-gm="madeira">+6 Madeiras Raras</button>
+          ${[1, 2, 3].map((n) => `<button class="gm-btn" type="button" data-gm="casaNivel" data-n="${n}">Casa nível ${n}</button>`).join('')}</div>
         <p class="gm-dica">"Lutar" começa a luta na hora (sem precisar da ordem). Dominada, todos lutam no Nv.50.</p>
       </div>
       <div class="gm-bloco">
@@ -507,6 +509,8 @@ export class PainelGM {
       case 'hora': this.mundo.hora = Number(d.h); this.mundo.atualizarCeu(0); break;
       case 'ir': this.ir(d.onde); this.fecharPainel(); return;
       case 'treinador': this.fecharPainel(); this.jogo.lutarComTreinador(Number(d.i)); return;
+      case 'madeira': this.jogo.estado.madeira = (this.jogo.estado.madeira || 0) + 6; this.jogo.aviso('GM: +6 Madeiras Raras.'); this.jogo.salvar(); break;
+      case 'casaNivel': this.jogo.estado.casaNivel = Number(d.n); this.mundo.trocarModeloCasa(); this.jogo.aviso(`GM: casa no nível ${d.n}.`); this.jogo.salvar(); break;
       case 'moedas': this.jogo.estado.moedas = (this.jogo.estado.moedas || 0) + 1000; this.jogo.atualizarHudMundo(); this.jogo.salvar(); break;
       case 'chocar': if (this.jogo.estado.ovo) { this.jogo.ovo.chocarAgora(); this.fecharPainel(); return; } this.jogo.aviso('GM: você não tem ovo (domine a arena).'); break;
       case 'arenaProg': {

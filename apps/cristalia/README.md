@@ -105,10 +105,10 @@ O jogo é um **PWA** (aplicativo web instalável). Ele fica no site **https://la
   - **Montar casa aqui:** monta na sua frente. Se ali estiver ocupado, o jogo procura o lugar livre mais próximo.
   - **Guardar a casa:** aparece quando você está perto dela; a casa volta para a bolsa.
   - **Mudar a casa para cá:** aparece quando você está longe; a casa sai de onde estava e é montada onde você está.
-- **A casa não cura.** Ela serve para marcar o lugar onde você acorda, para não ter que voltar até o castelo. A cura de verdade é a fonte do castelo.
+- **A casa evolui** (nível 1, 2 e 3) com **Madeira Rara** e moedas. Veja "Evolução da casa" abaixo. No nível 1 ela **não cura**: só marca o lugar onde você acorda, para não ter que voltar até o castelo. A cura completa é sempre a fonte do castelo.
 - Em volta da casa (10 m) é **área segura**: monstros não aparecem e dão meia-volta.
 - Se toda a equipe desmaiar numa batalha:
-  - **com a casa montada:** você acorda na casa, e **só os monstros desmaiados** voltam com **1/4 da vida** (os outros ficam como estavam);
+  - **com a casa montada:** você acorda na casa, e **só os monstros desmaiados** voltam com **1/4 da vida** (**2/3** com a casa nível 2 ou 3); os outros ficam como estavam;
   - **com a casa guardada:** você acorda na fonte do castelo, com todos curados.
 - Não dá para montar a casa no Reino nem no corredor que leva até ele.
 - A posição da casa fica salva. A casa não pode ser montada na água nem na lava.
@@ -192,6 +192,28 @@ O Reino fica **fora da borda do mapa**, como as dungeons, mas não é dungeon: �
 - Lá dentro não aparecem monstros, não nascem árvores do mapa e não dá para montar a casa.
 - **Leve no celular:** todas as peças paradas do Reino viram **3 malhas** (cores normais, peças vistas dos dois lados e o que brilha), e a plateia é **1 lote**. A colisão usa círculos na `mundo.grade`, como o resto.
 - **Código:** a forma (corredor + platô) é o `REINO` em `js/dungeon.js` (`TracadoReino`, com `paraMundo` e `paraLocal`), a direção e a Estrada Real ficam em `js/mapa/gerador.js` (`ANG_REINO`, `ESTRADA`, `naEstradaReal`) e o cenário em `js/reino.js`.
+
+## Evolução da casa
+
+| Nível | O que faz | Custo para chegar |
+|---|---|---|
+| 1 | Não cura. Acordar nela levanta os desmaiados com 1/4 da vida | (começo) |
+| 2 | **Encostar nela levanta os desmaiados com 2/3 da vida** (os de pé ficam como estão). Acordar nela também levanta com 2/3. Ganha 2º andar, telhado azul e estrela dourada | 6 Madeiras Raras + 500 moedas |
+| 3 | Tudo do nível 2 + a **lojinha** do lado (barraca listrada): as mesmas poções da loja do Reino, **75% mais caras** (Cura 70, Reviver 210) | 12 Madeiras Raras + 1500 moedas |
+
+- **Para evoluir:** vá até a sua casa montada, abra a **Bolsa** e toque em **Evoluir** (a seção Casa mostra o nível, o que ele faz e o que falta).
+- **Madeira Rara** (aparece na Bolsa). Só de inimigos fortes; **os treinadores da arena não dão** (só moedas):
+
+  | Quem você vence (ou captura) | Madeira Rara |
+  |---|---|
+  | Chefe Nv.30 a 39 | 1, garantida |
+  | Chefe Nv.40 ou mais | 2, garantidas |
+  | Líder de grupo Nv.30 ou mais | 25% de chance de 1 |
+  | Monstro (solto ou de grupo) Nv.40 ou mais | 5% de chance de 1 |
+  | Abaixo do Nv.30 | nunca |
+
+- Guardar a casa ou mudar ela de lugar **não perde o nível**. O nível 3 precisa de um pouco mais de espaço para montar (a lojinha fica do lado).
+- **Fica salvo** em `estado.casaNivel` e `estado.madeira` (saves antigos: nível 1 e 0 madeiras). Os números ficam em `CASA` e `MADEIRA`, no `js/bolsa.js`; o desenho dos 3 níveis em `criarCasa(nivel)`, no `js/modelos.js`.
 
 ## Grupos de monstros
 
@@ -576,7 +598,7 @@ Só a **conta GM** tem o painel. O código fica em `js/gm.js` e só é baixado q
 | **Monstros** | Escolhe qualquer espécie (todas as 53, separadas por linha) e o nível (1 a 50). **Aparecer perto** (8 m na sua frente), **Lutar agora** (na arena escolhida ou na da região), **Grupo (5 + líder)** no mapa, **Lutar com grupo** e **Dar para mim** (vai para a equipe ou a reserva). Atalhos: selvagem, tipo duplo ou grupo aleatório, e **limpar o mapa** (os chefes e os acampamentos ficam). |
 | **Dungeons** | Para o Caminho das Brasas e a Trilha Ancestral: **ir para** a entrada, cada etapa ou o chefe; **lutar contra o acampamento** de cada etapa (na ordem 2 fracos → 2 médios → 1 forte → líder, no nível que a sua equipe enfrentaria); **lutar com o chefe** no nível escolhido; **chefe volta já** (sem esperar o amanhecer); **monstro da dungeon perto**. |
 | **Equipe** | **Copiar jogo de outra conta** deste aparelho para o GM (para testar com a equipe de verdade; a conta original não muda). Escolhe o **monstro alvo** (equipe ou reserva) e mostra nível, vida e experiência. **Adicionar XP:** +50, +500, +1 nível ou **até o nível ___**. A XP sobe como no jogo, então ele **evolui** ao chegar no nível (a animação aparece quando o painel fecha). **Evoluir agora**, **Voltar uma forma** (fica no nível logo abaixo da evolução, para não evoluir de novo sozinho), **Curar**, **subir 1 nível sem evoluir**. Também **curar todos** e mudar os cristais (+10, 99 ou zerar). |
-| **Mundo** | **Arena do Reino:** lutar com qualquer treinador na hora (sem a ordem), **dominar a arena** (já entrega o ovo), **zerar a arena** (tira o ovo também), **+1000 moedas** e **chocar o ovo agora**. **Hora:** amanhecer, meio-dia, anoitecer, meia-noite ou **parar o relógio**. **Teleporte:** castelo (a fonte), arena do Reino, Estrada Real, as 6 regiões (o lugar de cada uma vem da semente do mapa) e a casa. **Andar ×1, ×2 ou ×3.** **Invisível:** os monstros não vêm atrás de você, mas encostar neles ainda começa a batalha. **Mostrar FPS** (embaixo, no meio da tela), com os números do mapa (chunks, objetos, desenhos e triângulos por quadro, tempo para criar um chunk). **Mapa:** ver outra semente (digitada ou aleatória) e voltar à de todos: recarrega o jogo com outro mapa só neste aparelho, até fechar (pela URL `?semente=123`). |
+| **Mundo** | **Arena do Reino:** lutar com qualquer treinador na hora (sem a ordem), **dominar a arena** (já entrega o ovo), **zerar a arena** (tira o ovo também), **+1000 moedas**, **chocar o ovo agora**, **+6 Madeiras Raras** e **casa nível 1, 2 ou 3**. **Hora:** amanhecer, meio-dia, anoitecer, meia-noite ou **parar o relógio**. **Teleporte:** castelo (a fonte), arena do Reino, Estrada Real, as 6 regiões (o lugar de cada uma vem da semente do mapa) e a casa. **Andar ×1, ×2 ou ×3.** **Invisível:** os monstros não vêm atrás de você, mas encostar neles ainda começa a batalha. **Mostrar FPS** (embaixo, no meio da tela), com os números do mapa (chunks, objetos, desenhos e triângulos por quadro, tempo para criar um chunk). **Mapa:** ver outra semente (digitada ou aleatória) e voltar à de todos: recarrega o jogo com outro mapa só neste aparelho, até fechar (pela URL `?semente=123`). |
 | **Testes** | **Invencível** (a vida não desce, nem com efeitos e perigos da arena), **recarga zero**, **captura garantida** (qualquer cristal segura qualquer monstro, até os chefes), **inimigos parados**, **dano ×10**. Na gaveta da batalha também: **encher minha vida** e **vencer agora** (derrota todos, até os que estão esperando nas ondas). |
 
 - As chaves (invencível, dano ×10...) valem até você desligar.
@@ -613,7 +635,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `modelos/` | Os arquivos `.glb` (hoje `brasito.glb`) e um README com os detalhes de cada um |
 | `js/plataforma.js` | A vitrine 3D do Monstruário e a animação de evolução |
 | `js/mundo.js` | Mapa aberto: regiões, dia e noite, monstros selvagens e grupos (em volta do jogador), cristais, fonte do castelo, casa, Estrada Real segura, colisão e câmera |
-| `js/bolsa.js` | Moedas, poções (preços e efeito), a Bolsa (casa, poções, cristais, ovo) e a loja de poções do Reino |
+| `js/bolsa.js` | Moedas, poções (preços e efeito), Madeira Rara e a evolução da casa, a Bolsa (casa, poções, cristais, ovo), a loja de poções do Reino e a lojinha da casa |
 | `js/ovo.js` | O Ovo Misterioso: o ovo roxo em 3D, o tempo para chocar, o sorteio e a cena do nascimento |
 | `js/reino.js` | O Reino: castelo, praça e fonte, vila e loja, arena fechada com plateia e os 5 treinadores, muralha, lanternas da Estrada Real e a placa do Campo (tudo junto em poucas malhas) |
 | `js/mapa/config.js` | Configurações do mapa procedural e os perfis de qualidade |
