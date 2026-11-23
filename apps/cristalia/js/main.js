@@ -219,12 +219,12 @@ class Jogo {
       this.estado = s.estado;
       if (s.voltaram?.length) setTimeout(() => this.aviso(`Recuperados para a reserva: ${s.voltaram.join(', ')}.`), 600);
       if (s.hora != null) this.mundo.hora = s.hora;
-      // jogo salvo em outro mapa (o mapa antigo, ou outra semente): acorda na fonte e a casa volta para a mochila
+      // jogo salvo em outro mapa (o mapa antigo, ou outra semente): acorda no castelo e a casa volta para a mochila
       const outroMapa = s.semente !== SEMENTE;
       if (outroMapa && this.estado.casa) this.estado.casa = null;
       this.entrarNoMundo();
       if (s.pos && !outroMapa) { this.mundo.pos.set(s.pos.x, 0, s.pos.z); this.mundo.chunks.carregarTudoPerto(s.pos.x, s.pos.z); this.mundo.posicionarCamera(1); }
-      if (outroMapa) setTimeout(() => this.aviso('O mapa é novo! Você acordou na fonte e a casa voltou para a mochila.'), 900);
+      if (outroMapa) setTimeout(() => this.aviso('O mapa é novo! Você acordou no castelo e a casa voltou para a mochila.'), 900);
       // saves antigos: evolui quem já tem nível para isso
       for (const m of [...this.estado.equipe, ...this.estado.reserva]) this.registrarEvolucoes(verificarEvolucao(m));
       if (this.filaEvo.length) this.proximaEvolucao();
@@ -521,6 +521,7 @@ class Jogo {
     this.mundo.povoar();
     this.salvar();
     this.aviso(`${ESPECIES[especie].nome} agora é seu parceiro!`);
+    this.aviso('Siga a Estrada Real para sair do Reino e caçar monstros.');
     this.aviso('Encoste num monstro selvagem para batalhar.');
     this.aviso('Você tem uma casa na mochila: toque em "Montar casa".');
   }
@@ -574,6 +575,15 @@ class Jogo {
 
   precisaCura() {
     return [...this.estado.equipe, ...this.estado.reserva].some((m) => m.hp < statsDe(m.especie, m.nivel).hpMax);
+  }
+
+  // Os monstros desmaiados levantam com uma parte da vida (os outros ficam como estão)
+  levantarDesmaiados(parte) {
+    for (const m of [...this.estado.equipe, ...this.estado.reserva]) {
+      if (m.hp <= 0) m.hp = Math.max(1, Math.round(statsDe(m.especie, m.nivel).hpMax * parte));
+    }
+    this.atualizarHudMundo();
+    this.salvar();
   }
 
   curarEquipe() {
@@ -681,9 +691,11 @@ class Jogo {
     b.descartarTudo();
     this.batalha = null;
     if (tipo === 'derrota') {
-      this.curarEquipe();
+      // Na casa: só os desmaiados levantam, com 1/4 da vida. Sem casa: acorda na fonte do castelo, curado.
+      if (this.mundo.casaPos) this.levantarDesmaiados(0.25);
+      else this.curarEquipe();
       this.mundo.irParaBase();
-      this.aviso(this.mundo.casaPos ? 'Sua equipe desmaiou. Vocês acordaram em casa, curados.' : 'Sua equipe desmaiou. Vocês acordaram na fonte, curados.');
+      this.aviso(this.mundo.casaPos ? 'Sua equipe desmaiou. Vocês acordaram em casa: os desmaiados voltaram com 1/4 da vida.' : 'Sua equipe desmaiou. Vocês acordaram na fonte do castelo, curados.');
       this.aviso('Ninguém foi perdido: todos os seus monstros estão em Equipe → Reserva.');
     } else {
       this.mundo.graca = 2.5;

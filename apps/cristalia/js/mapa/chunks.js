@@ -17,7 +17,7 @@ import * as THREE from 'three';
 import { CONFIG_MAPA as C, QUALIDADES } from './config.js';
 import {
   SEMENTE, RAIO_MUNDO, NIVEL_AGUA, POIS, RESERVAS, LAGOA, aleatorio, semente3,
-  pesosEm, idDoPeso, N_PESOS, biomaEm, lagoEm, geloEm,
+  pesosEm, idDoPeso, N_PESOS, biomaEm, lagoEm, geloEm, naEstradaReal, ESTRADA,
 } from './gerador.js';
 import { alturaVertice, alturaEm, ESPACO } from './altura.js';
 import { TRACADOS, S_LAGO, foraDungeons } from '../dungeon.js';
@@ -282,6 +282,12 @@ export class Chunks {
   corDoChao(x, z, y, inc, rng, jaCalculado = false) {
     // dungeons: chão de basalto (Brasas) e de floresta fechada (Trilha), como antes
     const tr = TRACADOS.find((t) => t.local(x, z).s > t.sMin + 8 && t.fora(x, z) < 8);
+    if (tr?.id === 'reino') {
+      const fd = tr.fora(x, z), lp = tr.local(x, z);
+      if (fd > 2) return sorteio(rng, ['#5f8f44', '#6a9a4a', '#7a8a5a']);            // as encostas em volta
+      if (lp.s < tr.sFim + 4 && Math.abs(lp.lat) < 3.2) return sorteio(rng, ['#9c9484', '#a8a090', '#8e877a']); // a Estrada Real no corredor
+      return sorteio(rng, ['#7fbf5a', '#86c45e', '#76b452']);                          // a grama do Reino
+    }
     if (tr?.id === 'brasas') {
       const fd = tr.fora(x, z);
       return fd > 2 ? (rng() < 0.5 ? '#3a2a26' : '#2e2220') : (rng() < 0.08 ? '#c8461a' : sorteio(rng, ['#5a3a30', '#6b4535', '#4d3229']));
@@ -292,6 +298,8 @@ export class Chunks {
       if (Math.abs(lp.s - S_LAGO) < 4.2 && Math.abs(lp.lat) > 2.6) return '#2a6a6a';
       return rng() < 0.1 ? '#6a5236' : sorteio(rng, ['#3f7a3a', '#4a8a40', '#36703a', '#2f6a34']);
     }
+    // a Estrada Real (do Campo até a boca do Reino)
+    { const e = naEstradaReal(x, z); if (e.dentro && e.lat < ESTRADA.largura + 0.4) return sorteio(rng, ['#9c9484', '#a8a090', '#8e877a']); } // pedras do calçamento
     // o lago escondido da Floresta (cores do mapa antigo)
     const dl = Math.hypot(x - LAGOA.x, z - LAGOA.z);
     if (dl < LAGOA.r + 1) return '#3a8a8a';
@@ -383,6 +391,7 @@ export class Chunks {
     const dc = Math.hypot(x, z);
     if (dc < 13 || dc > RAIO_MUNDO - 3) return false;
     for (const t of TRACADOS) if (t.reservado(x, z)) return false;
+    { const e = naEstradaReal(x, z); if (e.dentro && e.lat < ESTRADA.largura + 2.5) return false; } // a Estrada Real fica livre
     for (const r of RESERVAS) if (Math.hypot(x - r.x, z - r.z) < r.r) return false;
     for (const r of this.m.reservas) if (Math.hypot(x - r.x, z - r.z) < r.r) return false;
     const h = alturaEm(x, z);

@@ -45,7 +45,7 @@ export class Companheiro {
     const d = this.jogo.estado?.equipe[0];
     if (!d) return;
     const nome = ESPECIES[d.especie].nome;
-    if (d.hp <= 0) { if (!silencioso) this.jogo.aviso(`${nome} está desmaiado. Cure na casa ou na fonte para invocar.`); return; }
+    if (d.hp <= 0) { if (!silencioso) this.jogo.aviso(`${nome} está desmaiado. Cure na fonte do castelo para invocar.`); return; }
     this.criarModelo(d);
     // aparece atrás do treinador
     const m = this.mundo, atras = this.pontoAtras();

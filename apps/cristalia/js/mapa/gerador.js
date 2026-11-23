@@ -119,6 +119,26 @@ export function biomaEm(x, z) {
 
 // ---------- saídas das dungeons (pela borda do bioma delas) ----------
 export const SAIDAS = { brasas: centroDe('fogo').ang, raizes: centroDe('planta').ang };
+// ---------- o Reino (fora da borda) e a Estrada Real ----------
+// O Reino sai pela borda no lado mais longe das duas dungeons e das montanhas
+// da Neve (a direção vem da semente). A Estrada Real vai do Campo até a boca do Reino.
+const difAng = (a, b) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
+export const ANG_REINO = (() => {
+  const evitar = [SAIDAS.brasas, SAIDAS.raizes, centroDe('raio').ang];
+  let melhor = 0, folga = -1;
+  for (let i = 0; i < 360; i++) {
+    const a = (i * Math.PI) / 180, f = Math.min(...evitar.map((e) => difAng(a, e)));
+    if (f > folga) { folga = f; melhor = a; }
+  }
+  return melhor;
+})();
+export const ESTRADA = { ang: ANG_REINO, dir: { x: Math.cos(ANG_REINO), z: Math.sin(ANG_REINO) }, inicio: 34, fim: RAIO_MUNDO - 4, largura: 3 };
+// Onde um ponto fica em relação à estrada: ao = ao longo (distância do centro), lat = para o lado
+export function naEstradaReal(x, z) {
+  const ao = x * ESTRADA.dir.x + z * ESTRADA.dir.z, lat = Math.abs(-x * ESTRADA.dir.z + z * ESTRADA.dir.x);
+  return { ao, lat, dentro: ao > ESTRADA.inicio && ao < ESTRADA.fim + 8 };
+}
+
 // 0 perto do caminho de uma dungeon (sem rio nem lago ali), 1 longe
 function longeDasSaidas(x, z) {
   let f = 1;
@@ -279,6 +299,7 @@ export function alturaBase(x, z) {
   if (dc < 12) h *= dc / 12; // centro plano para a fonte
   // rios: onde um ruído bem largo passa perto de zero
   fRio *= suave(16, 28, dc) * longeDasSaidas(x, z);
+  { const e = naEstradaReal(x, z); if (e.ao > ESTRADA.inicio - 10) fRio *= suave(7, 16, e.lat); } // sem rio na Estrada Real
   if (fRio > 0.02 && C.agua.rios > 0) {
     for (const r of SEM_RIO) { const d = Math.hypot(x - r.x, z - r.z); if (d < r.r + 14) fRio *= suave(r.r + 2, r.r + 14, d); }
     const L = C.agua.rios * fRio;

@@ -22,7 +22,7 @@
 import * as THREE from 'three';
 import { criarModelo, criarCoroa, animarModelo, criarAuraDupla } from './modelos.js';
 import { ESPECIES, ELEMENTOS, DUNGEONS, niveisDaEtapa, nivelDoChefe, criarMonstro, statsDe, formaPorNivel } from './dados.js';
-import { SAIDAS, RAIO_MUNDO } from './mapa/gerador.js';
+import { SAIDAS, RAIO_MUNDO, ANG_REINO, alturaBase } from './mapa/gerador.js';
 
 const MAX_SOLTOS = 7;            // monstros soltos dentro de cada dungeon
 const RESPAWN_ACAMPAMENTO = 120; // segundos até um acampamento vencido ter outro grupo
@@ -153,7 +153,45 @@ export const RAIZES = new Tracado({
 });
 RAIZES.yAgua = (S_LAGO - (84 - 10)) * 0.03 - 0.7; // altura da água do Lago Escondido
 
-export const TRACADOS = [BRASAS, RAIZES];
+// O Reino: não é dungeon. Um corredor curto atravessa a borda do mapa e chega num
+// platô redondo e plano (62 m de raio) cercado de montanhas, com o castelo no meio.
+// Usa a mesma forma das dungeons: a "arena do chefe" aqui é o platô inteiro.
+class TracadoReino extends Tracado {
+  constructor(cfg) {
+    super(cfg);
+    const b = this.ponto(this.sMin, 0);
+    this.h = alturaBase(b.x, b.z);          // o platô fica na altura do chão na boca
+    this.centro = this.centroChefe;
+    // giro do Reino: o eixo "frente" (+z do desenho) aponta para o mapa
+    this.giro = Math.atan2(-this.dir.x, -this.dir.z);
+  }
+  etapaEm() { return -1; }
+  altura(x, z, h) {
+    const { s, lat } = this.local(x, z);
+    const dT = this.dChefe(x, z);
+    let k = 0;
+    if (s > this.sMin - 2 && Math.abs(lat) < this.largura + 34)
+      k = Math.min(1, (s - (this.sMin - 2)) / 10) * Math.min(1, (this.largura + 34 - Math.abs(lat)) / 12);
+    if (dT < this.rChefe + 30) k = Math.max(k, Math.min(1, (this.rChefe + 30 - dT) / 12));
+    return k > 0 ? h * (1 - k) + this.h * k : h;
+  }
+  // Do desenho do Reino (x, z locais; +z = portão) para o mapa
+  paraMundo(lx, lz) {
+    const c = Math.cos(this.giro), s = Math.sin(this.giro);
+    return { x: this.centro.x + lx * c + lz * s, z: this.centro.z - lx * s + lz * c };
+  }
+  // Do mapa para o desenho do Reino
+  paraLocal(x, z) {
+    const dx = x - this.centro.x, dz = z - this.centro.z, c = Math.cos(this.giro), s = Math.sin(this.giro);
+    return { x: dx * c - dz * s, z: dx * s + dz * c };
+  }
+}
+export const REINO = new TracadoReino({
+  id: 'reino', zona: 'campo', ...saida(ANG_REINO),
+  sInicio: 70, sEtapa: 14, nEtapas: 1, sChefe: 146, rChefe: 62, largura: 9, curvaAmp: 0, sobe: 0,
+});
+
+export const TRACADOS = [BRASAS, RAIZES, REINO];
 
 // Funções para o mapa: juntam as duas dungeons
 export function tracadoPerto(x, z) { return TRACADOS.find((t) => t.perto(x, z)) || null; }

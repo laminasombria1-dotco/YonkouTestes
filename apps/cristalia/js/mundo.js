@@ -10,10 +10,11 @@
 import * as THREE from 'three';
 import { criarModelo, criarTreinador, criarCristal, pintarCristal, criarCoroa, criarCasa, animarCasa, animarModelo, criarAuraDupla, animarAura, descartar } from './modelos.js';
 import { CameraOrbita } from './camera.js';
-import { TRACADOS, tracadoPerto, prenderDungeons, dentroDungeonLivre, semCasaDungeons } from './dungeon.js';
+import { TRACADOS, REINO, tracadoPerto, prenderDungeons, dentroDungeonLivre, semCasaDungeons } from './dungeon.js';
 import { CaminhoDasBrasas } from './brasas.js';
 import { TrilhaAncestral, CRISTAL_ESCONDIDO } from './raizes.js';
-import { RAIO_MUNDO, NIVEL_AGUA, SEMENTE, LAGOA, RESERVAS, SEGREDOS, aleatorio, biomaEm, lagoEm } from './mapa/gerador.js';
+import { Reino, FONTE_REINO, NASCER_REINO } from './reino.js';
+import { RAIO_MUNDO, NIVEL_AGUA, SEMENTE, LAGOA, RESERVAS, SEGREDOS, ESTRADA, aleatorio, biomaEm, lagoEm, naEstradaReal } from './mapa/gerador.js';
 import { alturaEm, bloqueadoEm } from './mapa/altura.js';
 import { Grade, ListaObstaculos } from './mapa/grade.js';
 import { Chunks } from './mapa/chunks.js';
@@ -27,8 +28,7 @@ const N_CRISTAIS = 40;        // cristais de captura espalhados pelo mapa
 const VER_CRISTAL = 75;       // até essa distância os cristais são desenhados
 const VEL_JOGADOR = 7.5;
 const MAX_SELVAGENS = 18;     // monstros soltos em volta do jogador (aparecem perto e somem quando ficam longe)
-const RAIO_CASA = 2.6;        // tamanho da casa para colisão
-const CURA_CASA = 4.6;        // encostou nessa distância, a equipe é curada
+const RAIO_CASA = 2.6;        // tamanho da casa para colisão (a casa não cura: a cura é a fonte do castelo)
 const AREA_SEGURA_CASA = 10;  // monstros não chegam perto da casa
 const TAMANHO_GRUPO = 6;      // 5 comuns + 1 líder
 
@@ -64,11 +64,22 @@ function sortearLista(lista) {
   for (const [e, w] of lista) { r -= w; if (r <= 0) return e; }
   return lista[0][0];
 }
+// Estrada Real: nenhum selvagem nasce nela nem chega perto (é segura, como a casa)
+const SEGURA_ESTRADA = ESTRADA.largura + 4;
+function naEstrada(x, z, folga = 0) { const e = naEstradaReal(x, z); return e.dentro && e.lat < SEGURA_ESTRADA + folga; }
+// Perto da boca do Reino só aparecem monstros fracos (formas iniciais)
+const BOCA_REINO = { x: ESTRADA.dir.x * ESTRADA.fim, z: ESTRADA.dir.z * ESTRADA.fim };
+const PERTO_REINO = 55;
+export function pertoDoReino(x, z) { return Math.hypot(x - BOCA_REINO.x, z - BOCA_REINO.z) < PERTO_REINO; }
 export const DURACAO_DIA = 240; // segundos para um ciclo completo (metade dia, metade noite)
 
 const CEU_DIA = new THREE.Color('#9fd8ff'), CEU_NOITE = new THREE.Color('#1b2550');
 const HEMI_DIA = new THREE.Color('#d6f0ff'), HEMI_NOITE = new THREE.Color('#8f9fe0');
 const SOL_DIA = new THREE.Color('#fff1d6'), SOL_NOITE = new THREE.Color('#a8b8ff');
+// A fonte de cura fica na praça do castelo, no Reino (o novo centro do jogo)
+export const FONTE = REINO.paraMundo(FONTE_REINO.x, FONTE_REINO.z);
+export const NASCER = REINO.paraMundo(NASCER_REINO.x, NASCER_REINO.z);
+export const ANG_NASCER = Math.atan2(FONTE.x - NASCER.x, FONTE.z - NASCER.z); // de frente para a fonte e o castelo
 
 export function zonaEm(x, z) {
   const t = tracadoPerto(x, z); // dentro (ou na boca) de uma dungeon aberta
@@ -106,13 +117,14 @@ export class Mundo {
     this.dungeon = new CaminhoDasBrasas(this, alturaEm);
     this.floresta = new TrilhaAncestral(this, alturaEm);
     this.dungeons = [this.dungeon, this.floresta];
+    this.reino = new Reino(this, alturaEm);
     this.criarMontanhas();
     this.criarEstrelas();
 
     this.jogador = criarTreinador();
     this.cena.add(this.jogador);
-    this.pos = new THREE.Vector3(0, 0, 7);
-    this.ang = Math.PI;
+    this.pos = new THREE.Vector3(NASCER.x, 0, NASCER.z);
+    this.ang = ANG_NASCER;
     this.graca = 0;
     this.avisoT = 0;
     this.hora = 0.08; // 0 a 1: menos de 0.5 é dia
@@ -187,7 +199,8 @@ export class Mundo {
 
   pontoLivre(x, z, folga) {
     if (Math.hypot(x, z) < 13) return false;
-    if (TRACADOS.some((t) => t.reservado(x, z))) return false; // as dungeons se decoram sozinhas
+    if (TRACADOS.some((t) => t.reservado(x, z))) return false; // as dungeons e o Reino se decoram sozinhos
+    if (naEstrada(x, z, folga)) return false; // a Estrada Real fica livre
     if (this.casaPos && Math.hypot(x - this.casaPos.x, z - this.casaPos.z) < AREA_SEGURA_CASA + 4) return false;
     if (Math.hypot(x, z) > RAIO_MUNDO - 3) return false;
     if (alturaEm(x, z) < NIVEL_AGUA + 0.2) return false; // água, lava e leito de rio
@@ -210,8 +223,9 @@ export class Mundo {
     const cor = new THREE.Color();
     const NM = Math.round((Math.PI * 2 * RAIO_MUNDO) / 13);
     const extras = [];
-    for (const t of TRACADOS) for (let sd = 90; sd < 215; sd += 8) for (const lado of [-1, 1]) extras.push([t, sd, lado]);
-    const monts = new THREE.InstancedMesh(new THREE.ConeGeometry(1, 1, 6), new THREE.MeshLambertMaterial({ flatShading: true }), NM + extras.length);
+    for (const t of TRACADOS) if (t !== REINO) for (let sd = 90; sd < 215; sd += 8) for (const lado of [-1, 1]) extras.push([t, sd, lado]);
+    const NR = 44; // roda de montanhas em volta do Reino
+    const monts = new THREE.InstancedMesh(new THREE.ConeGeometry(1, 1, 6), new THREE.MeshLambertMaterial({ flatShading: true }), NM + extras.length + NR);
     let nm = 0;
     for (let i = 0; i < NM; i++) {
       const a = (i / NM) * Math.PI * 2 + rng() * 0.1;
@@ -235,24 +249,28 @@ export class Mundo {
       monts.setMatrixAt(nm, m4);
       monts.setColorAt(nm++, cor.set(t.id === 'brasas' ? (rng() < 0.5 ? '#3a2824' : '#4a322a') : (rng() < 0.5 ? '#1f4426' : '#2a5230')));
     }
+    // montanhas verdes em volta do Reino (menos na frente, onde chega o corredor)
+    for (let i = 0; i < NR; i++) {
+      const a = (i / NR) * Math.PI * 2 + rng() * 0.08;
+      const lx = Math.sin(a), lz = Math.cos(a);
+      if (lz > 0.93) continue; // a boca do corredor (a frente do Reino aponta para o mapa)
+      const r = REINO.rChefe + 9 + rng() * 9, { x, z } = REINO.paraMundo(lx * r, lz * r);
+      const larg = 12 + rng() * 9, alt = 14 + rng() * 16;
+      q.setFromAxisAngle(eixoY, rng() * 6);
+      m4.compose(v.set(x, alturaEm(x, z) + alt / 2 - 2, z), q, s.set(larg, alt, larg));
+      monts.setMatrixAt(nm, m4);
+      monts.setColorAt(nm++, cor.set(rng() < 0.5 ? '#5f8f44' : '#6e9f4c'));
+    }
     monts.count = nm;
     this.cena.add(monts);
   }
 
+  // A fonte de cura do castelo: a bacia é desenhada pelo reino.js; aqui fica o cristal que gira
   criarFonte() {
-    const pedra = new THREE.MeshLambertMaterial({ color: '#e3dccb', flatShading: true });
-    const g = new THREE.Group();
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(2, 2.4, 0.6, 8), pedra);
-    base.position.y = 0.3;
-    const espelho = new THREE.Mesh(new THREE.CylinderGeometry(1.65, 1.65, 0.1, 8), new THREE.MeshLambertMaterial({ color: '#7fe3ff', emissive: '#2a9ec8', emissiveIntensity: 0.4 }));
-    espelho.position.y = 0.62;
-    const pilar = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.42, 1.3, 6), pedra);
-    pilar.position.y = 1.2;
     this.cristalFonte = criarCristal(2.2);
-    this.cristalFonte.position.y = 2.9;
-    g.add(base, espelho, pilar, this.cristalFonte);
-    this.cena.add(g);
-    this.obstaculos.push({ x: 0, z: 0, r: 2.3 });
+    this.yFonte = REINO.h + 3.4;
+    this.cristalFonte.position.set(FONTE.x, this.yFonte, FONTE.z);
+    this.cena.add(this.cristalFonte);
   }
 
   // Cristais de captura no chão: posições sorteadas pela semente, mais os
@@ -317,6 +335,7 @@ export class Mundo {
     const frac = Math.min(1, Math.hypot(x, z) / RAIO_MUNDO);
     let n = Math.round(media * (0.55 + 0.65 * frac) + Math.random() * 2 - 1);
     if (perto) n = Math.min(n, Math.max(1, Math.round(media) - 1));
+    if (pertoDoReino(x, z)) n = Math.min(n, 2 + Math.floor(Math.random() * 4)); // em volta do Reino: Nv.2 a 5
     return Math.max(1, Math.min(45, n));
   }
 
@@ -354,6 +373,7 @@ export class Mundo {
         const a = Math.random() * Math.PI * 2, r = 34 + Math.random() * Math.max(10, this.raioSpawn() - 34);
         x = this.pos.x + Math.cos(a) * r; z = this.pos.z + Math.sin(a) * r;
         if (Math.hypot(x, z) < 22 || Math.hypot(x, z) > RAIO_MUNDO - 12 || !this.chunks.carregado(x, z)) continue;
+        if (Math.hypot(x - BOCA_REINO.x, z - BOCA_REINO.z) < PERTO_REINO + 20) continue; // perto do Reino, só monstros soltos e fracos
         if (this.grupos.some((o) => Math.hypot(o.x - x, o.z - z) < DIST_NASCER_GRUPOS)) continue; // longe dos outros grupos
         if (!this.pontoLivre(x, z, 3)) continue;
       }
@@ -514,7 +534,7 @@ export class Mundo {
   podeMontarCasa(x, z) {
     if (Math.hypot(x, z) > RAIO_MUNDO - 8) return false;
     if (semCasaDungeons(x, z)) return false; // dentro ou na boca das dungeons não
-    if (Math.hypot(x, z) < 6) return false; // em cima da fonte não
+    if (Math.hypot(x, z) < 6) return false; // em cima da placa do Campo não
     if (!this.chunks.carregado(x, z)) return false;
     // nem na água, nem na lava (confere o meio e a volta da casa)
     for (const [dx, dz] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) {
@@ -576,6 +596,7 @@ export class Mundo {
     const { x, z, rot } = this.casaPos;
     this.pos.set(x + Math.sin(rot) * (RAIO_CASA + 1.6), 0, z + Math.cos(rot) * (RAIO_CASA + 1.6));
     this.ang = rot;
+    this.orbita.yaw = rot + Math.PI;
     this.graca = 3;
     this.posicionarCamera(1);
   }
@@ -594,7 +615,7 @@ export class Mundo {
       if (!this.chunks.carregado(x, z) || !this.pontoLivre(x, z, 1)) continue;
       const zona = zonaEm(x, z);
       // o 10º monstro (sem ser o que aparece colado em você) é de tipo duplo
-      if (!perto && this.contaSpawn + 1 >= INTERVALO_DUPLO) {
+      if (!perto && this.contaSpawn + 1 >= INTERVALO_DUPLO && !pertoDoReino(x, z)) {
         this.contaSpawn = 0;
         this.spawnarDuplo(x, z, zona);
         return;
@@ -650,9 +671,13 @@ export class Mundo {
     descartar(s.modelo);
   }
 
+  // Acorda na praça do castelo, de frente para a fonte
   irParaFonte() {
-    this.pos.set(0, 0, 4.5);
-    this.ang = 0;
+    this.pos.set(NASCER.x, 0, NASCER.z);
+    this.ang = ANG_NASCER;
+    this.orbita.yaw = this.ang + Math.PI; // a câmera atrás do jogador, olhando para o castelo
+    this.orbita.voltarPara = null;
+    this.chunks.carregarTudoPerto(NASCER.x, NASCER.z);
     this.graca = 3;
     this.posicionarCamera(1);
   }
@@ -687,6 +712,8 @@ export class Mundo {
 
   // Distância e altura padrão da câmera (com o celular em pé ela fica mais longe e mais alta)
   camPadrao() {
+    // dentro da arena do Reino: mais perto e mais de cima (senão a câmera fica atrás do telhado)
+    if (this.reino?.dentroArena(this.pos.x, this.pos.z)) return { dist: 10, pitch: 1.0 };
     return this.jogo.aspecto < 1 ? { dist: 26, pitch: 0.82 } : { dist: 19, pitch: 0.71 }; // um pouco mais longe do personagem
   }
 
@@ -728,7 +755,7 @@ export class Mundo {
     this.jogador.visible = this.graca <= 0 || Math.floor(t * 10) % 2 === 0;
 
     this.cristalFonte.rotation.y += dt * 1.2;
-    this.cristalFonte.position.y = 2.9 + Math.sin(t * 2) * 0.15;
+    this.cristalFonte.position.y = this.yFonte + Math.sin(t * 2) * 0.15;
     for (const a of this.aguas) a.position.y = NIVEL_AGUA + Math.sin(t * 1.3) * 0.05;
     // chunks: cria os novos em volta (aos poucos) e apaga os que ficaram longe
     this.chunks.atualizar(this.pos.x, this.pos.z);
@@ -745,20 +772,22 @@ export class Mundo {
       this.periodoAvisado = this.periodo;
       if (this.jogo.estado) this.jogo.aviso(this.periodo === 'noite' ? 'Anoiteceu. Monstros de Lua e Trevas saíram!' : 'Amanheceu. Monstros de Sol e Luz estão por aí!');
     }
-    if (this.zonaAvisada !== zonaAtual) {
-      this.zonaAvisada = zonaAtual;
-      if (this.jogo.estado) this.jogo.mostrarZona(NOMES_ZONA[zonaAtual]);
+    const nomeZona = REINO.perto(this.pos.x, this.pos.z) ? 'Reino' : naEstrada(this.pos.x, this.pos.z) ? 'Estrada Real' : NOMES_ZONA[zonaAtual];
+    if (this.zonaAvisada !== nomeZona) {
+      this.zonaAvisada = nomeZona;
+      if (this.jogo.estado) this.jogo.mostrarZona(nomeZona);
     }
 
     const est = this.jogo.estado;
-    // Fonte de cura
-    if (est && Math.hypot(this.pos.x, this.pos.z) < 3.8 && this.jogo.precisaCura()) {
+    // Fonte de cura (na praça do castelo)
+    if (est && Math.hypot(this.pos.x - FONTE.x, this.pos.z - FONTE.z) < 4.8 && this.jogo.precisaCura()) {
       this.jogo.curarEquipe();
-      this.jogo.aviso('A fonte curou sua equipe!');
+      this.jogo.aviso('A fonte do castelo curou sua equipe!');
     }
 
-    // Casa: animação de montar, fumaça, cura e área segura
-    const naAreaSegura = this.distanciaCasa() < AREA_SEGURA_CASA;
+    // Casa: animação de montar, fumaça e área segura (a casa não cura)
+    // área segura: em volta da casa, na Estrada Real e no Reino
+    const naAreaSegura = this.distanciaCasa() < AREA_SEGURA_CASA || naEstrada(this.pos.x, this.pos.z, -2) || REINO.perto(this.pos.x, this.pos.z);
     if (this.casaPos) {
       if (this.casaAnim < 1) {
         this.casaAnim = Math.min(1, this.casaAnim + dt * 2.2);
@@ -766,10 +795,6 @@ export class Mundo {
         this.casa.scale.set(k + pulo, k * (1 + pulo), k + pulo);
       } else this.casa.scale.setScalar(1);
       animarCasa(this.casa, t, this.fatorNoite);
-      if (est && this.distanciaCasa() < CURA_CASA && this.jogo.precisaCura()) {
-        this.jogo.curarEquipe();
-        this.jogo.aviso('Sua casa curou toda a equipe!');
-      }
     }
 
     // Cristais no chão (só os perto são desenhados)
@@ -876,7 +901,7 @@ export class Mundo {
       } else if (this.avisoT <= 0) {
         this.avisoT = 3;
         this.graca = 1.5;
-        this.jogo.aviso(this.casaPos ? 'Sua equipe está desmaiada. Volte para casa ou para a fonte!' : 'Sua equipe está desmaiada. Monte sua casa ou volte à fonte!');
+        this.jogo.aviso('Sua equipe está desmaiada. Volte à fonte do castelo, no Reino!');
       }
     }
 
@@ -908,8 +933,14 @@ export class Mundo {
     s.x = p.x; s.z = p.z;
   }
 
-  // Monstros dão meia-volta quando chegam perto da casa
+  // Monstros dão meia-volta quando chegam perto da casa (ou da Estrada Real)
   fugirDaCasa(s) {
+    const e = naEstradaReal(s.x, s.z), m = s.grupo ? 3 : 0;
+    if (e.dentro && e.lat < SEGURA_ESTRADA + m) {
+      const lado = -s.x * ESTRADA.dir.z + s.z * ESTRADA.dir.x >= 0 ? 1 : -1; // de que lado da estrada ele está
+      s.ang = Math.atan2(-ESTRADA.dir.z * lado, ESTRADA.dir.x * lado);
+      return true;
+    }
     if (!this.casaPos) return false;
     const dx = s.x - this.casaPos.x, dz = s.z - this.casaPos.z;
     if (Math.hypot(dx, dz) > AREA_SEGURA_CASA + (s.grupo ? 3 : 0)) return false;
@@ -917,12 +948,12 @@ export class Mundo {
     return true;
   }
 
-  // Câmera girando devagar para a tela de título
+  // Câmera girando devagar em volta do castelo, para a tela de título
   orbitar(t) {
-    const a = t * 0.08;
-    this.camera.position.set(Math.sin(a) * 34, 20, Math.cos(a) * 34);
-    this.camera.lookAt(0, 0, 0);
-    this.chunks.atualizar(0, 0);
+    const a = t * 0.08, c = REINO.paraMundo(0, -2), y = REINO.h;
+    this.camera.position.set(c.x + Math.sin(a) * 58, y + 26, c.z + Math.cos(a) * 58);
+    this.camera.lookAt(c.x, y + 6, c.z);
+    this.chunks.atualizar(c.x, c.z);
     this.chunks.animar(t);
     for (const s of this.selvagens) animarModelo(s.modelo, t, false);
     for (const g of this.grupos) for (const m of g.membros) {

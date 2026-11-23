@@ -19,7 +19,10 @@ import {
   formasDaLinha, formaPorNivel, criarMonstro, statsDe, xpParaProximo, niveisDaEtapa, nivelDoChefe, nomeDupla, nomeTipo, verificarEvolucao,
 } from './dados.js';
 import { criarModelo, criarCoroa, criarAuraDupla } from './modelos.js';
-import { zonaEm, NOMES_ZONA } from './mundo.js';
+import { zonaEm, NOMES_ZONA, NASCER, ANG_NASCER } from './mundo.js';
+import { REINO } from './dungeon.js';
+import { ARENA_REINO } from './reino.js';
+import { ESTRADA } from './mapa/gerador.js';
 import { SEMENTE, SEMENTE_PADRAO, centroDe, LAGOS, POIS } from './mapa/gerador.js';
 
 const MAX_NIVEL = 50;
@@ -31,7 +34,10 @@ const arco = POIS.find((p) => p.tipo === 'arco'); // o Deserto: ao lado do arco 
 const lagoGrande = LAGOS.find((L) => L.tipo === 'agua' && !L.escondido && L.bioma === 'planta') || LAGOS[0];
 const perto = (c, d = 0) => { const a = Math.atan2(c.z, c.x); return [c.x - Math.cos(a) * d, c.z - Math.sin(a) * d]; };
 const LUGARES = [
-  ['fonte', 'Fonte', 0, 4.5], ['campo', 'Campo', 16, 16], ['planta', 'Floresta', ...perto(centroDe('planta'))],
+  ['fonte', 'Castelo', NASCER.x, NASCER.z],
+  ['arena', 'Arena', ...(({ x, z }) => [x, z])(REINO.paraMundo(ARENA_REINO.x + 24, ARENA_REINO.z + 4))],
+  ['estrada', 'Estrada Real', ESTRADA.dir.x * 150, ESTRADA.dir.z * 150],
+  ['campo', 'Campo', 16, 16], ['planta', 'Floresta', ...perto(centroDe('planta'))],
   ['agua', 'Lago', ...perto(lagoGrande, -(lagoGrande.r + 4))],
   ['fogo', 'Vulcão', ...perto(centroDe('fogo'), 16)], ['terra', 'Deserto', ...(arco ? [arco.x + Math.cos(arco.ang + 1.57) * 7, arco.z + Math.sin(arco.ang + 1.57) * 7] : perto(centroDe('terra')))],
   ['raio', 'Neve', ...perto(centroDe('raio'))],
@@ -771,7 +777,7 @@ export class PainelGM {
     }
     const l = LUGARES.find((x) => x[0] === onde);
     if (!l) return;
-    this.teleportar(l[2], l[3], onde === 'fonte' ? 0 : this.mundo.ang);
+    this.teleportar(l[2], l[3], onde === 'fonte' ? ANG_NASCER : this.mundo.ang);
     this.jogo.aviso(`GM: ${l[1]}${NOMES_ZONA[onde] && NOMES_ZONA[onde] !== l[1] ? ' (' + NOMES_ZONA[onde] + ')' : ''}.`);
   }
 

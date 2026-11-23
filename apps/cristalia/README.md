@@ -28,10 +28,11 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
 - **Evoluir:** cada linha tem 4 formas. A forma inicial evolui no **nível 6**, a 1ª evolução no **nível 12** e a 2ª evolução no **nível 30**. Quando seu monstro chega ao nível, aparece a animação de evolução e ele ganha atributos e golpes mais fortes.
 - **Dia e noite:** um ciclo completo dura 4 minutos (2 de dia e 2 de noite). **Sol e Luz** só aparecem de dia; **Lua e Trevas**, só à noite. O relógio fica no canto superior direito.
 - **Equipe:** até 3 monstros. Com a equipe cheia, o capturado vai para a reserva.
-- **Reserva:** no painel Equipe, a aba **Reserva** mostra **todos** os monstros que você tem (os da equipe aparecem marcados). Perder uma batalha nunca apaga monstros: a equipe só é curada e volta para casa.
+- **Reserva:** no painel Equipe, a aba **Reserva** mostra **todos** os monstros que você tem (os da equipe aparecem marcados). Perder uma batalha nunca apaga monstros: você acorda na casa ou no castelo (veja "Casa").
 - **Proteção:** o jogo guarda uma cópia de cada monstro que você já teve. Se algum sumir da equipe e da reserva por qualquer motivo, ele volta sozinho para a Reserva, com um aviso.
-- **Fonte de cura:** a fonte no centro do mapa cura todos os seus monstros.
-- **Nível dos selvagens:** acompanha o nível da sua equipe e aumenta quanto mais longe do centro você vai. Nas bordas aparecem as formas evoluídas.
+- **Fonte de cura:** a fonte na praça do castelo, no **Reino**, cura todos os seus monstros. É a única fonte do jogo (a do meio do Campo virou uma placa que aponta para o Reino).
+- **Começo:** o jogo novo começa no Reino, na frente da fonte do castelo. Siga a **Estrada Real** para chegar ao mapa (veja "O Reino").
+- **Nível dos selvagens:** acompanha o nível da sua equipe e aumenta quanto mais longe do centro você vai. Nas bordas aparecem as formas evoluídas. A exceção é **em volta da boca do Reino** (55 m): ali só aparecem monstros fracos (Nv.2 a 5, formas iniciais), sem grupos e sem tipo duplo.
 - **Monstros perto de você:** os selvagens e os grupos aparecem em volta do jogador (até ~90 m) e somem quando ficam longe; assim o mapa grande não fica mais pesado.
 - O progresso é salvo sozinho: no celular a cada 5 s e na nuvem (veja abaixo).
 - **Tela cheia:** botão na tela inicial, no mapa e na batalha. Alguns navegadores não deixam (o iPhone, por exemplo); nesse caso, use "Adicionar à tela inicial".
@@ -103,11 +104,28 @@ O jogo é um **PWA** (aplicativo web instalável). Ele fica no site **https://la
   - **Montar casa:** monta na sua frente. Se ali estiver ocupado, o jogo procura o lugar livre mais próximo.
   - **Guardar casa:** aparece quando você está perto dela; a casa volta para a mochila.
   - **Mudar casa p/ cá:** aparece quando você está longe; a casa sai de onde estava e é montada onde você está.
-- **Encostar na casa cura todos os monstros**, inclusive os desmaiados, da equipe e da reserva.
+- **A casa não cura.** Ela serve para marcar o lugar onde você acorda, para não ter que voltar até o castelo. A cura de verdade é a fonte do castelo.
 - Em volta da casa (10 m) é **área segura**: monstros não aparecem e dão meia-volta.
-- Se toda a equipe desmaiar, você **acorda na casa** (ou na fonte, se a casa estiver guardada).
+- Se toda a equipe desmaiar numa batalha:
+  - **com a casa montada:** você acorda na casa, e **só os monstros desmaiados** voltam com **1/4 da vida** (os outros ficam como estavam);
+  - **com a casa guardada:** você acorda na fonte do castelo, com todos curados.
+- Não dá para montar a casa no Reino nem no corredor que leva até ele.
 - A posição da casa fica salva. A casa não pode ser montada na água nem na lava.
-- Se o mapa mudar (o jogo salvo é do mapa antigo ou de outra semente), a casa volta para a mochila e você acorda na fonte.
+- Se o mapa mudar (o jogo salvo é do mapa antigo ou de outra semente), a casa volta para a mochila e você acorda no castelo.
+
+## O Reino (o novo centro do jogo)
+
+O Reino fica **fora da borda do mapa**, como as dungeons, mas não é dungeon: é o lugar seguro onde o jogo começa. Ele sai pela borda no lado **mais longe das duas dungeons e das montanhas da Neve** (a direção vem da semente do mapa; na semente de todos, fica depois do Deserto). Não tem tela de carregamento: você entra andando.
+
+- **Estrada Real:** um calçamento de pedra cinza do Campo até a boca do Reino, com lanternas e bandeiras azuis dos dois lados. Na estrada **nenhum selvagem aparece**, e os que chegam perto dão meia-volta (é área segura, como a casa). Não há rio cortando a estrada. No meio do Campo, uma **placa com uma seta** aponta para ela.
+- **O platô:** redondo (62 m de raio), plano, cercado de montanhas verdes, com uma **muralha** de torres de telhado azul e um **portão**.
+- **Castelo** no meio (torre do meio, alas e duas torres redondas, telhados azuis), com a **praça e a fonte de cura** na frente. É ali que você nasce e acorda.
+- **Vila:** casas de pedra e madeira com telhado azul e janelas acesas. Uma delas é a **loja de poções** (placa pendurada e barraca listrada azul e branca). Comprar ainda não funciona: vem na próxima parte.
+- **Arena fechada** (coliseu de telhado vermelho): parede de 2 andares de arcos, arquibancada em degraus com **plateia** (~320 bonequinhos coloridos), túnel do portão até a areia, e o **palco** com os 5 treinadores. Dentro dela a câmera chega mais perto e fica mais alta. As lutas com os treinadores vêm na próxima parte.
+- **Os treinadores** (na ordem da luta; o último é o Campeão): **Gill** (Fogo), **Sheyla** (Água), **Cris** (Trevas), **Lana** (Luz) e **Julius** (Planta, o Rei, de coroa).
+- Lá dentro não aparecem monstros, não nascem árvores do mapa e não dá para montar a casa.
+- **Leve no celular:** todas as peças paradas do Reino viram **3 malhas** (cores normais, peças vistas dos dois lados e o que brilha), e a plateia é **1 lote**. A colisão usa círculos na `mundo.grade`, como o resto.
+- **Código:** a forma (corredor + platô) é o `REINO` em `js/dungeon.js` (`TracadoReino`, com `paraMundo` e `paraLocal`), a direção e a Estrada Real ficam em `js/mapa/gerador.js` (`ANG_REINO`, `ESTRADA`, `naEstradaReal`) e o cenário em `js/reino.js`.
 
 ## Grupos de monstros
 
@@ -225,7 +243,8 @@ Sai da borda do mapa pela Floresta, seguindo as lanternas de flor (a direção d
 
 | Região | Bioma | Quem aparece |
 |---|---|---|
-| Campo | No centro (com a fonte) | Um pouco de tudo; Sol e Luz de dia, Lua e Trevas à noite |
+| Reino | Fora da borda, no fim da Estrada Real: castelo, vila, loja e arena | Ninguém (é seguro). Em volta da boca, monstros fracos |
+| Campo | No centro (com a placa que aponta para o Reino) | Um pouco de tudo; Sol e Luz de dia, Lua e Trevas à noite |
 | Floresta | Floresta: árvores, pinheiros, clareiras e morrinhos | Planta (Musguinho), Espinhal (raro); Luz de dia, Trevas à noite. Daqui sai a Trilha Ancestral |
 | Lago | Em volta dos lagos (no Campo, na Floresta e o oásis do Deserto) | Água (Gotinho), Aquaraia (raro); Lua à noite |
 | Vulcão | Lava: chão vulcânico, vulcão com cratera, rios de lava | Fogo (Brasito), Vulcarapa (raro). Daqui sai o Caminho das Brasas |
@@ -239,10 +258,10 @@ Os monstros de cada região são os mesmos de antes: o Deserto ocupa o lugar da 
 O mapa é **gerado por uma semente** (seed): um número que decide tudo (onde fica cada bioma, o relevo, os rios, os lagos, as árvores). A mesma semente sempre dá o mesmo mapa. **Todos os jogadores usam a mesma semente**: o mundo é um só para todos. O código fica em `js/mapa/`.
 
 - **Tamanho:** mapa redondo de **200 m de raio** (cerca de 5 vezes a área do mapa antigo; atravessar leva ~55 s andando). Na borda o chão sobe e há montanhas.
-- **Biomas:** o **Campo** fica no meio, com a fonte. Em volta, os 4 biomas (Floresta, Deserto, Neve e Lava), em ordem sorteada, com tamanhos diferentes e **bordas onduladas**. Onde dois se encontram, as cores e o relevo se misturam aos poucos.
+- **Biomas:** o **Campo** fica no meio, com a placa do Reino. Em volta, os 4 biomas (Floresta, Deserto, Neve e Lava), em ordem sorteada, com tamanhos diferentes e **bordas onduladas**. Onde dois se encontram, as cores e o relevo se misturam aos poucos.
 - **Relevo:** morrinhos no Campo e na Floresta, dunas e cânions no Deserto, cadeias de montanhas na Neve (com neve no alto dos picos) e um vulcão com cratera de lava no meio da Lava.
 - **Água:** rios (rasos: dá para atravessar andando), lagos (o meio é fundo: não dá para entrar), lagos congelados na Neve (dá para andar em cima) e rios de lava (não dá para entrar).
-- **Pontos de interesse:** o vulcão com lava na cratera, o arco de pedra do Deserto, o oásis com palmeiras, o cristal de gelo gigante da Neve, os lugares fixos da Floresta e as entradas das duas dungeons. Perto de alguns tem cristal escondido.
+- **Pontos de interesse:** o vulcão com lava na cratera, o arco de pedra do Deserto, o oásis com palmeiras, o cristal de gelo gigante da Neve, os lugares fixos da Floresta, as entradas das duas dungeons e a boca do Reino. Perto de alguns tem cristal escondido.
 - **Chunks:** o mapa é dividido em quadrados de **32 m**. Só os chunks perto de você existem na memória; os novos são criados aos poucos enquanto você anda (no máximo ~3 ms por quadro) e os que ficam longe são apagados.
 - **Leve no celular:**
   - cada tipo de objeto (árvore, pedra, cacto...) é desenhado **num lote só por chunk** (InstancedMesh);
@@ -267,7 +286,7 @@ Na primeira vez, o jogo escolhe sozinho: **Fraco** em celular com 4 núcleos ou 
 
 Tudo dá para ajustar lá: a semente, o tamanho do mundo, o tamanho dos chunks, os quadrados do chão por chunk (perto e longe), o tamanho do Campo, a quantidade de biomas (4 a 8; com mais de 4 eles se repetem em volta), a distância e o tamanho dos biomas (e quanto cada um ocupa), o quanto as bordas são onduladas, a largura da mistura entre biomas, o nível da água, a largura dos rios, a densidade de objetos de cada bioma, o tempo máximo por quadro criando chunks e os 3 perfis de qualidade.
 
-**Trocar a semente muda o mapa de todo mundo:** o jogo salvo de quem estava em outro mapa acorda na fonte, com a casa na mochila (os monstros, itens e níveis não mudam).
+**Trocar a semente muda o mapa de todo mundo:** o jogo salvo de quem estava em outro mapa acorda no castelo, com a casa na mochila (os monstros, itens e níveis não mudam).
 
 ### Para os monstros de cada bioma (futuro)
 
@@ -491,7 +510,7 @@ Só a **conta GM** tem o painel. O código fica em `js/gm.js` e só é baixado q
 | **Monstros** | Escolhe qualquer espécie (todas as 53, separadas por linha) e o nível (1 a 50). **Aparecer perto** (8 m na sua frente), **Lutar agora** (na arena escolhida ou na da região), **Grupo (5 + líder)** no mapa, **Lutar com grupo** e **Dar para mim** (vai para a equipe ou a reserva). Atalhos: selvagem, tipo duplo ou grupo aleatório, e **limpar o mapa** (os chefes e os acampamentos ficam). |
 | **Dungeons** | Para o Caminho das Brasas e a Trilha Ancestral: **ir para** a entrada, cada etapa ou o chefe; **lutar contra o acampamento** de cada etapa (na ordem 2 fracos → 2 médios → 1 forte → líder, no nível que a sua equipe enfrentaria); **lutar com o chefe** no nível escolhido; **chefe volta já** (sem esperar o amanhecer); **monstro da dungeon perto**. |
 | **Equipe** | **Copiar jogo de outra conta** deste aparelho para o GM (para testar com a equipe de verdade; a conta original não muda). Escolhe o **monstro alvo** (equipe ou reserva) e mostra nível, vida e experiência. **Adicionar XP:** +50, +500, +1 nível ou **até o nível ___**. A XP sobe como no jogo, então ele **evolui** ao chegar no nível (a animação aparece quando o painel fecha). **Evoluir agora**, **Voltar uma forma** (fica no nível logo abaixo da evolução, para não evoluir de novo sozinho), **Curar**, **subir 1 nível sem evoluir**. Também **curar todos** e mudar os cristais (+10, 99 ou zerar). |
-| **Mundo** | **Hora:** amanhecer, meio-dia, anoitecer, meia-noite ou **parar o relógio**. **Teleporte:** fonte, as 6 regiões (o lugar de cada uma vem da semente do mapa) e a casa. **Andar ×1, ×2 ou ×3.** **Invisível:** os monstros não vêm atrás de você, mas encostar neles ainda começa a batalha. **Mostrar FPS** (embaixo, no meio da tela), com os números do mapa (chunks, objetos, desenhos e triângulos por quadro, tempo para criar um chunk). **Mapa:** ver outra semente (digitada ou aleatória) e voltar à de todos: recarrega o jogo com outro mapa só neste aparelho, até fechar (pela URL `?semente=123`). |
+| **Mundo** | **Hora:** amanhecer, meio-dia, anoitecer, meia-noite ou **parar o relógio**. **Teleporte:** castelo (a fonte), arena do Reino, Estrada Real, as 6 regiões (o lugar de cada uma vem da semente do mapa) e a casa. **Andar ×1, ×2 ou ×3.** **Invisível:** os monstros não vêm atrás de você, mas encostar neles ainda começa a batalha. **Mostrar FPS** (embaixo, no meio da tela), com os números do mapa (chunks, objetos, desenhos e triângulos por quadro, tempo para criar um chunk). **Mapa:** ver outra semente (digitada ou aleatória) e voltar à de todos: recarrega o jogo com outro mapa só neste aparelho, até fechar (pela URL `?semente=123`). |
 | **Testes** | **Invencível** (a vida não desce, nem com efeitos e perigos da arena), **recarga zero**, **captura garantida** (qualquer cristal segura qualquer monstro, até os chefes), **inimigos parados**, **dano ×10**. Na gaveta da batalha também: **encher minha vida** e **vencer agora** (derrota todos, até os que estão esperando nas ondas). |
 
 - As chaves (invencível, dano ×10...) valem até você desligar.
@@ -527,14 +546,15 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/modelos3d.js` | Modelos feitos no Blender (`.glb`): carrega, faz uma cópia com ossos para cada monstro, toca as animações (parado, arrancada → correndo e os 3 golpes, no tempo certo de cada golpe), faz o fogo pulsar e o piscar. Hoje só o Brasito (forma inicial) |
 | `modelos/` | Os arquivos `.glb` (hoje `brasito.glb`) e um README com os detalhes de cada um |
 | `js/plataforma.js` | A vitrine 3D do Monstruário e a animação de evolução |
-| `js/mundo.js` | Mapa aberto: regiões, dia e noite, monstros selvagens e grupos (em volta do jogador), cristais, fonte, casa, colisão e câmera |
+| `js/mundo.js` | Mapa aberto: regiões, dia e noite, monstros selvagens e grupos (em volta do jogador), cristais, fonte do castelo, casa, Estrada Real segura, colisão e câmera |
+| `js/reino.js` | O Reino: castelo, praça e fonte, vila e loja, arena fechada com plateia e os 5 treinadores, muralha, lanternas da Estrada Real e a placa do Campo (tudo junto em poucas malhas) |
 | `js/mapa/config.js` | Configurações do mapa procedural e os perfis de qualidade |
-| `js/mapa/gerador.js` | O gerador do mapa (só matemática): ruído com semente, biomas, altura do chão, rios, lagos, pontos de interesse, lugares da Floresta e direção das dungeons |
+| `js/mapa/gerador.js` | O gerador do mapa (só matemática): ruído com semente, biomas, altura do chão, rios, lagos, pontos de interesse, lugares da Floresta, direção das dungeons e do Reino e a Estrada Real |
 | `js/mapa/altura.js` | `alturaEm(x, z)`: a altura do chão igual aos triângulos desenhados (com as dungeons e a borda), e onde não dá para andar (lago fundo e lava) |
 | `js/mapa/chunks.js` | Os chunks: cria o chão, a água, a lava e os objetos de cada pedaço do mapa, carrega e apaga conforme você anda, e o LOD |
 | `js/mapa/grade.js` | Grade de obstáculos: guarda as árvores, pedras e peças em quadradinhos de 8 m, para a colisão só olhar o que está perto |
 | `js/batalha.js` | Batalha em tempo real: movimento, golpes, efeitos, IA do inimigo e captura |
-| `js/dungeon.js` | Base das dungeons abertas: a forma do corredor (`Tracado`), portões transparentes, acampamentos, monstros soltos, chefe e clima. Também o `Lote` e o `Bloco`, que juntam peças para ficar leve no celular |
+| `js/dungeon.js` | Base das dungeons abertas: a forma do corredor (`Tracado`) e a do Reino (`REINO`), portões transparentes, acampamentos, monstros soltos, chefe e clima. Também o `Lote` e o `Bloco`, que juntam peças para ficar leve no celular |
 | `js/brasas.js` | Cenário do Caminho das Brasas (braseiros, forja, rio de lava, Trono de Magma, vulcão) |
 | `js/raizes.js` | Cenário da Trilha Ancestral e da Floresta (cogumelos, ruínas, lago, raízes, Árvore-Mãe, vaga-lumes, monstros extras) |
 | `js/arena.js` | Arenas: chão, obstáculos, clima animado e perigos de cada região (com chance), e o escurecer do Astro Negro |
