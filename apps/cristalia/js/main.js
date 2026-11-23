@@ -12,6 +12,8 @@ import { Plataforma, CenaEvolucao } from './plataforma.js';
 import { carregarModelos3D } from './modelos.js';
 import { Companheiro } from './companheiro.js';
 import { TREINADORES, equipeDoTreinador } from './reino.js';
+import { Bolsa, MOEDAS } from './bolsa.js';
+import { Ovo } from './ovo.js';
 import {
   ESPECIES, ELEMENTOS, GOLPES, ORDEM_ELEMENTOS, RAROS, NOMES_ESTAGIO, NIVEIS_EVOLUCAO,
   criarMonstro, statsDe, xpParaProximo, xpDaVitoria, verificarEvolucao, formasDaLinha, fracoContra,
@@ -117,6 +119,8 @@ class Jogo {
     this.modo = 'titulo';
     this.mundo = new Mundo(this);
     this.pet = new Companheiro(this); // monstro invocado que segue o treinador
+    this.bolsa = new Bolsa(this); // bolsa, loja de poções e moedas
+    this.ovo = new Ovo(this);     // o Ovo Misterioso do Campeão
     this.plataforma = null;
     this.batalha = null;
     this.cenaEvo = null;
@@ -174,7 +178,7 @@ class Jogo {
     $('#hud-batalha').hidden = nome !== 'batalha';
     this.app.classList.toggle('em-batalha', nome === 'batalha');
     this.ctrl.mostrar(nome === 'mundo' || nome === 'batalha');
-    if (nome !== 'mundo') { this.mostrarRotulo(null); this.fecharEquipe(); }
+    if (nome !== 'mundo') { this.mostrarRotulo(null); this.fecharEquipe(); this.bolsa?.fechar(); }
     if (nome === 'titulo') this.atualizarTitulo();
     if (nome !== 'mundo') this.fecharMenu();
     this.gm?.aoMudarTela(nome);
@@ -282,7 +286,7 @@ class Jogo {
     });
     $('#evo-continuar').addEventListener('click', () => this.fecharEvolucao());
     $('#btn-equipe').addEventListener('click', () => this.abrirEquipe());
-    $('#btn-casa').addEventListener('click', () => this.acaoCasa());
+    $('#btn-casa').addEventListener('click', () => this.bolsa.abrir());
     // Monstro invocado: invocar/guardar, controlar e voltar ao treinador
     $('#btn-pet').addEventListener('click', () => this.pet.alternar());
     $('#btn-controlar').addEventListener('click', () => this.pet.controlar());
@@ -381,6 +385,7 @@ class Jogo {
     if (!$('#tela-saida').hidden) { $('#tela-saida').hidden = true; return 'ok'; }
     if (!$('#menu-pausa').hidden) { this.fecharMenu(); return 'ok'; }
     if (this.gm?.fecharPainel()) return 'ok';
+    if (this.bolsa.fechar()) return 'ok';
     if (this.painelAberto) { this.fecharEquipe(); return 'ok'; }
     if (this.modo === 'colecao') { this.fecharColecao(); return 'ok'; }
     if (this.modo === 'mundo' && this.pet.controlando) { this.pet.voltarAoTreinador(); return 'ok'; }
@@ -516,7 +521,8 @@ class Jogo {
   }
 
   novoJogo(especie) {
-    this.estado = { equipe: [criarMonstro(especie, 3)], reserva: [], pedras: { comum: 5, forte: 0, supremo: 0 }, capturados: [especie], casa: null };
+    this.estado = { equipe: [criarMonstro(especie, 3)], reserva: [], pedras: { comum: 5, forte: 0, supremo: 0 }, capturados: [especie], casa: null,
+      moedas: 0, pocoes: { cura: 3, reviver: 1 } };
     this.mundo.hora = 0.08;
     this.entrarNoMundo();
     this.mundo.povoar();
@@ -524,10 +530,12 @@ class Jogo {
     this.aviso(`${ESPECIES[especie].nome} agora é seu parceiro!`);
     this.aviso('Siga a Estrada Real para sair do Reino e caçar monstros.');
     this.aviso('Encoste num monstro selvagem para batalhar.');
-    this.aviso('Você tem uma casa na mochila: toque em "Montar casa".');
+    this.aviso('Na Bolsa (canto de baixo) ficam a casa, as poções e os cristais.');
   }
 
   entrarNoMundo() {
+    Bolsa.garantir(this.estado); // saves antigos: moedas e poções
+    if (this.estado.arena?.ovoPendente) this.ovo.receber(); // dominou antes de o ovo existir
     // a casa salva volta para o lugar onde estava
     if (this.estado.casa) this.mundo.montarCasa(this.estado.casa.x, this.estado.casa.z, this.estado.casa.rot, false);
     else this.mundo.guardarCasa();
@@ -559,17 +567,13 @@ class Jogo {
       const mudou = !!m.casaPos;
       m.montarCasa(lugar.x, lugar.z, lugar.rot);
       this.estado.casa = { ...m.casaPos };
-      this.aviso(mudou ? 'Você mudou a casa para cá!' : 'Casa montada! Encoste nela para curar a equipe.');
+      this.aviso(mudou ? 'Você mudou a casa para cá!' : 'Casa montada! Se a equipe desmaiar, você acorda aqui.');
     }
     this.salvar();
   }
 
-  atualizarBotaoCasa() {
-    const m = this.mundo;
-    const txt = !m.casaPos ? 'Montar casa' : m.distanciaCasa() < 7 ? 'Guardar casa' : 'Mudar casa p/ cá';
-    const b = $('#btn-casa');
-    if (b.dataset.txt !== txt) { b.dataset.txt = txt; b.querySelector('span').textContent = txt; }
-  }
+  // (o botão do canto agora é a Bolsa; montar, guardar e mudar a casa ficam dentro dela)
+  atualizarBotaoCasa() {}
 
   // ---------- regras da equipe ----------
   temMonstroDePe() { return this.estado.equipe.some((m) => m.hp > 0); }
@@ -666,11 +670,12 @@ class Jogo {
       const primeira = !prog.dominada && i === prog.vencidos;
       this.aviso(`Você venceu ${tr.campeao ? 'o Rei ' : ''}${tr.nome}${primeira ? '' : ' de novo'}!`);
       this.ganharCristais({ comum: 0, forte: 0, supremo: 0, ...(primeira ? tr.premio : tr.campeao ? { forte: 1, supremo: 1 } : { forte: 1 }) });
+      this.bolsa.ganharMoedas(primeira ? tr.moedas : Math.round(tr.moedas / 2)); // revanche: metade
       if (primeira) prog.vencidos = i + 1;
       if (primeira && tr.campeao) {
         prog.dominada = true;
-        prog.ovoPendente = true; // o Ovo Misterioso (próxima parte)
         this.aviso('Você dominou a arena! Agora você é o Campeão do Reino!');
+        this.ovo.receber(); // o prêmio do Campeão: o Ovo Misterioso
         this.aviso('Nas revanches, todos os treinadores lutam no nível 50.');
       } else if (primeira) this.aviso(`Próximo desafio: ${TREINADORES[i + 1].nome}.`);
       this.mundo.reino.festa(5); // a plateia comemora
@@ -719,6 +724,12 @@ class Jogo {
       else if (Math.random() < (b.grupo ? 0.2 : 0.35)) ganho.comum++;
     }
     this.ganharCristais(ganho);
+    // Moedas: cada selvagem vencido dá 5 a 10; num grupo, 4 por comum e 10 pelo líder; o chefe dá 300
+    if (!b.treinador && ativo.hp > 0) {
+      let moedas = b.chefe && vencidos.length ? MOEDAS.chefe : 0;
+      if (!b.chefe) for (const d of b.derrotados) moedas += b.grupo ? (d.lider ? MOEDAS.liderGrupo : MOEDAS.comumGrupo) : MOEDAS.selvagem[0] + Math.floor(Math.random() * (MOEDAS.selvagem[1] - MOEDAS.selvagem[0] + 1));
+      this.bolsa.ganharMoedas(moedas);
+    }
     for (const novo of b.capturados) {
       novo.hp = Math.max(1, novo.hp);
       delete novo.lider; delete novo.onda; delete novo.forca;
@@ -867,6 +878,7 @@ class Jogo {
         <span class="nome">${e.nome}</span><span class="nv">Nv.${m.nivel}</span>
         <i class="vida"><b style="width:${(f * 100).toFixed(0)}%" data-nivel="${f > 0.5 ? 'alto' : f > 0.2 ? 'medio' : 'baixo'}"></b></i></div>`;
     }).join('');
+    $('#contador-moedas b').textContent = this.estado.moedas ?? 0;
     const p = this.estado.pedras;
     // mostra só os tipos que você tem (o comum sempre)
     $('#contador-cristais').innerHTML = CRISTAIS.filter((c, i) => i === 0 || p[c.id] > 0)
@@ -1178,7 +1190,14 @@ class Jogo {
       cena = this.plataforma.cena; camera = this.plataforma.camera;
     } else if (this.modo === 'evolucao') {
       this.cenaEvo.atualizar(dt, this.t);
-      if (this.cenaEvo.trocou && !this.evoAnunciada) {
+      if (this.cenaEvo.nascimento) { // o Ovo Misterioso chocando
+        if (this.cenaEvo.trocou && !this.evoAnunciada) {
+          this.evoAnunciada = true;
+          const tx = this.cenaEvo.textos();
+          $('#evo-texto').textContent = tx.titulo;
+          $('#evo-novidades').textContent = tx.sub;
+        }
+      } else if (this.cenaEvo.trocou && !this.evoAnunciada) {
         this.evoAnunciada = true;
         $('#evo-texto').textContent = `${ESPECIES[this.evoAtual.de].nome} evoluiu para ${ESPECIES[this.evoAtual.para].nome}!`;
         const nov = novidadesDaEvolucao(this.evoAtual.de, this.evoAtual.para);
@@ -1191,12 +1210,13 @@ class Jogo {
       this.mundo.atualizar(dt, this.ctrl, this.t, pausado);
       if (this.modo === 'mundo') this.pet.atualizar(dt, this.ctrl, this.t, pausado);
       this.atualizarRelogio();
-      if (this.modo === 'mundo') this.atualizarBotaoCasa();
+      if (this.modo === 'mundo' && this.ctrl.consumir('bolsa')) { if (this.bolsa.aberta) this.bolsa.fechar(); else if (!this.painelAberto) this.bolsa.abrir(); }
       this.salvarT = (this.salvarT || 0) + dt;
       if (this.salvarT > 5) { this.salvarT = 0; this.salvar(); }
     } else if (this.modo === 'batalha') {
       this.batalha.atualizar(dt, this.ctrl);
     }
+    this.ovo.atualizar(dt); // o tempo do ovo passa no mapa e na batalha
     if (this.modo === 'batalha' && this.batalha) { cena = this.batalha.cena; camera = this.batalha.camera; }
     if (this.modo === 'evolucao' && this.cenaEvo) { cena = this.cenaEvo.cena; camera = this.cenaEvo.camera; }
     this.renderer.render(cena, camera);

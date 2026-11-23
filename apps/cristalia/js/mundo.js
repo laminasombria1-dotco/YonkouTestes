@@ -910,6 +910,11 @@ export class Mundo {
       if (this.jogo.batalha) return;
     }
 
+    // Loja de poções (a barraca listrada da vila): encostou na frente, a loja abre
+    const lj = this.reino.loja, dLoja = est && lj ? Math.hypot(this.pos.x - lj.x, this.pos.z - lj.z) : Infinity;
+    if (dLoja > 3) this.reino.armadoLoja = true;
+    if (dLoja < 1.6 && this.reino.armadoLoja !== false && !pausado) { this.reino.armadoLoja = false; this.jogo.bolsa.abrirLoja(); }
+
     // Encontro!
     const raioEncontro = maisPerto?.grupoDe ? 0.9 : 0.9 + (maisPerto ? ESPECIES[maisPerto.dados.especie].raio : 0);
     if (maisPerto && est && !pausado && this.graca <= 0 && !naAreaSegura && !protegido && menorD < raioEncontro) {
@@ -937,6 +942,8 @@ export class Mundo {
       const marca = esp.chefe ? '<span class="duplo">Chefe · </span>' : esp.dupla ? '<span class="duplo">Tipo duplo · </span>' : '';
       this.jogo.mostrarRotulo(`${bolinhas}${marca}${esp.nome} <b>Nv.${maisPerto.dados.nivel}</b>`,
         new THREE.Vector3(maisPerto.x, maisPerto.modelo.position.y + esp.altura + 0.3, maisPerto.z), this.camera);
+    } else if (dLoja < 7) {
+      this.jogo.mostrarRotulo('<i style="background:#e8474a"></i>Loja de Poções <b>encoste para comprar</b>', new THREE.Vector3(lj.x, REINO.h + 3, lj.z), this.camera);
     } else if (tp) {
       // placa em cima do treinador: nome, elemento, níveis e se já foi vencido
       const prog = this.jogo.progressoArena(), tr = tp.tr;

@@ -282,6 +282,48 @@
   #rotulo i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
   #rotulo b { color: var(--sol); }
 
+  /* ---------- bolsa, loja, moedas e poções ---------- */
+  .icone-bolsa { width: 26px; height: 24px; position: relative; display: block; }
+  .icone-bolsa::before { content: ""; position: absolute; left: 7px; right: 7px; top: 0; height: 9px; border: 3px solid #c89a5a; border-bottom: 0; border-radius: 8px 8px 0 0; }
+  .icone-bolsa::after { content: ""; position: absolute; left: 1px; right: 1px; bottom: 0; height: 16px; background: #a8743f; border-radius: 5px 5px 8px 8px; box-shadow: inset 0 4px 0 #c89a5a; }
+  .moeda { display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff2a0, #ffc93a 45%, #c8901a); box-shadow: 0 0 0 2px #8a5a10 inset; }
+  .pilula.moedas { gap: 6px; color: #ffe27a; }
+  .mini-moedas { font-size: 0.9rem; padding: 3px 10px; vertical-align: middle; margin-left: 8px; }
+  .frasco { display: inline-block; width: 14px; height: 18px; position: relative; border-radius: 3px 3px 7px 7px; background: #e8474a; box-shadow: 0 -5px 0 -2px #f2f2f2; }
+  .frasco.reviver { background: #ffd23f; }
+  #btn-pocao .frasco { width: 38%; height: 50%; box-shadow: 0 0 10px #e8474a; }
+  #btn-pocao .selo { --crist: #e8474a; }
+  #btn-pocao.esperando { opacity: 0.55; }
+  #btn-pocao .recarga-pocao { position: absolute; inset: 0; border-radius: inherit; background: conic-gradient(rgba(0,0,0,0.55) calc(var(--p, 0) * 360deg), transparent 0); pointer-events: none; }
+  #seletor-pocao { position: absolute; top: calc(max(10px, env(safe-area-inset-top, 0px)) + clamp(48px, 10vmin, 60px)); right: max(10px, env(safe-area-inset-right, 0px));
+    display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 14px; background: var(--painel); border: 1px solid var(--painel-borda); pointer-events: auto; }
+  #seletor-pocao[hidden] { display: none; }
+  #seletor-pocao button { display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 8px; min-width: 200px; padding: 7px 10px; border-radius: 10px;
+    border: 2px solid transparent; background: rgba(255, 255, 255, 0.06); font-weight: 800; font-size: 0.82rem; text-align: left; }
+  #seletor-pocao button small { color: var(--creme-suave); font-weight: 700; }
+  #seletor-pocao button:disabled { opacity: 0.4; }
+  .painel-tela { position: absolute; inset: 0; background: rgba(10, 18, 34, 0.75); display: flex; justify-content: center; align-items: flex-start; overflow-y: auto; touch-action: pan-y;
+    padding-block: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .painel-tela[hidden] { display: none; }
+  .bolsa-secao { display: flex; flex-direction: column; gap: 8px; }
+  .bolsa-linha { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .bolsa-linha .item { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,0.08); font-weight: 800; }
+  .bolsa-btn { border: 2px solid var(--cristal); border-radius: 999px; padding: 7px 14px; background: #23406e; font-weight: 800; }
+  .bolsa-btn[disabled] { opacity: 0.4; }
+  .bolsa-monstros { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+  .bolsa-monstro { background: var(--painel); border-radius: 12px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; border-left: 4px solid var(--cor); }
+  .bolsa-monstro header { display: flex; justify-content: space-between; font-weight: 800; }
+  .bolsa-monstro .cmds { display: flex; gap: 6px; flex-wrap: wrap; }
+  .bolsa-monstro.desmaiado header span { color: #ff8a9a; }
+  .loja-item { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 10px; background: var(--painel); border-radius: 12px; padding: 10px 12px; }
+  .loja-item .frasco { width: 20px; height: 26px; }
+  .loja-item p { margin: 2px 0 0; font-size: 0.78rem; color: var(--creme-suave); }
+  .loja-item .preco { display: inline-flex; align-items: center; gap: 5px; color: #ffe27a; font-weight: 800; }
+  .ovo-caixa { display: flex; align-items: center; gap: 12px; background: var(--painel); border-radius: 12px; padding: 10px 12px; }
+  .ovo-desenho { width: 34px; height: 44px; border-radius: 50% 50% 46% 46% / 60% 60% 40% 40%; background: radial-gradient(circle at 35% 30%, #c79bff, #8a4ad9 55%, #4a1f7a); box-shadow: 0 0 12px #8a4ad9; flex: none; }
+  .barra-ovo { height: 8px; border-radius: 4px; background: rgba(255,255,255,0.12); overflow: hidden; margin-top: 4px; }
+  .barra-ovo b { display: block; height: 100%; background: #c79bff; }
+
   /* ---------- painel da equipe ---------- */
   #painel-equipe { position: absolute; inset: 0; background: rgba(10, 18, 34, 0.75); display: flex; justify-content: center; align-items: flex-start; overflow-y: auto; touch-action: pan-y;
     padding-block: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
@@ -297,12 +339,12 @@
   .ficha .onde.eq { background: #2f8a4f; }
   .ficha.desmaiado { opacity: 0.75; }
   .cab-onde { display: flex; margin-bottom: -2px; }
-  #painel-cristais { display: flex; flex-direction: column; gap: 8px; }
-  #painel-cristais .linha-cr { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-  #painel-cristais .cr { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,0.08); border: 2px solid var(--c); font-weight: 800; }
-  #painel-cristais .cr .losango { background: var(--c); }
-  #painel-cristais button[disabled] { opacity: 0.45; }
-  #painel-cristais small { color: var(--creme-suave); }
+  #painel-cristais, #bolsa-cristais { display: flex; flex-direction: column; gap: 8px; }
+  #painel-cristais .linha-cr, #bolsa-cristais .linha-cr { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  #painel-cristais .cr, #bolsa-cristais .cr { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,0.08); border: 2px solid var(--c); font-weight: 800; }
+  #painel-cristais .cr .losango, #bolsa-cristais .cr .losango { background: var(--c); }
+  #painel-cristais button[disabled], #bolsa-cristais button[disabled] { opacity: 0.45; }
+  #painel-cristais small, #bolsa-cristais small { color: var(--creme-suave); }
   .grade-fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
   .ficha { background: var(--painel); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 6px; border-top: 3px solid var(--cor); min-width: 0; }
   .ficha header { display: flex; align-items: center; gap: 8px; }
@@ -576,13 +618,15 @@
     <div id="equipe-chips"></div>
     <div class="topo-dir">
       <button id="btn-menu" class="btn-icone mini" type="button" title="Menu (Esc)" aria-label="Menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      <span class="pilula moedas" title="Moedas de ouro (compre poções na loja do Reino)" id="contador-moedas"><i class="moeda"></i><b>0</b></span>
       <span class="pilula cristais" title="Cristais de captura: comum, forte e supremo" id="contador-cristais"></span>
       <button id="btn-monstros" class="btn-hud" type="button">Monstros</button>
       <button id="btn-equipe" class="btn-hud" type="button">Equipe</button>
       <button class="btn-icone mini btn-tela-cheia" type="button" title="Tela cheia" aria-label="Tela cheia"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>
     </div>
     <div id="relogio" class="pilula relogio"><span class="astro"></span><span id="relogio-texto">Dia</span></div>
-    <button id="btn-casa" class="btn-casa" type="button"><i class="icone-casa"></i><span>Montar casa</span></button>
+    <!-- a bolsa: casa, poções, cristais e o ovo (no lugar do antigo botão da casa) -->
+    <button id="btn-casa" class="btn-casa" type="button" title="Bolsa (B)"><i class="icone-bolsa"></i><span>Bolsa</span></button>
     <!-- monstro invocado (tecla R e T no PC) -->
     <button id="btn-pet" class="btn-casa btn-pet" type="button" title="Invocar ou guardar o 1º monstro da equipe (R)" hidden>
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7" cy="9" r="2"/><circle cx="12" cy="6.5" r="2"/><circle cx="17" cy="9" r="2"/><path d="M8 17c0-3 2-5 4-5s4 2 4 5c0 1.5-1.5 2-4 2s-4-.5-4-2z"/></svg><span>Invocar</span>
@@ -619,6 +663,9 @@
       <button id="btn-tipo-cristal" class="btn-icone mini" data-acao="tipoCristal" type="button" title="Escolher cristal (V)" aria-label="Escolher o tipo de cristal">
         <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
       </button>
+      <button id="btn-pocao" class="btn-icone" data-acao="pocao" type="button" title="Poções (P)" aria-label="Usar poção">
+        <i class="frasco"></i><b id="qtd-pocao" class="selo">0</b><span class="recarga-pocao"></span>
+      </button>
       <button class="btn-icone" data-acao="trocar" type="button" title="Trocar monstro (Q)" aria-label="Trocar monstro">
         <svg viewBox="0 0 24 24"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>
       </button>
@@ -631,6 +678,11 @@
     </div>
     <!-- escolher o cristal: aparece ao tocar na setinha -->
     <div id="seletor-cristal" hidden></div>
+    <!-- escolher a poção: aparece ao tocar no frasco -->
+    <div id="seletor-pocao" hidden>
+      <button type="button" data-acao="pocaoCura"><i class="frasco cura"></i><span>Poção de Cura</span><small></small></button>
+      <button type="button" data-acao="pocaoReviver"><i class="frasco reviver"></i><span>Poção de Reviver</span><small></small></button>
+    </div>
     <!-- nome e vida de cada inimigo, em cima dele -->
     <div id="placas-inimigos"></div>
     <div class="golpes">
@@ -665,6 +717,21 @@
         <div id="lista-todos" class="grade-fichas"></div>
       </div>
       <p id="info-colecao"></p>
+    </div>
+  </div>
+
+  <!-- a bolsa: casa, poções, cristais e o ovo -->
+  <div id="painel-bolsa" class="painel-tela" hidden>
+    <div class="painel-caixa">
+      <div class="painel-cabeca"><h2>Bolsa <span class="pilula moedas mini-moedas"><i class="moeda"></i><b id="bolsa-moedas">0</b></span></h2><button class="btn-hud fechar-painel" type="button">Fechar</button></div>
+      <div id="conteudo-bolsa"></div>
+    </div>
+  </div>
+  <!-- a loja de poções do Reino -->
+  <div id="painel-loja" class="painel-tela" hidden>
+    <div class="painel-caixa">
+      <div class="painel-cabeca"><h2>Loja de Poções <span class="pilula moedas mini-moedas"><i class="moeda"></i><b id="loja-moedas">0</b></span></h2><button class="btn-hud fechar-painel" type="button">Fechar</button></div>
+      <div id="conteudo-loja"></div>
     </div>
   </div>
 

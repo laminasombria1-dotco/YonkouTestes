@@ -31,17 +31,18 @@ const ARENA = { r0: 9, deg: 7, passo: 1.2, palco: 0.87, porta: 0.16 }; // areia,
 //  ang = ângulo em volta do meio da arena (0 = portão), r = distância do meio, alt = altura.
 //  equipe: os monstros, na ordem em que entram ("L:fogo" = da linha de Fogo, na forma do nível).
 //  fala: o que ele diz antes da luta. premio: cristais da 1ª vitória (revanche: 1 Forte, e o Rei dá +1 Supremo).
+//  moedas: moedas de ouro da 1ª vitória (revanche: metade).
 export const TREINADORES = [
   { id: 'gill', nome: 'Gill', elemento: 'fogo', cor: '#d94a4a', niveis: [20, 24], ang: 55, r: 6.3, alt: 0.5,
-    equipe: [['L:fogo', 20], ['vulcarapa', 22], ['L:fogo', 24]], fala: 'Gill: Ha! Vamos ver se você aguenta o calor!', premio: { comum: 3, forte: 1 } },
+    equipe: [['L:fogo', 20], ['vulcarapa', 22], ['L:fogo', 24]], fala: 'Gill: Ha! Vamos ver se você aguenta o calor!', premio: { comum: 3, forte: 1 }, moedas: 80 },
   { id: 'cris', nome: 'Cris', elemento: 'trevas', cor: '#8a4ad9', niveis: [25, 29], ang: -55, r: 6.3, alt: 0.8,
-    equipe: [['L:trevas', 25], ['L:lua', 27], ['L:trevas', 29]], fala: 'Cris: As sombras já sabem como isso termina...', premio: { comum: 3, forte: 1 } },
+    equipe: [['L:trevas', 25], ['L:lua', 27], ['L:trevas', 29]], fala: 'Cris: As sombras já sabem como isso termina...', premio: { comum: 3, forte: 1 }, moedas: 100 },
   { id: 'lana', nome: 'Lana', elemento: 'luz', cor: '#e0b030', niveis: [30, 34], ang: 125, r: 6.3, alt: 1.1,
-    equipe: [['L:luz', 30], ['L:sol', 32], ['L:luz', 34]], fala: 'Lana: Prepare os olhos. Vai brilhar!', premio: { comum: 3, forte: 2 } },
+    equipe: [['L:luz', 30], ['L:sol', 32], ['L:luz', 34]], fala: 'Lana: Prepare os olhos. Vai brilhar!', premio: { comum: 3, forte: 2 }, moedas: 130 },
   { id: 'sheyla', nome: 'Sheyla', elemento: 'agua', cor: '#3d7bd9', niveis: [40, 45], ang: -125, r: 6.3, alt: 1.4,
-    equipe: [['L:agua', 40], ['aquaraia', 43], ['L:agua', 45]], fala: 'Sheyla: A maré está do meu lado. Venha!', premio: { forte: 3 } },
+    equipe: [['L:agua', 40], ['aquaraia', 43], ['L:agua', 45]], fala: 'Sheyla: A maré está do meu lado. Venha!', premio: { forte: 3 }, moedas: 170 },
   { id: 'julius', nome: 'Julius', elemento: 'planta', cor: '#3faf5a', niveis: [46, 50], ang: 180, r: 6.6, alt: 2, campeao: true,
-    equipe: [['L:planta', 46], ['espinhal', 48], ['L:planta', 49], ['L:planta', 50]], fala: 'Rei Julius: Chegou longe. Mostre que merece esta coroa!', premio: { forte: 3, supremo: 2 } },
+    equipe: [['L:planta', 46], ['espinhal', 48], ['L:planta', 49], ['L:planta', 50]], fala: 'Rei Julius: Chegou longe. Mostre que merece esta coroa!', premio: { forte: 3, supremo: 2 }, moedas: 500 },
 ];
 // Depois que a arena for dominada (todos vencidos 1 vez), todos lutam no nível 50
 export const NIVEL_REVANCHE = 50;

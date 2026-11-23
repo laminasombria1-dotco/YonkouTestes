@@ -19,6 +19,7 @@ import { HabilidadesPedrisco } from './habilidades/pedrisco-batalha.js';
 import { HabilidadesFaisquinho } from './habilidades/faisquinho-batalha.js';
 import { HabilidadesSolito } from './habilidades/solito-batalha.js';
 import { CameraOrbita } from './camera.js';
+import { aplicarPocao, RECARGA_POCAO } from './bolsa.js';
 import { criarModelo, criarCristal, criarCoroa, animarModelo, piscar, descartar, tocarGolpe, pararGolpe } from './modelos.js';
 
 const MAX_ATIVOS = 2;      // quantos inimigos de um grupo lutam ao mesmo tempo (o próximo par só entra quando estes caírem)
@@ -165,6 +166,7 @@ export class Batalha {
     this.t = 0;
     this.trocaCd = 0;
     this.trocaAuto = 0;
+    this.pocaoCd = 0; // recarga das poções (10 s entre uma e outra)
     this.posicionarCamera(1);
     this.montarHud();
     if (this.treinador) {
@@ -292,7 +294,11 @@ export class Batalha {
       if (ctrl.consumir('proxCristal')) this.trocarCristal();
       for (let k = 0; k < CRISTAIS.length; k++) if (ctrl.consumir('cristal' + k)) this.escolherCristal(k);
       if (ctrl.consumir('trocar')) this.trocar(false);
+      if (ctrl.consumir('pocao')) this.abrirPocoes();
+      if (ctrl.consumir('pocaoCura')) this.usarPocao('cura');
+      if (ctrl.consumir('pocaoReviver')) this.usarPocao('reviver');
     }
+    this.pocaoCd = Math.max(0, this.pocaoCd - dt);
     if (!this.captura) this.escolherAlvo();
     const vivos = this.vivos();
     const podeAgir = !this.fim && !this.captura && liberado;
@@ -1139,6 +1145,39 @@ export class Batalha {
     }
   }
 
+  // ---------- poções ----------
+  abrirPocoes() {
+    const el = document.getElementById('seletor-pocao');
+    this.fecharSeletor();
+    el.hidden = !el.hidden;
+  }
+  fecharPocoes() { const el = document.getElementById('seletor-pocao'); if (el) el.hidden = true; }
+  // Cura: o monstro que está lutando. Reviver: o 1º desmaiado da equipe (depois é só trocar para ele).
+  usarPocao(qual) {
+    this.fecharPocoes();
+    if (this.fim || this.captura) return;
+    const est = this.jogo.estado;
+    if (this.pocaoCd > 0) { this.jogo.aviso(`Espere ${Math.ceil(this.pocaoCd)} s para usar outra poção.`); return; }
+    if ((est.pocoes?.[qual] || 0) <= 0) { this.jogo.aviso(`Sem ${qual === 'cura' ? 'Poções de Cura' : 'Poções de Reviver'}. Compre na loja do Reino.`); return; }
+    let alvo;
+    if (qual === 'cura') {
+      alvo = this.jog.morto ? null : this.jog.dados;
+      if (alvo && alvo.hp >= this.jog.stats.hpMax) { this.jogo.aviso(`${this.jog.esp.nome} já está com a vida cheia.`); return; }
+    } else {
+      alvo = est.equipe.find((m) => m.hp <= 0);
+      if (!alvo) { this.jogo.aviso('Ninguém da equipe está desmaiado.'); return; }
+    }
+    const antes = alvo?.hp ?? 0;
+    const txt = alvo && aplicarPocao(est, qual, alvo);
+    if (!txt) return;
+    this.pocaoCd = RECARGA_POCAO;
+    this.jogo.aviso(txt);
+    if (qual === 'cura') {
+      this.jogo.numero('+' + (alvo.hp - antes), this.jog.pos.clone().setY(this.jog.altura), '#5fe08a', '');
+      this.particulas(this.jog.pos, '#ff8a8a', 14, 1);
+    } else this.jogo.aviso('Toque em Trocar para mandar ele de volta à luta.');
+  }
+
   // ---------- trocar e fugir ----------
   proximoDePe() {
     const eq = this.jogo.estado.equipe;
@@ -1331,6 +1370,19 @@ export class Batalha {
       ui.btnCristal.title = `${cr.nome}: ${this.tipoCristal < min ? 'não segura este monstro' : Math.round(chanceCaptura(e.dados, this.tipoCristal) * 100) + '% de chance'}`;
     }
     this.atualizarSeletor(e);
+    // botão das poções: quantas tem e a recarga
+    const pc = this.jogo.estado.pocoes || { cura: 0, reviver: 0 }, bp = document.getElementById('btn-pocao');
+    const txtP = `${pc.cura + pc.reviver}|${this.pocaoCd > 0}`;
+    if (this.txtPocao !== txtP) {
+      this.txtPocao = txtP;
+      document.getElementById('qtd-pocao').textContent = pc.cura + pc.reviver;
+      bp.classList.toggle('esperando', this.pocaoCd > 0);
+      const sel = document.getElementById('seletor-pocao');
+      sel.children[0].querySelector('small').textContent = `×${pc.cura} · no monstro da luta`;
+      sel.children[1].querySelector('small').textContent = `×${pc.reviver} · num desmaiado`;
+      sel.children[0].disabled = pc.cura <= 0; sel.children[1].disabled = pc.reviver <= 0;
+    }
+    bp.style.setProperty('--p', (this.pocaoCd / RECARGA_POCAO).toFixed(3));
     const eq = this.jogo.estado.equipe;
     const marcas = eq.map((m, i) => `<i class="${m.hp <= 0 ? 'fora' : ''} ${i === this.idx ? 'atual' : ''}"></i>`).join('');
     if (ui.bjEquipe.innerHTML !== marcas) ui.bjEquipe.innerHTML = marcas;
@@ -1339,6 +1391,7 @@ export class Batalha {
   // Libera a memória dos materiais da arena quando a batalha acaba
   descartarTudo() {
     this.jogo.ui.placas.innerHTML = '';
+    this.fecharPocoes();
     this.jogo.ui.btnCristal.hidden = false;
     const tipo = document.getElementById('btn-tipo-cristal');
     if (tipo) tipo.hidden = false;

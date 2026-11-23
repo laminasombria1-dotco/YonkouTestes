@@ -22,6 +22,7 @@ const TECLAS_ACAO = {
   KeyJ: 'golpe0', Digit1: 'golpe0', KeyK: 'golpe1', Digit2: 'golpe1', KeyL: 'golpe2', Digit3: 'golpe2',
   Space: 'esquiva', ShiftLeft: 'esquiva', KeyC: 'cristal', KeyV: 'proxCristal', KeyQ: 'trocar', KeyF: 'fugir',
   KeyR: 'pet', KeyT: 'controlar', // monstro invocado: invocar/guardar e controlar/voltar
+  KeyP: 'pocao', KeyB: 'bolsa', // poções (na batalha) e a bolsa (no mapa)
 };
 
 // O foco está num campo de texto? (aí W, A, S, D, C, Espaço... são letras, não atalhos)

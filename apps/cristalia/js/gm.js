@@ -361,7 +361,9 @@ export class PainelGM {
         <h3>Arena do Reino (vencidos: ${this.jogo.progressoArena?.().vencidos ?? 0}/5${this.jogo.progressoArena?.().dominada ? ', dominada' : ''})</h3>
         <div class="gm-grade">${TREINADORES.map((t, i) => `<button class="gm-btn" type="button" data-gm="treinador" data-i="${i}">Lutar: ${t.nome}</button>`).join('')}
           <button class="gm-btn" type="button" data-gm="arenaProg" data-v="dominar">Dominar a arena</button>
-          <button class="gm-btn" type="button" data-gm="arenaProg" data-v="zerar">Zerar a arena</button></div>
+          <button class="gm-btn" type="button" data-gm="arenaProg" data-v="zerar">Zerar a arena</button>
+          <button class="gm-btn" type="button" data-gm="moedas">+1000 moedas</button>
+          <button class="gm-btn" type="button" data-gm="chocar">Chocar o ovo agora</button></div>
         <p class="gm-dica">"Lutar" começa a luta na hora (sem precisar da ordem). Dominada, todos lutam no Nv.50.</p>
       </div>
       <div class="gm-bloco">
@@ -505,10 +507,12 @@ export class PainelGM {
       case 'hora': this.mundo.hora = Number(d.h); this.mundo.atualizarCeu(0); break;
       case 'ir': this.ir(d.onde); this.fecharPainel(); return;
       case 'treinador': this.fecharPainel(); this.jogo.lutarComTreinador(Number(d.i)); return;
+      case 'moedas': this.jogo.estado.moedas = (this.jogo.estado.moedas || 0) + 1000; this.jogo.atualizarHudMundo(); this.jogo.salvar(); break;
+      case 'chocar': if (this.jogo.estado.ovo) { this.jogo.ovo.chocarAgora(); this.fecharPainel(); return; } this.jogo.aviso('GM: você não tem ovo (domine a arena).'); break;
       case 'arenaProg': {
         const p = this.jogo.progressoArena();
-        if (d.v === 'dominar') { p.vencidos = 5; p.dominada = true; p.ovoPendente = true; this.jogo.aviso('GM: arena dominada.'); }
-        else { p.vencidos = 0; p.dominada = false; delete p.ovoPendente; this.jogo.aviso('GM: arena zerada.'); }
+        if (d.v === 'dominar') { p.vencidos = 5; p.dominada = true; this.jogo.aviso('GM: arena dominada.'); this.jogo.ovo.receber(); }
+        else { p.vencidos = 0; p.dominada = false; delete p.ovoPendente; delete p.ovoRecebido; this.jogo.estado.ovo = null; this.jogo.aviso('GM: arena zerada (e o ovo também).'); }
         this.jogo.salvar(); break;
       }
       case 'vel': this.vel = Number(d.v); break;
