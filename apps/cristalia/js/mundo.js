@@ -101,7 +101,7 @@ export class Mundo {
     this.cena = new THREE.Scene();
     this.cena.background = CEU_DIA.clone();
     this.cena.fog = new THREE.Fog(CEU_DIA.clone(), 40, 115);
-    this.camera = new THREE.PerspectiveCamera(50, 1, 0.1, 300);
+    this.camera = new THREE.PerspectiveCamera(50, jogo.aspecto || 1, 0.1, 300); // a proporção da tela (larga, deitado)
     this.orbita = new CameraOrbita(0); // câmera em terceira pessoa que o jogador gira
     this.hemi = new THREE.HemisphereLight(HEMI_DIA.clone(), '#5d7a3e', 1.7);
     this.sol = new THREE.DirectionalLight(SOL_DIA.clone(), 1.9);
@@ -318,7 +318,7 @@ export class Mundo {
     this.sol.color.lerpColors(SOL_DIA, SOL_NOITE, f);
     this.sol.intensity = THREE.MathUtils.lerp(1.9, 0.55, f);
     this.estrelas.material.opacity = f;
-    this.cena.fog.near = this.nevoa * 0.36; // as dungeons fecham a névoa por cima disso
+    this.cena.fog.near = this.nevoa * 0.55; // a névoa só começa depois da metade da visão (as dungeons fecham a névoa por cima disso)
     this.cena.fog.far = this.nevoa;
   }
 

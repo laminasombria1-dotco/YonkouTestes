@@ -121,6 +121,7 @@ class Jogo {
     this.pet = new Companheiro(this); // monstro invocado que segue o treinador
     this.bolsa = new Bolsa(this); // bolsa, loja de poções e moedas
     this.ovo = new Ovo(this);     // o Ovo Misterioso do Campeão
+    this.medir(); // de novo: agora a câmera do mapa já existe (senão ela fica quadrada e a imagem estica)
     this.plataforma = null;
     this.batalha = null;
     this.cenaEvo = null;
@@ -1219,6 +1220,8 @@ class Jogo {
       this.batalha.atualizar(dt, this.ctrl);
     }
     this.ovo.atualizar(dt); // o tempo do ovo passa no mapa e na batalha
+    // a câmera sempre com a proporção da tela (senão a imagem fica achatada ou esticada)
+    if (Math.abs(camera.aspect - this.aspecto) > 0.001 && (camera === this.mundo.camera || camera === this.batalha?.camera)) { camera.aspect = this.aspecto; camera.updateProjectionMatrix(); }
     if (this.modo === 'batalha' && this.batalha) { cena = this.batalha.cena; camera = this.batalha.camera; }
     if (this.modo === 'evolucao' && this.cenaEvo) { cena = this.cenaEvo.cena; camera = this.cenaEvo.camera; }
     this.renderer.render(cena, camera);
