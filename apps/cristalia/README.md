@@ -121,8 +121,18 @@ O Reino fica **fora da borda do mapa**, como as dungeons, mas não é dungeon: �
 - **O platô:** redondo (62 m de raio), plano, cercado de montanhas verdes, com uma **muralha** de torres de telhado azul e um **portão**.
 - **Castelo** no meio (torre do meio, alas e duas torres redondas, telhados azuis), com a **praça e a fonte de cura** na frente. É ali que você nasce e acorda.
 - **Vila:** casas de pedra e madeira com telhado azul e janelas acesas. Uma delas é a **loja de poções** (placa pendurada e barraca listrada azul e branca). Comprar ainda não funciona: vem na próxima parte.
-- **Arena fechada** (coliseu de telhado vermelho): parede de 2 andares de arcos, arquibancada em degraus com **plateia** (~320 bonequinhos coloridos), túnel do portão até a areia, e o **palco** com os 5 treinadores. Dentro dela a câmera chega mais perto e fica mais alta. As lutas com os treinadores vêm na próxima parte.
-- **Os treinadores** (na ordem da luta; o último é o Campeão): **Gill** (Fogo), **Sheyla** (Água), **Cris** (Trevas), **Lana** (Luz) e **Julius** (Planta, o Rei, de coroa).
+- **Arena fechada** (coliseu de telhado vermelho): parede de 2 andares de arcos, arquibancada em degraus com **plateia** (~320 bonequinhos coloridos), túnel do portão até a areia (sem teto, para a câmera passar), e o **palco** com as 5 bandeiras. Dentro dela a câmera chega mais perto e fica mais alta. As lutas com os treinadores vêm na próxima parte.
+- **Os treinadores** ficam **dentro da arena, cada um na sua plataforma** de pedra (com a cor do elemento e a bandeira dele), espalhadas pela areia em zigue-zague do portão até o palco. Cada plataforma é mais alta que a anterior, e a do Campeão tem uma coroa dourada em volta. Na ordem da luta:
+
+  | # | Treinador | Elemento | Níveis dos monstros (1ª vez) | Onde fica |
+  |---|---|---|---|---|
+  | 1 | **Gill** | Fogo | 20 a 24 | perto do portão, à direita de quem entra |
+  | 2 | **Cris** | Trevas | 25 a 29 | perto do portão, à esquerda |
+  | 3 | **Lana** | Luz | 30 a 34 | no meio, à direita |
+  | 4 | **Sheyla** | Água | 40 a 45 | no meio, à esquerda |
+  | 5 | **Julius** (o Rei, Campeão) | Planta | 46 a 50 (o mais forte) | no fundo, na frente do palco, na plataforma mais alta |
+
+  Depois que a arena é dominada (os 5 vencidos uma vez), **todos passam a lutar no nível 50**. Os números ficam em `TREINADORES` e `NIVEL_REVANCHE`, no `js/reino.js`.
 - Lá dentro não aparecem monstros, não nascem árvores do mapa e não dá para montar a casa.
 - **Leve no celular:** todas as peças paradas do Reino viram **3 malhas** (cores normais, peças vistas dos dois lados e o que brilha), e a plateia é **1 lote**. A colisão usa círculos na `mundo.grade`, como o resto.
 - **Código:** a forma (corredor + platô) é o `REINO` em `js/dungeon.js` (`TracadoReino`, com `paraMundo` e `paraLocal`), a direção e a Estrada Real ficam em `js/mapa/gerador.js` (`ANG_REINO`, `ESTRADA`, `naEstradaReal`) e o cenário em `js/reino.js`.

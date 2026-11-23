@@ -23,14 +23,20 @@ export const ARENA_REINO = { x: -36, z: -4 };        // centro da arena
 export const RAIO_MURALHA = 58;
 const ARENA = { r0: 9, deg: 7, passo: 1.2, palco: 0.87, porta: 0.16 }; // areia, degraus, aberturas (radianos)
 
-// Os 5 treinadores da arena, na ordem da luta (o último é o Campeão)
+// Os 5 treinadores da arena, na ordem da luta: Fogo > Trevas > Luz > Água > Planta (o Campeão).
+//  niveis: de que nível a que nível vão os monstros de cada um na 1ª vez.
+//  Cada um fica na sua plataforma, espalhadas pela areia em zigue-zague do portão
+//  até o palco, cada uma mais alta que a anterior:
+//  ang = ângulo em volta do meio da arena (0 = portão), r = distância do meio, alt = altura.
 export const TREINADORES = [
-  { id: 'gill', nome: 'Gill', elemento: 'fogo', cor: '#d94a4a' },
-  { id: 'sheyla', nome: 'Sheyla', elemento: 'agua', cor: '#3d7bd9' },
-  { id: 'cris', nome: 'Cris', elemento: 'trevas', cor: '#8a4ad9' },
-  { id: 'lana', nome: 'Lana', elemento: 'luz', cor: '#e0b030' },
-  { id: 'julius', nome: 'Julius', elemento: 'planta', cor: '#3faf5a', campeao: true },
+  { id: 'gill', nome: 'Gill', elemento: 'fogo', cor: '#d94a4a', niveis: [20, 24], ang: 55, r: 6.3, alt: 0.5 },
+  { id: 'cris', nome: 'Cris', elemento: 'trevas', cor: '#8a4ad9', niveis: [25, 29], ang: -55, r: 6.3, alt: 0.8 },
+  { id: 'lana', nome: 'Lana', elemento: 'luz', cor: '#e0b030', niveis: [30, 34], ang: 125, r: 6.3, alt: 1.1 },
+  { id: 'sheyla', nome: 'Sheyla', elemento: 'agua', cor: '#3d7bd9', niveis: [40, 45], ang: -125, r: 6.3, alt: 1.4 },
+  { id: 'julius', nome: 'Julius', elemento: 'planta', cor: '#3faf5a', niveis: [46, 50], ang: 180, r: 6.6, alt: 2, campeao: true },
 ];
+// Depois que a arena for dominada (todos vencidos 1 vez), todos lutam no nível 50
+export const NIVEL_REVANCHE = 50;
 
 // ---------- cores ----------
 const PEDRA = '#e8dcc4', PEDRA2 = '#cbbfa6', AZUL = '#3a5aa8', AZUL2 = '#2d4a8c', ARDOSIA = '#34508f';
@@ -332,9 +338,8 @@ export class Reino {
       const a = Math.PI * 1.5 + PALCO + (i / 16) * (Math.PI * 2 - 2 * PALCO);
       peca(g, cil(0.22, 0.22, 11.2 - H, 5), '#f2ead8', [Math.sin(a) * (R - 3.3), H + (11.2 - H) / 2 - 1.2, Math.cos(a) * (R - 3.3)]);
     }
-    // túnel do portão até a areia
+    // túnel do portão até a areia (sem teto: a câmera passa por cima)
     for (const z of [-1.9, 1.9]) peca(g, caixa(R - r0 + 1.4, 4, 0.6), PEDRA2, [(R + r0) / 2 + 0.6, 2, z]);
-    peca(g, caixa(R - r0 + 1.4, 0.6, 4.4), PEDRA2, [(R + r0) / 2 + 0.6, 4.3, 0]);
     // o chão da luta
     peca(g, cil(R, R, 0.1, 28), PEDRA2, [0, 0.05, 0]);
     peca(g, cil(r0, r0, 0.3, 28), AREIA, [0, 0.15, 0]);
@@ -358,13 +363,36 @@ export class Reino {
       for (const y of [2.5, 6.8]) peca(a, caixa(1.3, 2, 0.2), VIDRO, [-1.5, y, -s * 1.55]);
       peca(a, prisma(3.6, 5.4, 1.6), TELHA, [-1.5, 10, 0]);
     }
-    // bandeiras e os 5 treinadores no palco (de frente para a areia)
+    // as 5 bandeiras em cima do palco
     TREINADORES.forEach((tr, i) => {
       const z = (i - 2) * 4;
       peca(p, cil(0.05, 0.05, 3, 4), MAD, [-2.6, 13.2, z]);
       duplo(p, caixa(0.06, 0.9, 1.4), tr.cor, [-2.6, 14.1, z + 0.75]);
-      desenharTreinador(p, tr.id, [0.2, 1, (i - 2) * 2.4], Math.PI / 2);
     });
+    // a plataforma de cada treinador, na areia, e ele em cima, de frente para o meio da arena
+    this.posTreinadores = [];
+    for (const tr of TREINADORES) {
+      const a = (tr.ang * Math.PI) / 180, x = Math.cos(a) * tr.r, z = Math.sin(a) * tr.r, h = tr.alt;
+      const rb = tr.campeao ? 1.7 : 1.45;                                        // raio da plataforma
+      const virar = Math.atan2(-x, -z);                                          // de frente para o meio
+      peca(g, cil(rb + 0.15, rb + 0.25, 0.3, 10), PEDRA2, [x, 0.3, z]);           // base
+      peca(g, cil(rb, rb + 0.1, h, 10), PEDRA, [x, 0.3 + h / 2, z]);              // a plataforma
+      brilho(g, cil(rb + 0.04, rb + 0.04, 0.12, 10), tr.cor, [x, 0.3 + h - 0.08, z]); // faixa da cor do elemento
+      peca(g, cil(rb * 0.75, rb * 0.75, 0.06, 10), tr.cor, [x, 0.33 + h, z]);    // o centro colorido
+      const fx = x - Math.sin(virar) * (rb - 0.2), fz = z - Math.cos(virar) * (rb - 0.2);
+      peca(g, cil(0.06, 0.06, 3.2, 4), MAD, [fx, 0.3 + h + 1.6, fz]);            // mastro atrás dele
+      duplo(g, caixa(0.06, 1, 1.3), tr.cor, [fx, 0.3 + h + 2.6, fz], [0, virar + Math.PI / 2, 0]);
+      if (tr.campeao) for (let k = 0; k < 6; k++) {                              // coroa de pontas na plataforma do Rei
+        const ak = (k / 6) * Math.PI * 2;
+        brilho(g, cone(0.18, 0.5, 4), '#d8b450', [x + Math.cos(ak) * (rb + 0.05), 0.3 + h + 0.2, z + Math.sin(ak) * (rb + 0.05)]);
+      }
+      // degrau na frente, para subir
+      const dx = Math.sin(virar) * (rb + 0.35), dz = Math.cos(virar) * (rb + 0.35);
+      peca(g, caixa(1.2, Math.max(0.3, h * 0.5), 0.7), PEDRA2, [x + dx, 0.3 + Math.max(0.3, h * 0.5) / 2, z + dz], [0, virar, 0]);
+      desenharTreinador(g, tr.id, [x, 0.33 + h, z], virar);
+      this.obst(ARENA_REINO.x + x, ARENA_REINO.z + z, rb + 0.25);
+      this.posTreinadores.push(REINO.paraMundo(ARENA_REINO.x + x + dx * 1.6, ARENA_REINO.z + z + dz * 1.6)); // onde o jogador fala com ele
+    }
     // estandartes coloridos do lado de fora
     for (let i = 1; i < N; i += 3) {
       const a = (i / N) * Math.PI * 2 + Math.PI / N;
@@ -379,8 +407,6 @@ export class Reino {
     }
     for (const s of [-1, 1]) this.linha(ax + r0 + 0.8, az + s * 2.5, ax + RP, az + s * 2.5, 0.6);
     this.retangulo(ax - (r0 + 4), az, 6, 22, 0, 1.4); // o prédio do palco
-    // onde ficam os treinadores (coordenadas do mundo; a parte 2 usa isso para as lutas)
-    this.posTreinadores = TREINADORES.map((tr, i) => REINO.paraMundo(ax - (r0 + 1.2), az + (i - 2) * 2.4));
   }
 
   // ---------- a vila (kit de telhados azuis) ----------

@@ -713,7 +713,7 @@ export class Mundo {
   // Distância e altura padrão da câmera (com o celular em pé ela fica mais longe e mais alta)
   camPadrao() {
     // dentro da arena do Reino: mais perto e mais de cima (senão a câmera fica atrás do telhado)
-    if (this.reino?.dentroArena(this.pos.x, this.pos.z)) return { dist: 10, pitch: 1.0 };
+    if (this.reino?.dentroArena(this.pos.x, this.pos.z)) return { dist: 11, pitch: 0.72 };
     return this.jogo.aspecto < 1 ? { dist: 26, pitch: 0.82 } : { dist: 19, pitch: 0.71 }; // um pouco mais longe do personagem
   }
 
