@@ -150,7 +150,7 @@ O Reino fica **fora da borda do mapa**, como as dungeons, mas não é dungeon: �
 
   A forma de cada linha depende do nível (Nv.20 da linha do Fogo é um Fornalobo, por exemplo).
 - **Regras da luta:** não dá para capturar (os botões de cristal somem), e **Fugir = desistir**: você sai pelo portão da arena.
-- **A Arena do Reino da batalha:** o mesmo coliseu, em volta da areia de 22 m, com a plateia (~1000 bonequinhos) e o treinador assistindo da plataforma dele, do lado de lá. Cai confete. Não tem perigo e não favorece nenhum elemento. **A plateia pula** quando um monstro do treinador desmaia, e de novo no mapa quando você vence.
+- **A Arena do Reino da batalha:** o mesmo coliseu, em volta da areia de 22 m, com a plateia (~730 bonequinhos) e o treinador assistindo da plataforma dele, do lado de lá. Cai confete. Não tem perigo e não favorece nenhum elemento. **A plateia pula** quando um monstro do treinador desmaia, e de novo no mapa quando você vence.
 - **Vencer:** experiência cheia (sem o desconto de grupo) e cristais. Na 1ª vez: Gill e Cris dão 3 comuns + 1 Forte, Lana 3 comuns + 2 Fortes, Sheyla 3 Fortes e o Rei 3 Fortes + 2 Supremos. Nas revanches: 1 Forte (o Rei dá mais 1 Supremo).
 - **Perder:** você acorda na fonte do castelo, com todos curados. Os treinadores que você já venceu **continuam vencidos**.
 - **Dominar a arena:** vencendo o Rei Julius, você vira o **Campeão do Reino** (aparece "👑 Campeão do Reino" no resumo do jogo salvo, na tela de início). Daí em diante todos lutam no Nv.50, em qualquer ordem. O Ovo Misterioso do Campeão vem na próxima parte (o jogo já guarda que você tem um para receber).
