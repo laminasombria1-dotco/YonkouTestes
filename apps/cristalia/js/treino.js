@@ -25,6 +25,7 @@ import { HabilidadesPedrisco } from './habilidades/pedrisco-batalha.js';
 import { HabilidadesFaisquinho } from './habilidades/faisquinho-batalha.js';
 import { HabilidadesSolito } from './habilidades/solito-batalha.js';
 import { HabilidadesLunico } from './habilidades/lunico-batalha.js';
+import { HabilidadesLumino } from './habilidades/lumino-batalha.js';
 
 export const COLEIRA = 20; // metros: até onde o monstro vai longe do treinador
 
@@ -61,6 +62,7 @@ export class Treino extends Batalha {
     t.faisquinho = new HabilidadesFaisquinho(t);
     t.solito = new HabilidadesSolito(t);
     t.lunico = new HabilidadesLunico(t);
+    t.lumino = new HabilidadesLumino(t);
     // o monstro (posição medida a partir do treinador)
     const j = new Lutador(dados, 'jogador');
     j.pos.set(posMundo.x - t.centro.x, 0, posMundo.z - t.centro.z);
@@ -96,6 +98,7 @@ export class Treino extends Batalha {
     this.t += dt;
     const j = this.jog;
     const mov = Math.hypot(v.x, v.z) > 0.05;
+    j.mv = v; // para onde o joystick aponta (o Passo de Luz vai para lá)
     for (let i = 0; i < 3; i++) if (ctrl.consumir('golpe' + i)) this.tentarGolpe(j, i, this.alvoNoAr(j, j.golpe(i)));
     if (ctrl.consumir('esquiva')) this.esquivar(j, mov ? v : { x: Math.sin(j.ang), z: Math.cos(j.ang) }, null);
     // andar (igual à batalha: mais devagar enquanto prepara ou solta um jato)
@@ -119,6 +122,7 @@ export class Treino extends Batalha {
     this.faisquinho.atualizar(dt);
     this.solito.atualizar(dt);
     this.lunico.atualizar(dt);
+    this.lumino.atualizar(dt);
     // a camada acompanha o chão embaixo do monstro
     const w = this.posMundo();
     this.cena.position.y += (alturaEm(w.x, w.z) - this.cena.position.y) * (1 - Math.exp(-10 * dt));

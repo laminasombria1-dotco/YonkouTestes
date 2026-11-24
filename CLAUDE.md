@@ -38,7 +38,7 @@ Protótipo 3D low poly de caçar, capturar e evoluir monstros. **Three.js 0.170,
 - `apps/cristalia/modelos/README.md`: os modelos `.glb` feitos no Blender (hoje o Brasito).
 
 ### O que já existe
-- **Batalha** em tempo real: 9 linhas de 4 formas, tipos duplos, raros e 2 chefes. 8 linhas têm habilidades próprias em `js/habilidades/` (Brasito, Gotinho, Musguinho, Pedrisco, Faisquinho, Solito, Lunico e Trevas, a partir do Sombrelo). Só a Luz ainda usa as antigas.
+- **Batalha** em tempo real: 9 linhas de 4 formas, tipos duplos, raros e 2 chefes. As 9 linhas têm habilidades próprias em `js/habilidades/` (Brasito, Gotinho, Musguinho, Pedrisco, Faisquinho, Solito, Lunico, Lumino e Trevas, esta a partir do Sombrelo). Os tipos duplos, os raros e os chefes ainda usam os golpes de `dados.js`.
 - **Contas na nuvem** (Firebase, projeto `cristalia-91fd6`, pela internet direto em `js/nuvem.js`): nome e senha. Cada conta tem o seu jogo salvo: `cristalia-save-v1:<id>` no celular e `jogadores/<uid>` no Firestore. A conta **GM** fica só no aparelho e abre o painel GM (`js/gm.js`).
 - **Brasito 3D**: `modelos/brasito.glb` com animações (`js/modelos3d.js`, GLTFLoader em `lib/addons/`).
 - **Monstro invocado** (`js/companheiro.js`) e **modo treino** (`js/treino.js`: os golpes no mapa, "no ar").
@@ -94,4 +94,4 @@ Começou (etapa 0.1) como uma **cópia do Cristalia**, e vai recebendo da **Aren
   - Confira com `apksigner` se a impressão digital é **A5:AC:0C:12…:43:D4**. Aumente o `versionCode` em `app/build.gradle`. **Apague as cópias no fim.**
 
 ## Ficou para depois (não faça sem ele pedir)
-PvP entre 2 jogadores (a análise recomendou Firebase Realtime Database com anfitrião), habilidades novas da Luz, o Plenilúnio virar um lobo lunar (modelo novo, já combinado: depois das habilidades da Lua), arrancada do Brasito 3D mais rápida, Brasito 3D mais claro, e os botões do alto do mapa que se sobrepõem com o celular em pé.
+PvP entre 2 jogadores (a análise recomendou Firebase Realtime Database com anfitrião), o Plenilúnio virar um lobo lunar (modelo novo, já combinado: depois das habilidades da Lua), arrancada do Brasito 3D mais rápida, Brasito 3D mais claro, e os botões do alto do mapa que se sobrepõem com o celular em pé.

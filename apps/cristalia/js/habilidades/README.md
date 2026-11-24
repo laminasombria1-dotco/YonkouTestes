@@ -148,6 +148,27 @@ Solito (Nv.1) > Solário (Nv.6) > Solaurum (Nv.12) > Astrorei (Nv.30)
 - Calor mais forte ou mais longo: `calorSolito` → `poder` (cada pedaço), `calor.duracao` e `raio`.
 - Calor que esquenta mais rápido: `ondaCalor` → `calor.esquenta`.
 
+### Luz: linha do Lumino (`lumino.js` e `lumino-batalha.js`)
+Lumino (Nv.1) > Lumelo (Nv.6) > Prismal (Nv.12) > Aurealis (Nv.30)
+
+| Forma | Perto | Disparo | Área |
+|---|---|---|---|
+| Lumino | Investida | **Estilhaço de Luz**: cristal que se divide em **3** raios ao acertar alguém ou chegar a 8 m | **Redoma de Luz**: 3 m por 2 s, devolve os tiros e diminui 30% do outro dano; clarão no fim |
+| Lumelo | **Passo de Luz**: teletransporte de 5 m; cristais no chão onde aparece (2 m) | + Exposto | + Exposto no clarão |
+| Prismal | **Passo Prismático**: 6 m; cristais onde some **e** onde aparece | Divide em **5** | **Redoma Prismática**: 3,8 m por 3 s; tiros devolvidos voltam +50% |
+| Aurealis | **Passo Celestial**: 7 m; cristais no começo, no meio e no fim (2,5 m), as asas cortam em volta (fim +30%) | **Arco-Íris**: divide em **7** raios coloridos | **Julgamento**: redoma de 4 s; no fim, **6 colunas de luz** caem nos inimigos (até 6 m). Exposto dura 50% mais |
+
+- **Passo (`passo`):** o jogador vai para onde o **joystick aponta** (`c.mv`, guardado em `controlarJogador` e no treino); sem apontar, na direção do alvo. O inimigo vai na sua direção e para um pouco antes de você. Anda de 0,3 em 0,3 m: obstáculos seguram o passo. Fica sem levar dano por `passo.invul` segundos. Cada ponto de cristal acerta cada inimigo **uma vez**.
+- **Estilhaço (`divide`):** o cristal se divide ao acertar alguém ou chegar em `alcance` (se bater num obstáculo, só quebra: `p.bateu` em `../batalha.js`). Os raios não acertam de novo quem levou o cristal.
+- **Redoma (`redoma`):** fica em `c.redoma` e anda junto com ele. Devolve os tiros que voam (bolas, cristais, Bola Sombria, luas, gotas...) para quem atirou, com a força × `redoma.forca`. A folha bumerangue e o raio que marca **não** voltam. O outro dano (laser, jato, áreas, mordidas) cai `redoma.reducao` (`aplicarDano`). Aparece "Redoma 2s" embaixo da vida.
+- **Julgamento:** as colunas caem primeiro em cima de cada inimigo por perto e as que sobram em volta deles, com aviso no chão. No Julgamento o clarão empurra pouco, para o inimigo ficar embaixo das colunas.
+- Esta linha não ganha o "disparo ×2/×3": no lugar, o cristal se divide. A treinadora **Lana** usa esta linha (ela também devolve os seus tiros).
+
+**Exemplos de mudança (em `lumino.js`):**
+- Distância do passo: `passoLuz` → `passo.distancia`; alcance dos cristais: `passo.raio`.
+- Raios do estilhaço: `estilhaco` → `divide.raios`, `divide.abertura` (leque) e `divide.fator` (força de cada um).
+- Redoma: `redomaLuz` → `redoma.duracao`, `redoma.reducao` (0,3 = 30%) e `redoma.forca`.
+
 ### Lua: linha do Lunico (`lunico.js` e `lunico-batalha.js`)
 Lunico (Nv.1) > Lunarelo (Nv.6) > Crescêntio (Nv.12) > Plenilúnio (Nv.30)
 

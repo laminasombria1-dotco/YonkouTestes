@@ -571,6 +571,22 @@ A linha do Solito **solta um sol no campo** que a deixa mais forte, **queima que
 - **Calor:** anda junto com o monstro e dá dano a cada meio segundo em quem está perto; o anel fica mais vermelho quando esquenta. É o calor do Sol, não a Queimadura do Fogo. O ofuscado é sorteado uma vez por inimigo a cada uso.
 - Esta linha não ganha o "disparo ×2/×3". Os golpes de Sol de sempre (em `dados.js`) continuam para quem não é desta linha.
 
+## Golpes da linha do Lumino (Luz)
+
+A linha da Luz joga com a **velocidade da luz** (teletransporte), o **prisma** (o tiro se divide) e o **reflexo** (a redoma devolve os tiros). O efeito dela é o **Exposto** (recebe 30% a mais de dano). Os números ficam em `js/habilidades/lumino.js` e o funcionamento em `js/habilidades/lumino-batalha.js`.
+
+| Forma | Perto | Disparo | Área |
+|---|---|---|---|
+| Lumino | Investida | **Estilhaço de Luz**: cristal que se divide em 3 raios ao acertar alguém ou chegar a 8 m | **Redoma de Luz**: bolha de 3 m por 2 s que **devolve os tiros** dos inimigos e diminui 30% do outro dano; clarão no fim |
+| Lumelo | **Passo de Luz**: some e aparece 5 m **para onde você aponta o joystick**; cristais saem do chão e acertam quem estiver a até 2 m | + pode causar Exposto | + Exposto |
+| Prismal | **Passo Prismático**: 6 m; cristais onde ele some e onde aparece | Divide em 5 | **Redoma Prismática**: 3,8 m por 3 s; os tiros voltam 50% mais fortes |
+| Aurealis | **Passo Celestial**: 7 m; cristais no começo, no meio e no fim, e as asas cortam em volta | **Arco-Íris**: 7 raios coloridos | **Julgamento**: redoma de 4 s e, no fim, 6 colunas de luz caem nos inimigos |
+
+- **Passo:** sem apontar o joystick, ele vai na direção do alvo. Também serve para **fugir**. Pedras seguram o passo.
+- **Redoma:** só os tiros que voam voltam (a folha bumerangue e o raio que marca não). Laser, lança-chamas, ondas, áreas e golpes de perto não voltam, mas dão 30% menos dano.
+- A treinadora **Lana** usa esta linha: ela também devolve os seus tiros. Espere a redoma dela acabar.
+- Esta linha não ganha o "disparo ×2/×3" (no lugar, o cristal se divide). Os golpes de Luz de sempre (em `dados.js`) continuam para quem não é desta linha.
+
 ## Golpes da linha do Lunico (Lua)
 
 A linha da Lua joga com as **fases da lua**, **dashes que cruzam o alvo** e um **luar que cura**. Os números ficam em `js/habilidades/lunico.js` e o funcionamento em `js/habilidades/lunico-batalha.js`.
@@ -669,7 +685,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/brasas.js` | Cenário do Caminho das Brasas (braseiros, forja, rio de lava, Trono de Magma, vulcão) |
 | `js/raizes.js` | Cenário da Trilha Ancestral e da Floresta (cogumelos, ruínas, lago, raízes, Árvore-Mãe, vaga-lumes, monstros extras) |
 | `js/arena.js` | Arenas: chão, obstáculos, clima animado e perigos de cada região (com chance), e o escurecer do Astro Negro |
-| `js/habilidades/` | **Habilidades próprias das linhas de monstros** (uma pasta só para isso). Veja o `README.md` de lá. Hoje: linha do Brasito (`brasito.js` com os números, `brasito-batalha.js` com o lança-chamas, o rabo de fogo e a velocidade), linha do Gotinho (`gotinho.js` e `gotinho-batalha.js`, com o jato, o hidrocanhão, as ondas, o maremoto e o escudo), linha do Musguinho (`musguinho.js` e `musguinho-batalha.js`, com a folha bumerangue, a vinha que puxa, as raízes, a moita e o bosque), linha do Pedrisco (`pedrisco.js` e `pedrisco-batalha.js`, com a pedra em arco que quica, o punho sísmico, o tremor e os pilares), linha do Faisquinho (`faisquinho.js` e `faisquinho-batalha.js`, com as marcas, o dash elétrico, o tiro que marca, o choque e as nuvens), linha do Solito (`solito.js` e `solito-batalha.js`, com o sol que dá bônus, o laser e o calor), linha do Lunico (`lunico.js` e `lunico-batalha.js`, com o combo de dashes, as fases da lua e o luar que cura) e a linha do Breuzinho (`trevas.js` e `trevas-batalha.js`, com a mordida, a bola com olhos de alcance curto e a área que escurece e dá bônus de dano) |
+| `js/habilidades/` | **Habilidades próprias das linhas de monstros** (uma pasta só para isso). Veja o `README.md` de lá. Hoje: linha do Brasito (`brasito.js` com os números, `brasito-batalha.js` com o lança-chamas, o rabo de fogo e a velocidade), linha do Gotinho (`gotinho.js` e `gotinho-batalha.js`, com o jato, o hidrocanhão, as ondas, o maremoto e o escudo), linha do Musguinho (`musguinho.js` e `musguinho-batalha.js`, com a folha bumerangue, a vinha que puxa, as raízes, a moita e o bosque), linha do Pedrisco (`pedrisco.js` e `pedrisco-batalha.js`, com a pedra em arco que quica, o punho sísmico, o tremor e os pilares), linha do Faisquinho (`faisquinho.js` e `faisquinho-batalha.js`, com as marcas, o dash elétrico, o tiro que marca, o choque e as nuvens), linha do Solito (`solito.js` e `solito-batalha.js`, com o sol que dá bônus, o laser e o calor), linha do Lunico (`lunico.js` e `lunico-batalha.js`, com o combo de dashes, as fases da lua e o luar que cura), linha do Lumino (`lumino.js` e `lumino-batalha.js`, com o passo de luz, o estilhaço que se divide e a redoma que devolve os tiros) e a linha do Breuzinho (`trevas.js` e `trevas-batalha.js`, com a mordida, a bola com olhos de alcance curto e a área que escurece e dá bônus de dano) |
 | `js/nuvem.js` | Contas e jogo salvo na nuvem (Firebase, direto pela internet, sem a biblioteca do Firebase): criar conta, entrar, entrar de novo com 1 toque, ler e gravar o jogo salvo, e a senha do GM |
 | `js/companheiro.js` | O monstro invocado: invocar e guardar, seguir o treinador, os botões e a troca de controle (o treinador fica parado e protegido) |
 | `js/treino.js` | O modo treino: os golpes do monstro invocado no mapa, "no ar", usando o mesmo motor da batalha (sem inimigos e sem dano) |
