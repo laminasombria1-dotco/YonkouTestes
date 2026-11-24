@@ -142,9 +142,12 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
       *Feito:* `js/jardim.js`. Sementes com nomes em inglês (Strawberry, Field Apple, Moon Grape,
       Sun Peach, Crystal Fruit); 2 frutas por colheita; afeto com 5×nível pontos por nível; chance de
       Coração 3% + 2% por nível, e 1 garantido ao subir de nível.
-- [ ] **Fase 5 — Rei e arena:** Julius Nv.50 com formas finais, níveis novos depois de
+- [x] **Fase 5 — Rei e arena:** Julius Nv.50 com formas finais, níveis novos depois de
       vencidos, Coroa do Rei, título, ouro do Reino, 2 ovos na 2ª vitória, raros e lendários
       no ovo.
+      *Feito:* `revanche` em `TREINADORES` (`js/reino.js`); `virarCampeao`, `TESOURO` (100 a cada 10 min,
+      até 600, buscado na fonte) em `js/main.js`; coroa em `mundo.vestirCoroa`; vários ovos (`estado.ovos`)
+      e `CHANCES_OVO` (70/25/5) em `js/ovo.js`. A 2ª vitória contra o Rei dá 2 ovos (só uma vez).
 - [ ] **Fase 6 — Formas novas dos raros:** 9 formas (nome, modelo e habilidades).
 - [ ] **Fase 7 — Formas novas dos lendários:** 6 formas.
 - [ ] **Fase 8 — Conteúdo do Nv.50+:** masmorras que crescem, chefes de masmorra (monstros

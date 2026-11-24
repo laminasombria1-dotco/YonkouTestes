@@ -13,7 +13,7 @@ import { CameraOrbita } from './camera.js';
 import { TRACADOS, REINO, tracadoPerto, prenderDungeons, dentroDungeonLivre, semCasaDungeons } from './dungeon.js';
 import { CaminhoDasBrasas } from './brasas.js';
 import { TrilhaAncestral, CRISTAL_ESCONDIDO } from './raizes.js';
-import { Reino, FONTE_REINO, NASCER_REINO, ARENA_REINO, CASA_REINO } from './reino.js';
+import { Reino, FONTE_REINO, NASCER_REINO, ARENA_REINO, CASA_REINO, nivelRevanche } from './reino.js';
 import { JardimMundo, passarFome } from './jardim.js';
 import { RAIO_MUNDO, NIVEL_AGUA, SEMENTE, LAGOA, RESERVAS, SEGREDOS, ESTRADA, aleatorio, biomaEm, lagoEm, naEstradaReal } from './mapa/gerador.js';
 import { alturaEm, bloqueadoEm } from './mapa/altura.js';
@@ -542,6 +542,16 @@ export class Mundo {
     if (!g.membros.length) this.removerGrupo(g);
   }
 
+  // A Coroa do Rei na cabeça do jogador (o Campeão do Reino pode vestir ou tirar)
+  vestirCoroa(sim) {
+    if (sim && !this.coroaJogador) {
+      this.coroaJogador = criarCoroa(0.85);
+      this.coroaJogador.position.set(0, 1.53, 0); // em cima do boné
+      this.jogador.userData.corpo.add(this.coroaJogador);
+    }
+    if (this.coroaJogador) this.coroaJogador.visible = !!sim;
+  }
+
   // ---------- bandeira do Reino (onde você renasce) ----------
   podeFincarBandeira(x, z) {
     if (Math.hypot(x, z) > RAIO_MUNDO - 8) return false;
@@ -822,10 +832,12 @@ export class Mundo {
 
     const est = this.jogo.estado;
     // Fonte de cura (na praça do castelo)
-    if (est && Math.hypot(this.pos.x - FONTE.x, this.pos.z - FONTE.z) < 4.8 && this.jogo.precisaCura()) {
+    const naFonte = est && Math.hypot(this.pos.x - FONTE.x, this.pos.z - FONTE.z) < 4.8;
+    if (naFonte && this.jogo.precisaCura()) {
       this.jogo.curarEquipe();
       this.jogo.aviso('A fonte do castelo curou sua equipe!');
     }
+    if (naFonte && est.tesouro?.guardado) this.jogo.coletarTesouro(); // o ouro do Reino (Campeão)
 
     // Bandeira: animação de fincar, o pano balançando e a área segura (ela não cura)
     // área segura: em volta da bandeira, na Estrada Real e no Reino
@@ -990,7 +1002,7 @@ export class Mundo {
     } else if (tp) {
       // placa em cima do treinador: nome, elemento, níveis e se já foi vencido
       const prog = this.jogo.progressoArena(), tr = tp.tr;
-      const nv = prog.dominada ? 'Nv.50' : `Nv.${tr.niveis[0]}–${tr.niveis[1]}`;
+      const nv = prog.dominada ? `Nv.${nivelRevanche(tr)}` : tr.niveis[0] === tr.niveis[1] ? `Nv.${tr.niveis[0]}` : `Nv.${tr.niveis[0]}–${tr.niveis[1]}`;
       const marca = prog.dominada ? ' · revanche' : tp.i < prog.vencidos ? ' · vencido ✓' : tp.i === prog.vencidos ? ' · sua vez!' : ' · depois';
       this.jogo.mostrarRotulo(`<i style="background:${tr.cor}"></i>${tr.campeao ? 'Rei ' : ''}${tr.nome} · ${ELEMENTOS[tr.elemento].nome} <b>${nv}</b>${marca}`,
         new THREE.Vector3(tp.topo.x, tp.topo.y, tp.topo.z), this.camera);

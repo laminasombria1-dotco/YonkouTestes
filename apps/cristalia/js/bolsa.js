@@ -218,6 +218,7 @@ export class Bolsa {
       if (txt) { j.aviso(txt); j.salvar(); }
     }
     if (cmd === 'evoluirJardim') this.evoluirJardim();
+    if (cmd === 'coroa' && est.coroa) { est.coroaVestida = !est.coroaVestida; j.mundo.vestirCoroa(est.coroaVestida); j.aviso(est.coroaVestida ? 'Você vestiu a Coroa do Rei.' : 'Você guardou a Coroa do Rei.'); j.salvar(); }
     if (cmd === 'alimentar') {
       const m = [...est.equipe, ...est.reserva].find((x) => x.uid === d.uid);
       const r = m && alimentar(est, m, d.qual);
@@ -258,7 +259,12 @@ export class Bolsa {
           : `<button class="bolsa-btn" type="button" data-bolsa="usar" data-qual="cura" data-i="${i}" ${podeCura ? '' : 'disabled'}>Curar</button>`}</div>
       </div>`;
     }).join('');
-    $('#conteudo-bolsa').innerHTML = `
+    // Campeão do Reino: o título, a coroa (vestir ou guardar) e o ouro do Reino guardado
+    const T = est.tesouro;
+    const campeao = est.campeao ? `<div class="bolsa-secao"><h3>👑 Campeão do Reino</h3>
+        <div class="bolsa-linha"><button class="bolsa-btn" type="button" data-bolsa="coroa">${est.coroaVestida ? 'Guardar a Coroa do Rei' : 'Vestir a Coroa do Rei'}</button>
+        <small>Ouro do Reino guardado: <b>${T?.guardado || 0}</b> (até 600). Ganha 100 a cada 10 minutos de jogo: busque na fonte do castelo.</small></div></div>` : '';
+    $('#conteudo-bolsa').innerHTML = campeao + `
       <div class="bolsa-secao"><h3>Bandeira do Reino · nível ${nb}</h3>
         <div class="bolsa-linha"><button class="bolsa-btn" type="button" data-bolsa="bandeira">${txtBandeira}</button><small>${BANDEIRA.texto[nb]}</small></div>
         <div class="bolsa-linha">${evoluirBandeira}</div></div>

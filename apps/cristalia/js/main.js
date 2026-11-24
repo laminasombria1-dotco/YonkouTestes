@@ -38,6 +38,8 @@ const CHAVE_MIGRADO = 'cristalia-save-migrado';
 const TEMPORADA = 2;
 const ENVIO_NUVEM = 30;                    // segundos entre um envio para a nuvem e outro (enquanto joga)
 const MAX_EQUIPE = 3;
+// Ouro do Reino para o Campeão: 100 a cada 10 minutos de jogo, guardando no máximo 1 hora (600)
+export const TESOURO = { ouro: 100, cada: 600, max: 600 };
 const $ = (s) => document.querySelector(s);
 const TIPOS = { corpo: 'perto', projetil: 'disparo', area: 'área' };
 
@@ -548,6 +550,7 @@ class Jogo {
     else this.mundo.tirarBandeira();
     this.mundo.trocarModeloCasa();
     this.mundo.trocarModeloBandeira();
+    this.mundo.vestirCoroa(!!(this.estado.coroa && this.estado.coroaVestida));
     this.mundo.irParaBase();
     this.mostrarTela('mundo');
     this.atualizarHudMundo();
@@ -690,7 +693,7 @@ class Jogo {
     this.lutarComTreinador(i);
   }
 
-  // Começa a luta (depois de dominar a arena, é revanche: todos no Nv.50)
+  // Começa a luta (depois de dominar a arena, é revanche: cada um no seu nível de revanche)
   lutarComTreinador(i) {
     const tr = TREINADORES[i], revanche = !!this.progressoArena().dominada;
     this.aviso(tr.fala);
@@ -707,11 +710,13 @@ class Jogo {
       this.ganharCristais({ comum: 0, forte: 0, supremo: 0, ...(primeira ? tr.premio : tr.campeao ? { forte: 1, supremo: 1 } : { forte: 1 }) });
       this.bolsa.ganharMoedas(primeira ? tr.moedas : Math.round(tr.moedas / 2)); // revanche: metade
       if (primeira) prog.vencidos = i + 1;
+      if (tr.campeao) prog.vitoriasRei = (prog.vitoriasRei || 0) + 1;
       if (primeira && tr.campeao) {
         prog.dominada = true;
-        this.aviso('Você dominou a arena! Agora você é o Campeão do Reino!');
-        this.ovo.receber(); // o prêmio do Campeão: o Ovo Misterioso
-        this.aviso('Nas revanches, todos os treinadores lutam no nível 50.');
+        this.virarCampeao(); // coroa, título, ouro do Reino e 1 ovo
+        this.aviso('Nas revanches, os treinadores ficam mais fortes: Gill Nv.50, Cris 55, Lana 60, Sheyla 70 e o Rei 100.');
+      } else if (tr.campeao && prog.vitoriasRei === 2) {
+        this.ovo.receber(2); // a 2ª vitória contra o Rei: 2 ovos
       } else if (primeira) this.aviso(`Próximo desafio: ${TREINADORES[i + 1].nome}.`);
       this.mundo.reino.festa(5); // a plateia comemora
       this.mundo.graca = 2.5;
@@ -722,6 +727,40 @@ class Jogo {
       if (prog.vencidos && !prog.dominada) this.aviso('Os treinadores que você já venceu continuam vencidos.');
     } else this.mundo.sairDaArena(); // desistiu: sai pelo portão da arena
     this.mundo.reino.desarmar(i); // só luta de novo depois de se afastar da plataforma
+  }
+
+  // ---------- Campeão do Reino ----------
+  // 1ª vitória contra o Rei: a Coroa do Rei (para vestir), o título, o ouro do Reino e 1 ovo
+  virarCampeao() {
+    const est = this.estado;
+    est.campeao = true;
+    est.coroa = true;            // tem a coroa
+    est.coroaVestida = true;     // e já sai vestindo
+    est.tesouro = { guardado: 0, t: 0 };
+    this.mundo.vestirCoroa(true);
+    this.aviso('Você dominou a arena! Agora você é o Campeão do Reino!');
+    this.aviso('Rei Julius: Tome a Coroa do Rei. Use com orgulho (dá para tirar na Bolsa).');
+    this.aviso(`O Reino vai guardar ${TESOURO.ouro} de ouro para você a cada ${TESOURO.cada / 60} minutos de jogo. Busque na fonte do castelo.`);
+    this.ovo.receber(1);
+  }
+
+  // O ouro do Reino junta enquanto você joga (até o limite) e é buscado na fonte do castelo
+  passarTesouro(dt) {
+    const T = this.estado?.tesouro;
+    if (!T || (this.modo !== 'mundo' && this.modo !== 'batalha')) return;
+    if (T.guardado >= TESOURO.max) { T.t = 0; return; }
+    T.t += dt;
+    while (T.t >= TESOURO.cada && T.guardado < TESOURO.max) { T.t -= TESOURO.cada; T.guardado += TESOURO.ouro; }
+  }
+  coletarTesouro() {
+    const T = this.estado?.tesouro;
+    if (!T?.guardado) return;
+    const n = T.guardado;
+    T.guardado = 0;
+    this.aviso(`O Reino entregou o seu ouro de Campeão: +${n} de ouro!`);
+    this.estado.moedas += n;
+    this.atualizarHudMundo();
+    this.salvar();
   }
 
   iniciarBatalha(selvagem) {
@@ -1269,6 +1308,7 @@ class Jogo {
       this.batalha.atualizar(dt, this.ctrl);
     }
     this.ovo.atualizar(dt); // o tempo do ovo passa no mapa e na batalha
+    this.passarTesouro(dt); // o ouro do Reino (Campeão) junta enquanto você joga
     // a câmera sempre com a proporção da tela (senão a imagem fica achatada ou esticada)
     if (Math.abs(camera.aspect - this.aspecto) > 0.001 && (camera === this.mundo.camera || camera === this.batalha?.camera)) { camera.aspect = this.aspecto; camera.updateProjectionMatrix(); }
     if (this.modo === 'batalha' && this.batalha) { cena = this.batalha.cena; camera = this.batalha.camera; }

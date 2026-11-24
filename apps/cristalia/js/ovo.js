@@ -5,15 +5,28 @@
 //  - Quem nasce é sorteado entre os raros e os de tipo duplo, na forma inicial, Nv.1.
 //  - Ao chocar aparece uma cena (na mesma tela da evolução): o ovo treme, racha,
 //    as escamas voam e o monstro aparece.
-// Fica salvo em estado.ovo = { restante: segundos }.
+// Pode ter mais de um ovo (o Rei dá 2 na 2ª vitória): todos chocam juntos, um de cada vez.
+// Fica salvo em estado.ovos = [{ restante: segundos }].
+// Quem nasce: tipo duplo 70%, raro 25%, lendário 5% (CHANCES_OVO).
 // =============================================================
 import * as THREE from 'three';
 import { ESPECIES, ELEMENTOS, criarMonstro, formaPorNivel, nomeTipo } from './dados.js';
 import { criarModelo, animarModelo, descartar } from './modelos.js';
 
 export const TEMPO_OVO = 600; // segundos de jogo até chocar
-// Quem pode nascer (sorteio igual para todos)
-export const NASCEM_DO_OVO = () => ['espinhal', 'aquaraia', 'vulcarapa', formaPorNivel('fogoPlanta', 1), formaPorNivel('aguaFogo', 1), formaPorNivel('terraRaio', 1)];
+// Quem pode nascer: primeiro sorteia o grupo (com estas chances), depois um do grupo
+export const CHANCES_OVO = { dupla: 0.70, raro: 0.25, lendario: 0.05 };
+export const NASCEM_DO_OVO = {
+  dupla: () => [formaPorNivel('fogoPlanta', 1), formaPorNivel('aguaFogo', 1), formaPorNivel('terraRaio', 1)],
+  raro: () => ['espinhal', 'aquaraia', 'vulcarapa'],
+  lendario: () => ['ignarion', 'silvarion'],
+};
+export function sortearDoOvo(sorte = Math.random) {
+  const r = sorte();
+  const grupo = r < CHANCES_OVO.lendario ? 'lendario' : r < CHANCES_OVO.lendario + CHANCES_OVO.raro ? 'raro' : 'dupla';
+  const lista = NASCEM_DO_OVO[grupo]();
+  return { grupo, especie: lista[Math.floor(sorte() * lista.length)] };
+}
 
 const ROXO = '#8a4ad9', BORDA = '#3a1a5a';
 
@@ -155,34 +168,43 @@ export class CenaNascimento {
 // ---------- o ovo do jogador ----------
 export class Ovo {
   constructor(jogo) { this.jogo = jogo; }
-  get dados() { return this.jogo.estado?.ovo || null; }
+  // a lista de ovos (saves com o ovo antigo, estado.ovo, passam para a lista)
+  get lista() {
+    const est = this.jogo.estado;
+    if (!est) return [];
+    if (!est.ovos) est.ovos = [];
+    if (est.ovo) { est.ovos.push(est.ovo); est.ovo = null; }
+    return est.ovos;
+  }
+  get dados() { return this.lista[0] || null; }
 
-  // O Rei Julius entrega o ovo (só uma vez)
-  receber() {
-    const est = this.jogo.estado, arena = this.jogo.progressoArena();
-    if (est.ovo || arena.ovoRecebido) return;
-    est.ovo = { restante: TEMPO_OVO };
-    arena.ovoRecebido = true;
+  // O Rei Julius entrega ovos (n = quantos)
+  receber(n = 1) {
+    for (let k = 0; k < n; k++) this.lista.push({ restante: TEMPO_OVO });
+    const arena = this.jogo.progressoArena();
     delete arena.ovoPendente;
-    this.jogo.aviso('Rei Julius: Para o novo Campeão, um Ovo Misterioso! Ele está na sua Bolsa.');
-    this.jogo.aviso('Ele choca depois de 10 minutos de jogo.');
+    this.jogo.aviso(`Rei Julius: ${n > 1 ? `${n} Ovos Misteriosos` : 'um Ovo Misterioso'} para o Campeão! Está${n > 1 ? 'ão' : ''} na sua Bolsa.`);
+    this.jogo.aviso('Choca depois de 10 minutos de jogo. Pode nascer um tipo duplo, um raro ou até um lendário!');
   }
 
-  // A cada quadro (no mapa e na batalha): o tempo passa; no mapa, se acabou, choca
+  // A cada quadro (no mapa e na batalha): o tempo de todos passa; no mapa, o que acabou choca
   atualizar(dt) {
-    const o = this.dados, j = this.jogo;
-    if (!o || (j.modo !== 'mundo' && j.modo !== 'batalha')) return;
-    o.restante = Math.max(0, o.restante - dt);
-    if (o.restante <= 0 && j.modo === 'mundo' && !j.painelAberto && !j.batalha) this.chocar();
+    const j = this.jogo, lista = this.lista;
+    if (!lista.length || (j.modo !== 'mundo' && j.modo !== 'batalha')) return;
+    for (const o of lista) o.restante = Math.max(0, o.restante - dt);
+    if (lista.some((o) => o.restante <= 0) && j.modo === 'mundo' && !j.painelAberto && !j.batalha) this.chocar();
   }
 
   chocarAgora() { if (this.dados) { this.dados.restante = 0; this.jogo.bolsa.fechar(); } } // GM
 
   chocar() {
-    const j = this.jogo, est = j.estado;
-    const lista = NASCEM_DO_OVO(), especie = lista[Math.floor(Math.random() * lista.length)];
+    const j = this.jogo, est = j.estado, lista = this.lista;
+    const i = lista.findIndex((o) => o.restante <= 0);
+    if (i < 0) return;
+    const { grupo, especie } = sortearDoOvo();
     const m = criarMonstro(especie, 1);
-    est.ovo = null;
+    lista.splice(i, 1);
+    if (grupo === 'lendario') j.aviso(`Um LENDÁRIO nasceu do ovo: ${ESPECIES[especie].nome}!`);
     if (!est.capturados.includes(especie)) est.capturados.push(especie);
     if (est.equipe.length < 3) est.equipe.push(m); else est.reserva.push(m);
     j.pet.voltarAoTreinador?.(true);
@@ -197,15 +219,17 @@ export class Ovo {
     j.salvar();
   }
 
-  // A parte do ovo na Bolsa
+  // A parte dos ovos na Bolsa
   htmlBolsa() {
-    const o = this.dados;
-    if (!o) return '';
-    const s = Math.ceil(o.restante), feito = 1 - o.restante / TEMPO_OVO;
+    const lista = this.lista;
+    if (!lista.length) return '';
     const gm = this.jogo.gm ? '<button class="bolsa-btn" type="button" data-bolsa="chocar">GM: chocar agora</button>' : '';
-    return `<div class="bolsa-secao"><h3>Ovo Misterioso</h3>
-      <div class="ovo-caixa"><div class="ovo-desenho"></div><div style="flex:1"><b>Choca em ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}</b>
-        <div class="barra-ovo"><b style="width:${(feito * 100).toFixed(0)}%"></b></div>
-        <small>Pode nascer um monstro raro ou de tipo duplo. O tempo só passa enquanto você joga.</small></div>${gm}</div></div>`;
+    const ovos = lista.map((o) => {
+      const s = Math.ceil(o.restante), feito = 1 - o.restante / TEMPO_OVO;
+      return `<div class="ovo-caixa"><div class="ovo-desenho"></div><div style="flex:1"><b>Choca em ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}</b>
+        <div class="barra-ovo"><b style="width:${(feito * 100).toFixed(0)}%"></b></div></div></div>`;
+    }).join('');
+    return `<div class="bolsa-secao"><h3>${lista.length > 1 ? `Ovos Misteriosos (${lista.length})` : 'Ovo Misterioso'}</h3>${ovos}
+      <small>Pode nascer um tipo duplo (70%), um raro (25%) ou um lendário (5%). O tempo só passa enquanto você joga.</small>${gm}</div>`;
   }
 }

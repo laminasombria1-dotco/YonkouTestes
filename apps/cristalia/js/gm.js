@@ -369,6 +369,7 @@ export class PainelGM {
         <h3>Arena do Reino (vencidos: ${this.jogo.progressoArena?.().vencidos ?? 0}/5${this.jogo.progressoArena?.().dominada ? ', dominada' : ''})</h3>
         <div class="gm-grade">${TREINADORES.map((t, i) => `<button class="gm-btn" type="button" data-gm="treinador" data-i="${i}">Lutar: ${t.nome}</button>`).join('')}
           <button class="gm-btn" type="button" data-gm="arenaProg" data-v="dominar">Dominar a arena</button>
+          <button class="gm-btn" type="button" data-gm="tesouroCheio">Encher o ouro do Reino</button>
           <button class="gm-btn" type="button" data-gm="arenaProg" data-v="zerar">Zerar a arena</button>
           <button class="gm-btn" type="button" data-gm="moedas">+1000 de ouro</button>
           <button class="gm-btn" type="button" data-gm="chocar">Chocar o ovo agora</button>
@@ -541,11 +542,18 @@ export class PainelGM {
       case 'jardimNivel': this.estado.jardim.nivel = Number(d.n); this.estado.jardim.canteiros.length = Math.min(this.estado.jardim.canteiros.length, JARDIM.vagas[d.n - 1]); garantirJardim(this.estado); this.jogo.aviso(`GM: jardim no nível ${d.n}.`); this.salvar(); break;
       case 'bandeiraNivel': this.jogo.estado.bandeiraNivel = Number(d.n); this.mundo.trocarModeloBandeira(); this.jogo.aviso(`GM: bandeira no nível ${d.n}.`); this.jogo.salvar(); break;
       case 'moedas': this.jogo.estado.moedas = (this.jogo.estado.moedas || 0) + 1000; this.jogo.atualizarHudMundo(); this.jogo.salvar(); break;
-      case 'chocar': if (this.jogo.estado.ovo) { this.jogo.ovo.chocarAgora(); this.fecharPainel(); return; } this.jogo.aviso('GM: você não tem ovo (domine a arena).'); break;
+      case 'chocar': if (this.jogo.ovo.dados) { this.jogo.ovo.chocarAgora(); this.fecharPainel(); return; } this.jogo.aviso('GM: você não tem ovo (domine a arena).'); break;
+      case 'tesouroCheio': if (this.jogo.estado.tesouro) { this.jogo.estado.tesouro.guardado = 600; this.jogo.aviso('GM: 600 de ouro esperando na fonte.'); } else this.jogo.aviso('GM: só o Campeão tem ouro do Reino (domine a arena).'); break;
       case 'arenaProg': {
         const p = this.jogo.progressoArena();
-        if (d.v === 'dominar') { p.vencidos = 5; p.dominada = true; this.jogo.aviso('GM: arena dominada.'); this.jogo.ovo.receber(); }
-        else { p.vencidos = 0; p.dominada = false; delete p.ovoPendente; delete p.ovoRecebido; this.jogo.estado.ovo = null; this.jogo.aviso('GM: arena zerada (e o ovo também).'); }
+        if (d.v === 'dominar') { p.vencidos = 5; p.dominada = true; p.vitoriasRei = 1; this.jogo.aviso('GM: arena dominada.'); this.jogo.virarCampeao(); }
+        else {
+          const est = this.jogo.estado;
+          p.vencidos = 0; p.dominada = false; p.vitoriasRei = 0; delete p.ovoPendente; delete p.ovoRecebido;
+          est.ovo = null; est.ovos = []; est.campeao = false; est.coroa = false; est.coroaVestida = false; est.tesouro = null;
+          this.mundo.vestirCoroa(false);
+          this.jogo.aviso('GM: arena zerada (sem ovos, sem coroa e sem o ouro do Reino).');
+        }
         this.jogo.salvar(); break;
       }
       case 'vel': this.vel = Number(d.v); break;

@@ -37,7 +37,7 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
 - **Proteção:** o jogo guarda uma cópia de cada monstro que você já teve. Se algum sumir da equipe e da reserva por qualquer motivo, ele volta sozinho para a Reserva, com um aviso.
 - **Fonte de cura:** a fonte na praça do castelo, no **Reino**, cura todos os seus monstros. É a única fonte do jogo (a do meio do Campo virou uma placa que aponta para o Reino).
 - **Começo:** o jogo novo começa no Reino, na frente da fonte do castelo, com 3 Poções de Cura e 1 de Reviver. Siga a **Estrada Real** para chegar ao mapa (veja "O Reino").
-- **Bolsa:** o botão do canto de baixo (tecla **B** no PC). Dentro dela ficam a casa, as poções, os cristais e o Ovo Misterioso. Veja "Bolsa, ouro e loja".
+- **Bolsa:** o botão do canto de baixo (tecla **B** no PC). Dentro dela ficam a bandeira, a casa, o jardim, as frutas, os itens raros, as poções, os cristais e os ovos. Veja "Bolsa, ouro e loja".
 - **Nível dos selvagens:** acompanha o nível da sua equipe e aumenta quanto mais longe do centro você vai. Nas bordas aparecem as formas evoluídas. A exceção é **em volta da boca do Reino** (55 m): ali só aparecem monstros fracos (Nv.2 a 5, formas iniciais), sem grupos e sem tipo duplo.
 - **Monstros perto de você:** os selvagens e os grupos aparecem em volta do jogador (até ~90 m) e somem quando ficam longe; assim o mapa grande não fica mais pesado.
 - O progresso é salvo sozinho: no celular a cada 5 s e na nuvem (veja abaixo).
@@ -175,18 +175,18 @@ O jogo é um **PWA** (aplicativo web instalável). Ele fica no site **https://la
   | Poção de Reviver (amarela) | Levanta 1 monstro desmaiado com metade da vida | 120 |
 
 - **Loja:** a barraca listrada azul e branca da vila do Reino. Chegue perto (aparece "Loja de Poções") e encoste na frente dela. Dá para comprar de 1 em 1 ou de 5 em 5.
-- **Bolsa:** a casa (montar, guardar, mudar), as poções (cada monstro da equipe e da reserva tem o botão **Curar** ou **Reviver**), o Ovo Misterioso (quando você tiver) e os cristais (a fusão continua precisando estar perto da casa). O mundo fica parado enquanto a bolsa está aberta.
+- **Bolsa:** o Campeão do Reino (coroa e ouro do Reino), a bandeira (fincar, guardar, mudar, evoluir), a casa e o jardim, as frutas e o afeto, os itens raros, as poções (cada monstro da equipe e da reserva tem o botão **Curar** ou **Reviver**), os ovos e os cristais (a fusão precisa estar perto da casa). O mundo fica parado enquanto a bolsa está aberta.
 - **Na batalha:** o botão do **frasco** (tecla **P**) mostra quantas poções você tem e abre a escolha: **Cura** (no monstro que está lutando) ou **Reviver** (no 1º desmaiado da equipe; depois toque em Trocar para mandar ele de volta). Entre uma poção e outra há **10 s de recarga** (o botão escurece e vai clareando).
 - **Jogos salvos antigos** começam com 0 de ouro e 3 Poções de Cura.
 - **Código:** `js/bolsa.js` (preços, moedas, bolsa e loja) e o botão da batalha em `js/batalha.js`. Fica salvo em `estado.moedas` e `estado.pocoes`.
 
 ## Ovo Misterioso
 
-- O **Rei Julius** entrega o ovo roxo ao novo Campeão (na 1ª vez que você domina a arena). É **um só**.
-- Ele fica na Bolsa, com o tempo que falta, e **choca depois de 10 minutos de jogo** (o tempo só passa no mapa e na batalha, não no menu nem com o jogo fechado).
+- O **Rei Julius** entrega **1 ovo** na 1ª vitória contra ele (quando você domina a arena) e **2 ovos** na 2ª vitória.
+- Eles ficam na Bolsa, com o tempo que falta, e **chocam depois de 10 minutos de jogo** (todos ao mesmo tempo, um de cada vez; o tempo só passa no mapa e na batalha, não no menu nem com o jogo fechado).
 - Quando choca (no mapa), aparece uma cena: o ovo treme cada vez mais, a luz roxa de dentro aumenta, ele racha, as escamas voam e o monstro aparece.
-- **Quem nasce:** sorteado entre os raros e os de tipo duplo, na forma inicial e no **Nv.1**: Espinhal, Aquaraia, Vulcarapa, Brotobrasa, Vaporito ou Imanito. Vai para a equipe (ou para a reserva, se ela estiver cheia).
-- **Código:** `js/ovo.js` (o ovo em 3D, a cena do nascimento e o tempo). Fica salvo em `estado.ovo = { restante }` e `estado.arena.ovoRecebido`.
+- **Quem nasce** (na forma inicial e no **Nv.1**): **tipo duplo 70%** (Brotobrasa, Vaporito ou Imanito), **raro 25%** (Espinhal, Aquaraia ou Vulcarapa) e **lendário 5%** (Ignárion ou Silvárion). Vai para a equipe (ou para a reserva, se ela estiver cheia).
+- **Código:** `js/ovo.js` (o ovo em 3D, a cena do nascimento, o tempo e `CHANCES_OVO`/`sortearDoOvo`). Fica salvo em `estado.ovos = [{ restante }]`.
 
 ## O Reino (o novo centro do jogo)
 
@@ -221,15 +221,20 @@ O Reino fica **fora da borda do mapa**, como as dungeons, mas não é dungeon: �
   | Cris | linha de Trevas Nv.25, linha da Lua Nv.27, linha de Trevas Nv.29 |
   | Lana | linha da Luz Nv.30, linha do Sol Nv.32, linha da Luz Nv.34 |
   | Sheyla | linha da Água Nv.40, Aquaraia Nv.43, linha da Água Nv.45 |
-  | Rei Julius | linha da Planta Nv.46, Espinhal Nv.48, linha da Planta Nv.49 e Nv.50 (4 monstros) |
+  | Rei Julius | **todos no Nv.50 e na forma final**: Florestral, Espinhal, Florestral e Florestral (4 monstros) |
 
-  A forma de cada linha depende do nível (Nv.20 da linha do Fogo é um Fornalobo, por exemplo).
+  A forma de cada linha depende do nível: Nv.12 em diante a 1ª evolução, Nv.30 a 2ª, e do **Nv.50** a forma final (os treinadores podem ter a forma final; os selvagens do mapa não).
 - **Regras da luta:** não dá para capturar (os botões de cristal somem), e **Fugir = desistir**: você sai pelo portão da arena.
 - **A Arena do Reino da batalha:** o mesmo coliseu, em volta da areia de 22 m, com a plateia (~730 bonequinhos) e o treinador assistindo da plataforma dele, do lado de lá. Cai confete. Não tem perigo e não favorece nenhum elemento. **A plateia pula** quando um monstro do treinador desmaia, e de novo no mapa quando você vence.
 - **Vencer:** experiência cheia (sem o desconto de grupo), ouro (veja "Bolsa, ouro e loja") e cristais. Na 1ª vez: Gill e Cris dão 3 comuns + 1 Forte, Lana 3 comuns + 2 Fortes, Sheyla 3 Fortes e o Rei 3 Fortes + 2 Supremos. Nas revanches: 1 Forte (o Rei dá mais 1 Supremo).
 - **Perder:** você acorda na fonte do castelo, com todos curados. Os treinadores que você já venceu **continuam vencidos**.
-- **Dominar a arena:** vencendo o Rei Julius, você vira o **Campeão do Reino** (aparece "👑 Campeão do Reino" no resumo do jogo salvo, na tela de início). Daí em diante todos lutam no Nv.50, em qualquer ordem. O Rei também entrega o **Ovo Misterioso** (veja abaixo).
-- **Fica salvo** em `estado.arena`: `vencidos` (0 a 5), `dominada` e `ovoRecebido`.
+- **Dominar a arena:** vencendo o Rei Julius, você vira o **Campeão do Reino** e ganha:
+  - a **Coroa do Rei**: aparece na cabeça do seu personagem (na Bolsa, seção Campeão do Reino, dá para guardar ou vestir);
+  - o título **Campeão do Reino** (na Bolsa e no resumo do jogo salvo, na tela de início);
+  - o **ouro do Reino**: **100 de ouro a cada 10 minutos de jogo**, guardando no máximo **600** (1 hora). Para receber, **passe na fonte do castelo**;
+  - **1 Ovo Misterioso** (veja abaixo). A **2ª vitória** contra o Rei dá **2 ovos**.
+- **Revanches** (depois de dominar, em qualquer ordem): cada treinador fica mais forte: **Gill Nv.50, Cris Nv.55, Lana Nv.60, Sheyla Nv.70 e o Rei Nv.100** (com as formas finais).
+- **Fica salvo** em `estado.arena` (`vencidos` de 0 a 5, `dominada`, `vitoriasRei`), `estado.campeao`, `estado.coroa`/`coroaVestida` e `estado.tesouro` (o ouro do Reino guardado). Os níveis de revanche ficam em `revanche` de cada treinador (`TREINADORES`, `js/reino.js`) e o ouro do Reino em `TESOURO` (`js/main.js`).
 - Lá dentro não aparecem monstros, não nascem árvores do mapa e não dá para fincar a bandeira.
 - **Leve no celular:** todas as peças paradas do Reino viram **4 malhas** (cores normais, peças vistas dos dois lados, o que brilha e as paredes brancas do castelo), e a plateia é **1 lote**. A colisão usa círculos na `mundo.grade`, como o resto.
 - **Código:** a forma (corredor + platô) é o `REINO` em `js/dungeon.js` (`TracadoReino`, com `paraMundo` e `paraLocal`), a direção e a Estrada Real ficam em `js/mapa/gerador.js` (`ANG_REINO`, `ESTRADA`, `naEstradaReal`) e o cenário em `js/reino.js`.
