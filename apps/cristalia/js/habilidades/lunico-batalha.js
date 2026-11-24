@@ -283,7 +283,7 @@ export class HabilidadesLunico {
       for (const [x, y, r] of [[0.35, 0.3, 0.22], [-0.4, -0.15, 0.18], [0.1, -0.5, 0.14]]) {
         const cr = new THREE.Mesh(GEO_LUA, CRATERA); cr.scale.setScalar(r); cr.position.set(x, y, 0.85); lua.add(cr);
       }
-      lua.position.set(c.pos.x, 7, c.pos.z);
+      lua.position.set(c.pos.x, 9, c.pos.z); // alta, para não tapar o inimigo
       lua.scale.setScalar(0.01);
       this.cena.add(lua);
       this.b.jogo.numero('Auuuu!', c.pos.clone().setY(c.altura + 0.6), '#e2ddff', 'grande');
@@ -309,7 +309,7 @@ export class HabilidadesLunico {
       m.scale.setScalar(0.35 * k + 0.001);
     }
     if (Q.lua) {
-      Q.lua.scale.setScalar(Math.max(0.01, 1.3 * k));
+      Q.lua.scale.setScalar(Math.max(0.01, 0.85 * k));
       Q.lua.lookAt(this.b.camera.position);
     }
     Q.brilhoT -= dt;

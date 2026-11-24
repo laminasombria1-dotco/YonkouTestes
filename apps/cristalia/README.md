@@ -589,6 +589,8 @@ A linha da Luz joga com a **velocidade da luz** (teletransporte), o **prisma** (
 
 ## Golpes da linha do Lunico (Lua)
 
+O **Plenilúnio** (forma final) é um **lobo da lua cheia com orelhas de coelho**: máscara e armadura de prata, garras grandes, duas meias-luas **( )** nas costas e a lua cheia acima da cabeça. O modelo é feito de formas simples em `lobisomemLunar` (`js/modelos.js`); as peças do mesmo material viram uma só, para pesar pouco.
+
 A linha da Lua joga com as **fases da lua**, **dashes que cruzam o alvo** e um **luar que cura**. Os números ficam em `js/habilidades/lunico.js` e o funcionamento em `js/habilidades/lunico-batalha.js`.
 
 | Forma | Perto | Disparo | Área |

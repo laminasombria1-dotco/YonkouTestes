@@ -428,28 +428,148 @@ function linhaLua(c, u, e) {
     olhos(c, r * 1.15, r * 0.86, 0.18, 0.1);
     return;
   }
-  const big = e === 3;
+  if (e === 3) { lobisomemLunar(c, u); return; }
   p(c, G.esf(0.45, 10, 8), corp, [0, 1.0, 0], null, [1, 1.3, 0.9]);
   p(c, G.esf(0.36, 10, 8), corp, [0, 1.78, 0.05]);
   for (const s of [-1, 1]) {
-    orelha(s * 0.15, 2.05, 0, big ? 0.85 : 0.75, true);
+    orelha(s * 0.15, 2.05, 0, 0.75, true);
     p(c, G.cil(0.12, 0.14, 0.55, 6), corp, [s * 0.2, 0.3, 0]);
     p(c, G.esf(1), corp, [s * 0.2, 0.06, 0.1], null, [0.14, 0.08, 0.24]);
     p(c, G.cil(0.07, 0.08, 0.55, 5), corp, [s * 0.5, 1.05, 0.05], [0, 0, s * 0.3]);
   }
   p(c, G.toro(0.12, 0.035, Math.PI * 1.3, 4, 10), marca, [0, 1.98, 0.33], [0, 0, 0.9]);
   p(c, G.toro(0.7, 0.06, Math.PI * 1.2, 4, 18), marca, [0, 1.2, -0.45], [0, 0, -0.3]);
-  if (big) {
-    p(c, G.toro(0.7, 0.06, Math.PI * 1.2, 4, 18), marca, [0, 1.2, -0.5], [0, Math.PI, -0.3]);
-    const lua = new THREE.Group();
-    lua.position.set(0, 2.8, -0.6);
-    p(lua, G.esf(0.5, 12, 10), brilho('#eeeaff', 0.7), [0, 0, 0]);
-    for (const [x, y, rr] of [[0.15, 0.12, 0.1], [-0.2, -0.1, 0.08], [0.05, -0.25, 0.06]]) p(lua, G.esf(rr), mat('#c9c2f0'), [x, y, 0.45]);
-    c.add(lua);
-    u.pulsos.push({ obj: lua, base: 1, amp: 0.04, vel: 2 });
-    u.voa = true;
+  olhos(c, 1.84, 0.37, 0.14, 0.09);
+}
+
+// Meia-lua de verdade (grossa no meio, fina nas pontas), achatada: formato ")"
+// (para "(", use escala x negativa)
+function geoMeiaLua() {
+  return geo('meiaLua', () => {
+    const f = new THREE.Shape();
+    const n = 14;
+    // borda de fora: círculo de raio 1; borda de dentro: círculo de raio 0,95 deslocado para a esquerda
+    for (let i = 0; i <= n; i++) { const a = -1.89 + (3.78 * i) / n; f[i ? 'lineTo' : 'moveTo'](Math.cos(a), Math.sin(a)); }
+    for (let i = 0; i <= n; i++) { const a = 1.533 - (3.066 * i) / n; f.lineTo(-0.35 + Math.cos(a) * 0.95, Math.sin(a) * 0.95); }
+    return new THREE.ExtrudeGeometry(f, { depth: 0.08, bevelEnabled: false }).translate(0, 0, -0.04);
+  });
+}
+
+// Plenilúnio: lobo da lua cheia com orelhas de coelho, armadura de prata,
+// garras grandes, 2 luas crescentes nas costas e a lua cheia atrás. Flutua agachado.
+function lobisomemLunar(c, u) {
+  u.voa = true;
+  const pelo = mat('#4d4182'), peloEsc = mat('#342a5e'), prata = mat('#d3d1e4'), prataEsc = mat('#9894b8');
+  const garra = mat('#f0eef8'), boca = mat('#4a1428'), dente = mat('#ffffff'), orelhaIn = mat('#8e6cae'), nariz = mat('#1b1b30');
+  const luz = brilho('#eeeaff', 0.55), cresc = brilho('#d8d2ff', 0.75), olho = brilho('#ffffff', 1);
+  // cilindro de um ponto a outro (ossos dos braços e das pernas)
+  const osso = (pai, a, b, r1, r2, m) => {
+    const d = b.clone().sub(a);
+    const o = p(pai, G.cil(r2, r1, 1, 6), m, [(a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2]);
+    apontar(o, d);
+    o.scale.y = d.length();
+    return o;
+  };
+
+  // ---- tronco curvado para a frente ----
+  p(c, G.esf(0.38, 8, 6), pelo, [0, 1.0, -0.05], null, [1.05, 0.8, 0.9]);
+  osso(c, V(0, 1.0, -0.05), V(0, 1.5, 0.08), 0.3, 0.42, peloEsc);
+  p(c, G.esf(0.5, 9, 7), pelo, [0, 1.68, 0.1], [0.3, 0, 0], [1.4, 1.1, 0.95]);
+  // placa de prata em V no peito
+  for (const s of [-1, 1]) p(c, G.caixa(0.55, 0.1, 0.07), prata, [s * 0.23, 1.78, 0.55], [0.3, 0, s * 0.62]);
+  p(c, G.octa(1), prata, [0, 1.52, 0.52], [0.3, 0, 0], [0.13, 0.22, 0.05]);
+  // ombreiras com espinhos
+  for (const s of [-1, 1]) {
+    p(c, G.dode(0.34), prata, [s * 0.72, 1.97, 0.05], null, [1.15, 0.85, 1.05]);
+    p(c, G.cone(0.13, 0.55, 5), prata, [s * 0.92, 2.22, 0], [0, 0, -s * 0.75]);
+    p(c, G.cone(0.08, 0.34, 5), prataEsc, [s * 0.72, 2.16, -0.24], [-0.7, 0, -s * 0.3]);
   }
-  olhos(c, 1.84, 0.37, 0.14, 0.09, big ? '#b9b4ff' : null);
+  // pelo espetado no pescoço e nas costas
+  for (let i = 0; i < 7; i++) {
+    const a = -1.2 + i * 0.4;
+    p(c, G.cone(0.13, 0.5, 5), peloEsc, [Math.sin(a) * 0.36, 2.02, -0.18 + Math.cos(a) * 0.05], [-0.7, 0, -a * 0.6]);
+  }
+
+  // ---- cabeça de lobo (boca aberta) ----
+  const cab = new THREE.Group();
+  cab.position.set(0, 2.18, 0.42);
+  cab.rotation.x = 0.12;
+  c.add(cab);
+  p(cab, G.esf(0.3, 9, 7), pelo, [0, 0, 0], null, [1.15, 0.95, 1.05]);
+  p(cab, G.octa(1), prata, [0, 0.12, 0.22], null, [0.2, 0.13, 0.12]); // máscara de prata na testa
+  for (const s of [-1, 1]) p(cab, G.caixa(0.06, 0.28, 0.05), prata, [s * 0.15, 0.2, 0.17], [0, 0, s * 0.5]);
+  p(cab, G.cil(0.085, 0.17, 0.42, 6), pelo, [0, -0.03, 0.42], [Math.PI / 2, 0, 0]); // focinho
+  p(cab, G.esf(0.06), nariz, [0, 0.01, 0.64]);
+  p(cab, G.esf(0.13), boca, [0, -0.13, 0.38], null, [0.85, 0.55, 1.3]);
+  p(cab, G.cil(0.065, 0.13, 0.36, 6), peloEsc, [0, -0.22, 0.35], [Math.PI / 2 + 0.38, 0, 0]); // queixo aberto
+  for (const s of [-1, 1]) {
+    for (const [x, z] of [[0.05, 0.56], [0.1, 0.44]]) {
+      p(cab, G.cone(0.025, 0.1, 4), dente, [s * x, -0.1, z], [Math.PI, 0, 0]); // dentes de cima
+      p(cab, G.cone(0.022, 0.08, 4), dente, [s * x * 0.9, -0.2, z - 0.06], [0.35, 0, 0]); // dentes de baixo
+    }
+    // olhos brilhando, bravos (o lado de dentro mais baixo)
+    p(cab, G.esf(1), olho, [s * 0.13, 0.06, 0.28], [0, 0, s * 0.35], [0.075, 0.035, 0.03]);
+    // tufos nas bochechas
+    p(cab, G.cone(0.09, 0.3, 5), peloEsc, [s * 0.3, -0.06, 0.05], [0, 0, -s * 1.9]);
+    // orelhas compridas de coelho
+    const o = new THREE.Group();
+    o.position.set(s * 0.14, 0.22, -0.08);
+    o.rotation.set(-0.15, 0, -s * 0.22);
+    p(o, G.cil(0.05, 0.11, 0.95, 6), pelo, [0, 0.47, 0]);
+    p(o, G.esf(1), orelhaIn, [0, 0.47, 0.06], null, [0.06, 0.4, 0.03]);
+    p(o, G.cone(0.05, 0.18, 6), pelo, [0, 1.03, 0]);
+    cab.add(o);
+  }
+
+  // ---- braços compridos com braceletes e garras ----
+  u.bracos = [-1, 1].map((s) => {
+    const g = new THREE.Group();
+    g.position.set(s * 0.72, 1.87, 0.05);
+    const cot = V(s * 0.2, -0.5, 0.15), pulso = V(s * 0.28, -1.0, 0.38);
+    osso(g, V(0, 0, 0), cot, 0.21, 0.17, pelo);
+    p(g, G.esf(0.18), pelo, [cot.x, cot.y, cot.z]);
+    osso(g, cot, pulso, 0.19, 0.24, pelo);
+    osso(g, cot.clone().lerp(pulso, 0.25), cot.clone().lerp(pulso, 0.85), 0.24, 0.27, prata); // bracelete
+    p(g, G.cone(0.08, 0.34, 5), prata, [cot.x + s * 0.24, cot.y - 0.25, cot.z + 0.05], [0, 0, -s * 1.4]);
+    const mao = V(pulso.x + s * 0.03, pulso.y - 0.14, pulso.z + 0.1);
+    p(g, G.esf(0.25, 8, 6), pelo, [mao.x, mao.y, mao.z], null, [1, 0.8, 1.1]);
+    for (let k = 0; k < 4; k++) { // 4 garras grandes para baixo e para a frente
+      p(g, G.cone(0.05, 0.46, 4), garra, [mao.x + (k - 1.5) * 0.11, mao.y - 0.2, mao.z + 0.16], [2.35, 0, 0]);
+    }
+    p(g, G.cone(0.05, 0.34, 4), garra, [mao.x - s * 0.22, mao.y - 0.06, mao.z + 0.1], [2.2, 0, s * 0.6]); // polegar
+    c.add(g);
+    return g;
+  });
+
+  // ---- pernas de lobo, agachadas ----
+  u.pernas = [-1, 1].map((s) => {
+    const g = new THREE.Group();
+    g.position.set(s * 0.25, 0.95, -0.05);
+    const joelho = V(s * 0.05, -0.35, 0.3), tornozelo = V(s * 0.05, -0.7, 0), dedos = V(s * 0.05, -0.9, 0.22);
+    osso(g, V(0, 0, 0), joelho, 0.23, 0.18, pelo);
+    p(g, G.octa(1), prata, [joelho.x, joelho.y, joelho.z + 0.12], null, [0.1, 0.12, 0.06]);
+    osso(g, joelho, tornozelo, 0.14, 0.1, peloEsc);
+    osso(g, tornozelo, dedos, 0.1, 0.12, pelo);
+    for (let k = -1; k <= 1; k++) p(g, G.cone(0.03, 0.14, 4), garra, [dedos.x + k * 0.07, dedos.y + 0.02, dedos.z + 0.08], [1.9, 0, 0]);
+    c.add(g);
+    return g;
+  });
+
+  // ---- 2 luas crescentes nas costas, uma de cada lado: ( ) ----
+  for (const s of [-1, 1]) p(c, geoMeiaLua(), cresc, [s * 0.78, 2.65, -0.5], [0, -s * 0.3, -s * 0.12], [s * 0.55, 0.88, 1]);
+
+  // ---- a lua cheia atrás dele ----
+  const lua = new THREE.Group();
+  // a lua fica acima da cabeça: vista de trás (a câmera da batalha) ela não tapa o corpo
+  lua.position.set(0, 3.45, -0.85);
+  p(lua, G.esf(0.45, 14, 12), luz, [0, 0, 0]);
+  const cratera = mat('#c3bbea');
+  for (const lado of [1, -1]) { // crateras na frente e atrás
+    for (const [x, y, r] of [[0.15, 0.13, 0.1], [-0.18, -0.07, 0.075], [0.03, -0.22, 0.06], [-0.07, 0.23, 0.045]]) p(lua, G.esf(r), cratera, [x * lado, y, 0.41 * lado]);
+  }
+  p(lua, G.esf(0.6, 12, 10), mat('#eeeaff', { transparent: true, opacity: 0.18, depthWrite: false }), [0, 0, 0]);
+  c.add(lua);
+  u.pulsos.push({ obj: lua, base: 1, amp: 0.04, vel: 2 });
 }
 
 // ---------- Luz: Lumino > Lumelo > Prismal > Aurealis ----------

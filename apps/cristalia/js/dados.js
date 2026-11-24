@@ -366,7 +366,7 @@ export const LINHAS = {
     ['lunico', 'Lunico', 'Coelhinho com uma lua crescente na testa. Só sai à noite.'],
     ['lunarelo', 'Lunarelo', 'As pontas das orelhas brilham como luas finas.'],
     ['crescentio', 'Crescêntio', 'Coelho guerreiro com uma lâmina lunar nas costas.'],
-    ['plenilunio', 'Plenilúnio', 'Guardião da lua cheia. Flutua sob o luar.'],
+    ['plenilunio', 'Plenilúnio', 'Lobo da lua cheia com orelhas de coelho e garras de prata. Flutua sob o luar.'],
   ] },
   luz: { base: { hp: 44, atk: 12, def: 10, vel: 6.6 }, formas: [
     ['lumino', 'Lumino', 'Bolinha de luz com asinhas. Só aparece de dia.'],
