@@ -126,8 +126,11 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
       em `js/dados.js`; o bloco da evolução rara no cartão do monstro (`main.js`); a temporada 2
       do jogo salvo (`TEMPORADA` em `main.js`); no GM, itens da evolução e "Completar a missão".
       As evoluções dos raros e lendários ficam para as fases 6 e 7.
-- [ ] **Fase 2 — Itens:** Ouro (nome), Galho Raro (no lugar da Madeira Rara), Asa do Anjo,
+- [x] **Fase 2 — Itens:** Ouro (nome), Galho Raro (no lugar da Madeira Rara), Asa do Anjo,
       Coração, drops por sorte nos chefes de masmorra, acampamentos sem drop.
+      *Feito:* `DROPS` e `sortearDrop` no `js/bolsa.js` (chefe de masmorra: 70% galho, 45% asa,
+      25% os 2; rei de dungeon: 50%, 25%, 10%); seção Itens raros na Bolsa; "ouro" nos textos.
+      O Coração ainda não tem de onde vir (fase 4).
 - [ ] **Fase 3 — Casa no Reino + Bandeira:** espaço da casa, casa nível 1 a 5 com visual novo,
       fim das funções antigas, bandeira para renascer (1/4 e 2/4).
 - [ ] **Fase 4 — Jardim + Afeto:** sementes na loja, plantar e colher (tempo real, morrem),

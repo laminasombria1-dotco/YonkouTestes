@@ -1,6 +1,9 @@
 // =============================================================
-// BOLSA, LOJA E MOEDAS
-//  - Moedas de ouro: ganhas nas vitórias (selvagens, grupos, chefes e treinadores).
+// BOLSA, LOJA E OURO
+//  - Ouro (no código e no jogo salvo continua "moedas"): ganho nas vitórias
+//    (selvagens, grupos, chefes e treinadores).
+//  - Itens raros: Galho Raro (evolui a casa), Asa do Anjo e Coração do Guardião
+//    (evolução rara). Galhos e asas caem por sorte dos chefes de masmorra (DROPS).
 //  - Poções: Cura (vermelha) cura metade da vida de 1 monstro de pé;
 //    Reviver (amarela) levanta 1 monstro desmaiado com metade da vida.
 //  - Bolsa (o botão do canto, no lugar da antiga casa): a casa, as poções
@@ -16,12 +19,12 @@ export const POCOES = {
 };
 export const RECARGA_POCAO = 10; // segundos entre uma poção e outra, na batalha
 
-// A casa evolui com Madeira Rara (e moedas). O nível fica em estado.casaNivel.
+// A casa evolui com Galho Raro (e ouro). O nível fica em estado.casaNivel.
 //  1: não cura; acordar nela levanta os desmaiados com 1/4 da vida
 //  2: encostar nela levanta os desmaiados com 2/3 da vida (os de pé ficam como estão)
 //  3: igual ao 2 + a lojinha do lado da casa, 75% mais cara que a do Reino
 export const CASA = {
-  custo: { 2: { madeira: 6, moedas: 500 }, 3: { madeira: 12, moedas: 1500 } },
+  custo: { 2: { galhos: 6, moedas: 500 }, 3: { galhos: 12, moedas: 1500 } },
   fatorLojinha: 1.75,
   texto: {
     1: 'Não cura: marca onde você acorda se a equipe desmaiar (os desmaiados voltam com 1/4 da vida).',
@@ -29,17 +32,23 @@ export const CASA = {
     3: 'Levanta os desmaiados com 2/3 da vida e tem a lojinha de poções do lado (75% mais cara que a do Reino).',
   },
 };
-// Madeira Rara: só de inimigos fortes (Nv.30 para cima). Os treinadores não dão.
-export const MADEIRA = { chefe30: 1, chefe40: 2, lider30: 0.25, monstro40: 0.05 };
-export function madeiraDe(d) {
-  const e = ESPECIES[d.especie];
-  if (e.chefe) return d.nivel >= 40 ? MADEIRA.chefe40 : d.nivel >= 30 ? MADEIRA.chefe30 : 0;
-  if (d.lider && d.nivel >= 30) return Math.random() < MADEIRA.lider30 ? 1 : 0;
-  if (d.nivel >= 40) return Math.random() < MADEIRA.monstro40 ? 1 : 0;
-  return 0;
+// Galho Raro e Asa do Anjo: só POR SORTE dos chefes de masmorra e dos reis de dungeon.
+// Os monstros do mapa, os acampamentos e os treinadores não dão.
+//  galho = chance de cair o galho | asa = chance de cair a asa | os2 = chance de cair os dois juntos
+//  (os2 já está dentro das outras: no chefe, 25% os 2, 45% só o galho, 20% só a asa, 10% nada)
+export const DROPS = {
+  chefeMasmorra: { galho: 0.70, asa: 0.45, os2: 0.25 },
+  reiDungeon: { galho: 0.50, asa: 0.25, os2: 0.10 }, // as dungeons ainda vão ser feitas
+};
+export function sortearDrop(qual, sorte = Math.random()) {
+  const D = DROPS[qual], soGalho = D.galho - D.os2, soAsa = D.asa - D.os2;
+  if (sorte < D.os2) return { galhos: 1, asas: 1 };
+  if (sorte < D.os2 + soGalho) return { galhos: 1, asas: 0 };
+  if (sorte < D.os2 + soGalho + soAsa) return { galhos: 0, asas: 1 };
+  return { galhos: 0, asas: 0 };
 }
 
-// Moedas de cada vitória (os treinadores têm as deles, em reino.js)
+// Ouro de cada vitória (os treinadores têm o deles, em reino.js)
 export const MOEDAS = { selvagem: [5, 10], comumGrupo: 4, liderGrupo: 10, chefe: 300 };
 
 const $ = (s) => document.querySelector(s);
@@ -81,7 +90,7 @@ export class Bolsa {
   static garantir(estado) {
     if (typeof estado.moedas !== 'number') estado.moedas = 0;
     if (!estado.pocoes) estado.pocoes = { cura: 3, reviver: 0 };
-    if (typeof estado.madeira !== 'number') estado.madeira = 0;
+    if (typeof estado.galhos !== 'number') estado.galhos = 0;   // Galho Raro (casa)
     if (!estado.casaNivel) estado.casaNivel = 1;
     if (typeof estado.asas !== 'number') estado.asas = 0;       // Asa do Anjo (evolução rara)
     if (typeof estado.coracoes !== 'number') estado.coracoes = 0; // Coração do Guardião (evolução rara)
@@ -90,7 +99,7 @@ export class Bolsa {
   ganharMoedas(n) {
     if (!n) return;
     this.est.moedas += n;
-    this.jogo.aviso(`+${n} moedas de ouro.`);
+    this.jogo.aviso(`+${n} de ouro.`);
     this.jogo.atualizarHudMundo();
   }
 
@@ -99,10 +108,10 @@ export class Bolsa {
   abrirLoja(lojinha = false) { this.fator = lojinha ? CASA.fatorLojinha : 1; this.jogo.painelAberto = true; $('#painel-bolsa').hidden = true; $('#painel-loja').hidden = false; this.renderLoja(); }
   preco(id) { return Math.round(POCOES[id].preco * (this.fator || 1)); }
 
-  ganharMadeira(n) {
-    if (!n) return;
-    this.est.madeira += n;
-    this.jogo.aviso(`Você conseguiu ${n} Madeira${n > 1 ? 's Raras' : ' Rara'}! (para evoluir a casa)`);
+  // Galhos Raros e Asas do Anjo que caíram (de sortearDrop)
+  ganharItens(d) {
+    if (d.galhos) { this.est.galhos += d.galhos; this.jogo.aviso(`Você conseguiu ${d.galhos} Galho${d.galhos > 1 ? 's Raros' : ' Raro'}! (para evoluir a casa)`); }
+    if (d.asas) { this.est.asas += d.asas; this.jogo.aviso(`Você conseguiu ${d.asas} Asa${d.asas > 1 ? 's' : ''} do Anjo! (para a evolução rara)`); }
   }
 
   // Evolui a casa (precisa estar perto dela, montada)
@@ -110,8 +119,8 @@ export class Bolsa {
     const est = this.est, j = this.jogo, m = j.mundo, prox = est.casaNivel + 1, c = CASA.custo[prox];
     if (!c) return;
     if (!m.casaPos || m.distanciaCasa() > 7) { j.aviso('Vá até a sua casa montada para evoluir.'); return; }
-    if (est.madeira < c.madeira || est.moedas < c.moedas) { j.aviso(`Faltam ${Math.max(0, c.madeira - est.madeira)} Madeiras Raras e ${Math.max(0, c.moedas - est.moedas)} moedas.`); return; }
-    est.madeira -= c.madeira;
+    if (est.galhos < c.galhos || est.moedas < c.moedas) { j.aviso(`Faltam ${Math.max(0, c.galhos - est.galhos)} Galhos Raros e ${Math.max(0, c.moedas - est.moedas)} de ouro.`); return; }
+    est.galhos -= c.galhos;
     est.moedas -= c.moedas;
     est.casaNivel = prox;
     m.trocarModeloCasa();
@@ -139,7 +148,7 @@ export class Bolsa {
     }
     if (cmd === 'comprar') {
       const n = Number(d.n), custo = this.preco(d.qual) * n;
-      if (est.moedas < custo) { j.aviso(`Faltam ${custo - est.moedas} moedas.`); return; }
+      if (est.moedas < custo) { j.aviso(`Faltam ${custo - est.moedas} de ouro.`); return; }
       est.moedas -= custo;
       est.pocoes[d.qual] += n;
       j.aviso(`Você comprou ${n} ${n > 1 ? 'Poções' : 'Poção'} de ${d.qual === 'cura' ? 'Cura' : 'Reviver'}.`);
@@ -159,8 +168,8 @@ export class Bolsa {
     $('#bolsa-moedas').textContent = est.moedas;
     const txtCasa = !m.casaPos ? 'Montar casa aqui' : m.distanciaCasa() < 7 ? 'Guardar a casa' : 'Mudar a casa para cá';
     const nv = est.casaNivel, c = CASA.custo[nv + 1], perto = m.casaPos && m.distanciaCasa() <= 7;
-    const evoluir = c ? `<button class="bolsa-btn" type="button" data-bolsa="evoluirCasa" ${perto && est.madeira >= c.madeira && est.moedas >= c.moedas ? '' : 'disabled'}>Evoluir para o nível ${nv + 1}</button>
-        <small>Custa ${c.madeira} Madeiras Raras e ${c.moedas} moedas${perto ? '' : ' (vá até a casa montada)'}.</small>` : '<small>Sua casa já está no nível máximo.</small>';
+    const evoluir = c ? `<button class="bolsa-btn" type="button" data-bolsa="evoluirCasa" ${perto && est.galhos >= c.galhos && est.moedas >= c.moedas ? '' : 'disabled'}>Evoluir para o nível ${nv + 1}</button>
+        <small>Custa ${c.galhos} Galhos Raros e ${c.moedas} de ouro${perto ? '' : ' (vá até a casa montada)'}.</small>` : '<small>Sua casa já está no nível máximo.</small>';
     const lista = [...est.equipe, ...est.reserva];
     const fichas = lista.map((mm, i) => {
       const e = ESPECIES[mm.especie], max = statsDe(mm.especie, mm.nivel).hpMax, caido = mm.hp <= 0;
@@ -176,8 +185,10 @@ export class Bolsa {
     $('#conteudo-bolsa').innerHTML = `
       <div class="bolsa-secao"><h3>Casa · nível ${nv}</h3>
         <div class="bolsa-linha"><button class="bolsa-btn" type="button" data-bolsa="casa">${txtCasa}</button><small>${CASA.texto[nv]}</small></div>
-        <div class="bolsa-linha"><span class="item"><i class="madeira"></i>Madeira Rara ×${est.madeira}</span>${evoluir}</div>
-        <small>Madeira Rara: vença chefes do Nv.30 para cima (1, ou 2 no Nv.40+), líderes de grupo Nv.30+ (às vezes) e monstros Nv.40+ (raramente).</small></div>
+        <div class="bolsa-linha"><span class="item"><i class="madeira"></i>Galho Raro ×${est.galhos}</span>${evoluir}</div></div>
+      <div class="bolsa-secao"><h3>Itens raros</h3>
+        <div class="bolsa-linha"><span class="item"><i class="madeira"></i>Galho Raro ×${est.galhos}</span><span class="item"><i class="asa"></i>Asa do Anjo ×${est.asas}</span><span class="item"><i class="coracao"></i>Coração do Guardião ×${est.coracoes}</span></div>
+        <small>Galho Raro e Asa do Anjo: caem por sorte dos chefes das masmorras (o galho cai mais). Coração do Guardião: vem do afeto do seu monstro. A Asa e o Coração servem para a evolução rara (Nv.50).</small></div>
       <div class="bolsa-secao"><h3>Poções</h3>
         <div class="bolsa-linha"><span class="item"><i class="frasco cura"></i>Cura ×${est.pocoes.cura}</span><span class="item"><i class="frasco reviver"></i>Reviver ×${est.pocoes.reviver}</span>
         <small>Compre mais na loja de poções do Reino.</small></div>
@@ -198,6 +209,6 @@ export class Bolsa {
         <div class="bolsa-linha"><span class="preco"><i class="moeda"></i>${this.preco(id)}</span>
           <button class="bolsa-btn" type="button" data-bolsa="comprar" data-qual="${id}" data-n="1" ${est.moedas < this.preco(id) ? 'disabled' : ''}>Comprar 1</button>
           <button class="bolsa-btn" type="button" data-bolsa="comprar" data-qual="${id}" data-n="5" ${est.moedas < this.preco(id) * 5 ? 'disabled' : ''}>Comprar 5</button></div>
-      </div>`).join('') + (lojinha ? '<p class="vazio">Na lojinha da casa tudo custa 75% a mais que na loja do Reino.</p>' : '<p class="vazio">Ganhe moedas vencendo monstros, grupos, chefes e os treinadores da arena.</p>');
+      </div>`).join('') + (lojinha ? '<p class="vazio">Na lojinha da casa tudo custa 75% a mais que na loja do Reino.</p>' : '<p class="vazio">Ganhe ouro vencendo monstros, grupos, chefes e os treinadores da arena.</p>');
   }
 }

@@ -12,7 +12,7 @@ import { Plataforma, CenaEvolucao } from './plataforma.js';
 import { carregarModelos3D } from './modelos.js';
 import { Companheiro } from './companheiro.js';
 import { TREINADORES, equipeDoTreinador } from './reino.js';
-import { Bolsa, MOEDAS, madeiraDe } from './bolsa.js';
+import { Bolsa, MOEDAS, sortearDrop } from './bolsa.js';
 import { Ovo } from './ovo.js';
 import {
   ESPECIES, ELEMENTOS, GOLPES, ORDEM_ELEMENTOS, RAROS, NOMES_ESTAGIO, NIVEIS_EVOLUCAO,
@@ -527,7 +527,7 @@ class Jogo {
 
   novoJogo(especie) {
     this.estado = { equipe: [criarMonstro(especie, 3)], reserva: [], pedras: { comum: 5, forte: 0, supremo: 0 }, capturados: [especie], casa: null,
-      moedas: 0, pocoes: { cura: 3, reviver: 1 }, madeira: 0, casaNivel: 1, asas: 0, coracoes: 0 };
+      moedas: 0, pocoes: { cura: 3, reviver: 1 }, galhos: 0, casaNivel: 1, asas: 0, coracoes: 0 };
     this.mundo.hora = 0.08;
     this.entrarNoMundo();
     this.mundo.povoar();
@@ -755,13 +755,13 @@ class Jogo {
       else if (Math.random() < (b.grupo ? 0.2 : 0.35)) ganho.comum++;
     }
     this.ganharCristais(ganho);
-    // Moedas: cada selvagem vencido dá 5 a 10; num grupo, 4 por comum e 10 pelo líder; o chefe dá 300
+    // Ouro: cada selvagem vencido dá 5 a 10; num grupo, 4 por comum e 10 pelo líder; o chefe dá 300
     if (!b.treinador && ativo.hp > 0) {
       let moedas = b.chefe && vencidos.length ? MOEDAS.chefe : 0;
       if (!b.chefe) for (const d of b.derrotados) moedas += b.grupo ? (d.lider ? MOEDAS.liderGrupo : MOEDAS.comumGrupo) : MOEDAS.selvagem[0] + Math.floor(Math.random() * (MOEDAS.selvagem[1] - MOEDAS.selvagem[0] + 1));
       this.bolsa.ganharMoedas(moedas);
-      // Madeira Rara: só chefes e monstros fortes (Nv.30 para cima)
-      this.bolsa.ganharMadeira(vencidos.reduce((s, d) => s + madeiraDe(d), 0));
+      // Galho Raro e Asa do Anjo: por sorte, só do chefe da masmorra (os acampamentos e o mapa não dão)
+      if (b.chefe && vencidos.length) this.bolsa.ganharItens(sortearDrop('chefeMasmorra'));
     }
     for (const novo of b.capturados) {
       novo.hp = Math.max(1, novo.hp);
