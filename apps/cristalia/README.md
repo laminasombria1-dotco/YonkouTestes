@@ -202,7 +202,7 @@ O Reino fica **fora da borda do mapa**, como as dungeons, mas não é dungeon: �
 - **Perder:** você acorda na fonte do castelo, com todos curados. Os treinadores que você já venceu **continuam vencidos**.
 - **Dominar a arena:** vencendo o Rei Julius, você vira o **Campeão do Reino** (aparece "👑 Campeão do Reino" no resumo do jogo salvo, na tela de início). Daí em diante todos lutam no Nv.50, em qualquer ordem. O Rei também entrega o **Ovo Misterioso** (veja abaixo).
 - **Fica salvo** em `estado.arena`: `vencidos` (0 a 5), `dominada` e `ovoRecebido`.
-- Lá dentro não aparecem monstros, não nascem árvores do mapa e não dá para montar a casa.
+- Lá dentro não aparecem monstros, não nascem árvores do mapa e não dá para fincar a bandeira.
 - **Leve no celular:** todas as peças paradas do Reino viram **4 malhas** (cores normais, peças vistas dos dois lados, o que brilha e as paredes brancas do castelo), e a plateia é **1 lote**. A colisão usa círculos na `mundo.grade`, como o resto.
 - **Código:** a forma (corredor + platô) é o `REINO` em `js/dungeon.js` (`TracadoReino`, com `paraMundo` e `paraLocal`), a direção e a Estrada Real ficam em `js/mapa/gerador.js` (`ANG_REINO`, `ESTRADA`, `naEstradaReal`) e o cenário em `js/reino.js`.
 
@@ -292,7 +292,7 @@ Sai da borda do mapa pelo bioma de Lava, depois do Vulcão, seguindo a estrada d
 - **Ordem da luta nos acampamentos:** 2 fracos (comum −2 níveis) → 2 médios (comum +1) → 1 forte (entre o comum e o líder) → o líder. Cada onda só entra quando a anterior inteira cai.
 - Também aparecem monstros soltos lá dentro, já evoluídos (Brasalobo, Fornalobo, Vulcarapa, Cascalhão, Umbrafel...). Nenhum monstro novo além do chefe.
 - Um acampamento vencido ganha outro grupo depois de 2 minutos.
-- Não dá para montar a casa lá dentro (calor demais). Monte antes da entrada.
+- Não dá para fincar a bandeira lá dentro (calor demais). Finque antes da entrada.
 - Quanto mais fundo, mais escuro fica o céu, com cinzas caindo e brasas subindo.
 
 ### Chefe: Ignárion (super raro)
@@ -317,7 +317,7 @@ Sai da borda do mapa pela Floresta, seguindo as lanternas de flor (a direção d
 | 4 | Raízes Gigantes | Nv.14 | Nv.21 | Árvores enormes, raízes em arco, cipós e frutos brilhantes |
 
 - Quem aparece: só espécies que já existiam (Planta evoluída como Troncudo e Florestral, Espinhal, Fogo + Planta, e visitantes de Água, Terra, Luz e Trevas). Nenhum monstro novo além do chefe.
-- Não dá para montar a casa lá dentro (as raízes não deixam). Monte antes da entrada.
+- Não dá para fincar a bandeira lá dentro (as raízes não deixam). Finque antes da entrada.
 - Quanto mais fundo, mais escuro e verde fica o céu, com folhas caindo e vaga-lumes.
 - As árvores gigantes ficam transparentes quando estão entre a câmera e você.
 - Arena dos grupos: **Trilha Ancestral** (favorece Planta). Perigo: **moitas de espinhos** que arranham quem pisa, mas curam monstros de Planta.
@@ -730,7 +730,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `modelos/` | Os arquivos `.glb` (hoje `brasito.glb`) e um README com os detalhes de cada um |
 | `js/plataforma.js` | A vitrine 3D do Monstruário e a animação de evolução |
 | `js/mundo.js` | Mapa aberto: regiões, dia e noite, monstros selvagens e grupos (em volta do jogador), cristais, fonte do castelo, casa, Estrada Real segura, colisão e câmera |
-| `js/bolsa.js` | Ouro, poções (preços e efeito), Galho Raro, Asa do Anjo e os drops (`DROPS`), a evolução da casa, a Bolsa (casa, poções, cristais, ovo), a loja de poções do Reino e a lojinha da casa |
+| `js/bolsa.js` | Ouro, poções (preços e efeito), Galho Raro, Asa do Anjo e os drops (`DROPS`), a evolução da casa e da bandeira (`CASA`, `BANDEIRA`), a Bolsa (bandeira, casa, itens raros, poções, cristais, ovo) e a loja de poções do Reino |
 | `js/ovo.js` | O Ovo Misterioso: o ovo roxo em 3D, o tempo para chocar, o sorteio e a cena do nascimento |
 | `js/reino.js` | O Reino: castelo, praça e fonte, vila e loja, arena fechada com plateia e os 5 treinadores, muralha, lanternas da Estrada Real e a placa do Campo (tudo junto em poucas malhas) |
 | `js/mapa/config.js` | Configurações do mapa procedural e os perfis de qualidade |
