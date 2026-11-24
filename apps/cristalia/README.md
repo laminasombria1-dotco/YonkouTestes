@@ -121,8 +121,36 @@ O jogo é um **PWA** (aplicativo web instalável). Ele fica no site **https://la
 ## Casa no Reino
 
 - A casa do jogador fica **fixa no Reino**, entre a arena e o portão (lugar `CASA_REINO` em `js/reino.js`), virada para o caminho do portão. Ela **não cura e não tem loja** (as funções antigas acabaram): para se curar fora do castelo, use poções.
-- Perto dela dá para **fundir cristais**. Na próxima fase ela ganha o **jardim** (plantar frutas para alimentar os monstros).
+- Perto dela dá para **fundir cristais** e cuidar do **jardim** (veja "Jardim e afeto").
 - **Evolui do nível 1 ao 5** com Galhos Raros + ouro (vá até ela e abra a Bolsa). Veja "Evolução da casa" abaixo.
+
+## Jardim e afeto
+
+- **Jardim:** os canteiros ficam **na frente da casa**, no Reino (do lado do caminho do portão). Tem **nível próprio**, subido com Galhos Raros + ouro (Bolsa, perto da casa):
+
+  | Nível | Vagas | Custo para chegar |
+  |---|---|---|
+  | 1 | 2 | (começo) |
+  | 2 | 4 | 2 Galhos + 300 de ouro |
+  | 3 | 6 | 5 Galhos + 1.000 de ouro |
+  | 4 | 8 | 9 Galhos + 3.000 de ouro |
+  | 5 | 10 | 14 Galhos + 6.000 de ouro |
+
+- **Sementes** (na **Loja do Reino**, a barraca listrada). Cada uma só pode ser plantada se a **casa** tiver o nível pedido. Os nomes ficam em inglês:
+
+  | Semente | Casa | Preço | Cresce em | Afeto de cada fruta |
+  |---|---|---|---|---|
+  | Strawberry | 1 | 20 | 30 min | 1 |
+  | Field Apple | 2 | 50 | 1 h | 2 |
+  | Moon Grape | 3 | 120 | 2 h | 3 |
+  | Sun Peach | 4 | 250 | 4 h | 5 |
+  | Crystal Fruit | 5 | 500 | 8 h | 8 (e +5% de chance de Coração) |
+
+- As plantas crescem **em tempo real** (mesmo com o jogo fechado). Pronta, ela dá **2 frutas** ao colher. Se não for colhida em **12 horas**, ela **morre** (aí é só limpar o canteiro). Plantar e colher: abra a **Bolsa** perto da casa. O alimento **não é vendido** na loja: só vem do jardim.
+- **Afeto** (nível 1 a 10, aparece no cartão do monstro e na Bolsa): dê frutas na seção **Frutas e afeto** da Bolsa (em qualquer lugar). Cada nível pede mais pontos (5 no nível 1, 10 no 2... 45 no 9).
+  - **Coração do Guardião:** cada fruta tem chance de dar um (**3%** no afeto 1, +2% por nível, até 21% no 10), e ao **subir de nível** de afeto vem **1 garantido**.
+  - Depois de **3 frutas**, o monstro fica **satisfeito** por 1 dia do jogo (4 minutos jogando). Como dá para levar até 3 monstros, é preciso cultivar para os 3.
+- **Código:** `js/jardim.js` (`SEMENTES`, `JARDIM`, `AFETO`, plantar, colher, alimentar e os canteiros em 3D). Fica salvo em `estado.jardim`, `estado.sementes`, `estado.frutas` e no afeto de cada monstro (`m.afeto`). Leve no celular: no máximo 10 plantas com materiais fixos, redesenhadas 1 vez por segundo e só perto da casa.
 
 ## Bolsa, ouro e loja
 
@@ -730,6 +758,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `modelos/` | Os arquivos `.glb` (hoje `brasito.glb`) e um README com os detalhes de cada um |
 | `js/plataforma.js` | A vitrine 3D do Monstruário e a animação de evolução |
 | `js/mundo.js` | Mapa aberto: regiões, dia e noite, monstros selvagens e grupos (em volta do jogador), cristais, fonte do castelo, casa, Estrada Real segura, colisão e câmera |
+| `js/jardim.js` | O jardim (sementes, plantar, colher, as plantas em tempo real e os canteiros em 3D) e o afeto (alimentar, Coração do Guardião, satisfeito) |
 | `js/bolsa.js` | Ouro, poções (preços e efeito), Galho Raro, Asa do Anjo e os drops (`DROPS`), a evolução da casa e da bandeira (`CASA`, `BANDEIRA`), a Bolsa (bandeira, casa, itens raros, poções, cristais, ovo) e a loja de poções do Reino |
 | `js/ovo.js` | O Ovo Misterioso: o ovo roxo em 3D, o tempo para chocar, o sorteio e a cena do nascimento |
 | `js/reino.js` | O Reino: castelo, praça e fonte, vila e loja, arena fechada com plateia e os 5 treinadores, muralha, lanternas da Estrada Real e a placa do Campo (tudo junto em poucas malhas) |

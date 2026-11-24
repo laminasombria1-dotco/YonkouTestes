@@ -12,6 +12,7 @@
 // Na batalha, as poções ficam no botão do frasco (recarga de 10 s): batalha.js.
 // =============================================================
 import { ESPECIES, ELEMENTOS, statsDe } from './dados.js';
+import { SEMENTES, ORDEM_SEMENTES, JARDIM, AFETO, garantirJardim, faseDo, tempoTexto, plantar, colher, afetoDe, alimentar } from './jardim.js';
 
 export const POCOES = {
   cura: { nome: 'Poção de Cura', cor: 'vermelha', preco: 40, parte: 0.5, texto: 'Cura metade da vida de um monstro de pé.' },
@@ -104,6 +105,7 @@ export class Bolsa {
     if (typeof estado.galhos !== 'number') estado.galhos = 0;   // Galho Raro (casa)
     if (!estado.casaNivel) estado.casaNivel = 1;
     if (!estado.bandeiraNivel) estado.bandeiraNivel = 1;
+    garantirJardim(estado); // jardim, sementes e frutas
     if (typeof estado.asas !== 'number') estado.asas = 0;       // Asa do Anjo (evolução rara)
     if (typeof estado.coracoes !== 'number') estado.coracoes = 0; // Coração do Guardião (evolução rara)
   }
@@ -148,6 +150,18 @@ export class Bolsa {
     j.salvar();
   }
 
+  // Evolui o jardim (mais vagas; precisa estar perto da casa)
+  evoluirJardim() {
+    const est = this.est, j = this.jogo, prox = est.jardim.nivel + 1, c = JARDIM.custo[prox];
+    if (!c) return;
+    if (j.mundo.distanciaCasa() > 14) { j.aviso('Vá até a sua casa no Reino para evoluir o jardim.'); return; }
+    if (!this.pagar(c)) return;
+    est.jardim.nivel = prox;
+    garantirJardim(est);
+    j.aviso(`Seu jardim evoluiu para o nível ${prox}: agora cabem ${JARDIM.vagas[prox - 1]} plantas!`);
+    j.salvar();
+  }
+
   // Evolui a bandeira (precisa estar perto dela, fincada)
   evoluirBandeira() {
     const est = this.est, j = this.jogo, m = j.mundo, prox = est.bandeiraNivel + 1, c = BANDEIRA.custo[prox];
@@ -188,6 +202,32 @@ export class Bolsa {
       j.salvar();
       this.renderLoja();
       return;
+    }
+    if (cmd === 'comprarSemente') {
+      const S = SEMENTES[d.qual], n = Number(d.n), custo = S.preco * n;
+      if (est.moedas < custo) { j.aviso(`Faltam ${custo - est.moedas} de ouro.`); return; }
+      est.moedas -= custo;
+      est.sementes[d.qual] = (est.sementes[d.qual] || 0) + n;
+      j.aviso(`Você comprou ${n} semente${n > 1 ? 's' : ''} de ${S.nome}.`);
+      j.atualizarHudMundo(); j.salvar(); this.renderLoja();
+      return;
+    }
+    if (cmd === 'plantar' || cmd === 'colher') {
+      if (j.mundo.distanciaCasa() > 14) { j.aviso('O jardim fica na frente da sua casa, no Reino.'); return; }
+      const txt = cmd === 'plantar' ? plantar(est, Number(d.i), d.qual) : colher(est, Number(d.i));
+      if (txt) { j.aviso(txt); j.salvar(); }
+    }
+    if (cmd === 'evoluirJardim') this.evoluirJardim();
+    if (cmd === 'alimentar') {
+      const m = [...est.equipe, ...est.reserva].find((x) => x.uid === d.uid);
+      const r = m && alimentar(est, m, d.qual);
+      if (r?.texto) {
+        const nome = ESPECIES[m.especie].nome;
+        j.aviso(`${nome}: ${r.texto}`);
+        if (r.subiu) j.aviso(`O afeto de ${nome} subiu para o nível ${afetoDe(m).nivel}!`);
+        if (r.coracoes) j.aviso(`Você ganhou ${r.coracoes} Coração${r.coracoes > 1 ? 'ões' : ''} do Guardião!`);
+        j.salvar();
+      }
     }
     if (cmd === 'fundir') { j.fundir(Number(d.i)); }
     if (cmd === 'chocar') { j.ovo?.chocarAgora(); }
@@ -232,21 +272,81 @@ export class Bolsa {
         <div class="bolsa-linha"><span class="item"><i class="frasco cura"></i>Cura ×${est.pocoes.cura}</span><span class="item"><i class="frasco reviver"></i>Reviver ×${est.pocoes.reviver}</span>
         <small>Compre mais na loja de poções do Reino.</small></div>
         <div class="bolsa-monstros">${fichas}</div></div>
+      ${this.htmlJardim()}
+      ${this.htmlFrutas()}
       ${j.ovo ? j.ovo.htmlBolsa() : ''}
       <div class="bolsa-secao"><h3>Cristais</h3><div id="bolsa-cristais">${j.htmlCristais().replaceAll('data-cmd="fundir"', 'data-bolsa="fundir"')}</div></div>`;
+  }
+
+  // ---------- o jardim (na frente da casa do Reino) ----------
+  htmlJardim() {
+    const est = this.est, J = est.jardim, perto = this.jogo.mundo.distanciaCasa() <= 14;
+    const fases = J.canteiros.map((c) => faseDo(c));
+    const cont = (f) => fases.filter((x) => x.fase === f).length;
+    const resumo = `${cont('crescendo')} crescendo · ${cont('pronto')} pronta${cont('pronto') === 1 ? '' : 's'} · ${cont('vazio')} vaga${cont('vazio') === 1 ? '' : 's'}${cont('morto') ? ` · ${cont('morto')} morta${cont('morto') > 1 ? 's' : ''}` : ''}`;
+    const c = JARDIM.custo[J.nivel + 1];
+    const evoluir = c ? `<button class="bolsa-btn" type="button" data-bolsa="evoluirJardim" ${perto && est.galhos >= c.galhos && est.moedas >= c.moedas ? '' : 'disabled'}>Evoluir para o nível ${J.nivel + 1} (${JARDIM.vagas[J.nivel]} vagas)</button>
+        <small>Custa ${c.galhos} Galhos Raros e ${c.moedas} de ouro${perto ? '' : ' (vá até a casa)'}.</small>` : '<small>Seu jardim já está no nível máximo.</small>';
+    if (!perto) return `<div class="bolsa-secao"><h3>Jardim · nível ${J.nivel} (${J.canteiros.length} vagas)</h3>
+        <small>${resumo}. O jardim fica na frente da sua casa no Reino: vá até lá para plantar e colher.</small></div>`;
+    const canteiros = J.canteiros.map((cn, i) => {
+      const f = fases[i];
+      if (f.fase === 'vazio') {
+        const opc = ORDEM_SEMENTES.filter((id) => (est.sementes[id] || 0) > 0 && (est.casaNivel || 1) >= SEMENTES[id].casa)
+          .map((id) => `<button class="bolsa-btn" type="button" data-bolsa="plantar" data-i="${i}" data-qual="${id}">Plantar ${SEMENTES[id].nome} (${est.sementes[id]})</button>`).join('');
+        return `<div class="canteiro"><b>Vaga ${i + 1}</b> <span>vazia</span>${opc || '<small>Sem sementes (compre na loja do Reino).</small>'}</div>`;
+      }
+      const S = SEMENTES[cn.semente];
+      if (f.fase === 'crescendo') return `<div class="canteiro"><b>${S.nome}</b> <span>crescendo: falta ${tempoTexto(f.falta)}</span><i class="xp"><b style="width:${(f.k * 100).toFixed(0)}%"></b></i></div>`;
+      if (f.fase === 'pronto') return `<div class="canteiro pronto"><b>${S.nome}</b> <span>pronta! (morre em ${tempoTexto(f.falta)})</span><button class="bolsa-btn" type="button" data-bolsa="colher" data-i="${i}">Colher ${JARDIM.frutasPorColheita}</button></div>`;
+      return `<div class="canteiro morto"><b>${S.nome}</b> <span>morreu (não foi colhida a tempo)</span><button class="bolsa-btn" type="button" data-bolsa="colher" data-i="${i}">Limpar</button></div>`;
+    }).join('');
+    return `<div class="bolsa-secao"><h3>Jardim · nível ${J.nivel}</h3>
+        <small>As plantas crescem mesmo com o jogo fechado e morrem 12 horas depois de prontas.</small>
+        <div class="canteiros">${canteiros}</div>
+        <div class="bolsa-linha">${evoluir}</div></div>`;
+  }
+
+  // ---------- frutas e afeto ----------
+  htmlFrutas() {
+    const est = this.est, lista = [...est.equipe, ...est.reserva];
+    const tem = ORDEM_SEMENTES.filter((id) => (est.frutas[id] || 0) > 0);
+    const frutas = tem.length ? tem.map((id) => `<span class="item"><i class="fruta" style="--cor:${SEMENTES[id].cor}"></i>${SEMENTES[id].nome} ×${est.frutas[id]}</span>`).join('') : '<small>Nenhuma fruta. Plante no jardim da casa e colha.</small>';
+    const fichas = lista.map((m) => {
+      const e = ESPECIES[m.especie], A = afetoDe(m), max = A.nivel >= AFETO.max;
+      const barra = max ? 100 : (A.pontos / AFETO.pontos(A.nivel)) * 100;
+      const estado = A.satisfeito > 0 ? `<small>satisfeito (${tempoTexto(A.satisfeito)})</small>` : `<small>pode comer ${AFETO.porVez - A.comeu}</small>`;
+      const botoes = A.satisfeito > 0 ? '' : tem.map((id) => `<button class="bolsa-btn" type="button" data-bolsa="alimentar" data-uid="${m.uid}" data-qual="${id}">Dar ${SEMENTES[id].nome}</button>`).join('');
+      return `<div class="bolsa-monstro" style="--cor:${ELEMENTOS[e.elemento].cor}">
+        <header>${e.nome} <span>Afeto Nv.${A.nivel}${max ? ' (máx.)' : ''}</span></header>
+        <i class="xp"><b style="width:${barra.toFixed(0)}%"></b></i>
+        <div class="cmds">${estado}${botoes}</div></div>`;
+    }).join('');
+    return `<div class="bolsa-secao"><h3>Frutas e afeto</h3>
+        <div class="bolsa-linha">${frutas}</div>
+        <small>Cada fruta sobe o afeto e tem chance de dar um Coração do Guardião (maior com mais afeto). Ao subir de nível de afeto, vem 1 Coração garantido. Depois de ${AFETO.porVez} frutas, o monstro fica satisfeito por um tempo.</small>
+        <div class="bolsa-monstros">${fichas}</div></div>`;
   }
 
   // ---------- a loja ----------
   renderLoja() {
     const est = this.est;
     $('#loja-moedas').textContent = est.moedas;
-    $('#painel-loja h2').firstChild.textContent = 'Loja de Poções ';
+    $('#painel-loja h2').firstChild.textContent = 'Loja do Reino ';
     $('#conteudo-loja').innerHTML = Object.entries(POCOES).map(([id, p]) => `
       <div class="loja-item"><i class="frasco ${id}"></i>
         <div><b>${p.nome}</b> <small>(você tem ${est.pocoes[id]})</small><p>${p.texto}</p></div>
         <div class="bolsa-linha"><span class="preco"><i class="moeda"></i>${this.preco(id)}</span>
           <button class="bolsa-btn" type="button" data-bolsa="comprar" data-qual="${id}" data-n="1" ${est.moedas < this.preco(id) ? 'disabled' : ''}>Comprar 1</button>
           <button class="bolsa-btn" type="button" data-bolsa="comprar" data-qual="${id}" data-n="5" ${est.moedas < this.preco(id) * 5 ? 'disabled' : ''}>Comprar 5</button></div>
-      </div>`).join('') + '<p class="vazio">Ganhe ouro vencendo monstros, grupos, chefes e os treinadores da arena.</p>';
+      </div>`).join('') + `<h3 class="loja-titulo">Sementes</h3>` + ORDEM_SEMENTES.map((id) => {
+      const S = SEMENTES[id], pode = (est.casaNivel || 1) >= S.casa;
+      return `<div class="loja-item"><i class="fruta" style="--cor:${S.cor}"></i>
+        <div><b>${S.nome}</b> <small>(você tem ${est.sementes[id] || 0})</small><p>Cresce em ${tempoTexto(S.tempo)} · cada fruta dá ${S.afeto} de afeto${S.coracao ? ' e mais chance de Coração' : ''} · ${pode ? `casa nível ${S.casa}+` : `<b>precisa da casa nível ${S.casa}</b>`}</p></div>
+        <div class="bolsa-linha"><span class="preco"><i class="moeda"></i>${S.preco}</span>
+          <button class="bolsa-btn" type="button" data-bolsa="comprarSemente" data-qual="${id}" data-n="1" ${est.moedas < S.preco ? 'disabled' : ''}>Comprar 1</button>
+          <button class="bolsa-btn" type="button" data-bolsa="comprarSemente" data-qual="${id}" data-n="5" ${est.moedas < S.preco * 5 ? 'disabled' : ''}>Comprar 5</button></div>
+      </div>`;
+    }).join('') + '<p class="vazio">Ganhe ouro vencendo monstros, grupos, chefes e os treinadores da arena.</p>';
   }
 }

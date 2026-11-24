@@ -14,6 +14,7 @@ import { TRACADOS, REINO, tracadoPerto, prenderDungeons, dentroDungeonLivre, sem
 import { CaminhoDasBrasas } from './brasas.js';
 import { TrilhaAncestral, CRISTAL_ESCONDIDO } from './raizes.js';
 import { Reino, FONTE_REINO, NASCER_REINO, ARENA_REINO, CASA_REINO } from './reino.js';
+import { JardimMundo, passarFome } from './jardim.js';
 import { RAIO_MUNDO, NIVEL_AGUA, SEMENTE, LAGOA, RESERVAS, SEGREDOS, ESTRADA, aleatorio, biomaEm, lagoEm, naEstradaReal } from './mapa/gerador.js';
 import { alturaEm, bloqueadoEm } from './mapa/altura.js';
 import { Grade, ListaObstaculos } from './mapa/grade.js';
@@ -151,6 +152,7 @@ export class Mundo {
     this.casa.position.set(pc.x, alturaEm(pc.x, pc.z), pc.z);
     this.casa.rotation.y = this.casaPos.rot;
     this.obstaculos.push({ x: pc.x, z: pc.z, r: RAIO_CASA });
+    this.jardim3d = new JardimMundo(this); // os canteiros na frente da casa (jardim.js)
 
     this.cristais = [];
     this.criarCristaisChao();
@@ -836,6 +838,8 @@ export class Mundo {
       } else this.bandeira.scale.setScalar(1);
       animarBandeira(this.bandeira, t);
     }
+    // Jardim (plantas em tempo real) e o "satisfeito" dos monstros passando
+    if (est) { this.jardim3d.atualizar(dt, est, this.distanciaCasa() < 70); if (!pausado) passarFome(est, dt); }
     // Casa do Reino: fumaça, janelas acesas à noite e o pulinho quando sobe de nível
     if (this.distanciaCasa() < 70) {
       if (this.casaAnim < 1) {

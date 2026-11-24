@@ -318,6 +318,14 @@
   .bolsa-monstro { background: var(--painel); border-radius: 12px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; border-left: 4px solid var(--cor); }
   .bolsa-monstro header { display: flex; justify-content: space-between; font-weight: 800; }
   .bolsa-monstro .cmds { display: flex; gap: 6px; flex-wrap: wrap; }
+  /* jardim: os canteiros (vaga, crescendo, pronta, morta) e o ícone da fruta */
+  .canteiros { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
+  .canteiro { background: rgba(106, 74, 42, 0.35); border: 1px solid #6a4a2a; border-radius: 10px; padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; }
+  .canteiro span { color: var(--creme-suave); }
+  .canteiro.pronto { border-color: #7dffa0; }
+  .canteiro.morto { opacity: 0.7; }
+  .fruta { display: inline-block; width: 13px; height: 13px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #ffffff, var(--cor) 55%); box-shadow: 0 0 5px var(--cor); margin-right: 2px; }
+  .loja-titulo { margin: 10px 0 4px; font-family: var(--f-titulo); }
   .bolsa-monstro.desmaiado header span { color: #ff8a9a; }
   .loja-item { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 10px; background: var(--painel); border-radius: 12px; padding: 10px 12px; }
   .loja-item .frasco { width: 20px; height: 26px; }
@@ -742,7 +750,7 @@
   <!-- a loja de poções do Reino -->
   <div id="painel-loja" class="painel-tela" hidden>
     <div class="painel-caixa">
-      <div class="painel-cabeca"><h2>Loja de Poções <span class="pilula moedas mini-moedas"><i class="moeda"></i><b id="loja-moedas">0</b></span></h2><button class="btn-hud fechar-painel" type="button">Fechar</button></div>
+      <div class="painel-cabeca"><h2>Loja do Reino <span class="pilula moedas mini-moedas"><i class="moeda"></i><b id="loja-moedas">0</b></span></h2><button class="btn-hud fechar-painel" type="button">Fechar</button></div>
       <div id="conteudo-loja"></div>
     </div>
   </div>

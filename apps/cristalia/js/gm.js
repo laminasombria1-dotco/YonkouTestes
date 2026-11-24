@@ -23,6 +23,7 @@ import { criarModelo, criarCoroa, criarAuraDupla } from './modelos.js';
 import { zonaEm, NOMES_ZONA, NASCER, ANG_NASCER } from './mundo.js';
 import { REINO } from './dungeon.js';
 import { ARENA_REINO, TREINADORES } from './reino.js';
+import { SEMENTES, ORDEM_SEMENTES, JARDIM, garantirJardim } from './jardim.js';
 import { ESTRADA } from './mapa/gerador.js';
 import { SEMENTE, SEMENTE_PADRAO, centroDe, LAGOS, POIS } from './mapa/gerador.js';
 
@@ -374,6 +375,14 @@ export class PainelGM {
           <button class="gm-btn" type="button" data-gm="madeira">+6 Galhos Raros</button>
           ${[1, 2, 3, 4, 5].map((n) => `<button class="gm-btn" type="button" data-gm="casaNivel" data-n="${n}">Casa nível ${n}</button>`).join('')}
           ${[1, 2].map((n) => `<button class="gm-btn" type="button" data-gm="bandeiraNivel" data-n="${n}">Bandeira nível ${n}</button>`).join('')}</div>
+        <h3>Jardim e afeto</h3>
+        <div class="gm-linha">
+          <button class="gm-btn" type="button" data-gm="sementes">+5 sementes de cada</button>
+          <button class="gm-btn" type="button" data-gm="frutas">+5 frutas de cada</button>
+          <button class="gm-btn" type="button" data-gm="crescer">Plantas prontas agora</button>
+          <button class="gm-btn" type="button" data-gm="matarPlantas">Plantas morrem agora</button>
+          <button class="gm-btn" type="button" data-gm="semFome">Tirar o "satisfeito"</button>
+          ${[1, 2, 3, 4, 5].map((n) => `<button class="gm-btn" type="button" data-gm="jardimNivel" data-n="${n}">Jardim nível ${n}</button>`).join('')}</div>
         <p class="gm-dica">"Lutar" começa a luta na hora (sem precisar da ordem). Dominada, todos lutam no Nv.50.</p>
       </div>
       <div class="gm-bloco">
@@ -521,6 +530,15 @@ export class PainelGM {
       case 'treinador': this.fecharPainel(); this.jogo.lutarComTreinador(Number(d.i)); return;
       case 'madeira': this.jogo.estado.galhos = (this.jogo.estado.galhos || 0) + 6; this.jogo.aviso('GM: +6 Galhos Raros.'); this.jogo.salvar(); break;
       case 'casaNivel': this.jogo.estado.casaNivel = Number(d.n); this.mundo.trocarModeloCasa(); this.jogo.aviso(`GM: casa no nível ${d.n}.`); this.jogo.salvar(); break;
+      case 'sementes': for (const id of ORDEM_SEMENTES) this.estado.sementes[id] = (this.estado.sementes[id] || 0) + 5; this.jogo.aviso('GM: +5 sementes de cada.'); this.salvar(); break;
+      case 'frutas': for (const id of ORDEM_SEMENTES) this.estado.frutas[id] = (this.estado.frutas[id] || 0) + 5; this.jogo.aviso('GM: +5 frutas de cada.'); this.salvar(); break;
+      case 'crescer': case 'matarPlantas': { // muda a hora em que foram plantadas (o tempo é real)
+        const morrer = acao === 'matarPlantas';
+        for (const c of this.estado.jardim.canteiros) if (c) c.plantou = Date.now() - (SEMENTES[c.semente].tempo + (morrer ? JARDIM.morre + 1 : 0)) * 1000;
+        this.jogo.aviso(morrer ? 'GM: as plantas morreram.' : 'GM: as plantas ficaram prontas.'); this.salvar(); break;
+      }
+      case 'semFome': for (const m of [...this.estado.equipe, ...this.estado.reserva]) if (m.afeto) { m.afeto.satisfeito = 0; m.afeto.comeu = 0; } this.jogo.aviso('GM: ninguém está satisfeito.'); this.salvar(); break;
+      case 'jardimNivel': this.estado.jardim.nivel = Number(d.n); this.estado.jardim.canteiros.length = Math.min(this.estado.jardim.canteiros.length, JARDIM.vagas[d.n - 1]); garantirJardim(this.estado); this.jogo.aviso(`GM: jardim no nível ${d.n}.`); this.salvar(); break;
       case 'bandeiraNivel': this.jogo.estado.bandeiraNivel = Number(d.n); this.mundo.trocarModeloBandeira(); this.jogo.aviso(`GM: bandeira no nível ${d.n}.`); this.jogo.salvar(); break;
       case 'moedas': this.jogo.estado.moedas = (this.jogo.estado.moedas || 0) + 1000; this.jogo.atualizarHudMundo(); this.jogo.salvar(); break;
       case 'chocar': if (this.jogo.estado.ovo) { this.jogo.ovo.chocarAgora(); this.fecharPainel(); return; } this.jogo.aviso('GM: você não tem ovo (domine a arena).'); break;

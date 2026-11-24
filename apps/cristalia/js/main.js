@@ -13,6 +13,7 @@ import { carregarModelos3D } from './modelos.js';
 import { Companheiro } from './companheiro.js';
 import { TREINADORES, equipeDoTreinador } from './reino.js';
 import { Bolsa, MOEDAS, sortearDrop } from './bolsa.js';
+import { afetoDe } from './jardim.js';
 import { Ovo } from './ovo.js';
 import {
   ESPECIES, ELEMENTOS, GOLPES, ORDEM_ELEMENTOS, RAROS, NOMES_ESTAGIO, NIVEIS_EVOLUCAO,
@@ -867,7 +868,7 @@ class Jogo {
       <header><span class="tag" ${tagEstilo}>${nomeTipo(e)}</span><strong>${e.nome}</strong><em>Nv.${m.nivel}</em></header>
       <div class="linha"><span>Vida</span><i class="vida"><b style="width:${(fVida * 100).toFixed(0)}%" data-nivel="${nivelVida}"></b></i><small>${m.hp}/${s.hpMax}</small></div>
       <div class="linha"><span>Exp.</span><i class="xp"><b style="width:${(fXp * 100).toFixed(0)}%"></b></i><small>${m.xp}/${xpParaProximo(m.nivel)}</small></div>
-      <div class="atributos"><span>Ataque <b>${Math.round(s.atk)}</b></span><span>Defesa <b>${Math.round(s.def)}</b></span><span>Veloc. <b>${s.vel.toFixed(1)}</b></span><span>${evo}</span></div>
+      <div class="atributos"><span>Ataque <b>${Math.round(s.atk)}</b></span><span>Defesa <b>${Math.round(s.def)}</b></span><span>Veloc. <b>${s.vel.toFixed(1)}</b></span><span>Afeto <b>Nv.${afetoDe(m).nivel}</b></span><span>${evo}</span></div>
       <div class="golpes-lista">${golpes}</div>
       ${this.htmlEvolucaoRara(m)}
       <div class="cmds">${botoes}</div>

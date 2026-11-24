@@ -137,8 +137,11 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
       virou a bandeira (`criarBandeira`, `fincarBandeira` no `mundo.js`). Custos em `CASA` e `BANDEIRA`
       (`js/bolsa.js`): casa 4/8/14/22 galhos + 500/1.500/4.000/8.000 de ouro; bandeira 3 galhos + 400.
       O espaço na frente da casa (lado do caminho do portão) fica para o jardim.
-- [ ] **Fase 4 — Jardim + Afeto:** sementes na loja, plantar e colher (tempo real, morrem),
+- [x] **Fase 4 — Jardim + Afeto:** sementes na loja, plantar e colher (tempo real, morrem),
       níveis do jardim, alimentar, nível de afeto, Coração, "satisfeito".
+      *Feito:* `js/jardim.js`. Sementes com nomes em inglês (Strawberry, Field Apple, Moon Grape,
+      Sun Peach, Crystal Fruit); 2 frutas por colheita; afeto com 5×nível pontos por nível; chance de
+      Coração 3% + 2% por nível, e 1 garantido ao subir de nível.
 - [ ] **Fase 5 — Rei e arena:** Julius Nv.50 com formas finais, níveis novos depois de
       vencidos, Coroa do Rei, título, ouro do Reino, 2 ovos na 2ª vitória, raros e lendários
       no ovo.
