@@ -99,6 +99,7 @@ export class Lutador {
   podeAndar() { return !this.tem('paralisia') && !this.tem('sono') && !this.tem('enraizado'); }
   podeAtacar() { return !this.tem('paralisia') && !this.tem('sono') && !this.tem('medo'); }
   // veloz = velocidade extra da Investida da linha do Brasito | sol = bônus do Sol da linha do Solito
+  // breu = bônus de dano da área da linha de Trevas (fica em c.breu = { cfg, t })
   get fatorVel() { return (this.veloz ? 1 + this.veloz.bonus : 1) * (this.sol ? 1 + this.sol.cfg.velocidade : 1) * (this.lento > 0 ? 0.5 : 1) * (this.tem('encharcado') ? 0.55 : 1) * (this.tem('parasita') ? 0.7 : 1) * (this.mod?.vel ?? 1); }
 }
 
@@ -358,7 +359,7 @@ export class Batalha {
     this.atualizarProjeteis(dt);
     this.arena.atualizar(dt, this.t);
     this.atualizarEfeitos(dt);
-    this.trevas.atualizar();
+    this.trevas.atualizar(dt);
     this.brasito.atualizar(dt);
     this.gotinho.atualizar(dt);
     this.musguinho.atualizar(dt);
@@ -421,6 +422,7 @@ export class Batalha {
         else if (gp.marca) { if (d > 2 && d < gp.alcance) opcoes.push(i, i); } // tiro que marca
         else if (gp.jato) { if (d < gp.jato.alcance * 0.9) opcoes.push(i, i); }
         else if (gp.arco) { if (d > 2.5 && d < gp.arco.alcance + 1) opcoes.push(i, i); } // pedra em arco
+        else if (gp.olhos) { if (d > 2 && d < gp.alcance * 0.9) opcoes.push(i, i); } // bola com olhos (alcance curto)
         else if (gp.tipo === 'projetil' && d > 2.5 && d < 12) opcoes.push(i);
       }
       if (opcoes.length && Math.random() < 0.75) this.tentarGolpe(e, opcoes[Math.floor(Math.random() * opcoes.length)], j);
@@ -503,7 +505,7 @@ export class Batalha {
       return g;
     }
     if (!inimigo) return null;
-    const comp = gp.tipo === 'corpo' ? gp.alcance + 2.2 : (gp.marca ? gp.alcance : 12);
+    const comp = gp.tipo === 'corpo' ? gp.alcance + 2.2 : (gp.marca || gp.olhos ? gp.alcance : 12);
     const larg = gp.tipo === 'corpo' ? 1.4 : (gp.quantidade > 1 ? 2.6 : 1);
     const m = new THREE.Mesh(GEO_FAIXA, matBrilho(cor, 0.3));
     m.scale.set(larg, 1, comp);
@@ -628,8 +630,9 @@ export class Batalha {
     const arena = at.mod?.dano ?? 1;               // bônus/penalidade da arena
     // Sol da linha do Solito: quem soltou causa mais dano e recebe menos
     const sol = (1 + (at.sol?.cfg.ataque ?? 0)) * (1 - (alvo.sol?.cfg.defesa ?? 0));
+    const breu = 1 + (at.breu?.cfg.dano ?? 0); // área da linha de Trevas: +5% a +15% de dano
     const gmDano = at.lado === 'jogador' ? (this.jogo.gm?.dano || 1) : 1; // GM: dano ×10
-    const dano = Math.max(1, Math.round(DANO_GERAL * gp.poder * (opcoes.fator ?? 1) * (at.stats.atk / def) * mult * exposto * nivel * arena * sol * gmDano * (0.9 + Math.random() * 0.2)));
+    const dano = Math.max(1, Math.round(DANO_GERAL * gp.poder * (opcoes.fator ?? 1) * (at.stats.atk / def) * mult * exposto * nivel * arena * sol * breu * gmDano * (0.9 + Math.random() * 0.2)));
     // Escudo d'Água (linha do Gotinho) segura o dano antes da vida
     const passou = this.gotinho.absorver(alvo, dano);
     alvo.dados.hp = Math.max(0, alvo.dados.hp - passou);
@@ -737,6 +740,7 @@ export class Batalha {
     this.faisquinho.parar(l);
     this.solito.parar(l);
     l.veloz = null;
+    l.breu = null;
     if (l.lado === 'inimigo') {
       this.derrotados.push(l.dados);
       if (l.dados.lider) this.liderDerrotado = true;
@@ -879,13 +883,15 @@ export class Batalha {
     const cor = ELEMENTOS[gp.elemento].cor;
     if (this.trevas.dele(c) && gp.elemento === 'trevas') {
       // tiro de Trevas: bola com olhos, lâmina ou morcego (depende da forma)
-      const info = this.trevas.projetil(c, ang);
+      const info = this.trevas.projetil(c, ang, gp);
       const dir = new THREE.Vector3(Math.sin(ang), 0, Math.cos(ang));
       const pos = c.pos.clone().addScaledVector(dir, c.raio + 0.3).setY(0.8 * c.esp.tamanho);
       info.obj.position.copy(pos);
       if (fator < 1) info.obj.scale.setScalar(0.85);
       this.cena.add(info.obj);
-      this.projeteis.push({ mesh: info.obj, trevas: info, pos, dir, gp, dono: c, lado: c.lado, vida: 1.4, fator, efeito: this.efeitoDoGolpe(c, gp) });
+      // a bola com olhos some quando chega no alcance; a Bola Sombria do Breuzinho vai longe (1,4 s)
+      const vida = gp.alcance ? gp.alcance / gp.velocidade : 1.4;
+      this.projeteis.push({ mesh: info.obj, trevas: info, pos, dir, gp, dono: c, lado: c.lado, vida, fator, efeito: this.efeitoDoGolpe(c, gp) });
       return;
     }
     if (this.musguinho.dele(c) && gp.bumerangue) {
@@ -1273,8 +1279,9 @@ export class Batalha {
     const veloz = l.veloz ? `<span style="--cor:#7dffa0">Veloz +${Math.round(l.veloz.bonus * 100)}% ${l.veloz.t.toFixed(0)}s</span>` : '';
     const escudo = l.escudo ? `<span style="--cor:#8fdcff">Escudo ${l.escudo.valor} ${l.escudo.t.toFixed(0)}s</span>` : '';
     const sol = l.sol ? `<span style="--cor:#ffab2e">Sol +${Math.round(l.sol.cfg.ataque * 100)}% ${l.sol.t.toFixed(0)}s</span>` : '';
+    const breu = l.breu ? `<span style="--cor:#b57be8">Trevas +${Math.round(l.breu.cfg.dano * 100)}% ${l.breu.t.toFixed(0)}s</span>` : '';
     const marcas = l.marcas ? `<span style="--cor:#f7e43a">Marcado ×${l.marcas.n} ${l.marcas.t.toFixed(0)}s</span>` : '';
-    return veloz + escudo + sol + marcas + Object.entries(l.status).map(([k, v]) => `<span style="--cor:${EFEITOS[k].cor}">${EFEITOS[k].nome} ${v.toFixed(1)}s</span>`).join('');
+    return veloz + escudo + sol + breu + marcas + Object.entries(l.status).map(([k, v]) => `<span style="--cor:${EFEITOS[k].cor}">${EFEITOS[k].nome} ${v.toFixed(1)}s</span>`).join('');
   }
 
   // Placa em cima de cada inimigo: só o nome e uma barrinha de vida

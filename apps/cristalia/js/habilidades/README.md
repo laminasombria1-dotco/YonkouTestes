@@ -148,8 +148,24 @@ Solito (Nv.1) > Solário (Nv.6) > Solaurum (Nv.12) > Astrorei (Nv.30)
 - Calor mais forte ou mais longo: `calorSolito` → `poder` (cada pedaço), `calor.duracao` e `raio`.
 - Calor que esquenta mais rápido: `ondaCalor` → `calor.esquenta`.
 
-### Trevas: linha do Breuzinho (`trevas-batalha.js`)
-Só o **visual** (poça de breu, tentáculos, mãos de sombra, olhos, bocarra, cópias sombrias, morcegos e o Astro Negro). Os números dos golpes de Trevas continuam em `../dados.js` (Mordida Sombria, Bola Sombria, Vazio, Garra Abissal, Sombras, Abismo).
+### Trevas: linha do Breuzinho (`trevas.js` e `trevas-batalha.js`)
+Breuzinho (Nv.1) > Sombrelo (Nv.6) > Umbrafel (Nv.12) > Noctífero (Nv.30)
+
+| Forma | Perto | Disparo | Área |
+|---|---|---|---|
+| Breuzinho | Investida | Bola Sombria (de `../dados.js`, vai longe) | Vazio (de `../dados.js`) |
+| Sombrelo | **Mordida Sombria** (13) | **Olhar Sombrio**: bola com olhos, 14, **8 m**, ×2 | **Vazio**: escurece a arena, **+5% de dano por 8 s** |
+| Umbrafel | **Mordida Abissal** (19) | **Olhar Abissal**: 16, **9 m**, ×2, bola maior | **Vazio Abissal**: **+10%**, pode causar Medo |
+| Noctífero | **Mordida da Noite Eterna** (24), pode causar Medo | **Olhar da Noite**: 17, **10 m**, ×3, com morcegos | **Abismo** com o Astro Negro: **+15%**, Medo dura 50% mais |
+
+- **Bola com olhos (`olhos: true`):** a bola some quando anda `alcance` metros (o tempo de vida é `alcance / velocidade`). A IA só atira se o alvo estiver a menos de 90% do alcance, e a faixa de aviso do inimigo tem o tamanho do alcance. `tamanho` aumenta a bola; `morcegos` põe 2 morcegos voando em volta dela.
+- **Bônus da área (`trevas`):** ao usar a área, quem usou ganha `c.breu` (`{ cfg, t }`). `batalha.js` usa o bônus no dano (`aplicarDano`, "breu") e mostra "Trevas +5%" embaixo da vida. O tempo é contado em `atualizar(dt)` de `trevas-batalha.js`. Não acumula: usar de novo só renova. A arena escurece por `trevas.escuro` segundos (no treino, não escurece).
+- As melhorias são as padrão (disparo ×2/×3, Medo na área e depois na mordida). Os selvagens de Trevas também ganham o bônus.
+- Visual: poça de breu, tentáculos, mãos de sombra, olhos, bocarra, cópias sombrias, morcegos e o Astro Negro.
+
+**Exemplos de mudança (em `trevas.js`):**
+- Bônus de dano: `vazioSombrio` → `trevas.dano` (0,05 = 5%); tempo: `trevas.duracao`; quanto escurece: `trevas.escuro`.
+- Tiro mais longe: `olharSombrio` → `alcance` (em metros).
 
 ## Modo treino (monstro invocado no mapa)
 

@@ -106,7 +106,7 @@ export class Treino extends Batalha {
     this.fisica(j, dt);
     this.atualizarProjeteis(dt);
     this.atualizarEfeitos(dt);
-    this.trevas.atualizar();
+    this.trevas.atualizar(dt);
     this.brasito.atualizar(dt);
     this.gotinho.atualizar(dt);
     this.musguinho.atualizar(dt);

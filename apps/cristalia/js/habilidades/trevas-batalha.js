@@ -1,13 +1,15 @@
 // =============================================================
 // VISUAL DOS GOLPES DE TREVAS
-// Só muda a aparência: dano, alcance e efeitos continuam em batalha.js.
+// Os números dos golpes ficam em trevas.js. Aqui fica como aparecem
+// e o bônus de dano da área (o "Breu").
 // Cada forma da linha de Trevas ganha algo novo:
 //  Breuzinho  -> bola com olhos, poça de breu com tentáculos, rastro de fumaça
-//  Sombrelo   -> bocarra de sombra, olhos que se abrem no impacto e na poça
-//  Umbrafel   -> cópias sombrias no avanço, marcas de garra, lâminas de sombra,
-//                mãos que saem do chão e agarram quem foi atingido
-//  Noctífero  -> garra gigante do chão, morcegos de sombra, cópia que atira junto,
-//                Abismo com o Astro Negro (a arena escurece) e um anel de olhos
+//  Sombrelo   -> bocarra de sombra, olhos que se abrem no impacto e na poça,
+//                a área escurece a arena e dá +5% de dano
+//  Umbrafel   -> cópias sombrias no avanço, bocarra maior, bola com olhos maior,
+//                mãos que saem do chão e agarram quem foi atingido (+10%)
+//  Noctífero  -> bocarra gigante e garra do chão, morcegos voando em volta da bola,
+//                cópia que atira junto, Abismo com o Astro Negro e um anel de olhos (+15%)
 // Tudo que aparece fica DENTRO da área que o golpe acerta de verdade.
 // Para ficar leve no celular: as formas (geometrias) são criadas uma vez só
 // e os materiais "fixos" são divididos entre todos os golpes.
@@ -31,7 +33,6 @@ const G = {
   dente: new THREE.ConeGeometry(1, 1, 4).translate(0, -0.5, 0), // ponta para baixo
   caixa: new THREE.BoxGeometry(1, 1, 1),
   lamina: new THREE.OctahedronGeometry(1, 0),
-  corte: new THREE.PlaneGeometry(1, 1),
   coroa: new THREE.TorusGeometry(1, 0.07, 5, 36),
   asa: triangulo(),
 };
@@ -172,16 +173,16 @@ export class VisualTrevas {
     const est = c.esp.estagio;
     const dir = new THREE.Vector3(alvo.pos.x - c.pos.x, 0, alvo.pos.z - c.pos.z).normalize();
     if (est === 0) { this.nuvem(alvo.pos.clone().setY(0.7), 5); return; }
-    if (est === 1) { this.bocarra(alvo, dir); return; }
-    this.cortes(alvo, est === 3 ? 4 : 3);
+    // a mordida: a bocarra cresce a cada forma
+    this.bocarra(alvo, dir, est === 3 ? 1.6 : est === 2 ? 1.3 : 1);
     if (est === 3) this.garraDoChao(alvo);
   }
 
-  // Sombrelo: uma bocarra de sombra aparece em volta do alvo e fecha
-  bocarra(alvo, dir) {
+  // Sombrelo em diante: uma bocarra de sombra aparece em volta do alvo e fecha
+  bocarra(alvo, dir, tam = 1) {
     const mats = matsDoGolpe();
     mats.dente = basico('#f2b0ff', 0.95);
-    const s = 0.9 + alvo.raio * 0.8;
+    const s = (0.9 + alvo.raio * 0.8) * tam;
     const g = new THREE.Group();
     g.position.copy(alvo.pos).setY(alvo.altura * 0.45);
     g.rotation.y = Math.atan2(-dir.x, -dir.z); // a boca "olha" para quem mordeu
@@ -217,28 +218,6 @@ export class VisualTrevas {
       baixo.position.y = -0.45 + fecha * 0.3;
       e.obj.scale.setScalar(s * (1 + (k > 0.3 ? (k - 0.3) * 0.25 : 0)));
       this.apagar(mats, k < 0.45 ? 1 : 1 - (k - 0.45) / 0.55);
-    }, mats);
-  }
-
-  // Umbrafel e Noctífero: marcas de garra roxas rasgando o ar
-  cortes(alvo, n) {
-    const mats = matsDoGolpe();
-    const g = new THREE.Group();
-    g.position.copy(alvo.pos).setY(alvo.altura * 0.55);
-    g.lookAt(this.b.camera.position);
-    const s = 1 + alvo.raio * 0.6;
-    const riscos = [];
-    for (let i = 0; i < n; i++) {
-      const r = new THREE.Mesh(G.corte, mats.roxo);
-      r.position.x = (i - (n - 1) / 2) * 0.32 * s;
-      r.rotation.z = 0.6;
-      r.scale.set(0.1 * s, 0.01, 1);
-      g.add(r);
-      riscos.push(r);
-    }
-    this.efeito(g, 0.5, (e, k) => {
-      riscos.forEach((r, i) => { r.scale.y = 2.1 * s * sobe(k, i * 0.05, i * 0.05 + 0.15); });
-      this.apagar(mats, 1 - sobe(k, 0.35, 1));
     }, mats);
   }
 
@@ -278,37 +257,49 @@ export class VisualTrevas {
   }
 
   // ---------- disparo ----------
-  // Devolve o objeto 3D do tiro de Trevas conforme a forma
-  projetil(c, ang) {
+  // Devolve o objeto 3D do tiro de Trevas: sempre a bola de breu com olhos
+  // (maior nas evoluções). No Noctífero, 2 morcegos voam em volta dela.
+  projetil(c, ang, gp) {
     const est = c.esp.estagio;
     const g = new THREE.Group();
     g.rotation.y = ang;
     const info = { obj: g, est, t: 0, fumacaT: 0, ang };
-    if (est <= 1) { // bola de breu com olhos
-      const nucleo = new THREE.Mesh(G.esf, MAT.preto); nucleo.scale.setScalar(0.3);
-      const casca = new THREE.Mesh(G.esf, MAT.casca); casca.scale.setScalar(0.42);
-      const olhos = this.parOlhos(0.75); olhos.position.set(0, 0.05, 0.3);
-      g.add(nucleo, casca, olhos);
-      info.casca = casca;
-    } else if (est === 2) { // lâmina de sombra
-      const nucleo = new THREE.Mesh(G.lamina, MAT.preto); nucleo.scale.set(0.16, 0.2, 0.75);
-      const casca = new THREE.Mesh(G.lamina, MAT.casca); casca.scale.set(0.26, 0.3, 0.95);
-      g.add(nucleo, casca);
-      info.casca = casca;
-    } else { // morcego de sombra
-      const corpo = new THREE.Mesh(G.esf, MAT.preto); corpo.scale.set(0.16, 0.14, 0.22);
-      const olhos = this.parOlhos(0.45); olhos.position.set(0, 0.06, 0.18);
-      g.add(corpo, olhos);
-      info.asas = [-1, 1].map((s) => {
-        const a = new THREE.Group();
-        const m = new THREE.Mesh(G.asa, MAT.asa);
-        m.scale.set(s * 0.9, 1, 0.9);
-        a.add(m);
-        g.add(a);
-        return a;
+    const bola = new THREE.Group();
+    bola.scale.setScalar(gp.tamanho || 1);
+    const nucleo = new THREE.Mesh(G.esf, MAT.preto); nucleo.scale.setScalar(0.3);
+    const casca = new THREE.Mesh(G.esf, MAT.casca); casca.scale.setScalar(0.42);
+    const olhos = this.parOlhos(0.75); olhos.position.set(0, 0.05, 0.3);
+    bola.add(nucleo, casca, olhos);
+    g.add(bola);
+    info.casca = casca;
+    if (gp.morcegos) {
+      info.asas = [];
+      info.morcegos = [0, Math.PI].map((fase) => {
+        const m = this.morcego(info.asas);
+        m.userData.fase = fase;
+        g.add(m);
+        return m;
       });
     }
     return info;
+  }
+
+  // morcego de sombra pequeno (as asas vão para a lista, para bater)
+  morcego(asas) {
+    const g = new THREE.Group();
+    const corpo = new THREE.Mesh(G.esf, MAT.preto); corpo.scale.set(0.16, 0.14, 0.22);
+    const olhos = this.parOlhos(0.45); olhos.position.set(0, 0.06, 0.18);
+    g.add(corpo, olhos);
+    for (const s of [-1, 1]) {
+      const a = new THREE.Group();
+      const m = new THREE.Mesh(G.asa, MAT.asa);
+      m.scale.set(s * 0.9, 1, 0.9);
+      a.add(m);
+      a.userData.lado = s;
+      g.add(a);
+      asas.push(a);
+    }
+    return g;
   }
 
   // a cada quadro, depois que o tiro andou
@@ -317,17 +308,14 @@ export class VisualTrevas {
     info.t += dt;
     info.fumacaT -= dt;
     if (info.fumacaT <= 0) { info.fumacaT = 0.07; this.fumaca(p.pos.clone(), info.est === 3 ? 0.14 : 0.2, 0.35); }
-    if (info.casca) info.casca.scale.multiplyScalar(1 + Math.sin(info.t * 25) * 0.04);
-    if (info.est === 2) { // ondula de leve (só o desenho; o tiro continua em linha reta)
-      const lado = Math.sin(info.t * 22) * 0.18;
-      p.mesh.position.x += Math.cos(info.ang) * lado;
-      p.mesh.position.z -= Math.sin(info.ang) * lado;
-    }
-    if (info.asas) {
+    if (info.casca) info.casca.scale.setScalar(0.42 * (1 + Math.sin(info.t * 25) * 0.06));
+    if (info.morcegos) { // os morcegos giram em volta da bola, batendo as asas
       const bate = Math.sin(info.t * 30) * 0.7;
-      info.asas[0].rotation.z = -bate;
-      info.asas[1].rotation.z = bate;
-      p.mesh.position.y += Math.sin(info.t * 15) * 0.08;
+      for (const a of info.asas) a.rotation.z = -a.userData.lado * bate;
+      for (const m of info.morcegos) {
+        const a = info.t * 9 + m.userData.fase;
+        m.position.set(Math.cos(a) * 0.75, 0.15 + Math.sin(a * 2) * 0.15, Math.sin(a) * 0.45);
+      }
     }
   }
 
@@ -390,10 +378,12 @@ export class VisualTrevas {
     // mãos que agarram quem foi atingido (Umbrafel em diante)
     if (est >= 2) for (const alvo of atingidos) this.agarrar(alvo, final);
 
-    // Noctífero: o Astro Negro sobe e a arena escurece
-    if (final) {
-      this.astroNegro(c, vida);
-      this.b.arena.escurecer(vida);
+    // Noctífero: o Astro Negro sobe
+    if (final) this.astroNegro(c, vida);
+    // Sombrelo em diante: a arena escurece e quem usou ganha o bônus de dano
+    if (gp.trevas) {
+      this.b.arena.escurecer(gp.trevas.escuro);
+      c.breu = { cfg: gp.trevas, t: gp.trevas.duracao };
     }
 
     this.efeito(g, vida, (e, k, dt) => {
@@ -527,8 +517,14 @@ export class VisualTrevas {
   }
 
   // ---------- Medo: olhos roxos flutuando atrás de quem está com medo ----------
-  atualizar() {
+  atualizar(dt = 0) {
     const b = this.b;
+    // o bônus de dano da área (Breu) vai acabando
+    for (const l of [b.jog, ...b.inimigos]) {
+      if (!l?.breu) continue;
+      l.breu.t -= dt;
+      if (l.breu.t <= 0 || l.morto) l.breu = null;
+    }
     const presentes = new Set([b.jog, ...b.inimigos]);
     for (const [l, olhos] of this.medo) {
       if (!presentes.has(l) || !l.tem('medo') || l.morto || !l.modelo.visible) {
