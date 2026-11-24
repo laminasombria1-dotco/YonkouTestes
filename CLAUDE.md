@@ -33,6 +33,7 @@ Ele diz como trabalhar aqui. Se algo mudar no projeto, atualize este arquivo jun
 ## O jogo Cristalia (`apps/cristalia/`)
 
 Protótipo 3D low poly de caçar, capturar e evoluir monstros. **Three.js 0.170, JavaScript puro, sem build** (sem npm). Leia primeiro:
+- **`apps/cristalia/PLANO.md`: a grande atualização em andamento** (evolução nova, itens, casa no Reino, jardim, afeto, bandeira, Rei, raros, lendários). Todas as decisões do Lâmina estão lá, com as fases. **Uma fase por vez**, marque `[x]` ao terminar e pergunte se tiver dúvida.
 - `apps/cristalia/README.md`: como jogar, contas e nuvem, monstro invocado, casa, regiões, **mapa procedural**, dungeons, arenas, painel GM e a lista de arquivos.
 - `apps/cristalia/js/habilidades/README.md`: as habilidades de cada linha de monstros e o modo treino.
 - `apps/cristalia/modelos/README.md`: os modelos `.glb` feitos no Blender (hoje o Brasito).
