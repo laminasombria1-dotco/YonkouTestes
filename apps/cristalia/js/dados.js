@@ -12,6 +12,7 @@ import { GOLPES_MUSGUINHO, GOLPES_POR_FORMA_MUSGUINHO, MELHORIAS_MUSGUINHO, TEXT
 import { GOLPES_PEDRISCO, GOLPES_POR_FORMA_PEDRISCO, MELHORIAS_PEDRISCO, TEXTOS_PEDRISCO, NOVIDADES_PEDRISCO } from './habilidades/pedrisco.js';
 import { GOLPES_FAISQUINHO, GOLPES_POR_FORMA_FAISQUINHO, MELHORIAS_FAISQUINHO, TEXTOS_FAISQUINHO, NOVIDADES_FAISQUINHO } from './habilidades/faisquinho.js';
 import { GOLPES_SOLITO, GOLPES_POR_FORMA_SOLITO, MELHORIAS_SOLITO, TEXTOS_SOLITO, NOVIDADES_SOLITO } from './habilidades/solito.js';
+import { GOLPES_BROTOBRASA, GOLPES_POR_FORMA_BROTOBRASA, MELHORIAS_BROTOBRASA, TEXTOS_BROTOBRASA, NOVIDADES_BROTOBRASA } from './habilidades/brotobrasa.js';
 import { GOLPES_VAPORITO, GOLPES_POR_FORMA_VAPORITO, MELHORIAS_VAPORITO, TEXTOS_VAPORITO, NOVIDADES_VAPORITO } from './habilidades/vaporito.js';
 import { GOLPES_LUMINO, GOLPES_POR_FORMA_LUMINO, MELHORIAS_LUMINO, TEXTOS_LUMINO, NOVIDADES_LUMINO } from './habilidades/lumino.js';
 import { GOLPES_LUNICO, GOLPES_POR_FORMA_LUNICO, MELHORIAS_LUNICO, TEXTOS_LUNICO, NOVIDADES_LUNICO } from './habilidades/lunico.js';
@@ -28,6 +29,7 @@ const HABILIDADES_DA_LINHA = {
   lua: { golpes: GOLPES_POR_FORMA_LUNICO, melhorias: MELHORIAS_LUNICO, textos: TEXTOS_LUNICO, novidades: NOVIDADES_LUNICO },
   luz: { golpes: GOLPES_POR_FORMA_LUMINO, melhorias: MELHORIAS_LUMINO, textos: TEXTOS_LUMINO, novidades: NOVIDADES_LUMINO },
   // tipos duplos com habilidades próprias (a chave é a da linha em DUPLAS)
+  fogoPlanta: { golpes: GOLPES_POR_FORMA_BROTOBRASA, melhorias: MELHORIAS_BROTOBRASA, textos: TEXTOS_BROTOBRASA, novidades: NOVIDADES_BROTOBRASA },
   aguaFogo: { golpes: GOLPES_POR_FORMA_VAPORITO, melhorias: MELHORIAS_VAPORITO, textos: TEXTOS_VAPORITO, novidades: NOVIDADES_VAPORITO },
   trevas: { golpes: GOLPES_POR_FORMA_TREVAS, melhorias: MELHORIAS_TREVAS, textos: TEXTOS_TREVAS, novidades: NOVIDADES_TREVAS },
 };
@@ -189,6 +191,8 @@ export const GOLPES = {
   ...GOLPES_LUNICO,
   // golpes próprios da linha do Lumino (números em js/habilidades/lumino.js)
   ...GOLPES_LUMINO,
+  // golpes próprios da linha do Brotobrasa (números em js/habilidades/brotobrasa.js)
+  ...GOLPES_BROTOBRASA,
   // golpes próprios da linha do Vaporito (números em js/habilidades/vaporito.js)
   ...GOLPES_VAPORITO,
   // golpes próprios da linha do Breuzinho (números em js/habilidades/trevas.js)

@@ -148,6 +148,22 @@ Solito (Nv.1) > Solário (Nv.6) > Solaurum (Nv.12) > Astrorei (Nv.30)
 - Calor mais forte ou mais longo: `calorSolito` → `poder` (cada pedaço), `calor.duracao` e `raio`.
 - Calor que esquenta mais rápido: `ondaCalor` → `calor.esquenta`.
 
+### Fogo + Planta (tipo duplo): linha do Brotobrasa, o jardineiro de fogo (`brotobrasa.js` e `brotobrasa-batalha.js`)
+Brotobrasa (Nv.1) > Chamafolha (Nv.6) > Ardentroco (Nv.12) > Florinferno (Nv.30). Planta **flores de fogo** (armadilhas) que explodem quando o inimigo chega perto.
+
+| Forma | Perto | Disparo | Área |
+|---|---|---|---|
+| Brotobrasa | Investida | **Semente de Brasa**: vira uma flor até 7 m; explode com inimigo a 1,5 m (ou depois de 6 s). Até **2** flores | **Anel de Brotos**: 5 brotos em volta explodem 1 s depois |
+| Chamafolha | **Folhas Ardentes**: leque de 2,5 m; **+30% em quem está queimando** | + Queimadura, até **3** flores | + Queimadura |
+| Ardentroco | **Galhada em Brasa**: 2 golpes (3 m); o 2º **planta uma flor** | **Semente de Chama**: deixa **fogo no chão** 2 s; até **4** flores | **7 brotos** (3,8 m) |
+| Florinferno | **Galhada Infernal** (também planta flor) | **Flor Gigante**: explosão de 2,5 m | **Florescer Infernal**: por 6 s, nasce uma flor a cada metro que ele anda (até 8) |
+
+- **Flores (`semente`, `florescer`):** ficam em `this.flores` (todas juntas, com o dono). Cada dono tem um limite por tipo ('semente' e 'trilha'): plantar mais uma tira a mais velha. A flor arma em 0,3 s e explode uma vez só. O aviso no chão é **vermelho** quando a flor é do inimigo.
+- **Fogo no chão (`semente.chao`):** em `this.fogos`, dá um pedaço de dano a cada 0,5 s em quem está em cima.
+- **Leque (`leque`):** golpe de perto em `c.leque` (1 ou 2 golpes); `queimando` dá mais dano em quem tem Queimadura. A Galhada planta uma flor igual à do disparo dele.
+- Leve para o celular de referência: cada flor tem 3 peças com materiais fixos; no máximo 4 flores do disparo + 8 da trilha por monstro. Quando ele sai da luta, as flores dele somem.
+- **IA:** planta flor quando você está a mais de 2 m, usa o leque de perto e o anel quando você está dentro dele.
+
 ### Água + Fogo (tipo duplo): linha do Vaporito, o tanque (`vaporito.js` e `vaporito-batalha.js`)
 Vaporito (Nv.1) > Fumarolo (Nv.6) > Gêiserão (Nv.12) > Caldeirax (Nv.30). Atributos de tanque em `DUPLAS.aguaFogo` (`../dados.js`): vida 64, ataque 13, defesa 15, velocidade 5,2.
 

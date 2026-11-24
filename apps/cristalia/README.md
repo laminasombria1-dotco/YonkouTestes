@@ -571,6 +571,20 @@ A linha do Solito **solta um sol no campo** que a deixa mais forte, **queima que
 - **Calor:** anda junto com o monstro e dá dano a cada meio segundo em quem está perto; o anel fica mais vermelho quando esquenta. É o calor do Sol, não a Queimadura do Fogo. O ofuscado é sorteado uma vez por inimigo a cada uso.
 - Esta linha não ganha o "disparo ×2/×3". Os golpes de Sol de sempre (em `dados.js`) continuam para quem não é desta linha.
 
+## Golpes da linha do Brotobrasa (Fogo + Planta, o jardineiro de fogo)
+
+O Brotobrasa planta **flores de fogo** no chão: elas são armadilhas e **explodem quando o inimigo chega perto**. Os números ficam em `js/habilidades/brotobrasa.js` e o funcionamento em `js/habilidades/brotobrasa-batalha.js`.
+
+| Forma | Perto | Disparo | Área |
+|---|---|---|---|
+| Brotobrasa | Investida | **Semente de Brasa**: vira uma flor de fogo (até 2 no campo) | **Anel de Brotos**: brotos nascem em volta e explodem |
+| Chamafolha | **Folhas Ardentes**: leque; +30% em quem está queimando | + Queimadura, até 3 flores | + Queimadura |
+| Ardentroco | **Galhada em Brasa**: 2 golpes; planta uma flor | **Semente de Chama**: deixa fogo no chão; até 4 flores | 7 brotos |
+| Florinferno | **Galhada Infernal** | **Flor Gigante** | **Florescer Infernal**: nascem flores por onde ele anda |
+
+- **Como jogar:** plante flores e atraia o inimigo para cima delas; termine de perto, porque quem queima leva mais.
+- As flores **do inimigo** têm um aviso **vermelho** no chão: desvie delas.
+
 ## Golpes da linha do Vaporito (Água + Fogo, o tanque)
 
 O Vaporito é uma tartaruga de vapor: **muita vida e defesa, mas lento**. Luta colado, aguenta e pune quem bate nele. Os números ficam em `js/habilidades/vaporito.js` e o funcionamento em `js/habilidades/vaporito-batalha.js`.
@@ -702,7 +716,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/brasas.js` | Cenário do Caminho das Brasas (braseiros, forja, rio de lava, Trono de Magma, vulcão) |
 | `js/raizes.js` | Cenário da Trilha Ancestral e da Floresta (cogumelos, ruínas, lago, raízes, Árvore-Mãe, vaga-lumes, monstros extras) |
 | `js/arena.js` | Arenas: chão, obstáculos, clima animado e perigos de cada região (com chance), e o escurecer do Astro Negro |
-| `js/habilidades/` | **Habilidades próprias das linhas de monstros** (uma pasta só para isso). Veja o `README.md` de lá. Hoje: linha do Brasito (`brasito.js` com os números, `brasito-batalha.js` com o lança-chamas, o rabo de fogo e a velocidade), linha do Gotinho (`gotinho.js` e `gotinho-batalha.js`, com o jato, o hidrocanhão, as ondas, o maremoto e o escudo), linha do Musguinho (`musguinho.js` e `musguinho-batalha.js`, com a folha bumerangue, a vinha que puxa, as raízes, a moita e o bosque), linha do Pedrisco (`pedrisco.js` e `pedrisco-batalha.js`, com a pedra em arco que quica, o punho sísmico, o tremor e os pilares), linha do Faisquinho (`faisquinho.js` e `faisquinho-batalha.js`, com as marcas, o dash elétrico, o tiro que marca, o choque e as nuvens), linha do Solito (`solito.js` e `solito-batalha.js`, com o sol que dá bônus, o laser e o calor), linha do Lunico (`lunico.js` e `lunico-batalha.js`, com o combo de dashes, as fases da lua e o luar que cura), linha do Lumino (`lumino.js` e `lumino-batalha.js`, com o passo de luz, o estilhaço que se divide e a redoma que devolve os tiros), linha do Vaporito, tipo duplo Água + Fogo (`vaporito.js` e `vaporito-batalha.js`, o tanque: arrancada, bafo de vapor e casco) e a linha do Breuzinho (`trevas.js` e `trevas-batalha.js`, com a mordida, a bola com olhos de alcance curto e a área que escurece e dá bônus de dano) |
+| `js/habilidades/` | **Habilidades próprias das linhas de monstros** (uma pasta só para isso). Veja o `README.md` de lá. Hoje: linha do Brasito (`brasito.js` com os números, `brasito-batalha.js` com o lança-chamas, o rabo de fogo e a velocidade), linha do Gotinho (`gotinho.js` e `gotinho-batalha.js`, com o jato, o hidrocanhão, as ondas, o maremoto e o escudo), linha do Musguinho (`musguinho.js` e `musguinho-batalha.js`, com a folha bumerangue, a vinha que puxa, as raízes, a moita e o bosque), linha do Pedrisco (`pedrisco.js` e `pedrisco-batalha.js`, com a pedra em arco que quica, o punho sísmico, o tremor e os pilares), linha do Faisquinho (`faisquinho.js` e `faisquinho-batalha.js`, com as marcas, o dash elétrico, o tiro que marca, o choque e as nuvens), linha do Solito (`solito.js` e `solito-batalha.js`, com o sol que dá bônus, o laser e o calor), linha do Lunico (`lunico.js` e `lunico-batalha.js`, com o combo de dashes, as fases da lua e o luar que cura), linha do Lumino (`lumino.js` e `lumino-batalha.js`, com o passo de luz, o estilhaço que se divide e a redoma que devolve os tiros), linha do Brotobrasa, tipo duplo Fogo + Planta (`brotobrasa.js` e `brotobrasa-batalha.js`, as flores de fogo que explodem), linha do Vaporito, tipo duplo Água + Fogo (`vaporito.js` e `vaporito-batalha.js`, o tanque: arrancada, bafo de vapor e casco) e a linha do Breuzinho (`trevas.js` e `trevas-batalha.js`, com a mordida, a bola com olhos de alcance curto e a área que escurece e dá bônus de dano) |
 | `js/nuvem.js` | Contas e jogo salvo na nuvem (Firebase, direto pela internet, sem a biblioteca do Firebase): criar conta, entrar, entrar de novo com 1 toque, ler e gravar o jogo salvo, e a senha do GM |
 | `js/companheiro.js` | O monstro invocado: invocar e guardar, seguir o treinador, os botões e a troca de controle (o treinador fica parado e protegido) |
 | `js/treino.js` | O modo treino: os golpes do monstro invocado no mapa, "no ar", usando o mesmo motor da batalha (sem inimigos e sem dano) |
