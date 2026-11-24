@@ -22,6 +22,7 @@ import { HabilidadesLunico } from './habilidades/lunico-batalha.js';
 import { HabilidadesLumino } from './habilidades/lumino-batalha.js';
 import { HabilidadesVaporito } from './habilidades/vaporito-batalha.js';
 import { HabilidadesBrotobrasa } from './habilidades/brotobrasa-batalha.js';
+import { HabilidadesImanito } from './habilidades/imanito-batalha.js';
 import { CameraOrbita } from './camera.js';
 import { aplicarPocao, RECARGA_POCAO } from './bolsa.js';
 import { criarModelo, criarCristal, criarCoroa, animarModelo, piscar, descartar, tocarGolpe, pararGolpe } from './modelos.js';
@@ -130,6 +131,7 @@ export class Batalha {
     this.lumino = new HabilidadesLumino(this); // passo de luz, estilhaço e redoma da linha do Lumino
     this.vaporito = new HabilidadesVaporito(this); // arrancada, bafo e casco da linha do Vaporito (tanque)
     this.brotobrasa = new HabilidadesBrotobrasa(this); // flores de fogo (armadilhas) da linha do Brotobrasa
+    this.imanito = new HabilidadesImanito(this); // pedras orbitais, ímã e repulsão da linha do Imanito
     this.periodo = jogo.mundo.periodo;
 
     this.idx = idxInicial;
@@ -381,6 +383,7 @@ export class Batalha {
     this.lumino.atualizar(dt);
     this.vaporito.atualizar(dt);
     this.brotobrasa.atualizar(dt);
+    this.imanito.atualizar(dt);
     if (this.captura) this.atualizarCaptura(dt);
 
     if (this.trocaAuto > 0) {
@@ -433,6 +436,9 @@ export class Batalha {
         if (gp.laser) { if (d < gp.laser.alcance) opcoes.push(i, i); continue; } // laser
         if (gp.passo) { if (d < gp.passo.distancia + 1) opcoes.push(i, i); continue; } // passo de luz: aparece perto de você
         if (gp.casco) { if (this.t - (e.ultimoDano ?? -9) < 1.2 && d < 7) opcoes.push(i, i, i); continue; } // casco: quando está apanhando
+        if (gp.pedras) { if (this.imanito.quantas(e) > 0 && d > 2.5 && d < gp.pedras.alcance) opcoes.push(i, i); continue; } // atira pedra (se tiver)
+        if (gp.ima) { if (d > 2.5 && d < gp.alcance && Math.random() < 0.5) opcoes.push(i); continue; } // ímã: de vez em quando
+        if (gp.repulsao) { if (d < gp.raio * 0.85) opcoes.push(i, i, i); continue; } // repulsão / tempestade
         if (gp.semente) { if (d > 2 && d < gp.alcance + 1) opcoes.push(i, i); continue; } // flor de fogo perto de você
         if (gp.leque) { if (d < gp.alcance + 0.8) opcoes.push(i, i); continue; } // folhas e galhada: de perto
         if (gp.anel) { if (d < gp.raio) opcoes.push(i, i, i); continue; } // anel de brotos
@@ -455,8 +461,9 @@ export class Batalha {
       const ax = (j.pos.x - e.pos.x) / (d || 1), az = (j.pos.z - e.pos.z) / (d || 1);
       // distância preferida depende de qual golpe está pronto
       const g0 = e.golpe(0);
-      const vinha = g0.vinha || g0.espinhos ? g0.alcance * 0.7 : g0.sol ? 6 : 1.8; // com a vinha ou o punho sísmico fica mais longe; o sol não é de perto
-      const prefere = e.rec[0] <= 0.2 ? vinha : (e.rec[1] <= 0.3 ? 6 : 4.5);
+      const vinha = g0.vinha || g0.espinhos ? g0.alcance * 0.7 : g0.sol ? 6 : g0.ima ? 4 : 1.8; // o ímã puxa de longe // com a vinha ou o punho sísmico fica mais longe; o sol não é de perto
+      const repulsaoPronta = e.golpe(2).repulsao && e.rec[2] <= 0.2; // Imanito: chega perto para empurrar
+      const prefere = e.rec[0] <= 0.2 ? vinha : repulsaoPronta ? 1.8 : (e.rec[1] <= 0.3 ? 6 : 4.5);
       let fx = 0, fz = 0;
       if (d > prefere + 0.5) { fx += ax; fz += az; } else if (d < prefere - 0.5) { fx -= ax; fz -= az; }
       fx += -az * ia.strafe * 0.7;
@@ -477,7 +484,7 @@ export class Batalha {
   }
 
   tentarGolpe(c, i, alvo) {
-    if (c.prep || c.rec[i] > 0 || c.stun > 0 || c.dash || c.combo || c.arrancada || c.bafo || c.morto || c.rajada || c.jato || c.giro || c.vinha || c.punho || c.feixe) return;
+    if (c.prep || c.rec[i] > 0 || c.stun > 0 || c.dash || c.combo || c.arrancada || c.bafo || c.ima || c.morto || c.rajada || c.jato || c.giro || c.vinha || c.punho || c.feixe) return;
     if (c.casco) { // linha do Vaporito: dentro do casco não ataca
       if (c.lado === 'jogador' && this.t - (this.avisoBloqueio || 0) > 0.8) { this.avisoBloqueio = this.t; this.jogo.numero('No casco!', c.pos.clone().setY(c.altura), '#ffffff', 'pequeno'); }
       return;
@@ -536,7 +543,7 @@ export class Batalha {
       return g;
     }
     if (!inimigo) return null;
-    const comp = gp.passo ? gp.passo.distancia : gp.tipo === 'corpo' ? gp.alcance + 2.2 : (gp.marca || gp.olhos ? gp.alcance : 12);
+    const comp = gp.passo ? gp.passo.distancia : gp.ima ? gp.alcance : gp.tipo === 'corpo' ? gp.alcance + 2.2 : (gp.marca || gp.olhos ? gp.alcance : 12);
     const larg = gp.tipo === 'corpo' ? 1.4 : (gp.quantidade > 1 ? 2.6 : 1);
     const m = new THREE.Mesh(GEO_FAIXA, matBrilho(cor, 0.3));
     m.scale.set(larg, 1, comp);
@@ -595,6 +602,14 @@ export class Batalha {
       this.solito.atirarLaser(c, gp, dir, this.efeitoDoGolpe(c, gp));   // laser
     } else if (gp.calor) {
       this.solito.iniciarCalor(c, gp, this.efeitoDoGolpe(c, gp));       // calor em volta
+    } else if (gp.pedras) {
+      this.imanito.atirarPedra(c, gp, dir, this.efeitoDoGolpe(c, gp));       // atira uma pedra da órbita
+    } else if (gp.ima) {
+      this.imanito.iniciarIma(c, gp, dir, this.efeitoDoGolpe(c, gp));         // puxa e soca
+    } else if (gp.tempestade) {
+      this.imanito.iniciarTempestade(c, gp, this.efeitoDoGolpe(c, gp));      // puxa, raios e explode
+    } else if (gp.repulsao) {
+      this.imanito.repulsar(c, gp, c.pos.clone(), gp.raio, this.efeitoDoGolpe(c, gp)); // empurra todos
     } else if (gp.semente) {
       this.brotobrasa.jogarSemente(c, gp, dir, null);                       // semente que vira flor de fogo
     } else if (gp.leque) {
@@ -811,6 +826,7 @@ export class Batalha {
     this.lumino.parar(l);
     this.vaporito.parar(l);
     this.brotobrasa.parar(l);
+    this.imanito.parar(l);
     l.veloz = null;
     l.breu = null;
     if (l.lado === 'inimigo') {
@@ -1027,6 +1043,7 @@ export class Batalha {
       else if (p.faisca) this.faisquinho.atualizarProjetil(p, dt);
       else if (p.luaFase) this.lunico.atualizarProjetil(p, dt);
       else if (p.luzCristal || p.luzRaio) this.lumino.atualizarProjetil(p, dt);
+      else if (p.pedraIma) this.imanito.atualizarProjetil(p, dt);
       else if (p.bumerangue) { /* a folha gira em moverFolha */ }
       else if (p.gp.elemento === 'lua') p.mesh.rotation.y += dt * 14;
       else if (p.gp.elemento !== 'planta' && p.gp.elemento !== 'raio') p.mesh.rotation.x += dt * 8;
@@ -1042,6 +1059,7 @@ export class Batalha {
       if (alvo) {
         const acertou = this.aplicarDano(p.dono, alvo, p.gp, p.dir, { fator: p.fator, efeito: p.bumerangue ? this.musguinho.efeitoDaFolha(p, alvo) : p.efeito });
         if (p.faisca && acertou) this.faisquinho.aoAcertarTiro(p, alvo); // marca e deixa o Choque pronto
+        if (p.pedraIma && acertou) this.imanito.aoAcertar(p, alvo);     // pedra de corrente: raio em quem está perto
         if (p.bumerangue) {
           // folha bumerangue: passa pelo alvo e segue (acerta cada um uma vez na ida e uma na volta)
           p.atingidos.add(alvo);
@@ -1158,7 +1176,7 @@ export class Batalha {
     est.pedras[tipo.id]--;
     const sucesso = garantida || Math.random() < chanceCaptura(this.ini.dados, this.tipoCristal);
     if (this.jog.prep) this.cancelarPreparo(this.jog);
-    for (const l of this.inimigos) { if (l.prep) this.cancelarPreparo(l); l.dash = null; l.rajada = null; this.brasito.parar(l); this.gotinho.parar(l, false); this.musguinho.parar(l); this.pedrisco.parar(l); this.faisquinho.parar(l, false); this.lunico.parar(l); this.lumino.parar(l); this.vaporito.parar(l); this.brotobrasa.parar(l); }
+    for (const l of this.inimigos) { if (l.prep) this.cancelarPreparo(l); l.dash = null; l.rajada = null; this.brasito.parar(l); this.gotinho.parar(l, false); this.musguinho.parar(l); this.pedrisco.parar(l); this.faisquinho.parar(l, false); this.lunico.parar(l); this.lumino.parar(l); this.vaporito.parar(l); this.brotobrasa.parar(l); this.imanito.parar(l); }
     const cr = criarCristal(1.1, this.tipoCristal);
     this.cena.add(cr);
     this.captura = {
@@ -1291,6 +1309,7 @@ export class Batalha {
     this.lumino.parar(velho);
     this.vaporito.parar(velho);
     this.brotobrasa.parar(velho);
+    this.imanito.parar(velho);
     this.cena.remove(velho.modelo);
     descartar(velho.modelo);
     this.particulas(velho.pos, '#8ff4ff', 12, 1);
@@ -1368,13 +1387,14 @@ export class Batalha {
     const veloz = l.veloz ? `<span style="--cor:#7dffa0">Veloz +${Math.round(l.veloz.bonus * 100)}% ${l.veloz.t.toFixed(0)}s</span>` : '';
     const escudo = l.escudo ? `<span style="--cor:#8fdcff">Escudo ${l.escudo.valor} ${l.escudo.t.toFixed(0)}s</span>` : '';
     const sol = l.sol ? `<span style="--cor:#ffab2e">Sol +${Math.round(l.sol.cfg.ataque * 100)}% ${l.sol.t.toFixed(0)}s</span>` : '';
+    const pedras = l.orbita ? `<span style="--cor:#d8c8a8">Pedras ${l.orbita.pedras.length}/${l.orbita.P.max}</span>` : '';
     const casco = l.casco ? `<span style="--cor:#9fd9c0">Casco ${Math.max(0, l.casco.C.duracao - l.casco.t).toFixed(0)}s</span>` : '';
     const blindado = l.blindado ? `<span style="--cor:#bfe8ff">Blindado +${Math.round(l.blindado.f * 100)}% ${l.blindado.t.toFixed(0)}s</span>` : '';
     const redoma = l.redoma ? `<span style="--cor:#fff6c8">Redoma ${Math.max(0, l.redoma.cfg.duracao - l.redoma.t).toFixed(0)}s</span>` : '';
     const luar = l.luarVel ? `<span style="--cor:#e2ddff">Fúria Lunar +${Math.round(l.luarVel.f * 100)}%</span>` : '';
     const breu = l.breu ? `<span style="--cor:#b57be8">Trevas +${Math.round(l.breu.cfg.dano * 100)}% ${l.breu.t.toFixed(0)}s</span>` : '';
     const marcas = l.marcas ? `<span style="--cor:#f7e43a">Marcado ×${l.marcas.n} ${l.marcas.t.toFixed(0)}s</span>` : '';
-    return veloz + escudo + sol + breu + luar + redoma + casco + blindado + marcas + Object.entries(l.status).map(([k, v]) => `<span style="--cor:${EFEITOS[k].cor}">${EFEITOS[k].nome} ${v.toFixed(1)}s</span>`).join('');
+    return veloz + escudo + sol + breu + luar + redoma + casco + blindado + pedras + marcas + Object.entries(l.status).map(([k, v]) => `<span style="--cor:${EFEITOS[k].cor}">${EFEITOS[k].nome} ${v.toFixed(1)}s</span>`).join('');
   }
 
   // Placa em cima de cada inimigo: só o nome e uma barrinha de vida

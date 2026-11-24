@@ -148,6 +148,23 @@ Solito (Nv.1) > Solário (Nv.6) > Solaurum (Nv.12) > Astrorei (Nv.30)
 - Calor mais forte ou mais longo: `calorSolito` → `poder` (cada pedaço), `calor.duracao` e `raio`.
 - Calor que esquenta mais rápido: `ondaCalor` → `calor.esquenta`.
 
+### Terra + Raio (tipo duplo): linha do Imanito, o mestre do magnetismo (`imanito.js` e `imanito-batalha.js`)
+Imanito (Nv.1) > Magnetito (Nv.6) > Ferrovolt (Nv.12) > Titanvolt (Nv.30). Pedras giram em volta dele (munição e escudo); o Ímã **puxa** e a Repulsão **empurra**.
+
+| Forma | Perto | Disparo | Área |
+|---|---|---|---|
+| Imanito | Investida | **Pedra Magnética**: até **2** pedras girando (nasce 1 a cada 3 s); atira uma; cada pedra segura 1 tiro | **Repulsão**: empurra todos em volta (3 m) |
+| Magnetito | **Ímã**: puxa (0,3 s) num cone de 6 m e soca | **3** pedras; + Paralisia | + Paralisia |
+| Ferrovolt | **Ímã Elétrico**: o soco pode paralisar | **Pedra de Corrente**: **4** pedras; ao acertar, raio em quem está perto do alvo | Quem bate numa pedra ou na borda leva +60% e fica **atordoado** |
+| Titanvolt | **Esmagamento**: com 2 ou mais puxados, bate um contra o outro | **Pedra Titã**: **5** pedras, maiores e mais rápidas | **Tempestade Magnética**: 2 s puxando para o centro com raios caindo; depois explode empurrando |
+
+- **Pedras (`pedras`):** ficam em `c.orbita` (criadas cheias na primeira vez). O disparo tira uma da órbita e ela vira o tiro, mirando no inimigo mais perto à frente; sem pedras, sai só uma faísca fraca (`fatorSem`). Quando um tiro inimigo que voa entra no círculo das pedras, a mais perto pula na frente e o segura (a folha bumerangue e o raio que marca não). Aparece "Pedras 3/4" embaixo da vida.
+- **Ímã (`ima`):** em `c.ima`; os alvos param lado a lado na frente dele e ficam presos durante o puxão.
+- **Chefes e o Campeão** (`resistente`): puxados e empurrados só pela metade.
+- **Parede:** `vaiBater` testa o caminho do empurrão com `arena.bloqueia` e `arena.colidir` (borda).
+- **IA:** atira pedra só se tiver; fica a ~4 m quando o ímã está pronto (usa de vez em quando) e chega perto quando a repulsão está pronta.
+- Leve para o celular de referência: no máximo 5 pedras por monstro, materiais fixos, raios que somem em 0,2 s.
+
 ### Fogo + Planta (tipo duplo): linha do Brotobrasa, o jardineiro de fogo (`brotobrasa.js` e `brotobrasa-batalha.js`)
 Brotobrasa (Nv.1) > Chamafolha (Nv.6) > Ardentroco (Nv.12) > Florinferno (Nv.30). Planta **flores de fogo** (armadilhas) que explodem quando o inimigo chega perto.
 
