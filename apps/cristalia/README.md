@@ -104,20 +104,25 @@ O jogo é um **PWA** (aplicativo web instalável). Ele fica no site **https://la
 - **Código:** `js/companheiro.js` (seguir, botões, trocar o controle) e `js/treino.js` (o modo treino). O modo treino usa o **mesmo motor da batalha**: os golpes de todas as linhas funcionam igual, sem inimigos e sem dano. Tudo do treino fica numa "camada" centrada no treinador, como uma arena invisível de 22 m, que sobe e desce acompanhando o chão embaixo do monstro. Os obstáculos do mapa seguram o monstro e os tiros.
 - **Limite:** o mapa tem morros e a arena de batalha é plana. Num golpe longo num morro, uma parte do efeito pode entrar no chão ou flutuar um pouco.
 
-## Casa (base portátil)
+## Bandeira do Reino (onde você renasce)
 
-- Você começa com a casa **na bolsa**. Abra a **Bolsa** (botão do canto inferior direito) e use o botão da casa, que muda conforme a situação:
-  - **Montar casa aqui:** monta na sua frente. Se ali estiver ocupado, o jogo procura o lugar livre mais próximo.
-  - **Guardar a casa:** aparece quando você está perto dela; a casa volta para a bolsa.
-  - **Mudar a casa para cá:** aparece quando você está longe; a casa sai de onde estava e é montada onde você está.
-- **A casa evolui** (nível 1, 2 e 3) com **Galho Raro** e ouro. Veja "Evolução da casa" abaixo. No nível 1 ela **não cura**: só marca o lugar onde você acorda, para não ter que voltar até o castelo. A cura completa é sempre a fonte do castelo.
-- Em volta da casa (10 m) é **área segura**: monstros não aparecem e dão meia-volta.
+- Você começa com a **bandeira do Reino na bolsa**. Abra a **Bolsa** (botão do canto inferior direito) e use o botão da bandeira, que muda conforme a situação:
+  - **Fincar a bandeira aqui:** finca na sua frente (se ali estiver ocupado, procura o lugar livre mais perto).
+  - **Guardar a bandeira:** aparece quando você está perto dela.
+  - **Mudar a bandeira para cá:** aparece quando você está longe.
+- Em volta da bandeira (10 m) é **área segura**: monstros não aparecem e dão meia-volta.
 - Se toda a equipe desmaiar numa batalha:
-  - **com a casa montada:** você acorda na casa, e **só os monstros desmaiados** voltam com **1/4 da vida** (**2/3** com a casa nível 2 ou 3); os outros ficam como estavam;
-  - **com a casa guardada:** você acorda na fonte do castelo, com todos curados.
-- Não dá para montar a casa no Reino nem no corredor que leva até ele.
-- A posição da casa fica salva. A casa não pode ser montada na água nem na lava.
-- Se o mapa mudar (o jogo salvo é do mapa antigo ou de outra semente), a casa volta para a mochila e você acorda no castelo.
+  - **com a bandeira fincada:** você renasce nela, e **só os desmaiados** voltam com **1/4 da vida** (**2/4** com a bandeira nível 2); os outros ficam como estavam;
+  - **sem a bandeira:** você acorda na fonte do castelo, com todos curados.
+- **A bandeira não cura** (a cura é a fonte do castelo e as poções). Não dá para fincar dentro das masmorras nem na água ou na lava.
+- **Evolui** com Galhos Raros + ouro (vá até ela e abra a Bolsa): nível 2 = **3 Galhos + 400 de ouro** (bandeira maior, ponta e faixas douradas, brilho no chão).
+- Fica salva em `estado.bandeira` (posição) e `estado.bandeiraNivel`. Os números em `BANDEIRA` (`js/bolsa.js`); o desenho em `criarBandeira(nivel)` (`js/modelos.js`).
+
+## Casa no Reino
+
+- A casa do jogador fica **fixa no Reino**, entre a arena e o portão (lugar `CASA_REINO` em `js/reino.js`), virada para o caminho do portão. Ela **não cura e não tem loja** (as funções antigas acabaram): para se curar fora do castelo, use poções.
+- Perto dela dá para **fundir cristais**. Na próxima fase ela ganha o **jardim** (plantar frutas para alimentar os monstros).
+- **Evolui do nível 1 ao 5** com Galhos Raros + ouro (vá até ela e abra a Bolsa). Veja "Evolução da casa" abaixo.
 
 ## Bolsa, ouro e loja
 
@@ -203,13 +208,15 @@ O Reino fica **fora da borda do mapa**, como as dungeons, mas não é dungeon: �
 
 ## Evolução da casa
 
-| Nível | O que faz | Custo para chegar |
+| Nível | Como fica | Custo para chegar |
 |---|---|---|
-| 1 | Não cura. Acordar nela levanta os desmaiados com 1/4 da vida | (começo) |
-| 2 | **Encostar nela levanta os desmaiados com 2/3 da vida** (os de pé ficam como estão). Acordar nela também levanta com 2/3. Ganha 2º andar, telhado azul e estrela dourada | 6 Galhos Raros + 500 de ouro |
-| 3 | Tudo do nível 2 + a **lojinha** do lado (barraca listrada): as mesmas poções da loja do Reino, **75% mais caras** (Cura 70, Reviver 210) | 12 Galhos Raros + 1500 de ouro |
+| 1 | Cabana simples, telhado vermelho | (começo) |
+| 2 | Sobrado com 2º andar e telhado azul | 4 Galhos Raros + 500 de ouro |
+| 3 | + varanda coberta e cerca com flores | 8 Galhos Raros + 1.500 de ouro |
+| 4 | Casa grande, mais larga, com torrezinha redonda | 14 Galhos Raros + 4.000 de ouro |
+| 5 | Casarão: ala nova, torre de telhado dourado com a bandeira do Reino e lanternas | 22 Galhos Raros + 8.000 de ouro |
 
-- **Para evoluir:** vá até a sua casa montada, abra a **Bolsa** e toque em **Evoluir** (a seção Casa mostra o nível, o que ele faz e o que falta).
+- **Para evoluir:** vá até a sua casa no Reino, abra a **Bolsa** e toque em **Evoluir** (a seção Casa no Reino mostra o nível e o que falta).
 - **Galho Raro** (o antigo nome era Madeira Rara; aparece na Bolsa) e **Asa do Anjo** (para a evolução rara): caem **por sorte** só dos **chefes de masmorra** (e, no futuro, dos reis de dungeon). Os monstros do mapa, os acampamentos e os treinadores **não dão**:
 
   | Quem você vence (ou captura) | Os 2 | Só o galho | Só a asa | Nada |
@@ -219,8 +226,7 @@ O Reino fica **fora da borda do mapa**, como as dungeons, mas não é dungeon: �
 
   No total: no chefe, **70%** de cair galho e **45%** de cair asa; no rei, 50% e 25%.
 
-- Guardar a casa ou mudar ela de lugar **não perde o nível**. O nível 3 precisa de um pouco mais de espaço para montar (a lojinha fica do lado).
-- **Fica salvo** em `estado.casaNivel` e `estado.galhos` (as Asas em `estado.asas` e os Corações em `estado.coracoes`). Os números ficam em `CASA` e `DROPS` (com `sortearDrop`), no `js/bolsa.js`; o desenho dos 3 níveis em `criarCasa(nivel)`, no `js/modelos.js`.
+- **Fica salvo** em `estado.casaNivel` e `estado.galhos` (as Asas em `estado.asas` e os Corações em `estado.coracoes`). Os números ficam em `CASA` e `DROPS` (com `sortearDrop`), no `js/bolsa.js`; o desenho dos 5 níveis em `criarCasa(nivel)`, no `js/modelos.js` (as peças do mesmo material viram uma malha só).
 
 ## Grupos de monstros
 

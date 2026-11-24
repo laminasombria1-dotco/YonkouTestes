@@ -131,8 +131,12 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
       *Feito:* `DROPS` e `sortearDrop` no `js/bolsa.js` (chefe de masmorra: 70% galho, 45% asa,
       25% os 2; rei de dungeon: 50%, 25%, 10%); seção Itens raros na Bolsa; "ouro" nos textos.
       O Coração ainda não tem de onde vir (fase 4).
-- [ ] **Fase 3 — Casa no Reino + Bandeira:** espaço da casa, casa nível 1 a 5 com visual novo,
+- [x] **Fase 3 — Casa no Reino + Bandeira:** espaço da casa, casa nível 1 a 5 com visual novo,
       fim das funções antigas, bandeira para renascer (1/4 e 2/4).
+      *Feito:* casa no lugar A (`CASA_REINO` em `js/reino.js`), 5 níveis em `criarCasa`; a casa portátil
+      virou a bandeira (`criarBandeira`, `fincarBandeira` no `mundo.js`). Custos em `CASA` e `BANDEIRA`
+      (`js/bolsa.js`): casa 4/8/14/22 galhos + 500/1.500/4.000/8.000 de ouro; bandeira 3 galhos + 400.
+      O espaço na frente da casa (lado do caminho do portão) fica para o jardim.
 - [ ] **Fase 4 — Jardim + Afeto:** sementes na loja, plantar e colher (tempo real, morrem),
       níveis do jardim, alimentar, nível de afeto, Coração, "satisfeito".
 - [ ] **Fase 5 — Rei e arena:** Julius Nv.50 com formas finais, níveis novos depois de

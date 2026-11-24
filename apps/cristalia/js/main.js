@@ -231,10 +231,10 @@ class Jogo {
       if (s.hora != null) this.mundo.hora = s.hora;
       // jogo salvo em outro mapa (o mapa antigo, ou outra semente): acorda no castelo e a casa volta para a mochila
       const outroMapa = s.semente !== SEMENTE;
-      if (outroMapa && this.estado.casa) this.estado.casa = null;
+      if (outroMapa && this.estado.bandeira) this.estado.bandeira = null;
       this.entrarNoMundo();
       if (s.pos && !outroMapa) { this.mundo.pos.set(s.pos.x, 0, s.pos.z); this.mundo.chunks.carregarTudoPerto(s.pos.x, s.pos.z); this.mundo.posicionarCamera(1); }
-      if (outroMapa) setTimeout(() => this.aviso('O mapa é novo! Você acordou no castelo e a casa voltou para a mochila.'), 900);
+      if (outroMapa) setTimeout(() => this.aviso('O mapa é novo! Você acordou no castelo e a bandeira voltou para a mochila.'), 900);
       // saves antigos: evolui quem já tem nível para isso
       for (const m of [...this.estado.equipe, ...this.estado.reserva]) this.registrarEvolucoes(verificarEvolucao(m));
       if (this.filaEvo.length) this.proximaEvolucao();
@@ -526,7 +526,7 @@ class Jogo {
   }
 
   novoJogo(especie) {
-    this.estado = { equipe: [criarMonstro(especie, 3)], reserva: [], pedras: { comum: 5, forte: 0, supremo: 0 }, capturados: [especie], casa: null,
+    this.estado = { equipe: [criarMonstro(especie, 3)], reserva: [], pedras: { comum: 5, forte: 0, supremo: 0 }, capturados: [especie], bandeira: null, bandeiraNivel: 1,
       moedas: 0, pocoes: { cura: 3, reviver: 1 }, galhos: 0, casaNivel: 1, asas: 0, coracoes: 0 };
     this.mundo.hora = 0.08;
     this.entrarNoMundo();
@@ -535,31 +535,34 @@ class Jogo {
     this.aviso(`${ESPECIES[especie].nome} agora é seu parceiro!`);
     this.aviso('Siga a Estrada Real para sair do Reino e caçar monstros.');
     this.aviso('Encoste num monstro selvagem para batalhar.');
-    this.aviso('Na Bolsa (canto de baixo) ficam a casa, as poções e os cristais.');
+    this.aviso('Na Bolsa (canto de baixo) ficam a bandeira do Reino (onde você renasce), a casa, as poções e os cristais.');
   }
 
   entrarNoMundo() {
     Bolsa.garantir(this.estado); // saves antigos: moedas e poções
     if (this.estado.arena?.ovoPendente) this.ovo.receber(); // dominou antes de o ovo existir
-    // a casa salva volta para o lugar onde estava
-    if (this.estado.casa) this.mundo.montarCasa(this.estado.casa.x, this.estado.casa.z, this.estado.casa.rot, false);
-    else this.mundo.guardarCasa();
+    // a bandeira salva volta para o lugar onde estava; a casa do Reino fica no nível salvo
+    const bd = this.estado.bandeira;
+    if (bd) this.mundo.fincarBandeira(bd.x, bd.z, bd.rot, false);
+    else this.mundo.tirarBandeira();
+    this.mundo.trocarModeloCasa();
+    this.mundo.trocarModeloBandeira();
     this.mundo.irParaBase();
     this.mostrarTela('mundo');
     this.atualizarHudMundo();
     this.pet.reiniciar(); // estava invocado? sai de novo
   }
 
-  // ---------- casa ----------
-  // O botão muda conforme a situação: montar, guardar ou trazer a casa para perto
-  acaoCasa() {
+  // ---------- bandeira do Reino ----------
+  // O botão muda conforme a situação: fincar, tirar ou trazer a bandeira para perto
+  acaoBandeira() {
     const m = this.mundo;
-    if (m.casaPos && m.distanciaCasa() < 7) {
-      m.guardarCasa();
-      this.estado.casa = null;
-      this.aviso('Casa guardada na mochila.');
+    if (m.bandeiraPos && m.distanciaBandeira() < 5) {
+      m.tirarBandeira();
+      this.estado.bandeira = null;
+      this.aviso('Bandeira guardada na mochila. Sem ela, você acorda na fonte do castelo.');
     } else {
-      const lugar = m.acharLugarCasa();
+      const lugar = m.acharLugarBandeira();
       const dg = !lugar && m.dungeons?.find((d) => d.t.semCasa(m.pos.x, m.pos.z));
       if (dg) {
         this.aviso(dg.cfg.semCasa);
@@ -569,10 +572,10 @@ class Jogo {
         this.aviso('Não há espaço aqui. Procure um lugar mais aberto, longe de árvores, pedras e água.');
         return;
       }
-      const mudou = !!m.casaPos;
-      m.montarCasa(lugar.x, lugar.z, lugar.rot);
-      this.estado.casa = { ...m.casaPos };
-      this.aviso(mudou ? 'Você mudou a casa para cá!' : 'Casa montada! Se a equipe desmaiar, você acorda aqui.');
+      const mudou = !!m.bandeiraPos;
+      m.fincarBandeira(lugar.x, lugar.z, lugar.rot);
+      this.estado.bandeira = { ...m.bandeiraPos };
+      this.aviso(mudou ? 'Você mudou a bandeira para cá!' : 'Bandeira fincada! Se a equipe desmaiar, você renasce aqui.');
     }
     this.salvar();
   }
@@ -784,11 +787,12 @@ class Jogo {
     this.batalha = null;
     if (b.treinador) this.fimLutaTreinador(tipo, b);
     else if (tipo === 'derrota') {
-      // Na casa: só os desmaiados levantam, com 1/4 da vida. Sem casa: acorda na fonte do castelo, curado.
-      if (this.mundo.casaPos) this.levantarDesmaiados((this.estado.casaNivel || 1) >= 2 ? 2 / 3 : 0.25); // nível 2+: 2/3
+      // Na bandeira: só os desmaiados levantam, com 1/4 da vida (nível 2: 2/4). Sem bandeira: acorda na fonte, curado.
+      const parteBandeira = (this.estado.bandeiraNivel || 1) >= 2 ? 0.5 : 0.25;
+      if (this.mundo.bandeiraPos) this.levantarDesmaiados(parteBandeira);
       else this.curarEquipe();
       this.mundo.irParaBase();
-      this.aviso(this.mundo.casaPos ? `Sua equipe desmaiou. Vocês acordaram em casa: os desmaiados voltaram com ${(this.estado.casaNivel || 1) >= 2 ? '2/3' : '1/4'} da vida.` : 'Sua equipe desmaiou. Vocês acordaram na fonte do castelo, curados.');
+      this.aviso(this.mundo.bandeiraPos ? `Sua equipe desmaiou. Vocês renasceram na bandeira: os desmaiados voltaram com ${parteBandeira >= 0.5 ? '2/4' : '1/4'} da vida.` : 'Sua equipe desmaiou. Vocês acordaram na fonte do castelo, curados.');
       this.aviso('Ninguém foi perdido: todos os seus monstros estão em Equipe → Reserva.');
     } else {
       this.mundo.graca = 2.5;
@@ -814,7 +818,7 @@ class Jogo {
   }
 
   // Fundir 3 cristais em 1 mais forte: só perto da casa
-  podeFundir() { return !!this.mundo.casaPos && this.mundo.distanciaCasa() < 9; }
+  podeFundir() { return this.mundo.distanciaCasa() < 9; } // perto da casa do Reino
 
   fundir(i) {
     const de = CRISTAIS[i], para = CRISTAIS[i + 1];
@@ -831,7 +835,7 @@ class Jogo {
     const p = this.estado.pedras, perto = this.podeFundir();
     const contas = CRISTAIS.map((c) => `<span class="cr" style="--c:${c.cor}"><span class="losango"></span>${c.nome} <b>${p[c.id]}</b></span>`).join('');
     const botoes = CRISTAIS.slice(0, -1).map((c, i) => `<button class="btn-hud" type="button" data-cmd="fundir" data-i="${i}" ${perto && p[c.id] >= CUSTO_FUSAO ? '' : 'disabled'}>Fundir ${CUSTO_FUSAO} ${c.curto} → 1 ${CRISTAIS[i + 1].curto}</button>`).join('');
-    const dica = perto ? 'Sua casa tem uma bancada: junte 3 cristais iguais para fazer 1 mais forte.' : 'Para fundir cristais, vá até a sua casa.';
+    const dica = perto ? 'Sua casa tem uma bancada: junte 3 cristais iguais para fazer 1 mais forte.' : 'Para fundir cristais, vá até a sua casa no Reino (entre a arena e o portão).';
     return `<div class="linha-cr">${contas}</div><div class="linha-cr">${botoes}</div>
       <small>${dica} Forte: 1,5× a chance. Supremo: 2,2×. Tipo duplo exige Forte (formas iniciais) ou Supremo (2ª evolução e final).</small>`;
   }

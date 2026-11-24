@@ -1193,58 +1193,83 @@ export function criarCoroa(escala = 1) {
   return g;
 }
 
-// ---------- Casa portátil (base) ----------
-// nivel: 1 = a casa simples; 2 = maior, com 2º andar e telhado azul; 3 = igual à 2 + a lojinha (barraca listrada do lado)
+// ---------- Casa do jogador (fixa no Reino) ----------
+// nivel 1 a 5 (cada um cresce em cima do anterior):
+//  1: cabana simples · 2: sobrado com 2º andar e telhado azul · 3: + varanda coberta e cerca com flores
+//  4: casa grande, mais larga, com torrezinha redonda · 5: casarão com ala do lado, telhado dourado,
+//     bandeira do Reino e lanternas
+// As peças do mesmo material viram uma malha só (juntarPecas), para pesar pouco no celular.
 export function criarCasa(nivel = 1) {
   const g = new THREE.Group();
-  const parede = mat('#f3e3c3'), madeira = mat('#8a5a3a'), pedra = mat('#c9c0ad');
-  const telhado = mat(nivel >= 2 ? '#3a5aa8' : '#d9534f');
+  const parede = mat('#f3e3c3'), madeira = mat('#8a5a3a'), pedra = mat('#c9c0ad'), grama = mat('#4f9a45');
+  const telhado = mat(nivel >= 2 ? '#3a5aa8' : '#d9534f'), ouro = brilho('#ffd23f', 0.5);
   const vidro = () => mat('#9fe0ff', { emissive: '#ffd37a', emissiveIntensity: 0.1 });
-  const andar = nivel >= 2 ? 1.7 : 0; // altura do 2º andar
-  p(g, G.caixa(4.4, 0.3, 3.8), pedra, [0, 0.15, 0]);
-  p(g, G.caixa(3.6, 2.2, 3.0), parede, [0, 1.4, 0]);
+  const larg = nivel >= 4 ? 5.2 : 3.6;     // largura do corpo da casa
+  const andar = nivel >= 2 ? 1.7 : 0;      // altura do 2º andar
   const janelas = [];
+  p(g, G.caixa(larg + 0.8, 0.3, 3.8), pedra, [0, 0.15, 0]);
+  p(g, G.caixa(larg, 2.2, 3.0), parede, [0, 1.4, 0]);
   if (nivel >= 2) {
-    // 2º andar, um pouco para fora, com madeira cruzada e 2 janelas
-    p(g, G.caixa(3.8, andar, 3.2), parede, [0, 2.5 + andar / 2, 0]);
-    for (const x of [-1.9, 0, 1.9]) p(g, G.caixa(0.16, andar, 3.25), madeira, [x, 2.5 + andar / 2, 0]);
-    p(g, G.caixa(3.9, 0.16, 3.3), madeira, [0, 2.5, 0]);
-    for (const x of [-0.95, 0.95]) janelas.push(p(g, G.caixa(0.6, 0.6, 0.08), vidro(), [x, 2.5 + andar / 2, 1.62]));
+    // 2º andar com madeira cruzada e janelas
+    p(g, G.caixa(larg + 0.2, andar, 3.2), parede, [0, 2.5 + andar / 2, 0]);
+    for (const x of [-(larg / 2 + 0.1), 0, larg / 2 + 0.1]) p(g, G.caixa(0.16, andar, 3.25), madeira, [x, 2.5 + andar / 2, 0]);
+    p(g, G.caixa(larg + 0.3, 0.16, 3.3), madeira, [0, 2.5, 0]);
+    const nj = nivel >= 4 ? 3 : 2;
+    for (let k = 0; k < nj; k++) janelas.push(p(g, G.caixa(0.6, 0.6, 0.08), vidro(), [(k - (nj - 1) / 2) * (larg / nj), 2.5 + andar / 2, 1.62]));
   }
-  const teto = p(g, G.cone(nivel >= 2 ? 3.3 : 3.1, 1.7, 4), telhado, [0, 3.35 + andar, 0], [0, Math.PI / 4, 0]);
-  teto.scale.set(1, 1, 0.88);
-  // vigas nos cantos
-  for (const [x, z] of [[-1.8, 1.5], [1.8, 1.5], [-1.8, -1.5], [1.8, -1.5]]) p(g, G.caixa(0.2, 2.2, 0.2), madeira, [x, 1.4, z]);
+  const teto = p(g, G.cone((larg / 2 + 0.6) * 1.35, 1.7 + (nivel >= 4 ? 0.4 : 0), 4), telhado, [0, 3.35 + andar + (nivel >= 4 ? 0.2 : 0), 0], [0, Math.PI / 4, 0]);
+  teto.scale.set(1, 1, 3.0 / larg * 0.95);
+  // vigas nos cantos, porta e janelas de baixo
+  for (const [x, z] of [[-larg / 2, 1.5], [larg / 2, 1.5], [-larg / 2, -1.5], [larg / 2, -1.5]]) p(g, G.caixa(0.2, 2.2, 0.2), madeira, [x, 1.4, z]);
   p(g, G.caixa(0.95, 1.45, 0.1), madeira, [0, 1.03, 1.52]);
-  p(g, G.esf(0.06), mat('#ffd23f'), [0.3, 1.0, 1.59]);
-  for (const x of [-1.15, 1.15]) {
-    const j = p(g, G.caixa(0.7, 0.6, 0.08), vidro(), [x, 1.6, 1.52]);
-    p(g, G.caixa(0.8, 0.08, 0.12), madeira, [x, 1.26, 1.55]);
-    janelas.push(j);
+  p(g, G.esf(0.06), ouro, [0.3, 1.0, 1.59]);
+  for (const x of nivel >= 4 ? [-1.9, -1.05, 1.05, 1.9] : [-1.15, 1.15]) {
+    janelas.push(p(g, G.caixa(0.6, 0.6, 0.08), vidro(), [x, 1.6, 1.52]));
+    p(g, G.caixa(0.7, 0.08, 0.12), madeira, [x, 1.26, 1.55]);
   }
-  p(g, G.caixa(0.45, 1.2, 0.45), pedra, [1.0, 3.6 + andar, -0.5]);
-  // sinal da casa acima da porta (cruz verde no nível 1; estrela dourada nos níveis maiores)
-  const sinal = brilho(nivel >= 2 ? '#ffd23f' : '#5fe08a', 0.8);
-  p(g, G.caixa(0.5, 0.15, 0.08), sinal, [0, 2.15, 1.55]);
-  p(g, G.caixa(0.15, 0.5, 0.08), sinal, [0, 2.15, 1.55]);
-  p(g, G.caixa(1.2, 0.04, 0.7), mat('#c9533a'), [0, 0.32, 2.3]);
-  // bandeira no telhado
-  p(g, G.cil(0.03, 0.03, 1.2, 4), madeira, [-1.0, 4.0 + andar, 0.2]);
-  const bandeira = p(g, G.caixa(0.6, 0.35, 0.03), mat(nivel >= 2 ? '#ffd23f' : '#8ff4ff'), [-0.7, 4.4 + andar, 0.2]);
+  const yChamine = 4.3 + andar + (nivel >= 4 ? 0.4 : 0);
+  p(g, G.caixa(0.45, 1.2, 0.45), pedra, [1.0, yChamine - 0.7, -0.5]);
+  p(g, G.caixa(1.2, 0.04, 0.7), mat('#c9533a'), [0, 0.32, 2.3]); // tapete na porta
+  // bandeirinha no telhado
+  p(g, G.cil(0.03, 0.03, 1.2, 4), madeira, [-1.0, yChamine - 0.3, 0.2]);
+  const bandeira = p(g, G.caixa(0.6, 0.35, 0.03), mat(nivel >= 2 ? '#ffd23f' : '#8ff4ff'), [-0.7, yChamine + 0.1, 0.2]);
   if (nivel >= 3) {
-    // a lojinha: barraca listrada azul e branca do lado direito, com as poções
-    const b = new THREE.Group(); b.position.set(3.5, 0, 0.9); g.add(b);
-    p(b, G.caixa(2.2, 0.9, 0.9), madeira, [0, 0.45, 0]);
-    for (const x of [-1.05, 1.05]) p(b, G.caixa(0.12, 2.3, 0.12), madeira, [x, 1.15, -0.35]);
-    for (let i = 0; i < 5; i++) p(b, G.caixa(0.46, 0.08, 1.3), mat(i % 2 ? '#ffffff' : '#3a5aa8'), [-0.92 + i * 0.46, 2.3, -0.05], [0.3, 0, 0]);
-    for (const [c, x] of [['#e8474a', -0.6], ['#e8474a', -0.25], ['#ffd23f', 0.25], ['#ffd23f', 0.6]]) {
-      p(b, G.esf(0.17), brilho(c, 0.55), [x, 1.08, 0]);
-      p(b, G.cil(0.05, 0.05, 0.18, 4), mat('#ffffff'), [x, 1.3, 0]);
+    // varanda coberta na frente (4 postes e um telhadinho) e cerca baixa com flores
+    for (const x of [-1.4, 1.4]) p(g, G.caixa(0.14, 1.9, 0.14), madeira, [x, 0.95, 2.6]);
+    p(g, G.caixa(3.2, 0.12, 1.3), telhado, [0, 1.95, 2.1], [0.25, 0, 0]);
+    for (let k = -4; k <= 4; k++) if (Math.abs(k) > 1) p(g, G.caixa(0.1, 0.6, 0.1), madeira, [k * 0.7, 0.3, 3.6]);
+    p(g, G.caixa(6.2, 0.08, 0.08), madeira, [0, 0.5, 3.6]);
+    for (const [x, c] of [[-2.4, '#ff6a9a'], [-1.9, '#ffd23f'], [1.9, '#ff6a9a'], [2.4, '#b87aff']]) {
+      p(g, G.esf(0.22), grama, [x, 0.3, 3.2]);
+      p(g, G.esf(0.1), mat(c), [x, 0.5, 3.25]);
+    }
+  }
+  if (nivel >= 4) {
+    // torrezinha redonda do lado esquerdo
+    const tx = -(larg / 2 + 0.6);
+    p(g, G.cil(0.9, 1, 4.6 + andar * 0.4, 8), pedra, [tx, (4.6 + andar * 0.4) / 2, -0.6]);
+    p(g, G.cone(1.25, 1.8, 8), nivel >= 5 ? ouro : telhado, [tx, 4.6 + andar * 0.4 + 0.9, -0.6]);
+    janelas.push(p(g, G.caixa(0.08, 0.6, 0.45), vidro(), [tx - 0.92, 3.2, -0.6]));
+  }
+  if (nivel >= 5) {
+    // ala do lado direito, bandeira do Reino na torre e lanternas na frente
+    const ax = larg / 2 + 1.5;
+    p(g, G.caixa(2.6, 2.4, 2.6), parede, [ax, 1.5, -0.3]);
+    p(g, G.cone(2.2, 1.4, 4), telhado, [ax, 3.4, -0.3], [0, Math.PI / 4, 0]);
+    janelas.push(p(g, G.caixa(0.6, 0.6, 0.08), vidro(), [ax, 1.6, 1.02]));
+    const tx = -(larg / 2 + 0.6);
+    p(g, G.cil(0.04, 0.04, 1.6, 4), madeira, [tx, 7.3, -0.6]);
+    p(g, G.caixa(0.9, 0.5, 0.04), mat('#3a5aa8'), [tx + 0.47, 7.8, -0.6]);
+    p(g, G.esf(0.12), ouro, [tx + 0.47, 7.8, -0.57]);
+    for (const x of [-3.4, 3.4]) {
+      p(g, G.cil(0.06, 0.08, 1.5, 5), madeira, [x, 0.75, 3.9]);
+      janelas.push(p(g, G.esf(0.18), vidro(), [x, 1.6, 3.9]));
     }
   }
   const fumacas = [];
-  for (let i = 0; i < 3; i++) fumacas.push(p(g, G.ico(0.22, 0), mat('#e0e0e0', { transparent: true, opacity: 0.7, depthWrite: false }), [1.0, 4.3 + andar, -0.5]));
-  g.userData = { janelas, fumacas, bandeira, nivel, yChamine: 4.3 + andar };
+  for (let i = 0; i < 3; i++) fumacas.push(p(g, G.ico(0.22, 0), mat('#e0e0e0', { transparent: true, opacity: 0.7, depthWrite: false }), [1.0, yChamine, -0.5]));
+  g.userData = { janelas, fumacas, bandeira, nivel, yChamine };
+  juntarPecas(g, new Set([...janelas, ...fumacas, bandeira]));
   return g;
 }
 
@@ -1258,6 +1283,36 @@ export function animarCasa(casa, t, noite) {
   });
   for (const j of u.janelas) j.material.emissiveIntensity = 0.1 + noite * 0.9;
   u.bandeira.rotation.y = Math.sin(t * 3) * 0.3;
+}
+
+// ---------- Bandeira do Reino (portátil: onde você renasce) ----------
+// nivel 1: mastro de madeira e bandeira azul com o cristal do Reino
+// nivel 2: mastro mais alto com ponta dourada, bandeira maior com faixa dourada e brilho no chão
+export function criarBandeira(nivel = 1) {
+  const g = new THREE.Group();
+  const madeira = mat('#8a5a3a'), pedra = mat('#c9c0ad'), azul = mat('#3a5aa8'), ouro = brilho('#ffd23f', 0.6);
+  const alto = nivel >= 2 ? 3.6 : 3;
+  // base de pedras
+  for (let k = 0; k < 5; k++) { const a = (k / 5) * Math.PI * 2; p(g, G.dode(0.28), pedra, [Math.cos(a) * 0.35, 0.15, Math.sin(a) * 0.35]); }
+  p(g, G.cil(0.07, 0.09, alto, 6), madeira, [0, alto / 2, 0]);
+  p(g, G.esf(nivel >= 2 ? 0.16 : 0.1), nivel >= 2 ? ouro : madeira, [0, alto + 0.08, 0]);
+  // o pano (em um grupo que balança, preso no mastro)
+  const pano = new THREE.Group();
+  pano.position.set(0, alto - 0.55, 0);
+  const w = nivel >= 2 ? 1.5 : 1.2, h = nivel >= 2 ? 0.9 : 0.75;
+  p(pano, G.caixa(w, h, 0.04), azul, [w / 2 + 0.06, 0, 0]);
+  p(pano, G.octa(0.16), brilho('#8ff4ff', 0.7), [w / 2 + 0.06, 0, 0.04], null, [1, 1.4, 0.5]); // o cristal do Reino
+  if (nivel >= 2) for (const y of [-h / 2 + 0.06, h / 2 - 0.06]) p(pano, G.caixa(w, 0.08, 0.05), ouro, [w / 2 + 0.06, y, 0]);
+  g.add(pano);
+  if (nivel >= 2) p(g, G.cil(0.9, 0.9, 0.04, 18), brilho('#ffd23f', 0.4, { transparent: true, opacity: 0.35, depthWrite: false }), [0, 0.03, 0]);
+  g.userData = { pano, nivel };
+  return g;
+}
+
+export function animarBandeira(b, t) {
+  const u = b.userData;
+  u.pano.rotation.y = Math.sin(t * 2.6) * 0.35;
+  u.pano.scale.x = 1 + Math.sin(t * 5) * 0.05;
 }
 
 // ---------- Cristal de captura ----------

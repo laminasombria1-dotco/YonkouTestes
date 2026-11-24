@@ -623,7 +623,7 @@ export const DUNGEONS = {
   brasas: {
     nome: 'Caminho das Brasas', regiao: 'Vulcão', chefe: 'ignarion', fim: 'Trono de Magma',
     zonaSoltos: 'brasas', zonaChefe: 'cratera',
-    semCasa: 'Calor demais aqui no Caminho das Brasas. Monte a casa antes da entrada.',
+    semCasa: 'Calor demais aqui no Caminho das Brasas. Finque a bandeira antes da entrada.',
     etapas: [
       { nome: 'Etapa 1 · Portão de Cinzas',       extraComum: 0, extraLider: 0 },
       { nome: 'Etapa 2 · Ruínas da Forja',        extraComum: 3, extraLider: 3 },
@@ -636,7 +636,7 @@ export const DUNGEONS = {
   raizes: {
     nome: 'Trilha Ancestral', regiao: 'Floresta', chefe: 'silvarion', fim: 'Santuário da Árvore-Mãe',
     zonaSoltos: 'raizes', zonaChefe: 'santuario',
-    semCasa: 'As raízes da Trilha Ancestral não deixam montar a casa. Monte antes da entrada.',
+    semCasa: 'As raízes da Trilha Ancestral não deixam fincar a bandeira. Finque antes da entrada.',
     etapas: [
       { nome: 'Etapa 1 · Bosque dos Cogumelos', extraComum: 0, extraLider: 0 },
       { nome: 'Etapa 2 · Ruínas de Musgo',      extraComum: 3, extraLider: 3 },

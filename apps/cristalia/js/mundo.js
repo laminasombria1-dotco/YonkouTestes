@@ -8,12 +8,12 @@
 // Monstros selvagens passeiam; encostou, começa a batalha.
 // =============================================================
 import * as THREE from 'three';
-import { criarModelo, criarTreinador, criarCristal, pintarCristal, criarCoroa, criarCasa, animarCasa, animarModelo, criarAuraDupla, animarAura, descartar } from './modelos.js';
+import { criarModelo, criarTreinador, criarCristal, pintarCristal, criarCoroa, criarCasa, animarCasa, criarBandeira, animarBandeira, animarModelo, criarAuraDupla, animarAura, descartar } from './modelos.js';
 import { CameraOrbita } from './camera.js';
 import { TRACADOS, REINO, tracadoPerto, prenderDungeons, dentroDungeonLivre, semCasaDungeons } from './dungeon.js';
 import { CaminhoDasBrasas } from './brasas.js';
 import { TrilhaAncestral, CRISTAL_ESCONDIDO } from './raizes.js';
-import { Reino, FONTE_REINO, NASCER_REINO, ARENA_REINO } from './reino.js';
+import { Reino, FONTE_REINO, NASCER_REINO, ARENA_REINO, CASA_REINO } from './reino.js';
 import { RAIO_MUNDO, NIVEL_AGUA, SEMENTE, LAGOA, RESERVAS, SEGREDOS, ESTRADA, aleatorio, biomaEm, lagoEm, naEstradaReal } from './mapa/gerador.js';
 import { alturaEm, bloqueadoEm } from './mapa/altura.js';
 import { Grade, ListaObstaculos } from './mapa/grade.js';
@@ -28,8 +28,9 @@ const N_CRISTAIS = 40;        // cristais de captura espalhados pelo mapa
 const VER_CRISTAL = 75;       // até essa distância os cristais são desenhados
 const VEL_JOGADOR = 7.5;
 const MAX_SELVAGENS = 18;     // monstros soltos em volta do jogador (aparecem perto e somem quando ficam longe)
-const RAIO_CASA = 2.6;        // tamanho da casa para colisão (a casa não cura: a cura é a fonte do castelo)
-const AREA_SEGURA_CASA = 10;  // monstros não chegam perto da casa
+const RAIO_BANDEIRA = 0.8;    // tamanho da bandeira do Reino para colisão (ela não cura: a cura é a fonte do castelo)
+const AREA_SEGURA_BANDEIRA = 10; // monstros não chegam perto da bandeira (onde você renasce)
+const RAIO_CASA = 3.2;        // a casa do jogador no Reino (fixa) para colisão
 const TAMANHO_GRUPO = 6;      // 5 comuns + 1 líder
 
 // Quantos grupos andam pelo mapa: aumenta com o nível médio da sua equipe (máximo 4)
@@ -133,14 +134,23 @@ export class Mundo {
     this.proxRelampago = 3;
     this.periodoAvisado = this.periodo;
 
-    // Casa portátil: começa guardada (na mochila)
-    this.casa = criarCasa();
-    this.casa.visible = false;
-    this.cena.add(this.casa);
-    this.casaPos = null;
-    this.casaObst = null;
+    // Bandeira do Reino (portátil): começa guardada (na mochila). É onde você renasce.
+    this.bandeira = criarBandeira();
+    this.bandeira.visible = false;
+    this.cena.add(this.bandeira);
+    this.bandeiraPos = null;
+    this.bandeiraObst = null;
+    this.bandeiraAnim = 1;
+
+    // A casa do jogador: fixa no Reino (lugar CASA_REINO), sobe de nível de 1 a 5
+    const pc = REINO.paraMundo(CASA_REINO.x, CASA_REINO.z);
+    this.casaPos = { x: pc.x, z: pc.z, rot: CASA_REINO.rot + REINO.giro }; // giro: do desenho do Reino para o mapa
     this.casaAnim = 1;
-    this.curaCasaAvisada = 0;
+    this.casa = criarCasa(1);
+    this.cena.add(this.casa);
+    this.casa.position.set(pc.x, alturaEm(pc.x, pc.z), pc.z);
+    this.casa.rotation.y = this.casaPos.rot;
+    this.obstaculos.push({ x: pc.x, z: pc.z, r: RAIO_CASA });
 
     this.cristais = [];
     this.criarCristaisChao();
@@ -201,7 +211,7 @@ export class Mundo {
     if (Math.hypot(x, z) < 13) return false;
     if (TRACADOS.some((t) => t.reservado(x, z))) return false; // as dungeons e o Reino se decoram sozinhos
     if (naEstrada(x, z, folga)) return false; // a Estrada Real fica livre
-    if (this.casaPos && Math.hypot(x - this.casaPos.x, z - this.casaPos.z) < AREA_SEGURA_CASA + 4) return false;
+    if (this.bandeiraPos && Math.hypot(x - this.bandeiraPos.x, z - this.bandeiraPos.z) < AREA_SEGURA_BANDEIRA + 4) return false;
     if (Math.hypot(x, z) > RAIO_MUNDO - 3) return false;
     if (alturaEm(x, z) < NIVEL_AGUA + 0.2) return false; // água, lava e leito de rio
     // lugares fixos da Floresta e pontos de interesse
@@ -497,10 +507,10 @@ export class Mundo {
       }
       const el = Math.hypot(ex, ez);
       if (el > 0.05) { fx += ex; fz += ez; anda = true; }
-      // não entram na área segura da casa
-      if (this.casaPos) {
-        const dx = m.x - this.casaPos.x, dz = m.z - this.casaPos.z, d = Math.hypot(dx, dz);
-        if (d < AREA_SEGURA_CASA + 1) { fx = dx / (d || 1); fz = dz / (d || 1); anda = true; }
+      // não entram na área segura da bandeira
+      if (this.bandeiraPos) {
+        const dx = m.x - this.bandeiraPos.x, dz = m.z - this.bandeiraPos.z, d = Math.hypot(dx, dz);
+        if (d < AREA_SEGURA_BANDEIRA + 1) { fx = dx / (d || 1); fz = dz / (d || 1); anda = true; }
       }
       const fl = Math.hypot(fx, fz);
       if (anda && fl > 0.01 && !pausado) {
@@ -530,93 +540,91 @@ export class Mundo {
     if (!g.membros.length) this.removerGrupo(g);
   }
 
-  // ---------- casa ----------
-  podeMontarCasa(x, z) {
+  // ---------- bandeira do Reino (onde você renasce) ----------
+  podeFincarBandeira(x, z) {
     if (Math.hypot(x, z) > RAIO_MUNDO - 8) return false;
-    if (semCasaDungeons(x, z)) return false; // dentro ou na boca das dungeons não
+    if (semCasaDungeons(x, z)) return false; // dentro ou na boca das masmorras não
     if (Math.hypot(x, z) < 6) return false; // em cima da placa do Campo não
     if (!this.chunks.carregado(x, z)) return false;
-    // nem na água, nem na lava (confere o meio e a volta da casa)
-    for (const [dx, dz] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) {
-      if (alturaEm(x + dx * RAIO_CASA, z + dz * RAIO_CASA) < NIVEL_AGUA + 0.3) return false;
-    }
-    const r = RAIO_CASA + (this.nivelCasa >= 3 ? 2.6 : 0.8); // nível 3: a lojinha do lado também precisa caber
-    return !this.grade.cada(x, z, r, (o) => o !== this.casaObst && o !== this.lojinhaObst && Math.hypot(x - o.x, z - o.z) < o.r + r);
+    if (alturaEm(x, z) < NIVEL_AGUA + 0.3) return false; // nem na água, nem na lava
+    const r = RAIO_BANDEIRA + 0.6;
+    return !this.grade.cada(x, z, r, (o) => o !== this.bandeiraObst && Math.hypot(x - o.x, z - o.z) < o.r + r);
   }
 
-  // Nível da casa (1 a 3: ver bolsa.js). Ao evoluir, o desenho da casa troca.
+  // Nível da bandeira (1: levanta com 1/4 da vida; 2: com 2/4) e da casa (1 a 5): ver bolsa.js
+  get nivelBandeira() { return this.jogo.estado?.bandeiraNivel || 1; }
   get nivelCasa() { return this.jogo.estado?.casaNivel || 1; }
+
+  trocarModeloBandeira() {
+    if (this.bandeira.userData.nivel === this.nivelBandeira) return;
+    const vis = this.bandeira.visible, pos = this.bandeira.position.clone(), rot = this.bandeira.rotation.y;
+    this.cena.remove(this.bandeira);
+    descartar(this.bandeira);
+    this.bandeira = criarBandeira(this.nivelBandeira);
+    this.bandeira.position.copy(pos); this.bandeira.rotation.y = rot; this.bandeira.visible = vis;
+    this.cena.add(this.bandeira);
+    if (this.bandeiraPos) this.bandeiraAnim = 0;
+  }
+
+  // A casa do Reino troca de desenho quando sobe de nível
   trocarModeloCasa() {
     if (this.casa.userData.nivel === this.nivelCasa) return;
-    const vis = this.casa.visible, pos = this.casa.position.clone(), rot = this.casa.rotation.y;
+    const pos = this.casa.position.clone(), rot = this.casa.rotation.y;
     this.cena.remove(this.casa);
     descartar(this.casa);
     this.casa = criarCasa(this.nivelCasa);
-    this.casa.position.copy(pos); this.casa.rotation.y = rot; this.casa.visible = vis;
+    this.casa.position.copy(pos); this.casa.rotation.y = rot;
     this.cena.add(this.casa);
-    if (this.casaPos) this.montarCasa(this.casaPos.x, this.casaPos.z, this.casaPos.rot); // a animação de montar, com o desenho novo
-  }
-  // Um ponto em volta da casa (lx, lz no desenho da casa) no mapa
-  pontoDaCasa(lx, lz) {
-    const { x, z, rot } = this.casaPos, c = Math.cos(rot), s = Math.sin(rot);
-    return { x: x + lx * c + lz * s, z: z - lx * s + lz * c };
+    this.casaAnim = 0; // pulinho de "casa nova"
   }
 
-  montarCasa(x, z, rot, animar = true) {
-    if (this.casa.userData.nivel !== this.nivelCasa) { this.cena.remove(this.casa); descartar(this.casa); this.casa = criarCasa(this.nivelCasa); this.cena.add(this.casa); }
-    if (this.casaObst) this.obstaculos.tirar(this.casaObst);
-    if (this.lojinhaObst) { this.obstaculos.tirar(this.lojinhaObst); this.lojinhaObst = null; }
-    this.casaPos = { x, z, rot };
-    this.casaObst = { x, z, r: RAIO_CASA };
-    this.obstaculos.push(this.casaObst);
-    if (this.nivelCasa >= 3) { this.lojinhaObst = { ...this.pontoDaCasa(3.5, 0.6), r: 1.3 }; this.obstaculos.push(this.lojinhaObst); }
-    this.casa.position.set(x, alturaEm(x, z), z);
-    this.casa.rotation.y = rot;
-    this.casa.visible = true;
-    this.casaAnim = animar ? 0 : 1;
+  fincarBandeira(x, z, rot, animar = true) {
+    if (this.bandeira.userData.nivel !== this.nivelBandeira) { this.cena.remove(this.bandeira); descartar(this.bandeira); this.bandeira = criarBandeira(this.nivelBandeira); this.cena.add(this.bandeira); }
+    if (this.bandeiraObst) this.obstaculos.tirar(this.bandeiraObst);
+    this.bandeiraPos = { x, z, rot };
+    this.bandeiraObst = { x, z, r: RAIO_BANDEIRA };
+    this.obstaculos.push(this.bandeiraObst);
+    this.bandeira.position.set(x, alturaEm(x, z), z);
+    this.bandeira.rotation.y = rot;
+    this.bandeira.visible = true;
+    this.bandeiraAnim = animar ? 0 : 1;
     // monstros que estavam em cima do lugar vão embora
-    for (const s of [...this.selvagens]) if (Math.hypot(s.x - x, s.z - z) < AREA_SEGURA_CASA) this.removerSelvagem(s);
-    for (const g of [...this.grupos]) if (Math.hypot(g.x - x, g.z - z) < AREA_SEGURA_CASA + 3) this.removerGrupo(g);
+    for (const s of [...this.selvagens]) if (Math.hypot(s.x - x, s.z - z) < AREA_SEGURA_BANDEIRA) this.removerSelvagem(s);
+    for (const g of [...this.grupos]) if (Math.hypot(g.x - x, g.z - z) < AREA_SEGURA_BANDEIRA + 3) this.removerGrupo(g);
   }
 
-  guardarCasa() {
-    if (this.casaObst) this.obstaculos.tirar(this.casaObst);
-    if (this.lojinhaObst) { this.obstaculos.tirar(this.lojinhaObst); this.lojinhaObst = null; }
-    this.casaObst = null;
-    this.casaPos = null;
-    this.casa.visible = false;
+  tirarBandeira() {
+    if (this.bandeiraObst) this.obstaculos.tirar(this.bandeiraObst);
+    this.bandeiraObst = null;
+    this.bandeiraPos = null;
+    this.bandeira.visible = false;
   }
 
-  // Lugar na frente do jogador onde a casa seria montada
-  lugarNaFrente() {
-    const d = RAIO_CASA + 2.2;
-    return { x: this.pos.x + Math.sin(this.ang) * d, z: this.pos.z + Math.cos(this.ang) * d, rot: this.ang + Math.PI };
-  }
-
-  // Procura um lugar livre: primeiro na frente do jogador, depois em volta dele
-  acharLugarCasa() {
-    const frente = this.lugarNaFrente();
-    if (this.podeMontarCasa(frente.x, frente.z)) return frente;
-    for (const d of [RAIO_CASA + 2.2, RAIO_CASA + 4, RAIO_CASA + 6]) {
-      for (let i = 1; i <= 16; i++) {
+  // Procura um lugar livre para a bandeira: primeiro na frente do jogador, depois em volta dele
+  acharLugarBandeira() {
+    for (const d of [2.2, 3.4, 4.6]) {
+      for (let i = 0; i <= 16; i++) {
         // alterna esquerda/direita a partir da frente
         const a = this.ang + Math.ceil(i / 2) * (i % 2 ? 1 : -1) * (Math.PI / 8);
         const x = this.pos.x + Math.sin(a) * d, z = this.pos.z + Math.cos(a) * d;
-        if (this.podeMontarCasa(x, z)) return { x, z, rot: Math.atan2(this.pos.x - x, this.pos.z - z) };
+        if (this.podeFincarBandeira(x, z)) return { x, z, rot: Math.atan2(this.pos.x - x, this.pos.z - z) };
       }
     }
     return null;
   }
 
+  distanciaBandeira() {
+    return this.bandeiraPos ? Math.hypot(this.pos.x - this.bandeiraPos.x, this.pos.z - this.bandeiraPos.z) : Infinity;
+  }
   distanciaCasa() {
-    return this.casaPos ? Math.hypot(this.pos.x - this.casaPos.x, this.pos.z - this.casaPos.z) : Infinity;
+    return Math.hypot(this.pos.x - this.casaPos.x, this.pos.z - this.casaPos.z);
   }
 
-  // Ao perder a batalha: acorda na casa (se ela estiver montada) ou na fonte
+  // Ao perder a batalha: acorda na bandeira (se ela estiver fincada) ou na fonte
   irParaBase() {
-    if (!this.casaPos) { this.irParaFonte(); return; }
-    const { x, z, rot } = this.casaPos;
-    this.pos.set(x + Math.sin(rot) * (RAIO_CASA + 1.6), 0, z + Math.cos(rot) * (RAIO_CASA + 1.6));
+    if (!this.bandeiraPos) { this.irParaFonte(); return; }
+    const { x, z, rot } = this.bandeiraPos;
+    this.pos.set(x + Math.sin(rot) * (RAIO_BANDEIRA + 1.6), 0, z + Math.cos(rot) * (RAIO_BANDEIRA + 1.6));
     this.ang = rot;
     this.orbita.yaw = rot + Math.PI;
     this.graca = 3;
@@ -817,27 +825,25 @@ export class Mundo {
       this.jogo.aviso('A fonte do castelo curou sua equipe!');
     }
 
-    // Casa: animação de montar, fumaça e área segura (a casa não cura)
-    // área segura: em volta da casa, na Estrada Real e no Reino
-    const naAreaSegura = this.distanciaCasa() < AREA_SEGURA_CASA || naEstrada(this.pos.x, this.pos.z, -2) || REINO.perto(this.pos.x, this.pos.z);
-    if (this.casaPos) {
+    // Bandeira: animação de fincar, o pano balançando e a área segura (ela não cura)
+    // área segura: em volta da bandeira, na Estrada Real e no Reino
+    const naAreaSegura = this.distanciaBandeira() < AREA_SEGURA_BANDEIRA || naEstrada(this.pos.x, this.pos.z, -2) || REINO.perto(this.pos.x, this.pos.z);
+    if (this.bandeiraPos) {
+      if (this.bandeiraAnim < 1) {
+        this.bandeiraAnim = Math.min(1, this.bandeiraAnim + dt * 2.5);
+        const k = this.bandeiraAnim; // sobe do chão
+        this.bandeira.scale.set(1, Math.max(0.01, k), 1);
+      } else this.bandeira.scale.setScalar(1);
+      animarBandeira(this.bandeira, t);
+    }
+    // Casa do Reino: fumaça, janelas acesas à noite e o pulinho quando sobe de nível
+    if (this.distanciaCasa() < 70) {
       if (this.casaAnim < 1) {
         this.casaAnim = Math.min(1, this.casaAnim + dt * 2.2);
         const k = this.casaAnim, pulo = Math.sin(k * Math.PI) * 0.15;
-        this.casa.scale.set(k + pulo, k * (1 + pulo), k + pulo);
-      } else this.casa.scale.setScalar(1);
+        this.casa.scale.set(1 + pulo, 1 + pulo, 1 + pulo);
+      }
       animarCasa(this.casa, t, this.fatorNoite);
-      // Nível 2 ou mais: encostar na casa levanta os desmaiados com 2/3 da vida
-      if (est && this.nivelCasa >= 2 && this.distanciaCasa() < 4.6 && [...est.equipe, ...est.reserva].some((m) => m.hp <= 0)) {
-        this.jogo.levantarDesmaiados(2 / 3);
-        this.jogo.aviso('Sua casa levantou os desmaiados com 2/3 da vida!');
-      }
-      // Nível 3: a lojinha do lado da casa (mais cara que a do Reino)
-      if (est && this.nivelCasa >= 3) {
-        const lj = this.pontoDaCasa(3.5, 2.3), d = Math.hypot(this.pos.x - lj.x, this.pos.z - lj.z);
-        if (d > 3) this.lojinhaArmada = true;
-        if (d < 1.3 && this.lojinhaArmada !== false && !pausado) { this.lojinhaArmada = false; this.jogo.bolsa.abrirLoja(true); }
-      }
     }
 
     // Cristais no chão (só os perto são desenhados)
@@ -1000,16 +1006,16 @@ export class Mundo {
   }
 
   // Monstros dão meia-volta quando chegam perto da casa (ou da Estrada Real)
-  fugirDaCasa(s) {
+  fugirDaCasa(s) { // (da Estrada Real e da bandeira)
     const e = naEstradaReal(s.x, s.z), m = s.grupo ? 3 : 0;
     if (e.dentro && e.lat < SEGURA_ESTRADA + m) {
       const lado = -s.x * ESTRADA.dir.z + s.z * ESTRADA.dir.x >= 0 ? 1 : -1; // de que lado da estrada ele está
       s.ang = Math.atan2(-ESTRADA.dir.z * lado, ESTRADA.dir.x * lado);
       return true;
     }
-    if (!this.casaPos) return false;
-    const dx = s.x - this.casaPos.x, dz = s.z - this.casaPos.z;
-    if (Math.hypot(dx, dz) > AREA_SEGURA_CASA + (s.grupo ? 3 : 0)) return false;
+    if (!this.bandeiraPos) return false;
+    const dx = s.x - this.bandeiraPos.x, dz = s.z - this.bandeiraPos.z;
+    if (Math.hypot(dx, dz) > AREA_SEGURA_BANDEIRA + (s.grupo ? 3 : 0)) return false;
     s.ang = Math.atan2(dx, dz);
     return true;
   }

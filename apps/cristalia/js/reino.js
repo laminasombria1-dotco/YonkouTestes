@@ -21,6 +21,9 @@ import { ESPECIES, criarMonstro, formaPorNivel } from './dados.js';
 export const FONTE_REINO = { x: 0, z: 15 };          // a fonte de cura, na praça
 export const NASCER_REINO = { x: 0, z: 21 };         // onde o jogador aparece (de frente para o castelo)
 export const ARENA_REINO = { x: -34, z: 14 };        // centro da arena (o portão abre para a praça da fonte)
+// A casa do jogador (fixa): entre a arena e o portão, virada para o caminho do portão (+x).
+// Tem espaço em volta para crescer até o nível 5 e para o jardim.
+export const CASA_REINO = { x: -26, z: 44, rot: Math.PI / 2 };
 export const RAIO_MURALHA = 58;
 const ARENA = { r0: 9, deg: 7, passo: 1.2, palco: 0.87, porta: 0.16 }; // areia, degraus, aberturas (radianos)
 
@@ -626,6 +629,7 @@ export class Reino {
       const a = rng() * Math.PI * 2, d = 20 + rng() * 34, x = Math.cos(a) * d, z = Math.sin(a) * d;
       if (Math.hypot(x - ARENA_REINO.x, z - ARENA_REINO.z) < 23 || (Math.abs(x) < 15 && z > -16 && z < 60) || (Math.abs(x) < 21 && z > -36 && z < 8) || Math.hypot(x - 36, z + 26) < 12) continue;
       if (Math.hypot(x - 22, z - 30) < 22 || Math.hypot(x - 20, z + 38) < 8) continue; // a vila
+      if (Math.hypot(x - CASA_REINO.x, z - CASA_REINO.z) < 13) continue; // o terreno da casa do jogador (e do jardim)
       const e = 0.8 + rng() * 0.5;
       peca(this.raiz, cil(0.3 * e, 0.4 * e, 1.6 * e, 5), MAD, [x, 0.8 * e, z]);
       peca(this.raiz, cone(1.8 * e, 4 * e, 6), rng() < 0.5 ? '#3f8a3a' : '#4a9a40', [x, 3.4 * e, z]);

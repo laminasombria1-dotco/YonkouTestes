@@ -346,7 +346,7 @@ export class PainelGM {
 
   abaMundo() {
     const m = this.mundo, noite = m.periodo === 'noite';
-    const casa = m.casaPos ? `<button class="gm-btn" type="button" data-gm="ir" data-onde="casa">Casa</button>` : '';
+    const casa = `<button class="gm-btn" type="button" data-gm="ir" data-onde="casa">Casa (Reino)</button>` + (m.bandeiraPos ? `<button class="gm-btn" type="button" data-gm="ir" data-onde="bandeira">Bandeira</button>` : '');
     const vel = [1, 2, 3].map((v) => `<button class="gm-btn ${this.vel === v ? 'sim' : ''}" type="button" data-gm="vel" data-v="${v}">×${v}</button>`).join('');
     return `
       <div class="gm-bloco">
@@ -372,7 +372,8 @@ export class PainelGM {
           <button class="gm-btn" type="button" data-gm="moedas">+1000 de ouro</button>
           <button class="gm-btn" type="button" data-gm="chocar">Chocar o ovo agora</button>
           <button class="gm-btn" type="button" data-gm="madeira">+6 Galhos Raros</button>
-          ${[1, 2, 3].map((n) => `<button class="gm-btn" type="button" data-gm="casaNivel" data-n="${n}">Casa nível ${n}</button>`).join('')}</div>
+          ${[1, 2, 3, 4, 5].map((n) => `<button class="gm-btn" type="button" data-gm="casaNivel" data-n="${n}">Casa nível ${n}</button>`).join('')}
+          ${[1, 2].map((n) => `<button class="gm-btn" type="button" data-gm="bandeiraNivel" data-n="${n}">Bandeira nível ${n}</button>`).join('')}</div>
         <p class="gm-dica">"Lutar" começa a luta na hora (sem precisar da ordem). Dominada, todos lutam no Nv.50.</p>
       </div>
       <div class="gm-bloco">
@@ -520,6 +521,7 @@ export class PainelGM {
       case 'treinador': this.fecharPainel(); this.jogo.lutarComTreinador(Number(d.i)); return;
       case 'madeira': this.jogo.estado.galhos = (this.jogo.estado.galhos || 0) + 6; this.jogo.aviso('GM: +6 Galhos Raros.'); this.jogo.salvar(); break;
       case 'casaNivel': this.jogo.estado.casaNivel = Number(d.n); this.mundo.trocarModeloCasa(); this.jogo.aviso(`GM: casa no nível ${d.n}.`); this.jogo.salvar(); break;
+      case 'bandeiraNivel': this.jogo.estado.bandeiraNivel = Number(d.n); this.mundo.trocarModeloBandeira(); this.jogo.aviso(`GM: bandeira no nível ${d.n}.`); this.jogo.salvar(); break;
       case 'moedas': this.jogo.estado.moedas = (this.jogo.estado.moedas || 0) + 1000; this.jogo.atualizarHudMundo(); this.jogo.salvar(); break;
       case 'chocar': if (this.jogo.estado.ovo) { this.jogo.ovo.chocarAgora(); this.fecharPainel(); return; } this.jogo.aviso('GM: você não tem ovo (domine a arena).'); break;
       case 'arenaProg': {
@@ -825,9 +827,9 @@ export class PainelGM {
   }
 
   ir(onde) {
-    if (onde === 'casa') {
-      const c = this.mundo.casaPos;
-      if (c) this.teleportar(c.x + Math.sin(c.rot) * 4.2, c.z + Math.cos(c.rot) * 4.2, c.rot);
+    if (onde === 'casa' || onde === 'bandeira') {
+      const c = onde === 'casa' ? this.mundo.casaPos : this.mundo.bandeiraPos, d = onde === 'casa' ? 6 : 2.5;
+      if (c) this.teleportar(c.x + Math.sin(c.rot) * d, c.z + Math.cos(c.rot) * d, c.rot + Math.PI);
       return;
     }
     const l = LUGARES.find((x) => x[0] === onde);
