@@ -571,6 +571,21 @@ A linha do Solito **solta um sol no campo** que a deixa mais forte, **queima que
 - **Calor:** anda junto com o monstro e dá dano a cada meio segundo em quem está perto; o anel fica mais vermelho quando esquenta. É o calor do Sol, não a Queimadura do Fogo. O ofuscado é sorteado uma vez por inimigo a cada uso.
 - Esta linha não ganha o "disparo ×2/×3". Os golpes de Sol de sempre (em `dados.js`) continuam para quem não é desta linha.
 
+## Golpes da linha do Vaporito (Água + Fogo, o tanque)
+
+O Vaporito é uma tartaruga de vapor: **muita vida e defesa, mas lento**. Luta colado, aguenta e pune quem bate nele. Os números ficam em `js/habilidades/vaporito.js` e o funcionamento em `js/habilidades/vaporito-batalha.js`.
+
+| Forma | Perto | "Disparo" (de perto) | Área |
+|---|---|---|---|
+| Vaporito | Investida | **Bafo de Vapor**: cone de vapor de 3 m | **Recolher no Casco**: 2,5 s recebendo 50% menos dano (não ataca e anda devagar); no fim, explode em vapor |
+| Fumarolo | **Arrancada de Vapor**: dispara 5 m pelos jatos das costas e empurra; depois fica **Blindado** (+20% de defesa) | + Encharcado (o inimigo não consegue fugir) | **Casco Quente**: quem bater de perto se queima |
+| Gêiserão | **Pancada de Casco**: no fim da arrancada, salta e bate o casco em volta | Bafo mais largo | **Casco do Gêiser**: 60% menos dano; no fim, um gêiser atordoa os inimigos |
+| Caldeirax | **Pancada do Gêiser**: a pancada deixa um gêiser que atordoa | **Bafo Fervente**: Encharcado e Queimadura | **Caldeira**: 70% menos dano; o dano que ele segura vira **pressão** e deixa a explosão mais forte (no máximo o dobro) |
+
+- **Como jogar:** chegue perto com a Arrancada, segure o inimigo com o Bafo e entre no casco quando ele atacar forte.
+- **Ponto fraco:** não tem ataque de longe. Contra quem foge e atira, depende da Arrancada.
+- Os selvagens também usam: um Gêiserão entra no casco quando apanha.
+
 ## Golpes da linha do Lumino (Luz)
 
 A linha da Luz joga com a **velocidade da luz** (teletransporte), o **prisma** (o tiro se divide) e o **reflexo** (a redoma devolve os tiros). O efeito dela é o **Exposto** (recebe 30% a mais de dano). Os números ficam em `js/habilidades/lumino.js` e o funcionamento em `js/habilidades/lumino-batalha.js`.
@@ -687,7 +702,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/brasas.js` | Cenário do Caminho das Brasas (braseiros, forja, rio de lava, Trono de Magma, vulcão) |
 | `js/raizes.js` | Cenário da Trilha Ancestral e da Floresta (cogumelos, ruínas, lago, raízes, Árvore-Mãe, vaga-lumes, monstros extras) |
 | `js/arena.js` | Arenas: chão, obstáculos, clima animado e perigos de cada região (com chance), e o escurecer do Astro Negro |
-| `js/habilidades/` | **Habilidades próprias das linhas de monstros** (uma pasta só para isso). Veja o `README.md` de lá. Hoje: linha do Brasito (`brasito.js` com os números, `brasito-batalha.js` com o lança-chamas, o rabo de fogo e a velocidade), linha do Gotinho (`gotinho.js` e `gotinho-batalha.js`, com o jato, o hidrocanhão, as ondas, o maremoto e o escudo), linha do Musguinho (`musguinho.js` e `musguinho-batalha.js`, com a folha bumerangue, a vinha que puxa, as raízes, a moita e o bosque), linha do Pedrisco (`pedrisco.js` e `pedrisco-batalha.js`, com a pedra em arco que quica, o punho sísmico, o tremor e os pilares), linha do Faisquinho (`faisquinho.js` e `faisquinho-batalha.js`, com as marcas, o dash elétrico, o tiro que marca, o choque e as nuvens), linha do Solito (`solito.js` e `solito-batalha.js`, com o sol que dá bônus, o laser e o calor), linha do Lunico (`lunico.js` e `lunico-batalha.js`, com o combo de dashes, as fases da lua e o luar que cura), linha do Lumino (`lumino.js` e `lumino-batalha.js`, com o passo de luz, o estilhaço que se divide e a redoma que devolve os tiros) e a linha do Breuzinho (`trevas.js` e `trevas-batalha.js`, com a mordida, a bola com olhos de alcance curto e a área que escurece e dá bônus de dano) |
+| `js/habilidades/` | **Habilidades próprias das linhas de monstros** (uma pasta só para isso). Veja o `README.md` de lá. Hoje: linha do Brasito (`brasito.js` com os números, `brasito-batalha.js` com o lança-chamas, o rabo de fogo e a velocidade), linha do Gotinho (`gotinho.js` e `gotinho-batalha.js`, com o jato, o hidrocanhão, as ondas, o maremoto e o escudo), linha do Musguinho (`musguinho.js` e `musguinho-batalha.js`, com a folha bumerangue, a vinha que puxa, as raízes, a moita e o bosque), linha do Pedrisco (`pedrisco.js` e `pedrisco-batalha.js`, com a pedra em arco que quica, o punho sísmico, o tremor e os pilares), linha do Faisquinho (`faisquinho.js` e `faisquinho-batalha.js`, com as marcas, o dash elétrico, o tiro que marca, o choque e as nuvens), linha do Solito (`solito.js` e `solito-batalha.js`, com o sol que dá bônus, o laser e o calor), linha do Lunico (`lunico.js` e `lunico-batalha.js`, com o combo de dashes, as fases da lua e o luar que cura), linha do Lumino (`lumino.js` e `lumino-batalha.js`, com o passo de luz, o estilhaço que se divide e a redoma que devolve os tiros), linha do Vaporito, tipo duplo Água + Fogo (`vaporito.js` e `vaporito-batalha.js`, o tanque: arrancada, bafo de vapor e casco) e a linha do Breuzinho (`trevas.js` e `trevas-batalha.js`, com a mordida, a bola com olhos de alcance curto e a área que escurece e dá bônus de dano) |
 | `js/nuvem.js` | Contas e jogo salvo na nuvem (Firebase, direto pela internet, sem a biblioteca do Firebase): criar conta, entrar, entrar de novo com 1 toque, ler e gravar o jogo salvo, e a senha do GM |
 | `js/companheiro.js` | O monstro invocado: invocar e guardar, seguir o treinador, os botões e a troca de controle (o treinador fica parado e protegido) |
 | `js/treino.js` | O modo treino: os golpes do monstro invocado no mapa, "no ar", usando o mesmo motor da batalha (sem inimigos e sem dano) |

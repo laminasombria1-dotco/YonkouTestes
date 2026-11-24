@@ -148,6 +148,24 @@ Solito (Nv.1) > Solário (Nv.6) > Solaurum (Nv.12) > Astrorei (Nv.30)
 - Calor mais forte ou mais longo: `calorSolito` → `poder` (cada pedaço), `calor.duracao` e `raio`.
 - Calor que esquenta mais rápido: `ondaCalor` → `calor.esquenta`.
 
+### Água + Fogo (tipo duplo): linha do Vaporito, o tanque (`vaporito.js` e `vaporito-batalha.js`)
+Vaporito (Nv.1) > Fumarolo (Nv.6) > Gêiserão (Nv.12) > Caldeirax (Nv.30). Atributos de tanque em `DUPLAS.aguaFogo` (`../dados.js`): vida 64, ataque 13, defesa 15, velocidade 5,2.
+
+| Forma | Perto | "Disparo" (de perto) | Área |
+|---|---|---|---|
+| Vaporito | Investida | **Bafo de Vapor**: cone de 3 m | **Recolher no Casco**: 2,5 s, 50% menos dano; explosão de vapor no fim (3 m) |
+| Fumarolo | **Arrancada de Vapor**: dash de 5 m, empurra; depois **Blindado** (+20% de defesa por 4 s) | + Encharcado | **Casco Quente**: quem bate de perto se queima |
+| Gêiserão | **Pancada de Casco**: a arrancada termina com uma pancada em volta (2,5 m) | Bafo de 3,5 m | **Casco do Gêiser**: 3 s, 60% menos; no fim, gêiser que atordoa 0,8 s |
+| Caldeirax | **Pancada do Gêiser**: a pancada deixa um gêiser que atordoa | **Bafo Fervente** (4,5 m): Encharcado e Queimadura | **Caldeira**: 3,5 s, 70% menos; a explosão ganha +50% do dano segurado (no máximo o dobro) |
+
+- **Casco (`casco`):** fica em `c.casco`. Dentro dele não ataca nem esquiva ("No casco!") e anda na metade da velocidade (`fatorVel`). `aplicarDano` diminui o dano e chama `aoApanharNoCasco`, que soma a pressão e queima quem bateu de perto. A recarga só começa quando ele sai (como o Sol do Solito).
+- **Pressão:** `aplicarDano` aceita `opcoes.bonus` (dano a mais), limitado ao **dobro** do golpe.
+- **Arrancada (`arrancada`):** dash próprio em `c.arrancada`; o Blindado fica em `c.blindado` e aumenta a defesa em `aplicarDano`.
+- **Bafo (`bafo`):** cone em `c.bafo`, 5 pedaços de dano, como o lança-chamas.
+- **Atordoado:** usa o `stun` da batalha (não anda nem ataca).
+- **IA:** entra no casco quando apanhou há pouco tempo (`ultimoDano`), usa o bafo só de perto e a arrancada para chegar.
+- É o 1º tipo duplo com habilidades próprias: a chave em `HABILIDADES_DA_LINHA` é a da linha em `DUPLAS` (`aguaFogo`).
+
 ### Luz: linha do Lumino (`lumino.js` e `lumino-batalha.js`)
 Lumino (Nv.1) > Lumelo (Nv.6) > Prismal (Nv.12) > Aurealis (Nv.30)
 

@@ -20,6 +20,7 @@ import { HabilidadesFaisquinho } from './habilidades/faisquinho-batalha.js';
 import { HabilidadesSolito } from './habilidades/solito-batalha.js';
 import { HabilidadesLunico } from './habilidades/lunico-batalha.js';
 import { HabilidadesLumino } from './habilidades/lumino-batalha.js';
+import { HabilidadesVaporito } from './habilidades/vaporito-batalha.js';
 import { CameraOrbita } from './camera.js';
 import { aplicarPocao, RECARGA_POCAO } from './bolsa.js';
 import { criarModelo, criarCristal, criarCoroa, animarModelo, piscar, descartar, tocarGolpe, pararGolpe } from './modelos.js';
@@ -102,8 +103,9 @@ export class Lutador {
   podeAtacar() { return !this.tem('paralisia') && !this.tem('sono') && !this.tem('medo'); }
   // veloz = velocidade extra da Investida da linha do Brasito | sol = bônus do Sol da linha do Solito
   // breu = bônus de dano da área da linha de Trevas (fica em c.breu = { cfg, t })
+  // casco / blindado / arrancada / bafo = golpes da linha do Vaporito (no casco anda na metade da velocidade)
   // luarLento / luarVel = lentidão de quem está no luar inimigo / velocidade do Plenilúnio no próprio luar
-  get fatorVel() { return (this.veloz ? 1 + this.veloz.bonus : 1) * (this.sol ? 1 + this.sol.cfg.velocidade : 1) * (this.lento > 0 ? 0.5 : 1) * (this.tem('encharcado') ? 0.55 : 1) * (this.tem('parasita') ? 0.7 : 1) * (this.luarLento ? 1 - this.luarLento.f : 1) * (this.luarVel ? 1 + this.luarVel.f : 1) * (this.mod?.vel ?? 1); }
+  get fatorVel() { return (this.veloz ? 1 + this.veloz.bonus : 1) * (this.sol ? 1 + this.sol.cfg.velocidade : 1) * (this.lento > 0 ? 0.5 : 1) * (this.tem('encharcado') ? 0.55 : 1) * (this.tem('parasita') ? 0.7 : 1) * (this.casco ? 0.5 : 1) * (this.luarLento ? 1 - this.luarLento.f : 1) * (this.luarVel ? 1 + this.luarVel.f : 1) * (this.mod?.vel ?? 1); }
 }
 
 export class Batalha {
@@ -125,6 +127,7 @@ export class Batalha {
     this.solito = new HabilidadesSolito(this); // sol que dá bônus, laser e calor da linha do Solito
     this.lunico = new HabilidadesLunico(this); // combo de dashes, fases da lua e luar da linha do Lunico
     this.lumino = new HabilidadesLumino(this); // passo de luz, estilhaço e redoma da linha do Lumino
+    this.vaporito = new HabilidadesVaporito(this); // arrancada, bafo e casco da linha do Vaporito (tanque)
     this.periodo = jogo.mundo.periodo;
 
     this.idx = idxInicial;
@@ -374,6 +377,7 @@ export class Batalha {
     this.solito.atualizar(dt);
     this.lunico.atualizar(dt);
     this.lumino.atualizar(dt);
+    this.vaporito.atualizar(dt);
     if (this.captura) this.atualizarCaptura(dt);
 
     if (this.trocaAuto > 0) {
@@ -397,8 +401,8 @@ export class Batalha {
     j.mv = v; // para onde o joystick aponta (o Passo de Luz vai para lá)
     for (let i = 0; i < 3; i++) if (ctrl.consumir('golpe' + i)) this.tentarGolpe(j, i, e);
     if (ctrl.consumir('esquiva')) this.esquivar(j, mov ? v : null, e);
-    if (!j.dash && !j.combo && !j.giro && j.stun <= 0 && j.podeAndar()) {
-      const vel = j.stats.vel * j.fatorVel * (j.prep || j.jato || j.punho || j.feixe ? 0.35 : 1);
+    if (!j.dash && !j.combo && !j.arrancada && !j.giro && j.stun <= 0 && j.podeAndar()) {
+      const vel = j.stats.vel * j.fatorVel * (j.prep || j.jato || j.bafo || j.punho || j.feixe ? 0.35 : 1);
       j.pos.x += v.x * vel * dt;
       j.pos.z += v.z * vel * dt;
       j.movendo = mov;
@@ -415,7 +419,7 @@ export class Batalha {
     ia.troca -= dt;
     const d = dist(e, j);
     if (ia.troca <= 0) { ia.strafe = Math.random() < 0.5 ? -1 : 1; ia.troca = 1.5 + Math.random() * 2; }
-    if (ia.t <= 0 && !e.prep && !e.dash && !e.combo && e.stun <= 0 && e.podeAtacar()) {
+    if (ia.t <= 0 && !e.prep && !e.dash && !e.combo && !e.arrancada && !e.casco && e.stun <= 0 && e.podeAtacar()) {
       // com vários inimigos ao mesmo tempo, cada um ataca com menos frequência
       ia.t = (0.3 + Math.random() * 0.4) * (1 + 0.6 * (ativos - 1)) * (e.furia ? 0.6 : 1);
       const opcoes = [];
@@ -425,6 +429,9 @@ export class Batalha {
         if (gp.sol) { if (!e.sol) opcoes.push(i, i, i); continue; }             // solta o sol quando não tem
         if (gp.laser) { if (d < gp.laser.alcance) opcoes.push(i, i); continue; } // laser
         if (gp.passo) { if (d < gp.passo.distancia + 1) opcoes.push(i, i); continue; } // passo de luz: aparece perto de você
+        if (gp.casco) { if (this.t - (e.ultimoDano ?? -9) < 1.2 && d < 7) opcoes.push(i, i, i); continue; } // casco: quando está apanhando
+        if (gp.bafo) { if (d < gp.alcance * 0.9 + e.raio) opcoes.push(i, i); continue; } // bafo: só de perto
+        if (gp.arrancada) { if (d > 1.5 && d < gp.arrancada.distancia + 0.5) opcoes.push(i, i); continue; } // arrancada
         if (gp.onda) { if (d < gp.onda.distancia * 0.9) opcoes.push(i, i, i); } // onda que anda para a frente
         else if (gp.tipo === 'area' && d < gp.raio * 0.85 + (gp.dash || 0)) opcoes.push(i, i, i);
         if (gp.tipo === 'corpo' && d < gp.alcance + 1.2) opcoes.push(i, i);
@@ -437,7 +444,7 @@ export class Batalha {
       }
       if (opcoes.length && Math.random() < 0.75) this.tentarGolpe(e, opcoes[Math.floor(Math.random() * opcoes.length)], j);
     }
-    if (!e.dash && !e.combo && !e.giro && e.stun <= 0 && e.podeAndar()) {
+    if (!e.dash && !e.combo && !e.arrancada && !e.giro && e.stun <= 0 && e.podeAndar()) {
       const ax = (j.pos.x - e.pos.x) / (d || 1), az = (j.pos.z - e.pos.z) / (d || 1);
       // distância preferida depende de qual golpe está pronto
       const g0 = e.golpe(0);
@@ -454,7 +461,7 @@ export class Batalha {
         [fx, fz] = [fx * cs - fz * sn, fx * sn + fz * cs];
         l = Math.hypot(fx, fz) || 1;
       }
-      const vel = e.stats.vel * 0.85 * e.fatorVel * (e.prep || e.jato || e.punho || e.feixe ? 0.2 : 1);
+      const vel = e.stats.vel * 0.85 * e.fatorVel * (e.prep || e.jato || e.bafo || e.punho || e.feixe ? 0.2 : 1);
       e.pos.x += (fx / l) * vel * dt;
       e.pos.z += (fz / l) * vel * dt;
       e.movendo = true;
@@ -463,7 +470,11 @@ export class Batalha {
   }
 
   tentarGolpe(c, i, alvo) {
-    if (c.prep || c.rec[i] > 0 || c.stun > 0 || c.dash || c.combo || c.morto || c.rajada || c.jato || c.giro || c.vinha || c.punho || c.feixe) return;
+    if (c.prep || c.rec[i] > 0 || c.stun > 0 || c.dash || c.combo || c.arrancada || c.bafo || c.morto || c.rajada || c.jato || c.giro || c.vinha || c.punho || c.feixe) return;
+    if (c.casco) { // linha do Vaporito: dentro do casco não ataca
+      if (c.lado === 'jogador' && this.t - (this.avisoBloqueio || 0) > 0.8) { this.avisoBloqueio = this.t; this.jogo.numero('No casco!', c.pos.clone().setY(c.altura), '#ffffff', 'pequeno'); }
+      return;
+    }
     if (!c.podeAtacar()) {
       // avisa o jogador por que o golpe não saiu
       if (c.lado === 'jogador' && this.t - (this.avisoBloqueio || 0) > 0.8) {
@@ -503,6 +514,8 @@ export class Batalha {
     if (gp.nuvens) return null; // as nuvens avisam cada raio que cai no chão
     if (gp.sol) return null;    // o sol não ataca
     if (gp.laser) return inimigo ? this.solito.avisoLaser(c, gp, dir, cor) : null; // laser
+    if (gp.bafo) return inimigo ? this.vaporito.avisoBafo(c, gp, dir) : null;     // bafo de vapor
+    if (gp.casco) return null; // o casco não ataca na hora
     if (gp.tipo === 'area') {
       const g = new THREE.Group();
       const anel = new THREE.Mesh(GEO_ANEL, matBrilho(cor, 0.75));
@@ -574,6 +587,12 @@ export class Batalha {
       this.solito.atirarLaser(c, gp, dir, this.efeitoDoGolpe(c, gp));   // laser
     } else if (gp.calor) {
       this.solito.iniciarCalor(c, gp, this.efeitoDoGolpe(c, gp));       // calor em volta
+    } else if (gp.arrancada) {
+      this.vaporito.iniciarArrancada(c, gp, dir, this.efeitoDoGolpe(c, gp)); // arrancada de vapor
+    } else if (gp.bafo) {
+      this.vaporito.iniciarBafo(c, gp, dir, this.efeitoDoGolpe(c, gp));      // bafo de vapor
+    } else if (gp.casco) {
+      this.vaporito.iniciarCasco(c, gp);                                     // esconde no casco
     } else if (gp.passo) {
       this.lumino.iniciarPasso(c, gp, dir, this.efeitoDoGolpe(c, gp));  // teletransporte com cristais
     } else if (gp.divide) {
@@ -646,7 +665,8 @@ export class Batalha {
       return false;
     }
     const mult = multiplicadorContra(gp.elemento, alvo.esp.elementos);
-    const def = alvo.stats.def * (alvo.tem('soterrado') ? 0.7 : 1);
+    // Blindado (linha do Vaporito): mais defesa por um tempo
+    const def = alvo.stats.def * (alvo.tem('soterrado') ? 0.7 : 1) * (alvo.blindado ? 1 + alvo.blindado.f : 1);
     const exposto = alvo.tem('exposto') ? 1.3 : 1;
     const nivel = fatorDanoNivel(at.dados.nivel);  // dano cresce com o nível de quem ataca
     const arena = at.mod?.dano ?? 1;               // bônus/penalidade da arena
@@ -656,9 +676,15 @@ export class Batalha {
     // linha do Lunico (Crescêntio em diante): golpe em quem está dormindo dá mais dano
     // Redoma da linha do Lumino: quem está dentro recebe menos dano
     const redoma = alvo.redoma ? 1 - alvo.redoma.cfg.reducao : 1;
+    // Casco da linha do Vaporito: recebe bem menos dano
+    const casco = alvo.casco ? 1 - alvo.casco.C.reducao : 1;
     const despertar = alvo.tem('sono') && at.melhoria?.despertar ? 1 + at.melhoria.despertar : 1;
     const gmDano = at.lado === 'jogador' ? (this.jogo.gm?.dano || 1) : 1; // GM: dano ×10
-    const dano = Math.max(1, Math.round(DANO_GERAL * gp.poder * (opcoes.fator ?? 1) * (at.stats.atk / def) * mult * exposto * nivel * arena * sol * breu * despertar * redoma * gmDano * (0.9 + Math.random() * 0.2)));
+    let dano = Math.max(1, Math.round(DANO_GERAL * gp.poder * (opcoes.fator ?? 1) * (at.stats.atk / def) * mult * exposto * nivel * arena * sol * breu * despertar * redoma * casco * gmDano * (0.9 + Math.random() * 0.2)));
+    // opcoes.bonus = dano a mais (pressão da Caldeira), no máximo o dobro do golpe
+    if (opcoes.bonus) dano += Math.min(Math.round(opcoes.bonus), dano);
+    alvo.ultimoDano = this.t; // a IA do Vaporito usa para entrar no casco
+    if (alvo.casco) this.vaporito.aoApanharNoCasco(alvo, at, gp, dano / casco - dano); // pressão e casco quente
     // Escudo d'Água (linha do Gotinho) segura o dano antes da vida
     const passou = this.gotinho.absorver(alvo, dano);
     alvo.dados.hp = Math.max(0, alvo.dados.hp - passou);
@@ -767,6 +793,7 @@ export class Batalha {
     this.solito.parar(l);
     this.lunico.parar(l);
     this.lumino.parar(l);
+    this.vaporito.parar(l);
     l.veloz = null;
     l.breu = null;
     if (l.lado === 'inimigo') {
@@ -795,7 +822,7 @@ export class Batalha {
   }
 
   esquivar(c, mv, outro) {
-    if (c.cdEsq > 0 || c.dash || c.combo || c.stun > 0 || c.morto || !c.podeAndar()) return;
+    if (c.cdEsq > 0 || c.dash || c.combo || c.arrancada || c.casco || c.stun > 0 || c.morto || !c.podeAndar()) return;
     const dir = mv ? new THREE.Vector3(mv.x, 0, mv.z) : new THREE.Vector3(c.pos.x - outro.pos.x, 0, c.pos.z - outro.pos.z);
     if (dir.lengthSq() < 1e-4) dir.set(1, 0, 0);
     dir.normalize();
@@ -853,6 +880,8 @@ export class Batalha {
     if (c.vinha) this.musguinho.atualizarVinha(c, dt);
     if (c.punho) this.pedrisco.atualizarPunho(c, dt);
     if (c.combo) this.lunico.atualizarCombo(c, dt);
+    if (c.arrancada) this.vaporito.atualizarArrancada(c, dt);
+    if (c.bafo) this.vaporito.atualizarBafo(c, dt);
 
     if (c.dash) {
       const ds = c.dash;
@@ -1111,7 +1140,7 @@ export class Batalha {
     est.pedras[tipo.id]--;
     const sucesso = garantida || Math.random() < chanceCaptura(this.ini.dados, this.tipoCristal);
     if (this.jog.prep) this.cancelarPreparo(this.jog);
-    for (const l of this.inimigos) { if (l.prep) this.cancelarPreparo(l); l.dash = null; l.rajada = null; this.brasito.parar(l); this.gotinho.parar(l, false); this.musguinho.parar(l); this.pedrisco.parar(l); this.faisquinho.parar(l, false); this.lunico.parar(l); this.lumino.parar(l); }
+    for (const l of this.inimigos) { if (l.prep) this.cancelarPreparo(l); l.dash = null; l.rajada = null; this.brasito.parar(l); this.gotinho.parar(l, false); this.musguinho.parar(l); this.pedrisco.parar(l); this.faisquinho.parar(l, false); this.lunico.parar(l); this.lumino.parar(l); this.vaporito.parar(l); }
     const cr = criarCristal(1.1, this.tipoCristal);
     this.cena.add(cr);
     this.captura = {
@@ -1242,6 +1271,7 @@ export class Batalha {
     this.solito.parar(velho);
     this.lunico.parar(velho);
     this.lumino.parar(velho);
+    this.vaporito.parar(velho);
     this.cena.remove(velho.modelo);
     descartar(velho.modelo);
     this.particulas(velho.pos, '#8ff4ff', 12, 1);
@@ -1319,11 +1349,13 @@ export class Batalha {
     const veloz = l.veloz ? `<span style="--cor:#7dffa0">Veloz +${Math.round(l.veloz.bonus * 100)}% ${l.veloz.t.toFixed(0)}s</span>` : '';
     const escudo = l.escudo ? `<span style="--cor:#8fdcff">Escudo ${l.escudo.valor} ${l.escudo.t.toFixed(0)}s</span>` : '';
     const sol = l.sol ? `<span style="--cor:#ffab2e">Sol +${Math.round(l.sol.cfg.ataque * 100)}% ${l.sol.t.toFixed(0)}s</span>` : '';
+    const casco = l.casco ? `<span style="--cor:#9fd9c0">Casco ${Math.max(0, l.casco.C.duracao - l.casco.t).toFixed(0)}s</span>` : '';
+    const blindado = l.blindado ? `<span style="--cor:#bfe8ff">Blindado +${Math.round(l.blindado.f * 100)}% ${l.blindado.t.toFixed(0)}s</span>` : '';
     const redoma = l.redoma ? `<span style="--cor:#fff6c8">Redoma ${Math.max(0, l.redoma.cfg.duracao - l.redoma.t).toFixed(0)}s</span>` : '';
     const luar = l.luarVel ? `<span style="--cor:#e2ddff">Fúria Lunar +${Math.round(l.luarVel.f * 100)}%</span>` : '';
     const breu = l.breu ? `<span style="--cor:#b57be8">Trevas +${Math.round(l.breu.cfg.dano * 100)}% ${l.breu.t.toFixed(0)}s</span>` : '';
     const marcas = l.marcas ? `<span style="--cor:#f7e43a">Marcado ×${l.marcas.n} ${l.marcas.t.toFixed(0)}s</span>` : '';
-    return veloz + escudo + sol + breu + luar + redoma + marcas + Object.entries(l.status).map(([k, v]) => `<span style="--cor:${EFEITOS[k].cor}">${EFEITOS[k].nome} ${v.toFixed(1)}s</span>`).join('');
+    return veloz + escudo + sol + breu + luar + redoma + casco + blindado + marcas + Object.entries(l.status).map(([k, v]) => `<span style="--cor:${EFEITOS[k].cor}">${EFEITOS[k].nome} ${v.toFixed(1)}s</span>`).join('');
   }
 
   // Placa em cima de cada inimigo: só o nome e uma barrinha de vida

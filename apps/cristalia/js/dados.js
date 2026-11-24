@@ -12,6 +12,7 @@ import { GOLPES_MUSGUINHO, GOLPES_POR_FORMA_MUSGUINHO, MELHORIAS_MUSGUINHO, TEXT
 import { GOLPES_PEDRISCO, GOLPES_POR_FORMA_PEDRISCO, MELHORIAS_PEDRISCO, TEXTOS_PEDRISCO, NOVIDADES_PEDRISCO } from './habilidades/pedrisco.js';
 import { GOLPES_FAISQUINHO, GOLPES_POR_FORMA_FAISQUINHO, MELHORIAS_FAISQUINHO, TEXTOS_FAISQUINHO, NOVIDADES_FAISQUINHO } from './habilidades/faisquinho.js';
 import { GOLPES_SOLITO, GOLPES_POR_FORMA_SOLITO, MELHORIAS_SOLITO, TEXTOS_SOLITO, NOVIDADES_SOLITO } from './habilidades/solito.js';
+import { GOLPES_VAPORITO, GOLPES_POR_FORMA_VAPORITO, MELHORIAS_VAPORITO, TEXTOS_VAPORITO, NOVIDADES_VAPORITO } from './habilidades/vaporito.js';
 import { GOLPES_LUMINO, GOLPES_POR_FORMA_LUMINO, MELHORIAS_LUMINO, TEXTOS_LUMINO, NOVIDADES_LUMINO } from './habilidades/lumino.js';
 import { GOLPES_LUNICO, GOLPES_POR_FORMA_LUNICO, MELHORIAS_LUNICO, TEXTOS_LUNICO, NOVIDADES_LUNICO } from './habilidades/lunico.js';
 import { GOLPES_TREVAS, GOLPES_POR_FORMA_TREVAS, MELHORIAS_TREVAS, TEXTOS_TREVAS, NOVIDADES_TREVAS } from './habilidades/trevas.js';
@@ -26,6 +27,8 @@ const HABILIDADES_DA_LINHA = {
   sol: { golpes: GOLPES_POR_FORMA_SOLITO, melhorias: MELHORIAS_SOLITO, textos: TEXTOS_SOLITO, novidades: NOVIDADES_SOLITO },
   lua: { golpes: GOLPES_POR_FORMA_LUNICO, melhorias: MELHORIAS_LUNICO, textos: TEXTOS_LUNICO, novidades: NOVIDADES_LUNICO },
   luz: { golpes: GOLPES_POR_FORMA_LUMINO, melhorias: MELHORIAS_LUMINO, textos: TEXTOS_LUMINO, novidades: NOVIDADES_LUMINO },
+  // tipos duplos com habilidades próprias (a chave é a da linha em DUPLAS)
+  aguaFogo: { golpes: GOLPES_POR_FORMA_VAPORITO, melhorias: MELHORIAS_VAPORITO, textos: TEXTOS_VAPORITO, novidades: NOVIDADES_VAPORITO },
   trevas: { golpes: GOLPES_POR_FORMA_TREVAS, melhorias: MELHORIAS_TREVAS, textos: TEXTOS_TREVAS, novidades: NOVIDADES_TREVAS },
 };
 
@@ -186,6 +189,8 @@ export const GOLPES = {
   ...GOLPES_LUNICO,
   // golpes próprios da linha do Lumino (números em js/habilidades/lumino.js)
   ...GOLPES_LUMINO,
+  // golpes próprios da linha do Vaporito (números em js/habilidades/vaporito.js)
+  ...GOLPES_VAPORITO,
   // golpes próprios da linha do Breuzinho (números em js/habilidades/trevas.js)
   ...GOLPES_TREVAS,
 };
@@ -398,7 +403,7 @@ export const DUPLAS = {
     ['florinferno', 'Florinferno', 'Árvore de chamas eternas. Onde passa, brotam flores de fogo.'],
   ] },
   aguaFogo: { elementos: ['agua', 'fogo'], zonas: ['agua', 'fogo', 'campo'],
-    base: { hp: 56, atk: 14, def: 12, vel: 5.8 }, formas: [
+    base: { hp: 64, atk: 13, def: 15, vel: 5.2 }, formas: [ // tanque: mais vida e defesa, mais lento
     ['vaporito', 'Vaporito', 'Bolinha de água fervendo. Chia quando está feliz.'],
     ['fumarolo', 'Fumarolo', 'Solta jatos de vapor pelas costas para correr.'],
     ['geiserao', 'Gêiserão', 'Tartaruga com um gêiser fervente no casco.'],
@@ -460,7 +465,7 @@ for (const [k, linha] of Object.entries(DUPLAS)) {
       raio: 0.65 * TAMANHO[e] * (1 + e * 0.12),
       altura: (1.7 + e * 0.45) * TAMANHO[e],
       base: { hp: linha.base.hp * MULT[e], atk: linha.base.atk * MULT[e], def: linha.base.def * MULT[e], vel: linha.base.vel * MULT_VEL[e] },
-      golpes: golpesDuplos(linha.elementos, e),
+      golpes: HABILIDADES_DA_LINHA[k]?.golpes[e] ?? golpesDuplos(linha.elementos, e),
       evoluiPara: linha.formas[e + 1]?.[0] ?? null,
       nivelEvolucao: NIVEIS_EVOLUCAO[e] ?? null,
     };
