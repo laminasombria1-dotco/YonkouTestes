@@ -17,6 +17,7 @@
 import {
   ESPECIES, ELEMENTOS, ORDEM_ELEMENTOS, ORDEM_DUPLAS, RAROS, NOMES_ESTAGIO, ARENAS, DUNGEONS, CRISTAIS,
   formasDaLinha, formaPorNivel, criarMonstro, statsDe, xpParaProximo, niveisDaEtapa, nivelDoChefe, nomeDupla, nomeTipo, verificarEvolucao,
+  NIVEL_MAXIMO, evoluirUmaVez, missaoDe,
 } from './dados.js';
 import { criarModelo, criarCoroa, criarAuraDupla } from './modelos.js';
 import { zonaEm, NOMES_ZONA, NASCER, ANG_NASCER } from './mundo.js';
@@ -25,7 +26,7 @@ import { ARENA_REINO, TREINADORES } from './reino.js';
 import { ESTRADA } from './mapa/gerador.js';
 import { SEMENTE, SEMENTE_PADRAO, centroDe, LAGOS, POIS } from './mapa/gerador.js';
 
-const MAX_NIVEL = 50;
+const MAX_NIVEL = NIVEL_MAXIMO; // nível máximo do jogo (100)
 const MAX_EQUIPE = 3;
 const TAMANHO_GRUPO = 6; // 5 comuns + 1 líder
 
@@ -289,7 +290,7 @@ export class PainelGM {
     const e = ESPECIES[m.especie], s = statsDe(m.especie, m.nivel);
     const opcoes = lista.map(([x, o], i) => `<option value="${i}" ${i === this.sel.alvo ? 'selected' : ''}>${esc(ESPECIES[x.especie].nome)} Nv.${x.nivel} (${o})</option>`).join('');
     const anterior = Object.keys(ESPECIES).find((id) => ESPECIES[id].evoluiPara === m.especie);
-    const evo = e.evoluiPara ? `evolui no Nv.${e.nivelEvolucao} para ${esc(ESPECIES[e.evoluiPara].nome)}` : 'forma final';
+    const evo = e.evoluiPara ? `${e.evolucaoRara ? 'evolução rara' : 'evolui'} no Nv.${e.nivelEvolucao} para ${esc(ESPECIES[e.evoluiPara].nome)}` : 'forma final';
     const p = this.estado.pedras;
     return `
       <div class="gm-bloco">
@@ -310,6 +311,12 @@ export class PainelGM {
           <button class="gm-btn" type="button" data-gm="voltarForma" ${anterior ? '' : 'disabled'}>Voltar uma forma</button>
           <button class="gm-btn" type="button" data-gm="curarAlvo">Curar</button>
           <button class="gm-btn forte" type="button" data-gm="pularNivel">Mudar para o Nv. acima (sem evoluir)</button>
+        </div>
+        <h3>Evolução rara</h3>
+        <p class="gm-info">${(() => { const M = missaoDe(m); return M ? `Missão: ${Math.min(M.conta, M.alvo)}/${M.alvo} (inimigos Nv.${M.contaDesde}+)` : 'Sem missão agora'; })()} · Asas <b>${this.estado.asas || 0}</b> · Corações <b>${this.estado.coracoes || 0}</b> · Ouro <b>${this.estado.moedas || 0}</b></p>
+        <div class="gm-linha">
+          <button class="gm-btn" type="button" data-gm="itensEvolucao">+3 Asas, +3 Corações, +3000 ouro</button>
+          <button class="gm-btn" type="button" data-gm="completarMissao">Completar a missão</button>
         </div>
       </div>
       <div class="gm-bloco">
@@ -495,6 +502,8 @@ export class PainelGM {
       case 'xpNivel': { const m = this.alvo(); this.darXp(xpParaProximo(m.nivel) - m.xp); break; }
       case 'xpAte': this.xpAte(this.sel.nivelAlvo); break;
       case 'evoluir': this.evoluir(); break;
+      case 'itensEvolucao': this.darItensEvolucao(); break;
+      case 'completarMissao': this.completarMissao(); break;
       case 'voltarForma': this.voltarForma(); break;
       case 'pularNivel': this.pularNivel(); break;
       case 'curarAlvo': { const m = this.alvo(); m.hp = statsDe(m.especie, m.nivel).hpMax; this.salvar(); break; }
@@ -737,7 +746,31 @@ export class PainelGM {
     const m = this.alvo(), e = ESPECIES[m.especie];
     if (!e.evoluiPara) return;
     if (m.nivel < e.nivelEvolucao) this.xpAte(e.nivelEvolucao);
-    else { this.jogo.registrarEvolucoes(verificarEvolucao(m)); this.salvar(); }
+    // evolução rara: o GM pula a missão, os itens e o ouro
+    if (e.evolucaoRara && ESPECIES[m.especie] === e && m.nivel >= e.nivelEvolucao) {
+      this.jogo.registrarEvolucoes([evoluirUmaVez(m)]);
+      this.jogo.aviso(`GM: evolução rara feita (sem missão, itens nem ouro).`);
+    } else if (m.nivel >= e.nivelEvolucao) this.jogo.registrarEvolucoes(verificarEvolucao(m));
+    this.salvar();
+  }
+
+  // Itens e ouro da evolução rara e a missão (para testar)
+  darItensEvolucao() {
+    const est = this.estado;
+    est.asas = (est.asas || 0) + 3;
+    est.coracoes = (est.coracoes || 0) + 3;
+    est.moedas = (est.moedas || 0) + 3000;
+    this.jogo.atualizarHudMundo();
+    this.jogo.aviso('GM: +3 Asas do Anjo, +3 Corações do Guardião e +3000 de ouro.');
+    this.salvar();
+  }
+
+  completarMissao() {
+    const m = this.alvo(), M = missaoDe(m);
+    if (!M) { this.jogo.aviso(`GM: ${ESPECIES[m.especie].nome} não tem missão agora (ela aparece 5 níveis antes da evolução rara).`); return; }
+    m.missao.conta = M.alvo;
+    this.jogo.aviso(`GM: missão de ${ESPECIES[m.especie].nome} completa.`);
+    this.salvar();
   }
 
   // Volta para a forma anterior da linha, no nível logo abaixo da evolução (para não evoluir de novo sozinho)

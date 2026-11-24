@@ -272,9 +272,9 @@ export const EFEITO_DO_ELEMENTO = {
 // =============================================================
 export const MELHORIAS = [
   { disparos: 1, efeitoArea: false, efeitoPerto: false, forcaEfeito: 1 },   // forma inicial
-  { disparos: 2, efeitoArea: false, efeitoPerto: false, forcaEfeito: 1 },   // 1ª evolução (Nv.6)
-  { disparos: 2, efeitoArea: true,  efeitoPerto: false, forcaEfeito: 1 },   // 2ª evolução (Nv.12)
-  { disparos: 3, efeitoArea: true,  efeitoPerto: true,  forcaEfeito: 1.5 }, // forma final (Nv.30)
+  { disparos: 2, efeitoArea: false, efeitoPerto: false, forcaEfeito: 1 },   // 1ª evolução (Nv.12)
+  { disparos: 2, efeitoArea: true,  efeitoPerto: false, forcaEfeito: 1 },   // 2ª evolução (Nv.30)
+  { disparos: 3, efeitoArea: true,  efeitoPerto: true,  forcaEfeito: 1.5 }, // forma final (Nv.50, evolução rara)
 ];
 export const PODER_DISPARO_EXTRA = 0.75; // cada disparo extra tem 75% da força
 export const DURACAO_EFEITO_PERTO = 0.6;  // efeito do golpe de perto dura 60% do normal
@@ -333,9 +333,17 @@ export function novidadesDaEvolucao(de, para) {
   return lista;
 }
 
-// Níveis em que a forma atual evolui para a próxima
-export const NIVEIS_EVOLUCAO = [6, 12, 30];
-export const NOMES_ESTAGIO = ['Forma inicial', '1ª evolução', '2ª evolução', 'Forma final'];
+// Níveis em que a forma atual evolui para a próxima.
+// As 2 primeiras são sozinhas, pelo nível. A do Nv.50 é a EVOLUÇÃO RARA (a forma final):
+// precisa de missão + itens + ouro e é feita com um botão (veja EVOLUCAO_RARA).
+export const NIVEIS_EVOLUCAO = [12, 30, 50];
+export const NOMES_ESTAGIO = ['Forma inicial', '1ª evolução', '2ª evolução', 'Evolução rara'];
+export const NIVEL_MAXIMO = 100;
+
+// Evolução rara das linhas e dos tipos duplos (da 2ª evolução para a forma final, no Nv.50)
+//  missaoNoNivel = a missão aparece nesse nível | contaDesde = só contam inimigos desse nível para cima
+//  alvo = quantos monstros derrotar | custo = itens e ouro gastos na hora de evoluir
+export const EVOLUCAO_RARA = { missaoNoNivel: 45, contaDesde: 35, alvo: 60, custo: { asas: 3, coracoes: 3, ouro: 3000 } };
 
 // Cada linha: atributos da forma inicial + as 4 formas [id, nome, descrição]
 export const LINHAS = {
@@ -461,6 +469,7 @@ for (const [el, linha] of Object.entries(LINHAS)) {
       golpes: HABILIDADES_DA_LINHA[el]?.golpes[e] ?? golpesDoEstagio(el, e),
       evoluiPara: linha.formas[e + 1]?.[0] ?? null,
       nivelEvolucao: NIVEIS_EVOLUCAO[e] ?? null,
+      evolucaoRara: e === 2 ? EVOLUCAO_RARA : null,
     };
   });
 }
@@ -476,6 +485,7 @@ for (const [k, linha] of Object.entries(DUPLAS)) {
       golpes: HABILIDADES_DA_LINHA[k]?.golpes[e] ?? golpesDuplos(linha.elementos, e),
       evoluiPara: linha.formas[e + 1]?.[0] ?? null,
       nivelEvolucao: NIVEIS_EVOLUCAO[e] ?? null,
+      evolucaoRara: e === 2 ? EVOLUCAO_RARA : null,
     };
   });
 }
@@ -523,9 +533,12 @@ export function formasDaLinha(k) {
   return (LINHAS[k] || DUPLAS[k]).formas.map((f) => f[0]);
 }
 
-// Qual forma um monstro selvagem tem num certo nível
-export function formaPorNivel(k, nivel) {
-  const estagio = NIVEIS_EVOLUCAO.filter((n) => nivel >= n).length;
+// Qual forma um monstro tem num certo nível.
+// final = pode estar na forma final (só treinadores e chefes de masmorra);
+// os selvagens do mapa param na 2ª evolução.
+export function formaPorNivel(k, nivel, final = false) {
+  let estagio = NIVEIS_EVOLUCAO.filter((n) => nivel >= n).length;
+  if (!final) estagio = Math.min(estagio, 2);
   return (LINHAS[k] || DUPLAS[k]).formas[estagio][0];
 }
 
@@ -697,20 +710,69 @@ export function criarMonstro(especie, nivel) {
   };
 }
 
-// Evolui o monstro quantas vezes o nível permitir. Devolve a lista de evoluções.
+// Troca o monstro para a próxima forma (a vida continua na mesma proporção)
+export function evoluirUmaVez(m) {
+  const de = m.especie;
+  const fracao = m.hp / statsDe(de, m.nivel).hpMax;
+  m.especie = ESPECIES[de].evoluiPara;
+  const max = statsDe(m.especie, m.nivel).hpMax;
+  m.hp = fracao > 0 ? Math.max(1, Math.round(fracao * max)) : 0;
+  delete m.missao; // a missão era desta forma
+  return { uid: m.uid, de, para: m.especie };
+}
+
+// Evolui o monstro quantas vezes o nível permitir (menos a evolução rara, que é com botão).
+// Devolve a lista de evoluções.
 export function verificarEvolucao(m) {
   const feitas = [];
   let esp = ESPECIES[m.especie];
-  while (esp?.evoluiPara && m.nivel >= esp.nivelEvolucao) {
-    const de = m.especie;
-    const fracao = m.hp / statsDe(de, m.nivel).hpMax;
-    m.especie = esp.evoluiPara;
-    const max = statsDe(m.especie, m.nivel).hpMax;
-    m.hp = fracao > 0 ? Math.max(1, Math.round(fracao * max)) : 0;
-    feitas.push({ uid: m.uid, de, para: m.especie });
+  while (esp?.evoluiPara && m.nivel >= esp.nivelEvolucao && !esp.evolucaoRara) {
+    feitas.push(evoluirUmaVez(m));
     esp = ESPECIES[m.especie];
   }
   return feitas;
+}
+
+// ---------- Missão e evolução rara ----------
+// A missão do monstro (ou null se ainda não tem): { alvo, contaDesde, conta, pronta }
+// Fica salva no monstro em m.missao = { de: espécie, conta }
+export function missaoDe(m) {
+  const R = ESPECIES[m.especie]?.evolucaoRara;
+  if (!R || m.nivel < R.missaoNoNivel) return null;
+  if (m.missao?.de !== m.especie) m.missao = { de: m.especie, conta: 0 };
+  return { alvo: R.alvo, contaDesde: R.contaDesde, conta: m.missao.conta, pronta: m.missao.conta >= R.alvo };
+}
+
+// Um inimigo desmaiou enquanto este monstro lutava. Devolve 'contou', 'completa' ou null.
+export function contarNaMissao(m, nivelInimigo) {
+  const M = missaoDe(m);
+  if (!M || M.pronta || nivelInimigo < M.contaDesde) return null;
+  m.missao.conta++;
+  return m.missao.conta >= M.alvo ? 'completa' : 'contou';
+}
+
+// O que falta para a evolução rara: { nivel, missao, asas, coracoes, ouro, tudo } (true = ok)
+export function requisitosEvolucaoRara(m, estado) {
+  const e = ESPECIES[m.especie], R = e?.evolucaoRara;
+  if (!R || !e.evoluiPara) return null;
+  const M = missaoDe(m), c = R.custo;
+  const r = {
+    nivel: m.nivel >= e.nivelEvolucao, missao: !!M?.pronta,
+    asas: (estado.asas || 0) >= c.asas, coracoes: (estado.coracoes || 0) >= c.coracoes, ouro: (estado.moedas || 0) >= c.ouro,
+  };
+  r.tudo = r.nivel && r.missao && r.asas && r.coracoes && r.ouro;
+  return r;
+}
+
+// Faz a evolução rara (gasta os itens e o ouro). Devolve a evolução feita ou null.
+export function fazerEvolucaoRara(m, estado) {
+  const r = requisitosEvolucaoRara(m, estado);
+  if (!r?.tudo) return null;
+  const c = ESPECIES[m.especie].evolucaoRara.custo;
+  estado.asas -= c.asas;
+  estado.coracoes -= c.coracoes;
+  estado.moedas -= c.ouro;
+  return evoluirUmaVez(m);
 }
 
 // =============================================================

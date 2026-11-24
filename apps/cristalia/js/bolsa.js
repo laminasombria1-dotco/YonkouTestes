@@ -83,6 +83,8 @@ export class Bolsa {
     if (!estado.pocoes) estado.pocoes = { cura: 3, reviver: 0 };
     if (typeof estado.madeira !== 'number') estado.madeira = 0;
     if (!estado.casaNivel) estado.casaNivel = 1;
+    if (typeof estado.asas !== 'number') estado.asas = 0;       // Asa do Anjo (evolução rara)
+    if (typeof estado.coracoes !== 'number') estado.coracoes = 0; // Coração do Guardião (evolução rara)
   }
 
   ganharMoedas(n) {

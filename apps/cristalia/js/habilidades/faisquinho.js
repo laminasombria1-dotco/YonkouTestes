@@ -1,6 +1,6 @@
 // =============================================================
 // HABILIDADES DA LINHA DO FAISQUINHO (Raio)
-// Faisquinho (Nv.1) > Choquilho (Nv.6) > Trovolt (Nv.12) > Tempestor (Nv.30)
+// Faisquinho (Nv.1) > Choquilho (Nv.12) > Trovolt (Nv.30) > Tempestor (Nv.50, evolução rara)
 //
 // ESTE ARQUIVO SÓ TEM NÚMEROS E TEXTOS: para mudar força, recarga, alcance,
 // marcas, choque ou nuvens, mexa aqui. Como cada golpe funciona e aparece na

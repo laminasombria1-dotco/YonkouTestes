@@ -25,7 +25,12 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
   - No PC: J, K e L para os golpes. A esquiva não tem mais botão na tela, mas ainda funciona com Espaço.
 - **Monstro invocado:** veja "Monstro invocado (companheiro)" abaixo.
 - **Capturar:** enfraqueça o monstro e toque no botão do cristal (tecla C). O número ao lado é a chance de captura. A **setinha** ao lado do cristal abre a lista para escolher Comum, Forte ou Supremo (no PC, a tecla V passa para o próximo). Formas evoluídas são bem mais difíceis de capturar.
-- **Evoluir:** cada linha tem 4 formas. A forma inicial evolui no **nível 6**, a 1ª evolução no **nível 12** e a 2ª evolução no **nível 30**. Quando seu monstro chega ao nível, aparece a animação de evolução e ele ganha atributos e golpes mais fortes.
+- **Evoluir:** cada linha tem 4 formas. A forma inicial evolui sozinha no **nível 12** e a 1ª evolução no **nível 30**. A última, a **evolução rara** (a forma final), é no **nível 50** e é feita com um botão no painel **Monstros**, quando o monstro tem tudo:
+  - a **missão**: aparece no **Nv.45** ("derrote 60 monstros Nv.35+ com ele"; conta quando o inimigo desmaia enquanto ele está lutando);
+  - **3 Asas do Anjo**, **3 Corações do Guardião** e **3.000 de ouro** (gastos na hora de evoluir).
+  O cartão do monstro mostra o que já tem (✓) e o que falta (✗). Os selvagens do mapa **não** aparecem na forma final: só os treinadores (conforme o nível) e os chefes de masmorra.
+- **Nível máximo: 100.** Os planos da grande atualização (itens, casa no Reino, jardim, afeto, bandeira, raros e lendários com evoluções) estão em `PLANO.md`.
+- **Temporada 2:** com a evolução nova, o progresso de todos foi zerado (os jogos salvos antigos são ignorados; as contas continuam).
 - **Dia e noite:** um ciclo completo dura 4 minutos (2 de dia e 2 de noite). **Sol e Luz** só aparecem de dia; **Lua e Trevas**, só à noite. O relógio fica no canto superior direito.
 - **Equipe:** até 3 monstros. Com a equipe cheia, o capturado vai para a reserva.
 - **Reserva:** no painel Equipe, a aba **Reserva** mostra **todos** os monstros que você tem (os da equipe aparecem marcados). Perder uma batalha nunca apaga monstros: você acorda na casa ou no castelo (veja "Casa").
@@ -237,13 +242,13 @@ O Reino fica **fora da borda do mapa**, como as dungeons, mas não é dungeon: �
 
 - São mais raros: **a cada 10 monstros que aparecem no mapa, 1 é de tipo duplo**. Eles têm um anel de duas cores em volta e aparecem na região de um dos seus elementos.
 - Quando um aparece, chega um aviso dizendo qual e onde.
-- Também evoluem no Nv.6, 12 e 30 e ganham as mesmas melhorias. A partir da 2ª evolução, o **disparo também causa o efeito** do elemento dele, então eles causam dois efeitos diferentes.
+- Também evoluem no Nv.12, 30 e 50 (a do Nv.50 é a evolução rara) e ganham as mesmas melhorias. A partir da 2ª evolução, o **disparo também causa o efeito** do elemento dele, então eles causam dois efeitos diferentes.
 - **Golpes:** perto e área são do 1º elemento; o disparo é do 2º.
 - **Na defesa:** o golpe é comparado com os dois elementos e os multiplicadores se somam. Um monstro nunca é fraco contra o próprio elemento.
 - **Captura mais difícil:** formas inicial e 1ª evolução só com **Cristal Forte** (ou melhor); 2ª evolução e forma final só com **Cristal Supremo**.
 - Valem 50% a mais de experiência e, ao serem vencidos, deixam 1 Cristal Forte.
 
-| Tipo | Nv.1 | Nv.6 | Nv.12 | Nv.30 | Onde aparece |
+| Tipo | Nv.1 | Nv.12 | Nv.30 | Nv.50 (rara) | Onde aparece |
 |---|---|---|---|---|---|
 | Fogo + Planta | Brotobrasa | Chamafolha | Ardentroco | Florinferno | Floresta, Vulcão, Campo |
 | Água + Fogo | Vaporito | Fumarolo | Gêiserão | Caldeirax | Lago, Vulcão, Campo |
@@ -382,7 +387,7 @@ Tudo dá para ajustar lá: a semente, o tamanho do mundo, o tamanho dos chunks, 
 
 ## Linhas evolutivas
 
-| Elemento | Nv.1 | Nv.6 | Nv.12 | Nv.30 |
+| Elemento | Nv.1 | Nv.12 | Nv.30 | Nv.50 (rara) |
 |---|---|---|---|---|
 | Fogo | Brasito | Brasalobo | Fornalobo | Magmalobo |
 | Água | Gotinho | Marolo | Marulhão | Tsunamar |
@@ -436,9 +441,9 @@ Cada evolução acrescenta algo às habilidades. Os monstros selvagens evoluído
 | Forma | O que ganha |
 |---|---|
 | Inicial (Nv.1) | Golpes básicos |
-| 1ª evolução (Nv.6) | O **disparo** atira **2 vezes** seguidas |
-| 2ª evolução (Nv.12) | A **área** passa a causar o **efeito do elemento** |
-| Forma final (Nv.30) | Disparo **3 vezes**, o golpe **perto** também causa o efeito e os efeitos duram 50% mais |
+| 1ª evolução (Nv.12) | O **disparo** atira **2 vezes** seguidas |
+| 2ª evolução (Nv.30) | A **área** passa a causar o **efeito do elemento** |
+| Forma final (Nv.50, evolução rara) | Disparo **3 vezes**, o golpe **perto** também causa o efeito e os efeitos duram 50% mais |
 
 "Causar o efeito" quer dizer ter uma **chance** de causar (veja a tabela de efeitos abaixo).
 

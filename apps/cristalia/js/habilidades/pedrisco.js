@@ -1,6 +1,6 @@
 // =============================================================
 // HABILIDADES DA LINHA DO PEDRISCO (Terra)
-// Pedrisco (Nv.1) > Cascalhão (Nv.6) > Rochedrão (Nv.12) > Montanhar (Nv.30)
+// Pedrisco (Nv.1) > Cascalhão (Nv.12) > Rochedrão (Nv.30) > Montanhar (Nv.50, evolução rara)
 //
 // ESTE ARQUIVO SÓ TEM NÚMEROS E TEXTOS: para mudar força, alcance, tamanho,
 // recarga, quiques, tempo no ar ou pilares, mexa aqui. Como cada golpe funciona

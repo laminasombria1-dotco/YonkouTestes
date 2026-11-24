@@ -19,7 +19,7 @@ import {
   criarMonstro, statsDe, xpParaProximo, xpDaVitoria, verificarEvolucao, formasDaLinha, fracoContra,
   textosMelhoria, novidadesDaEvolucao, melhoriaDe, EFEITOS, EFEITO_DO_ELEMENTO, chanceDoEfeito, pct,
   CRISTAIS, CUSTO_FUSAO, ORDEM_DUPLAS, DUPLAS, nomeDupla, nomeTipo, fundoTipo, fracoContraEspecie, forteContraEspecie,
-  DURACAO_EFEITO_DISPARO,
+  DURACAO_EFEITO_DISPARO, NIVEL_MAXIMO, missaoDe, contarNaMissao, requisitosEvolucaoRara, fazerEvolucaoRara,
 } from './dados.js';
 import { chaveNome, problemaNome, ErroNuvem, criarConta, entrar, renovar, Nuvem, senhaDoGM, SENHA_MIN } from './nuvem.js';
 
@@ -32,6 +32,9 @@ const EM_PE = window.matchMedia('(orientation: portrait) and (pointer: coarse)')
 const CHAVE_SAVE = 'cristalia-save-v1';
 const CHAVE_CONTAS = 'cristalia-contas';   // contas que já entraram neste aparelho (para entrar com 1 toque)
 const CHAVE_MIGRADO = 'cristalia-save-migrado';
+// Temporada do jogo salvo. A temporada 2 (evolução nova) começou do zero para todos:
+// jogos salvos de temporadas anteriores são ignorados (as contas continuam as mesmas).
+const TEMPORADA = 2;
 const ENVIO_NUVEM = 30;                    // segundos entre um envio para a nuvem e outro (enquanto joga)
 const MAX_EQUIPE = 3;
 const $ = (s) => document.querySelector(s);
@@ -80,6 +83,7 @@ function lerSave(chave) {
     if (!bruto) return null;
     const s = JSON.parse(bruto);
     if (!s?.estado?.equipe?.length) return null;
+    if (s.temporada !== TEMPORADA) return null; // jogo salvo de antes da temporada nova: começa do zero
     // ignora monstros de versões antigas que não existem mais
     s.estado.equipe = s.estado.equipe.filter((m) => ESPECIES[m.especie]);
     s.estado.reserva = (s.estado.reserva || []).filter((m) => ESPECIES[m.especie]);
@@ -305,7 +309,7 @@ class Jogo {
     }));
     $('#painel-equipe').addEventListener('click', (e) => {
       const b = e.target.closest('[data-cmd]');
-      if (b) this.comandoEquipe(b.dataset.cmd, Number(b.dataset.i));
+      if (b) this.comandoEquipe(b.dataset.cmd, Number(b.dataset.i), b.dataset.uid);
     });
   }
 
@@ -446,7 +450,7 @@ class Jogo {
     $(`#col-abas [data-aba="${aba}"]`)?.scrollIntoView({ block: 'nearest', inline: 'center' });
     $('#col-formas').innerHTML = ids.map((id, i) => {
       const e = ESPECIES[id];
-      const nv = e.superRaro ? 'Super raro' : e.raro ? 'Raro' : `Nv.${i === 0 ? 1 : NIVEIS_EVOLUCAO[i - 1]}`;
+      const nv = e.superRaro ? 'Super raro' : e.raro ? 'Raro' : `Nv.${i === 0 ? 1 : NIVEIS_EVOLUCAO[i - 1]}${i === 3 ? ' · rara' : ''}`;
       return `<button type="button" data-forma="${i}" style="--cor:${ELEMENTOS[e.elemento].cor}"><small>${nv}</small>${e.nome}</button>`;
     }).join('');
     $('#col-escolher').textContent = aba !== 'raros' ? `Escolher ${ESPECIES[ids[0]].nome}` : '';
@@ -523,7 +527,7 @@ class Jogo {
 
   novoJogo(especie) {
     this.estado = { equipe: [criarMonstro(especie, 3)], reserva: [], pedras: { comum: 5, forte: 0, supremo: 0 }, capturados: [especie], casa: null,
-      moedas: 0, pocoes: { cura: 3, reviver: 1 }, madeira: 0, casaNivel: 1 };
+      moedas: 0, pocoes: { cura: 3, reviver: 1 }, madeira: 0, casaNivel: 1, asas: 0, coracoes: 0 };
     this.mundo.hora = 0.08;
     this.entrarNoMundo();
     this.mundo.povoar();
@@ -601,7 +605,8 @@ class Jogo {
   ganharXp(m, qtd) {
     let subiu = false;
     m.xp += qtd;
-    while (m.xp >= xpParaProximo(m.nivel) && m.nivel < 50) {
+    const tinhaMissao = !!missaoDe(m);
+    while (m.xp >= xpParaProximo(m.nivel) && m.nivel < NIVEL_MAXIMO) {
       m.xp -= xpParaProximo(m.nivel);
       const antes = statsDe(m.especie, m.nivel).hpMax;
       m.nivel++;
@@ -609,8 +614,33 @@ class Jogo {
       m.hp = Math.min(depois, m.hp + (depois - antes));
       subiu = true;
     }
+    if (m.nivel >= NIVEL_MAXIMO) m.xp = 0;
     this.registrarEvolucoes(verificarEvolucao(m));
+    // chegou no nível da missão da evolução rara
+    const M = missaoDe(m);
+    if (M && !tinhaMissao) this.aviso(`Missão de ${ESPECIES[m.especie].nome}: derrote ${M.alvo} monstros Nv.${M.contaDesde}+ com ele para a evolução rara.`);
     return subiu;
+  }
+
+  // Um inimigo desmaiou enquanto "m" lutava: conta na missão da evolução rara
+  contarMissao(m, nivelInimigo) {
+    if (!m || contarNaMissao(m, nivelInimigo) !== 'completa') return;
+    const e = ESPECIES[m.especie];
+    this.aviso(`Missão completa! ${e.nome} pode fazer a evolução rara ${m.nivel >= e.nivelEvolucao ? 'agora' : `no Nv.${e.nivelEvolucao}`} (veja em Monstros).`);
+  }
+
+  // Bloco da evolução rara no cartão do monstro (missão, itens, ouro e o botão)
+  htmlEvolucaoRara(m) {
+    const e = ESPECIES[m.especie], R = e.evolucaoRara;
+    if (!R || !e.evoluiPara) return '';
+    const M = missaoDe(m), r = requisitosEvolucaoRara(m, this.estado), est = this.estado, c = R.custo;
+    const item = (ok, txt) => `<span class="${ok ? 'ok' : 'falta'}">${ok ? '✓' : '✗'} ${txt}</span>`;
+    const missao = M ? `Missão: ${Math.min(M.conta, M.alvo)}/${M.alvo} monstros Nv.${R.contaDesde}+` : `Missão no Nv.${R.missaoNoNivel}`;
+    return `<div class="evo-rara">
+      <b>Evolução rara → ${ESPECIES[e.evoluiPara].nome}</b>
+      <div class="evo-req">${item(r.nivel, `Nv.${e.nivelEvolucao}`)}${item(r.missao, missao)}${item(r.asas, `Asa do Anjo ${est.asas || 0}/${c.asas}`)}${item(r.coracoes, `Coração do Guardião ${est.coracoes || 0}/${c.coracoes}`)}${item(r.ouro, `Ouro ${est.moedas || 0}/${c.ouro}`)}</div>
+      <button type="button" data-cmd="evoluirRara" data-uid="${m.uid}" ${r.tudo ? '' : 'disabled'}>Evoluir</button>
+    </div>`;
   }
 
   registrarEvolucoes(lista) {
@@ -826,7 +856,7 @@ class Jogo {
     const fVida = m.hp / s.hpMax, fXp = m.xp / xpParaProximo(m.nivel);
     const nivelVida = fVida > 0.5 ? 'alto' : fVida > 0.2 ? 'medio' : 'baixo';
     const golpes = e.golpes.map((g) => `<span style="--cor:${ELEMENTOS[GOLPES[g].elemento].cor}">${GOLPES[g].nome}</span>`).join('');
-    const evo = e.evoluiPara ? `Evolui no Nv.${e.nivelEvolucao}` : e.raro ? 'Raro' : 'Forma final';
+    const evo = e.evoluiPara ? (e.evolucaoRara ? `Evolução rara no Nv.${e.nivelEvolucao}` : `Evolui no Nv.${e.nivelEvolucao}`) : e.raro ? 'Raro' : 'Forma final';
     const marca = onde ? `<span class="onde ${onde === 'Na equipe' ? 'eq' : ''}">${onde}</span>` : '';
     return `<article class="ficha${m.hp <= 0 ? ' desmaiado' : ''}" style="--cor:${el.cor}">
       ${marca ? `<div class="cab-onde">${marca}</div>` : ''}
@@ -835,6 +865,7 @@ class Jogo {
       <div class="linha"><span>Exp.</span><i class="xp"><b style="width:${(fXp * 100).toFixed(0)}%"></b></i><small>${m.xp}/${xpParaProximo(m.nivel)}</small></div>
       <div class="atributos"><span>Ataque <b>${Math.round(s.atk)}</b></span><span>Defesa <b>${Math.round(s.def)}</b></span><span>Veloc. <b>${s.vel.toFixed(1)}</b></span><span>${evo}</span></div>
       <div class="golpes-lista">${golpes}</div>
+      ${this.htmlEvolucaoRara(m)}
       <div class="cmds">${botoes}</div>
     </article>`;
   }
@@ -858,9 +889,19 @@ class Jogo {
     $('#info-colecao').textContent = `Você tem ${est.equipe.length + est.reserva.length} monstros · Espécies obtidas: ${est.capturados.length} de ${Object.keys(ESPECIES).length}`;
   }
 
-  comandoEquipe(cmd, i) {
+  comandoEquipe(cmd, i, uid) {
     const est = this.estado;
     if (cmd === 'fundir') { this.fundir(i); return; }
+    if (cmd === 'evoluirRara') { // gasta itens e ouro e mostra a animação da evolução
+      const m = [...est.equipe, ...est.reserva].find((x) => x.uid === uid);
+      const ev = m && fazerEvolucaoRara(m, est);
+      if (!ev) return;
+      this.registrarEvolucoes([ev]);
+      this.fecharEquipe();
+      this.salvar();
+      this.proximaEvolucao();
+      return;
+    }
     if (cmd === 'lider') { const [m] = est.equipe.splice(i, 1); est.equipe.unshift(m); }
     if (cmd === 'guardar' && est.equipe.length > 1) { const [m] = est.equipe.splice(i, 1); est.reserva.push(m); }
     if (cmd === 'usar') {
@@ -958,7 +999,7 @@ class Jogo {
     if (!this.estado || !this.conta) return;
     const voltaram = protegerColecao(this.estado);
     if (voltaram.length) { this.aviso(`Recuperados para a reserva: ${voltaram.join(', ')}.`); this.atualizarHudMundo?.(); }
-    gravarTexto(this.chaveSave(), JSON.stringify({ v: 3, t: Date.now(), estado: this.estado, pos: { x: this.mundo.pos.x, z: this.mundo.pos.z }, hora: this.mundo.hora, semente: SEMENTE }));
+    gravarTexto(this.chaveSave(), JSON.stringify({ v: 3, temporada: TEMPORADA, t: Date.now(), estado: this.estado, pos: { x: this.mundo.pos.x, z: this.mundo.pos.z }, hora: this.mundo.hora, semente: SEMENTE }));
     if (this.conta.nuvem) this.nuvemPendente = true;
   }
 
@@ -1106,6 +1147,9 @@ class Jogo {
       gravarContas(contas);
     }
     if (conta.tipo === 'gm') await this.ativarGM(); else this.desativarGM();
+    // tinha um jogo salvo de antes da temporada nova: avisa que todos começam do zero
+    const bruto = this.chaveSave() && lerTexto(this.chaveSave());
+    if (bruto && !lerSave(this.chaveSave()) && conta.tipo !== 'gm') this.avisoMigrado ||= 'O Cristalia mudou (evolução nova, nível até 100)! Todos começam do zero: escolha o seu primeiro monstro.';
     this.mostrarTela('titulo');
     if (this.avisoMigrado) { this.aviso(this.avisoMigrado); this.avisoMigrado = null; }
   }

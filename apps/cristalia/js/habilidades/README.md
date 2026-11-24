@@ -13,7 +13,7 @@ Os golpes que não estão aqui (os de sempre, de cada elemento) continuam em `..
 ## Linhas com habilidades próprias
 
 ### Fogo: linha do Brasito (`brasito.js` e `brasito-batalha.js`)
-Brasito (Nv.1) > Brasalobo (Nv.6) > Fornalobo (Nv.12) > Magmalobo (Nv.30)
+Brasito (Nv.1) > Brasalobo (Nv.12) > Fornalobo (Nv.30) > Magmalobo (Nv.50, evolução rara)
 
 | Forma | Perto | Disparo | Área |
 |---|---|---|---|
@@ -35,7 +35,7 @@ Brasito (Nv.1) > Brasalobo (Nv.6) > Fornalobo (Nv.12) > Magmalobo (Nv.30)
 - Rabo maior: `raio` (área) e `tamanhoRabo` (quanto o rabo cresce no giro).
 
 ### Água: linha do Gotinho (`gotinho.js` e `gotinho-batalha.js`)
-Gotinho (Nv.1) > Marolo (Nv.6) > Marulhão (Nv.12) > Tsunamar (Nv.30)
+Gotinho (Nv.1) > Marolo (Nv.12) > Marulhão (Nv.30) > Tsunamar (Nv.50, evolução rara)
 
 | Forma | Perto | Disparo | Área |
 |---|---|---|---|
@@ -58,7 +58,7 @@ Gotinho (Nv.1) > Marolo (Nv.6) > Marulhão (Nv.12) > Tsunamar (Nv.30)
 - Poça maior ou que dura mais: `hidrocanhaoPoca` → `poca.raio` e `poca.duracao`.
 
 ### Planta: linha do Musguinho (`musguinho.js` e `musguinho-batalha.js`)
-Musguinho (Nv.1) > Moitão (Nv.6) > Troncudo (Nv.12) > Florestral (Nv.30)
+Musguinho (Nv.1) > Moitão (Nv.12) > Troncudo (Nv.30) > Florestral (Nv.50, evolução rara)
 
 | Forma | Perto | Disparo | Área |
 |---|---|---|---|
@@ -81,7 +81,7 @@ Musguinho (Nv.1) > Moitão (Nv.6) > Troncudo (Nv.12) > Florestral (Nv.30)
 - Moita que dura mais: `moitaEspinhos` → `zona.duracao` e `zona.poderTick`.
 
 ### Terra: linha do Pedrisco (`pedrisco.js` e `pedrisco-batalha.js`)
-Pedrisco (Nv.1) > Cascalhão (Nv.6) > Rochedrão (Nv.12) > Montanhar (Nv.30)
+Pedrisco (Nv.1) > Cascalhão (Nv.12) > Rochedrão (Nv.30) > Montanhar (Nv.50, evolução rara)
 
 | Forma | Perto | Disparo | Área |
 |---|---|---|---|
@@ -104,7 +104,7 @@ Pedrisco (Nv.1) > Cascalhão (Nv.6) > Rochedrão (Nv.12) > Montanhar (Nv.30)
 - Pilares que duram mais ou em maior número: `muralhaPedra` → `pilares.duracao` e `pilares.quantidade`.
 
 ### Raio: linha do Faisquinho (`faisquinho.js` e `faisquinho-batalha.js`)
-Faisquinho (Nv.1) > Choquilho (Nv.6) > Trovolt (Nv.12) > Tempestor (Nv.30)
+Faisquinho (Nv.1) > Choquilho (Nv.12) > Trovolt (Nv.30) > Tempestor (Nv.50, evolução rara)
 
 | Forma | Perto | Disparo (tiro → Choque) | Área |
 |---|---|---|---|
@@ -128,7 +128,7 @@ Faisquinho (Nv.1) > Choquilho (Nv.6) > Trovolt (Nv.12) > Tempestor (Nv.30)
 - Mais nuvens ou que duram mais: `nuvemEletrica` → `nuvens.quantidade` e `nuvens.duracao`.
 
 ### Sol: linha do Solito (`solito.js` e `solito-batalha.js`)
-Solito (Nv.1) > Solário (Nv.6) > Solaurum (Nv.12) > Astrorei (Nv.30)
+Solito (Nv.1) > Solário (Nv.12) > Solaurum (Nv.30) > Astrorei (Nv.50, evolução rara)
 
 | Forma | Perto | Disparo | Área |
 |---|---|---|---|
@@ -149,7 +149,7 @@ Solito (Nv.1) > Solário (Nv.6) > Solaurum (Nv.12) > Astrorei (Nv.30)
 - Calor que esquenta mais rápido: `ondaCalor` → `calor.esquenta`.
 
 ### Terra + Raio (tipo duplo): linha do Imanito, o mestre do magnetismo (`imanito.js` e `imanito-batalha.js`)
-Imanito (Nv.1) > Magnetito (Nv.6) > Ferrovolt (Nv.12) > Titanvolt (Nv.30). Pedras giram em volta dele (munição e escudo); o Ímã **puxa** e a Repulsão **empurra**.
+Imanito (Nv.1) > Magnetito (Nv.12) > Ferrovolt (Nv.30) > Titanvolt (Nv.50, evolução rara). Pedras giram em volta dele (munição e escudo); o Ímã **puxa** e a Repulsão **empurra**.
 
 | Forma | Perto | Disparo | Área |
 |---|---|---|---|
@@ -166,7 +166,7 @@ Imanito (Nv.1) > Magnetito (Nv.6) > Ferrovolt (Nv.12) > Titanvolt (Nv.30). Pedra
 - Leve para o celular de referência: no máximo 5 pedras por monstro, materiais fixos, raios que somem em 0,2 s.
 
 ### Fogo + Planta (tipo duplo): linha do Brotobrasa, o jardineiro de fogo (`brotobrasa.js` e `brotobrasa-batalha.js`)
-Brotobrasa (Nv.1) > Chamafolha (Nv.6) > Ardentroco (Nv.12) > Florinferno (Nv.30). Planta **flores de fogo** (armadilhas) que explodem quando o inimigo chega perto.
+Brotobrasa (Nv.1) > Chamafolha (Nv.12) > Ardentroco (Nv.30) > Florinferno (Nv.50, evolução rara). Planta **flores de fogo** (armadilhas) que explodem quando o inimigo chega perto.
 
 | Forma | Perto | Disparo | Área |
 |---|---|---|---|
@@ -182,7 +182,7 @@ Brotobrasa (Nv.1) > Chamafolha (Nv.6) > Ardentroco (Nv.12) > Florinferno (Nv.30)
 - **IA:** planta flor quando você está a mais de 2 m, usa o leque de perto e o anel quando você está dentro dele.
 
 ### Água + Fogo (tipo duplo): linha do Vaporito, o tanque (`vaporito.js` e `vaporito-batalha.js`)
-Vaporito (Nv.1) > Fumarolo (Nv.6) > Gêiserão (Nv.12) > Caldeirax (Nv.30). Atributos de tanque em `DUPLAS.aguaFogo` (`../dados.js`): vida 64, ataque 13, defesa 15, velocidade 5,2.
+Vaporito (Nv.1) > Fumarolo (Nv.12) > Gêiserão (Nv.30) > Caldeirax (Nv.50, evolução rara). Atributos de tanque em `DUPLAS.aguaFogo` (`../dados.js`): vida 64, ataque 13, defesa 15, velocidade 5,2.
 
 | Forma | Perto | "Disparo" (de perto) | Área |
 |---|---|---|---|
@@ -200,7 +200,7 @@ Vaporito (Nv.1) > Fumarolo (Nv.6) > Gêiserão (Nv.12) > Caldeirax (Nv.30). Atri
 - É o 1º tipo duplo com habilidades próprias: a chave em `HABILIDADES_DA_LINHA` é a da linha em `DUPLAS` (`aguaFogo`).
 
 ### Luz: linha do Lumino (`lumino.js` e `lumino-batalha.js`)
-Lumino (Nv.1) > Lumelo (Nv.6) > Prismal (Nv.12) > Aurealis (Nv.30)
+Lumino (Nv.1) > Lumelo (Nv.12) > Prismal (Nv.30) > Aurealis (Nv.50, evolução rara)
 
 | Forma | Perto | Disparo | Área |
 |---|---|---|---|
@@ -221,7 +221,7 @@ Lumino (Nv.1) > Lumelo (Nv.6) > Prismal (Nv.12) > Aurealis (Nv.30)
 - Redoma: `redomaLuz` → `redoma.duracao`, `redoma.reducao` (0,3 = 30%) e `redoma.forca`.
 
 ### Lua: linha do Lunico (`lunico.js` e `lunico-batalha.js`)
-Lunico (Nv.1) > Lunarelo (Nv.6) > Crescêntio (Nv.12) > Plenilúnio (Nv.30)
+Lunico (Nv.1) > Lunarelo (Nv.12) > Crescêntio (Nv.30) > Plenilúnio (Nv.50, evolução rara)
 
 | Forma | Perto | Disparo | Área |
 |---|---|---|---|
@@ -242,7 +242,7 @@ Lunico (Nv.1) > Lunarelo (Nv.6) > Crescêntio (Nv.12) > Plenilúnio (Nv.30)
 - Cura do luar: `pocaLuar` → `luar.cura` (0,02 = 2% por segundo); tempo: `luar.duracao`; tamanho: `raio`.
 
 ### Trevas: linha do Breuzinho (`trevas.js` e `trevas-batalha.js`)
-Breuzinho (Nv.1) > Sombrelo (Nv.6) > Umbrafel (Nv.12) > Noctífero (Nv.30)
+Breuzinho (Nv.1) > Sombrelo (Nv.12) > Umbrafel (Nv.30) > Noctífero (Nv.50, evolução rara)
 
 | Forma | Perto | Disparo | Área |
 |---|---|---|---|

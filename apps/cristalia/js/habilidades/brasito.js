@@ -1,6 +1,6 @@
 // =============================================================
 // HABILIDADES DA LINHA DO BRASITO (Fogo)
-// Brasito (Nv.1) > Brasalobo (Nv.6) > Fornalobo (Nv.12) > Magmalobo (Nv.30)
+// Brasito (Nv.1) > Brasalobo (Nv.12) > Fornalobo (Nv.30) > Magmalobo (Nv.50, evolução rara)
 //
 // ESTE ARQUIVO SÓ TEM NÚMEROS E TEXTOS: para mudar força, alcance, tamanho,
 // recarga ou velocidade, mexa aqui. Como cada golpe funciona e aparece na

@@ -51,7 +51,7 @@ export const NIVEL_REVANCHE = 50;
 export function equipeDoTreinador(tr, revanche) {
   return tr.equipe.map(([e, nv], i) => {
     const nivel = revanche ? NIVEL_REVANCHE : nv;
-    const especie = e.startsWith('L:') ? formaPorNivel(e.slice(2), nivel) : e;
+    const especie = e.startsWith('L:') ? formaPorNivel(e.slice(2), nivel, true) : e; // treinador: forma final pelo nível
     const d = criarMonstro(especie, nivel);
     d.onda = i + 1; // entram um de cada vez, nesta ordem
     return d;

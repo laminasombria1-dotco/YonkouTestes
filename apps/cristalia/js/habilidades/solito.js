@@ -1,6 +1,6 @@
 // =============================================================
 // HABILIDADES DA LINHA DO SOLITO (Sol)
-// Solito (Nv.1) > Solário (Nv.6) > Solaurum (Nv.12) > Astrorei (Nv.30)
+// Solito (Nv.1) > Solário (Nv.12) > Solaurum (Nv.30) > Astrorei (Nv.50, evolução rara)
 //
 // ESTE ARQUIVO SÓ TEM NÚMEROS E TEXTOS: para mudar força, recarga, alcance,
 // bônus do sol ou calor, mexa aqui. Como cada golpe funciona e aparece na

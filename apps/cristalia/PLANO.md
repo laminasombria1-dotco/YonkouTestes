@@ -120,8 +120,12 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
   inimigos muito mais fracos.
 
 ## Fases
-- [ ] **Fase 1 — Evolução nova:** Nv.12/30/50, botão da evolução rara, missões, custos,
+- [x] **Fase 1 — Evolução nova:** Nv.12/30/50, botão da evolução rara, missões, custos,
       nível 100, forma final só para treinadores e chefes de masmorra, progresso zerado, GM.
+      *Feito:* `NIVEIS_EVOLUCAO`, `EVOLUCAO_RARA`, `missaoDe`, `fazerEvolucaoRara` e `formaPorNivel(k, nv, final)`
+      em `js/dados.js`; o bloco da evolução rara no cartão do monstro (`main.js`); a temporada 2
+      do jogo salvo (`TEMPORADA` em `main.js`); no GM, itens da evolução e "Completar a missão".
+      As evoluções dos raros e lendários ficam para as fases 6 e 7.
 - [ ] **Fase 2 — Itens:** Ouro (nome), Galho Raro (no lugar da Madeira Rara), Asa do Anjo,
       Coração, drops por sorte nos chefes de masmorra, acampamentos sem drop.
 - [ ] **Fase 3 — Casa no Reino + Bandeira:** espaço da casa, casa nível 1 a 5 com visual novo,

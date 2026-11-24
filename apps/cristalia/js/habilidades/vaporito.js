@@ -1,6 +1,6 @@
 // =============================================================
 // HABILIDADES DA LINHA DO VAPORITO (tipo duplo Água + Fogo): o TANQUE
-// Vaporito (Nv.1) > Fumarolo (Nv.6) > Gêiserão (Nv.12) > Caldeirax (Nv.30)
+// Vaporito (Nv.1) > Fumarolo (Nv.12) > Gêiserão (Nv.30) > Caldeirax (Nv.50, evolução rara)
 //
 // ESTE ARQUIVO SÓ TEM NÚMEROS E TEXTOS: para mudar força, recarga, alcance,
 // quanto o casco protege ou a pressão, mexa aqui. Como cada golpe funciona e

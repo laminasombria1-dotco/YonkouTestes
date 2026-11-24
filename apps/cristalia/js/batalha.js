@@ -831,6 +831,7 @@ export class Batalha {
     l.breu = null;
     if (l.lado === 'inimigo') {
       this.derrotados.push(l.dados);
+      this.jogo.contarMissao?.(this.jog?.dados, l.dados.nivel); // missão da evolução rara de quem está lutando
       if (l.dados.lider) this.liderDerrotado = true;
       const resta = this.restantes();
       if (this.treinador) {

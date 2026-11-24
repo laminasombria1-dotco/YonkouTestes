@@ -1,6 +1,6 @@
 // =============================================================
 // HABILIDADES DA LINHA DO LUNICO (Lua)
-// Lunico (Nv.1) > Lunarelo (Nv.6) > Crescêntio (Nv.12) > Plenilúnio (Nv.30)
+// Lunico (Nv.1) > Lunarelo (Nv.12) > Crescêntio (Nv.30) > Plenilúnio (Nv.50, evolução rara)
 //
 // ESTE ARQUIVO SÓ TEM NÚMEROS E TEXTOS: para mudar força, recarga, alcance,
 // cura ou velocidade, mexa aqui. Como cada golpe funciona e aparece na

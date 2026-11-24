@@ -1,6 +1,6 @@
 // =============================================================
 // HABILIDADES DA LINHA DO BREUZINHO (Trevas)
-// Breuzinho (Nv.1) > Sombrelo (Nv.6) > Umbrafel (Nv.12) > Noctífero (Nv.30)
+// Breuzinho (Nv.1) > Sombrelo (Nv.12) > Umbrafel (Nv.30) > Noctífero (Nv.50, evolução rara)
 //
 // ESTE ARQUIVO SÓ TEM NÚMEROS E TEXTOS: para mudar força, alcance, recarga
 // ou o bônus de dano, mexa aqui. Como cada golpe aparece na batalha fica em

@@ -1,6 +1,6 @@
 // =============================================================
 // HABILIDADES DA LINHA DO MUSGUINHO (Planta)
-// Musguinho (Nv.1) > Moitão (Nv.6) > Troncudo (Nv.12) > Florestral (Nv.30)
+// Musguinho (Nv.1) > Moitão (Nv.12) > Troncudo (Nv.30) > Florestral (Nv.50, evolução rara)
 //
 // ESTE ARQUIVO SÓ TEM NÚMEROS E TEXTOS: para mudar força, alcance, tamanho,
 // recarga, puxão ou cura, mexa aqui. Como cada golpe funciona e aparece na

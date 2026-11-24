@@ -1,6 +1,6 @@
 // =============================================================
 // HABILIDADES DA LINHA DO LUMINO (Luz)
-// Lumino (Nv.1) > Lumelo (Nv.6) > Prismal (Nv.12) > Aurealis (Nv.30)
+// Lumino (Nv.1) > Lumelo (Nv.12) > Prismal (Nv.30) > Aurealis (Nv.50, evolução rara)
 //
 // ESTE ARQUIVO SÓ TEM NÚMEROS E TEXTOS: para mudar força, recarga, distância
 // ou tamanho, mexa aqui. Como cada golpe funciona e aparece na batalha fica

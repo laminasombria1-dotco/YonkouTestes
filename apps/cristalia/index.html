@@ -360,6 +360,14 @@
   .cmds { display: flex; flex-wrap: wrap; gap: 6px; }
   .cmds button { border: 0; border-radius: 8px; padding: 6px 10px; background: #2a4a7a; font-weight: 700; font-size: 0.78rem; }
   .lider { font-size: 0.75rem; color: var(--sol); font-weight: 700; }
+  /* evolução rara: missão, itens e ouro (✓ tem / ✗ falta) e o botão */
+  .evo-rara { border: 1px dashed var(--sol); border-radius: 10px; padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; font-size: 0.75rem; }
+  .evo-rara b { color: var(--sol); }
+  .evo-req { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+  .evo-req .ok { color: #7dffa0; }
+  .evo-req .falta { color: var(--creme-suave); }
+  .evo-rara button { align-self: flex-start; border: 0; border-radius: 8px; padding: 6px 14px; background: linear-gradient(#ffd23f, #e08a10); color: #2a1a00; font-weight: 800; font-size: 0.8rem; }
+  .evo-rara button:disabled { background: #3a3f55; color: var(--creme-suave); }
   .vazio, #info-colecao { margin: 0; font-size: 0.85rem; color: var(--creme-suave); }
 
   /* ---------- HUD da batalha ---------- */

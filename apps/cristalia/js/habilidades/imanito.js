@@ -1,6 +1,6 @@
 // =============================================================
 // HABILIDADES DA LINHA DO IMANITO (tipo duplo Terra + Raio): o MESTRE DO MAGNETISMO
-// Imanito (Nv.1) > Magnetito (Nv.6) > Ferrovolt (Nv.12) > Titanvolt (Nv.30)
+// Imanito (Nv.1) > Magnetito (Nv.12) > Ferrovolt (Nv.30) > Titanvolt (Nv.50, evolução rara)
 //
 // ESTE ARQUIVO SÓ TEM NÚMEROS E TEXTOS: para mudar força, recarga, quantas pedras
 // giram, a força do puxão ou do empurrão, mexa aqui. Como cada golpe funciona e

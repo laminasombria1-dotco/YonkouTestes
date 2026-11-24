@@ -1,6 +1,6 @@
 // =============================================================
 // HABILIDADES DA LINHA DO GOTINHO (Água)
-// Gotinho (Nv.1) > Marolo (Nv.6) > Marulhão (Nv.12) > Tsunamar (Nv.30)
+// Gotinho (Nv.1) > Marolo (Nv.12) > Marulhão (Nv.30) > Tsunamar (Nv.50, evolução rara)
 //
 // ESTE ARQUIVO SÓ TEM NÚMEROS E TEXTOS: para mudar força, alcance, tamanho,
 // recarga, empurrão ou escudo, mexa aqui. Como cada golpe funciona e aparece

@@ -1,6 +1,6 @@
 // =============================================================
 // HABILIDADES DA LINHA DO BROTOBRASA (tipo duplo Fogo + Planta): o JARDINEIRO DE FOGO
-// Brotobrasa (Nv.1) > Chamafolha (Nv.6) > Ardentroco (Nv.12) > Florinferno (Nv.30)
+// Brotobrasa (Nv.1) > Chamafolha (Nv.12) > Ardentroco (Nv.30) > Florinferno (Nv.50, evolução rara)
 //
 // ESTE ARQUIVO SÓ TEM NÚMEROS E TEXTOS: para mudar força, recarga, alcance,
 // quantas flores cabem no campo ou o tamanho das explosões, mexa aqui. Como
