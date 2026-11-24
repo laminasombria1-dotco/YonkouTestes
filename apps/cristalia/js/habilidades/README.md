@@ -148,6 +148,27 @@ Solito (Nv.1) > Solário (Nv.6) > Solaurum (Nv.12) > Astrorei (Nv.30)
 - Calor mais forte ou mais longo: `calorSolito` → `poder` (cada pedaço), `calor.duracao` e `raio`.
 - Calor que esquenta mais rápido: `ondaCalor` → `calor.esquenta`.
 
+### Lua: linha do Lunico (`lunico.js` e `lunico-batalha.js`)
+Lunico (Nv.1) > Lunarelo (Nv.6) > Crescêntio (Nv.12) > Plenilúnio (Nv.30)
+
+| Forma | Perto | Disparo | Área |
+|---|---|---|---|
+| Lunico | Investida | **Fases da Lua**: Lua Nova (1 tiro rápido) > Lua Crescente (3 em leque) > **Lua Cheia** (bola grande) > volta | **Poça de Luar**: 3 m por 4 s, inimigos 30% mais lentos, ele cura 2%/s dentro |
+| Lunarelo | **Salto Lunar**: 2 dashes (100% e 150%) | Fases da Lua + Sono (a Lua Cheia tem o dobro da chance) | Poça de Luar + Sono |
+| Crescêntio | **Dança Crescente**: 3 dashes (100%, 150%, 200%) | A Lua Cheia **explode** (2,5 m) | **Luar Crescente**: 3,8 m por 5 s, cura 3%/s |
+| Plenilúnio | **Caçada da Lua Cheia**: 3 dashes (100%, 150%, 250%) + corte em meia-lua no chão | Lua Cheia explode maior (3,5 m) | **Uivo da Lua Cheia**: 5 m por 6 s, cura 4%/s, **+20% de velocidade** dentro (Fúria Lunar) |
+
+- **Combo de dashes (`combo`):** cada dash termina do outro lado do alvo, girando em volta dele (2 dashes: vai e volta; 3: um triângulo, frente > um lado > o outro). Os próximos dashes seguem o alvo se ele andar. Cada dash acerta **uma vez**, com a força multiplicada por `combo.fatores`. Durante o dash, o monstro **atravessa** o alvo (a regra "ninguém ocupa o mesmo lugar" fica desligada para ele). Bater numa pedra ou na borda para o dash ali.
+- **Fases da Lua (`fases`):** `c.faseLua` guarda a próxima fase, e o botão mostra o nome dela (`hudFases` em `../batalha.js`). Os tiros vão até `alcanceTiro`. A explosão da Lua Cheia não acerta de novo quem já levou o tiro.
+- **Luar (`luar`):** o círculo fica parado no chão onde foi usado. A cada meio segundo, inimigos dentro ganham `luarLento` e ele, dentro, se cura (e ganha `luarVel` no Plenilúnio). `fatorVel` em `../batalha.js` usa os dois. **No treino não cura** (`semCura` em `../treino.js`): a cura do jogo é só no castelo.
+- **Despertar** (Crescêntio em diante, `despertar` nas melhorias): golpe em quem está dormindo dá **+30% de dano** (`aplicarDano`). O combo é feito para isso: a Lua Cheia faz dormir e os dashes acordam batendo forte.
+- Esta linha não ganha o "disparo ×2/×3": no lugar, ganha as fases. Os selvagens da Lua também se curam no luar.
+
+**Exemplos de mudança (em `lunico.js`):**
+- Força dos dashes: `dancaCrescente` → `combo.fatores` (1,5 = +50%); mais longe do alvo: `combo.passa`.
+- Fases: em `FASES`, `tiros`, `fator` e `vel` de cada fase; explosão: `fasesLuaCheia` → `{ raio, fator }`.
+- Cura do luar: `pocaLuar` → `luar.cura` (0,02 = 2% por segundo); tempo: `luar.duracao`; tamanho: `raio`.
+
 ### Trevas: linha do Breuzinho (`trevas.js` e `trevas-batalha.js`)
 Breuzinho (Nv.1) > Sombrelo (Nv.6) > Umbrafel (Nv.12) > Noctífero (Nv.30)
 

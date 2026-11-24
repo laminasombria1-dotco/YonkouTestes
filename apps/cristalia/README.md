@@ -571,6 +571,22 @@ A linha do Solito **solta um sol no campo** que a deixa mais forte, **queima que
 - **Calor:** anda junto com o monstro e dá dano a cada meio segundo em quem está perto; o anel fica mais vermelho quando esquenta. É o calor do Sol, não a Queimadura do Fogo. O ofuscado é sorteado uma vez por inimigo a cada uso.
 - Esta linha não ganha o "disparo ×2/×3". Os golpes de Sol de sempre (em `dados.js`) continuam para quem não é desta linha.
 
+## Golpes da linha do Lunico (Lua)
+
+A linha da Lua joga com as **fases da lua**, **dashes que cruzam o alvo** e um **luar que cura**. Os números ficam em `js/habilidades/lunico.js` e o funcionamento em `js/habilidades/lunico-batalha.js`.
+
+| Forma | Perto | Disparo | Área |
+|---|---|---|---|
+| Lunico | Investida | **Fases da Lua**: cada uso muda a fase (Lua Nova > Crescente > Cheia > volta); o botão mostra a próxima | **Poça de Luar**: 3 m por 4 s; inimigos dentro 30% mais lentos; ele recupera 2% da vida por segundo se ficar dentro |
+| Lunarelo | **Salto Lunar**: 2 dashes (o 2º dá +50%) | + pode causar Sono (a Lua Cheia, o dobro) | + Sono |
+| Crescêntio | **Dança Crescente**: 3 dashes (100%, 150%, 200%) | A Lua Cheia explode (2,5 m) | **Luar Crescente**: 3,8 m, 5 s, cura 3%/s. Golpes em quem dorme dão +30% |
+| Plenilúnio | **Caçada da Lua Cheia**: 3 dashes (100%, 150%, 250%) e um corte em meia-lua no chão | Lua Cheia explode maior (3,5 m) | **Uivo da Lua Cheia**: ele uiva, a lua cheia aparece no céu; luar de 5 m por 6 s, cura 4%/s e **Fúria Lunar** (+20% de velocidade) dentro dele. Sono dura 50% mais |
+
+- **Dashes:** o 1º vai reto no alvo e passa por ele; os outros cruzam o alvo de lado (o monstro atravessa o alvo durante o combo). Se o alvo fugir no meio, os dashes seguintes podem errar.
+- **Combo com o Sono:** a Lua Cheia faz dormir e os dashes acordam o alvo com +30% de dano.
+- **Luar:** cura só **na batalha** (no modo treino, no mapa, não cura). Os selvagens da Lua também se curam no luar deles.
+- Esta linha não ganha o "disparo ×2/×3" (no lugar, as fases). Os golpes de Lua de sempre (em `dados.js`) continuam para quem não é desta linha.
+
 ## Golpes de Trevas
 
 Os golpes da linha de Trevas invocam coisas da escuridão, e cada evolução ganha algo novo. Tudo aparece **dentro da área que o golpe acerta**. Os números ficam em `js/habilidades/trevas.js` e o visual em `js/habilidades/trevas-batalha.js`.
@@ -653,7 +669,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/brasas.js` | Cenário do Caminho das Brasas (braseiros, forja, rio de lava, Trono de Magma, vulcão) |
 | `js/raizes.js` | Cenário da Trilha Ancestral e da Floresta (cogumelos, ruínas, lago, raízes, Árvore-Mãe, vaga-lumes, monstros extras) |
 | `js/arena.js` | Arenas: chão, obstáculos, clima animado e perigos de cada região (com chance), e o escurecer do Astro Negro |
-| `js/habilidades/` | **Habilidades próprias das linhas de monstros** (uma pasta só para isso). Veja o `README.md` de lá. Hoje: linha do Brasito (`brasito.js` com os números, `brasito-batalha.js` com o lança-chamas, o rabo de fogo e a velocidade), linha do Gotinho (`gotinho.js` e `gotinho-batalha.js`, com o jato, o hidrocanhão, as ondas, o maremoto e o escudo), linha do Musguinho (`musguinho.js` e `musguinho-batalha.js`, com a folha bumerangue, a vinha que puxa, as raízes, a moita e o bosque), linha do Pedrisco (`pedrisco.js` e `pedrisco-batalha.js`, com a pedra em arco que quica, o punho sísmico, o tremor e os pilares), linha do Faisquinho (`faisquinho.js` e `faisquinho-batalha.js`, com as marcas, o dash elétrico, o tiro que marca, o choque e as nuvens), linha do Solito (`solito.js` e `solito-batalha.js`, com o sol que dá bônus, o laser e o calor) e a linha do Breuzinho (`trevas.js` e `trevas-batalha.js`, com a mordida, a bola com olhos de alcance curto e a área que escurece e dá bônus de dano) |
+| `js/habilidades/` | **Habilidades próprias das linhas de monstros** (uma pasta só para isso). Veja o `README.md` de lá. Hoje: linha do Brasito (`brasito.js` com os números, `brasito-batalha.js` com o lança-chamas, o rabo de fogo e a velocidade), linha do Gotinho (`gotinho.js` e `gotinho-batalha.js`, com o jato, o hidrocanhão, as ondas, o maremoto e o escudo), linha do Musguinho (`musguinho.js` e `musguinho-batalha.js`, com a folha bumerangue, a vinha que puxa, as raízes, a moita e o bosque), linha do Pedrisco (`pedrisco.js` e `pedrisco-batalha.js`, com a pedra em arco que quica, o punho sísmico, o tremor e os pilares), linha do Faisquinho (`faisquinho.js` e `faisquinho-batalha.js`, com as marcas, o dash elétrico, o tiro que marca, o choque e as nuvens), linha do Solito (`solito.js` e `solito-batalha.js`, com o sol que dá bônus, o laser e o calor), linha do Lunico (`lunico.js` e `lunico-batalha.js`, com o combo de dashes, as fases da lua e o luar que cura) e a linha do Breuzinho (`trevas.js` e `trevas-batalha.js`, com a mordida, a bola com olhos de alcance curto e a área que escurece e dá bônus de dano) |
 | `js/nuvem.js` | Contas e jogo salvo na nuvem (Firebase, direto pela internet, sem a biblioteca do Firebase): criar conta, entrar, entrar de novo com 1 toque, ler e gravar o jogo salvo, e a senha do GM |
 | `js/companheiro.js` | O monstro invocado: invocar e guardar, seguir o treinador, os botões e a troca de controle (o treinador fica parado e protegido) |
 | `js/treino.js` | O modo treino: os golpes do monstro invocado no mapa, "no ar", usando o mesmo motor da batalha (sem inimigos e sem dano) |

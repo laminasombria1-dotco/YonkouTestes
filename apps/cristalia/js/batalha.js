@@ -18,6 +18,7 @@ import { HabilidadesMusguinho } from './habilidades/musguinho-batalha.js';
 import { HabilidadesPedrisco } from './habilidades/pedrisco-batalha.js';
 import { HabilidadesFaisquinho } from './habilidades/faisquinho-batalha.js';
 import { HabilidadesSolito } from './habilidades/solito-batalha.js';
+import { HabilidadesLunico } from './habilidades/lunico-batalha.js';
 import { CameraOrbita } from './camera.js';
 import { aplicarPocao, RECARGA_POCAO } from './bolsa.js';
 import { criarModelo, criarCristal, criarCoroa, animarModelo, piscar, descartar, tocarGolpe, pararGolpe } from './modelos.js';
@@ -100,7 +101,8 @@ export class Lutador {
   podeAtacar() { return !this.tem('paralisia') && !this.tem('sono') && !this.tem('medo'); }
   // veloz = velocidade extra da Investida da linha do Brasito | sol = bônus do Sol da linha do Solito
   // breu = bônus de dano da área da linha de Trevas (fica em c.breu = { cfg, t })
-  get fatorVel() { return (this.veloz ? 1 + this.veloz.bonus : 1) * (this.sol ? 1 + this.sol.cfg.velocidade : 1) * (this.lento > 0 ? 0.5 : 1) * (this.tem('encharcado') ? 0.55 : 1) * (this.tem('parasita') ? 0.7 : 1) * (this.mod?.vel ?? 1); }
+  // luarLento / luarVel = lentidão de quem está no luar inimigo / velocidade do Plenilúnio no próprio luar
+  get fatorVel() { return (this.veloz ? 1 + this.veloz.bonus : 1) * (this.sol ? 1 + this.sol.cfg.velocidade : 1) * (this.lento > 0 ? 0.5 : 1) * (this.tem('encharcado') ? 0.55 : 1) * (this.tem('parasita') ? 0.7 : 1) * (this.luarLento ? 1 - this.luarLento.f : 1) * (this.luarVel ? 1 + this.luarVel.f : 1) * (this.mod?.vel ?? 1); }
 }
 
 export class Batalha {
@@ -120,6 +122,7 @@ export class Batalha {
     this.pedrisco = new HabilidadesPedrisco(this); // pedra em arco, punho sísmico, tremor e pilares da linha do Pedrisco
     this.faisquinho = new HabilidadesFaisquinho(this); // marcas, dash elétrico, tiro que marca, choque e nuvens da linha do Faisquinho
     this.solito = new HabilidadesSolito(this); // sol que dá bônus, laser e calor da linha do Solito
+    this.lunico = new HabilidadesLunico(this); // combo de dashes, fases da lua e luar da linha do Lunico
     this.periodo = jogo.mundo.periodo;
 
     this.idx = idxInicial;
@@ -320,6 +323,7 @@ export class Batalha {
     for (let a = 0; a < todos.length; a++) for (let b = a + 1; b < todos.length; b++) {
       const A = todos[a], B = todos[b];
       if (A.morto) continue;
+      if (A.combo?.dash || B.combo?.dash) continue; // combo da linha do Lunico: o dash atravessa o alvo
       const d = dist(A, B), min = A.raio + B.raio;
       if (d < min && d > 0.001) {
         const ex = (A.pos.x - B.pos.x) / d, ez = (A.pos.z - B.pos.z) / d, f = (min - d) / 2;
@@ -366,6 +370,7 @@ export class Batalha {
     this.pedrisco.atualizar(dt);
     this.faisquinho.atualizar(dt);
     this.solito.atualizar(dt);
+    this.lunico.atualizar(dt);
     if (this.captura) this.atualizarCaptura(dt);
 
     if (this.trocaAuto > 0) {
@@ -388,7 +393,7 @@ export class Batalha {
     const mov = Math.hypot(v.x, v.z) > 0.05;
     for (let i = 0; i < 3; i++) if (ctrl.consumir('golpe' + i)) this.tentarGolpe(j, i, e);
     if (ctrl.consumir('esquiva')) this.esquivar(j, mov ? v : null, e);
-    if (!j.dash && !j.giro && j.stun <= 0 && j.podeAndar()) {
+    if (!j.dash && !j.combo && !j.giro && j.stun <= 0 && j.podeAndar()) {
       const vel = j.stats.vel * j.fatorVel * (j.prep || j.jato || j.punho || j.feixe ? 0.35 : 1);
       j.pos.x += v.x * vel * dt;
       j.pos.z += v.z * vel * dt;
@@ -406,7 +411,7 @@ export class Batalha {
     ia.troca -= dt;
     const d = dist(e, j);
     if (ia.troca <= 0) { ia.strafe = Math.random() < 0.5 ? -1 : 1; ia.troca = 1.5 + Math.random() * 2; }
-    if (ia.t <= 0 && !e.prep && !e.dash && e.stun <= 0 && e.podeAtacar()) {
+    if (ia.t <= 0 && !e.prep && !e.dash && !e.combo && e.stun <= 0 && e.podeAtacar()) {
       // com vários inimigos ao mesmo tempo, cada um ataca com menos frequência
       ia.t = (0.3 + Math.random() * 0.4) * (1 + 0.6 * (ativos - 1)) * (e.furia ? 0.6 : 1);
       const opcoes = [];
@@ -427,7 +432,7 @@ export class Batalha {
       }
       if (opcoes.length && Math.random() < 0.75) this.tentarGolpe(e, opcoes[Math.floor(Math.random() * opcoes.length)], j);
     }
-    if (!e.dash && !e.giro && e.stun <= 0 && e.podeAndar()) {
+    if (!e.dash && !e.combo && !e.giro && e.stun <= 0 && e.podeAndar()) {
       const ax = (j.pos.x - e.pos.x) / (d || 1), az = (j.pos.z - e.pos.z) / (d || 1);
       // distância preferida depende de qual golpe está pronto
       const g0 = e.golpe(0);
@@ -453,7 +458,7 @@ export class Batalha {
   }
 
   tentarGolpe(c, i, alvo) {
-    if (c.prep || c.rec[i] > 0 || c.stun > 0 || c.dash || c.morto || c.rajada || c.jato || c.giro || c.vinha || c.punho || c.feixe) return;
+    if (c.prep || c.rec[i] > 0 || c.stun > 0 || c.dash || c.combo || c.morto || c.rajada || c.jato || c.giro || c.vinha || c.punho || c.feixe) return;
     if (!c.podeAtacar()) {
       // avisa o jogador por que o golpe não saiu
       if (c.lado === 'jogador' && this.t - (this.avisoBloqueio || 0) > 0.8) {
@@ -564,6 +569,12 @@ export class Batalha {
       this.solito.atirarLaser(c, gp, dir, this.efeitoDoGolpe(c, gp));   // laser
     } else if (gp.calor) {
       this.solito.iniciarCalor(c, gp, this.efeitoDoGolpe(c, gp));       // calor em volta
+    } else if (gp.combo) {
+      this.lunico.iniciarCombo(c, gp, dir, this.efeitoDoGolpe(c, gp));  // dashes que cruzam o alvo
+    } else if (gp.fases) {
+      this.lunico.atirarFase(c, gp, dir, this.efeitoDoGolpe(c, gp));    // fases da lua
+    } else if (gp.luar) {
+      this.lunico.iniciarLuar(c, gp, this.efeitoDoGolpe(c, gp));        // círculo de luar
     } else if (gp.tipo === 'corpo') {
       c.dash = { dir: dir.clone(), t: 0.17, vel: 12, gp, acertou: false, efeito: this.efeitoDoGolpe(c, gp) };
       if (this.trevas.dele(c)) this.trevas.avancar(c);
@@ -631,8 +642,10 @@ export class Batalha {
     // Sol da linha do Solito: quem soltou causa mais dano e recebe menos
     const sol = (1 + (at.sol?.cfg.ataque ?? 0)) * (1 - (alvo.sol?.cfg.defesa ?? 0));
     const breu = 1 + (at.breu?.cfg.dano ?? 0); // área da linha de Trevas: +5% a +15% de dano
+    // linha do Lunico (Crescêntio em diante): golpe em quem está dormindo dá mais dano
+    const despertar = alvo.tem('sono') && at.melhoria?.despertar ? 1 + at.melhoria.despertar : 1;
     const gmDano = at.lado === 'jogador' ? (this.jogo.gm?.dano || 1) : 1; // GM: dano ×10
-    const dano = Math.max(1, Math.round(DANO_GERAL * gp.poder * (opcoes.fator ?? 1) * (at.stats.atk / def) * mult * exposto * nivel * arena * sol * breu * gmDano * (0.9 + Math.random() * 0.2)));
+    const dano = Math.max(1, Math.round(DANO_GERAL * gp.poder * (opcoes.fator ?? 1) * (at.stats.atk / def) * mult * exposto * nivel * arena * sol * breu * despertar * gmDano * (0.9 + Math.random() * 0.2)));
     // Escudo d'Água (linha do Gotinho) segura o dano antes da vida
     const passou = this.gotinho.absorver(alvo, dano);
     alvo.dados.hp = Math.max(0, alvo.dados.hp - passou);
@@ -739,6 +752,7 @@ export class Batalha {
     this.pedrisco.parar(l);
     this.faisquinho.parar(l);
     this.solito.parar(l);
+    this.lunico.parar(l);
     l.veloz = null;
     l.breu = null;
     if (l.lado === 'inimigo') {
@@ -767,7 +781,7 @@ export class Batalha {
   }
 
   esquivar(c, mv, outro) {
-    if (c.cdEsq > 0 || c.dash || c.stun > 0 || c.morto || !c.podeAndar()) return;
+    if (c.cdEsq > 0 || c.dash || c.combo || c.stun > 0 || c.morto || !c.podeAndar()) return;
     const dir = mv ? new THREE.Vector3(mv.x, 0, mv.z) : new THREE.Vector3(c.pos.x - outro.pos.x, 0, c.pos.z - outro.pos.z);
     if (dir.lengthSq() < 1e-4) dir.set(1, 0, 0);
     dir.normalize();
@@ -824,6 +838,7 @@ export class Batalha {
     if (c.giro) this.brasito.atualizarGiro(c, dt);
     if (c.vinha) this.musguinho.atualizarVinha(c, dt);
     if (c.punho) this.pedrisco.atualizarPunho(c, dt);
+    if (c.combo) this.lunico.atualizarCombo(c, dt);
 
     if (c.dash) {
       const ds = c.dash;
@@ -943,23 +958,24 @@ export class Batalha {
     for (let i = this.projeteis.length - 1; i >= 0; i--) {
       const p = this.projeteis[i];
       if (p.bumerangue) this.musguinho.moverFolha(p, dt); // folha que vai e volta
-      else p.pos.addScaledVector(p.dir, p.gp.velocidade * dt);
+      else p.pos.addScaledVector(p.dir, (p.vel ?? p.gp.velocidade) * dt);
       p.vida -= dt;
       p.mesh.position.copy(p.pos);
       if (p.trevas) this.trevas.atualizarProjetil(p, dt);
       else if (p.gotinho) this.gotinho.atualizarProjetil(p, dt);
       else if (p.faisca) this.faisquinho.atualizarProjetil(p, dt);
+      else if (p.luaFase) this.lunico.atualizarProjetil(p, dt);
       else if (p.bumerangue) { /* a folha gira em moverFolha */ }
       else if (p.gp.elemento === 'lua') p.mesh.rotation.y += dt * 14;
       else if (p.gp.elemento !== 'planta' && p.gp.elemento !== 'raio') p.mesh.rotation.x += dt * 8;
       const alvos = p.lado === 'jogador' ? this.vivos() : (this.jog.morto ? [] : [this.jog]);
       let acabou = p.vida <= 0 || p.chegou || Math.hypot(p.pos.x, p.pos.z) > RAIO_ARENA + 1;
       // obstáculos seguram os disparos: dá para se esconder atrás deles
-      if (!acabou && this.arena.bloqueia(p.pos, p.gp.raio * 0.6)) {
+      if (!acabou && this.arena.bloqueia(p.pos, (p.raio ?? p.gp.raio) * 0.6)) {
         acabou = true;
         this.particulas(p.pos, ELEMENTOS[p.gp.elemento].cor, 5, 0.6);
       }
-      const alvo = acabou ? null : alvos.find((o) => !p.atingidos?.has(o) && Math.hypot(p.pos.x - o.pos.x, p.pos.z - o.pos.z) < p.gp.raio + o.raio);
+      const alvo = acabou ? null : alvos.find((o) => !p.atingidos?.has(o) && Math.hypot(p.pos.x - o.pos.x, p.pos.z - o.pos.z) < (p.raio ?? p.gp.raio) + o.raio);
       if (alvo) {
         const acertou = this.aplicarDano(p.dono, alvo, p.gp, p.dir, { fator: p.fator, efeito: p.bumerangue ? this.musguinho.efeitoDaFolha(p, alvo) : p.efeito });
         if (p.faisca && acertou) this.faisquinho.aoAcertarTiro(p, alvo); // marca e deixa o Choque pronto
@@ -978,6 +994,7 @@ export class Batalha {
         if (p.gotinho && acabou) this.gotinho.impacto(p, alvo);
       } else if (acabou && p.trevas && p.vida > 0) this.trevas.impacto(p);
       else if (acabou && p.gotinho && p.vida > 0) this.gotinho.impacto(p, null);
+      if (acabou && p.luaFase) this.lunico.impacto(p, alvo); // a Lua Cheia explode
       if (acabou) {
         this.cena.remove(p.mesh);
         if (!p.trevas && !p.fixo) p.mesh.material.dispose(); // os tiros de Trevas usam materiais fixos
@@ -1077,7 +1094,7 @@ export class Batalha {
     est.pedras[tipo.id]--;
     const sucesso = garantida || Math.random() < chanceCaptura(this.ini.dados, this.tipoCristal);
     if (this.jog.prep) this.cancelarPreparo(this.jog);
-    for (const l of this.inimigos) { if (l.prep) this.cancelarPreparo(l); l.dash = null; l.rajada = null; this.brasito.parar(l); this.gotinho.parar(l, false); this.musguinho.parar(l); this.pedrisco.parar(l); this.faisquinho.parar(l, false); }
+    for (const l of this.inimigos) { if (l.prep) this.cancelarPreparo(l); l.dash = null; l.rajada = null; this.brasito.parar(l); this.gotinho.parar(l, false); this.musguinho.parar(l); this.pedrisco.parar(l); this.faisquinho.parar(l, false); this.lunico.parar(l); }
     const cr = criarCristal(1.1, this.tipoCristal);
     this.cena.add(cr);
     this.captura = {
@@ -1206,6 +1223,7 @@ export class Batalha {
     this.pedrisco.parar(velho);
     this.faisquinho.parar(velho);
     this.solito.parar(velho);
+    this.lunico.parar(velho);
     this.cena.remove(velho.modelo);
     descartar(velho.modelo);
     this.particulas(velho.pos, '#8ff4ff', 12, 1);
@@ -1261,7 +1279,8 @@ export class Batalha {
     const tipos = { corpo: 'perto', projetil: 'disparo', area: 'área' };
     ui.golpes.forEach((b, i) => {
       const gp = j.golpe(i);
-      b.querySelector('.nome').textContent = gp.nome;
+      // Fases da Lua: o botão mostra a próxima fase
+      b.querySelector('.nome').textContent = gp.fases ? this.lunico.faseAtual(j, gp).nome : gp.nome;
       const extra = gp.tipo === 'projetil' && j.melhoria.disparos > 1 ? ` ×${j.melhoria.disparos}` : '';
       const efB = this.efeitoDoGolpe(j, gp);
       b.querySelector('.tipo').textContent = tipos[gp.tipo] + extra + (efB ? ' ' + pct(efB.chance) : '');
@@ -1274,14 +1293,18 @@ export class Batalha {
     });
   }
 
+  // Fases da Lua: atualiza o nome do botão de disparo
+  hudFases() { this.montarBotoes(); }
+
   // Só os efeitos ativos (os bônus de arena não aparecem mais, para limpar a tela)
   htmlStatus(l) {
     const veloz = l.veloz ? `<span style="--cor:#7dffa0">Veloz +${Math.round(l.veloz.bonus * 100)}% ${l.veloz.t.toFixed(0)}s</span>` : '';
     const escudo = l.escudo ? `<span style="--cor:#8fdcff">Escudo ${l.escudo.valor} ${l.escudo.t.toFixed(0)}s</span>` : '';
     const sol = l.sol ? `<span style="--cor:#ffab2e">Sol +${Math.round(l.sol.cfg.ataque * 100)}% ${l.sol.t.toFixed(0)}s</span>` : '';
+    const luar = l.luarVel ? `<span style="--cor:#e2ddff">Fúria Lunar +${Math.round(l.luarVel.f * 100)}%</span>` : '';
     const breu = l.breu ? `<span style="--cor:#b57be8">Trevas +${Math.round(l.breu.cfg.dano * 100)}% ${l.breu.t.toFixed(0)}s</span>` : '';
     const marcas = l.marcas ? `<span style="--cor:#f7e43a">Marcado ×${l.marcas.n} ${l.marcas.t.toFixed(0)}s</span>` : '';
-    return veloz + escudo + sol + breu + marcas + Object.entries(l.status).map(([k, v]) => `<span style="--cor:${EFEITOS[k].cor}">${EFEITOS[k].nome} ${v.toFixed(1)}s</span>`).join('');
+    return veloz + escudo + sol + breu + luar + marcas + Object.entries(l.status).map(([k, v]) => `<span style="--cor:${EFEITOS[k].cor}">${EFEITOS[k].nome} ${v.toFixed(1)}s</span>`).join('');
   }
 
   // Placa em cima de cada inimigo: só o nome e uma barrinha de vida
