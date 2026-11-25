@@ -13,6 +13,7 @@ import { Plataforma, CenaEvolucao } from './plataforma.js';
 import { carregarModelos3D } from './modelos.js';
 import { Companheiro } from './companheiro.js';
 import { TREINADORES, equipeDoTreinador } from './reino.js';
+import { TREINADORES_VILA, TESOURO_VILA, PREMIO_VILA, NOMES_VILA, ORDEM_VILAS, tituloDaVila } from './vilas.js';
 import { Bolsa, MOEDAS, sortearDrop, bonusDrop } from './bolsa.js';
 import { afetoDe } from './jardim.js';
 import { Ovo } from './ovo.js';
@@ -179,6 +180,7 @@ class Jogo {
   // ---------- telas ----------
   mostrarTela(nome) {
     this.modo = nome;
+    this.atualizarSaco(true); // o saquinho do ouro só aparece no mapa
     $('#tela-login').hidden = nome !== 'login';
     $('#tela-titulo').hidden = nome !== 'titulo';
     $('#tela-colecao').hidden = nome !== 'colecao';
@@ -244,6 +246,7 @@ class Jogo {
       if (this.filaEvo.length) this.proximaEvolucao();
     });
     $('#btn-monstruario').addEventListener('click', () => this.abrirColecao('ver'));
+    $('#saco').addEventListener('click', () => this.coletarTesouro()); // o ouro de Campeão (Reino e vilas)
     // Login: Entrar, Criar conta, contas deste aparelho (1 toque) e Trocar conta
     $('#form-login').addEventListener('submit', (e) => { e.preventDefault(); this.loginComSenha(false); });
     $('#btn-criar-conta').addEventListener('click', () => this.loginComSenha(true));
@@ -334,7 +337,7 @@ class Jogo {
     if (!s) return;
     const lider = s.estado.equipe[0], esp = ESPECIES[lider.especie];
     const total = s.estado.equipe.length + s.estado.reserva.length;
-    $('#resumo-save').textContent = `${esp.nome} Nv.${lider.nivel} · ${total} ${total === 1 ? 'monstro' : 'monstros'}${s.estado.arena?.dominada ? ' · 👑 Campeão do Reino' : ''}`;
+    $('#resumo-save').textContent = `${esp.nome} Nv.${lider.nivel} · ${total} ${total === 1 ? 'monstro' : 'monstros'}${(() => { const tt = s.estado.titulo || (s.estado.arena?.dominada ? 'Campeão do Reino' : ''); return tt ? ' · 👑 ' + tt : ''; })()}`;
   }
 
   // ---------- menu de pausa e sair ----------
@@ -553,6 +556,11 @@ class Jogo {
     for (const mo of [...this.estado.equipe, ...this.estado.reserva]) mo.hp = Math.min(mo.hp, statsDe(mo.especie, mo.nivel).hpMax);
     if (this.estado.arena?.ovoPendente) this.ovo.receber(); // dominou antes de o ovo existir
     // a bandeira salva volta para o lugar onde estava; a casa do Reino fica no nível salvo
+    // uma bandeira que ficou onde agora tem vila volta para a Bolsa
+    if (this.estado.bandeira && this.mundo.vilas.vilaEm(this.estado.bandeira.x, this.estado.bandeira.z, 4)) {
+      this.estado.bandeira = null;
+      setTimeout(() => this.aviso('Nasceu uma vila onde estava a sua bandeira: ela voltou para a Bolsa.'), 900);
+    }
     const bd = this.estado.bandeira;
     if (bd) this.mundo.fincarBandeira(bd.x, bd.z, bd.rot, false);
     else this.mundo.tirarBandeira();
@@ -711,6 +719,7 @@ class Jogo {
 
   // Fim de uma luta de treinador: progresso, prêmio e para onde o jogador vai
   fimLutaTreinador(tipo, b) {
+    if (b.selvagem.vila) { this.fimLutaTreinadorDaVila(tipo, b); return; }
     const tr = b.treinador, i = b.selvagem.indice, prog = this.progressoArena();
     if (tipo === 'vitoria') {
       const primeira = !prog.dominada && i === prog.vencidos;
@@ -745,30 +754,124 @@ class Jogo {
     est.coroa = true;            // tem a coroa
     est.coroaVestida = true;     // e já sai vestindo
     est.tesouro = { guardado: 0, t: 0 };
+    if (!est.titulo) est.titulo = 'Campeão do Reino';
     this.mundo.vestirCoroa(true);
     this.aviso('Você dominou a arena! Agora você é o Campeão do Reino!');
     this.aviso('Rei Julius: Tome a Coroa do Rei. Use com orgulho (dá para tirar na Bolsa).');
-    this.aviso(`O Reino vai guardar ${TESOURO.ouro} de ouro para você a cada ${TESOURO.cada / 60} minutos de jogo. Busque na fonte do castelo.`);
+    this.aviso(`O Reino vai guardar ${TESOURO.ouro} de ouro para você a cada ${TESOURO.cada / 60} minutos de jogo. Pegue no saquinho 💰 da tela.`);
     this.ovo.receber(1);
   }
 
-  // O ouro do Reino junta enquanto você joga (até o limite) e é buscado na fonte do castelo
+  // ---------- arenas das vilas (mundo novo, passo 3) ----------
+  // Progresso de cada vila: quantos treinadores você já venceu, se é o campeão e o cofre de ouro
+  progressoVila(id) {
+    this.estado.vilas ||= {};
+    return (this.estado.vilas[id] ||= { vencidos: 0, dominada: false });
+  }
+  encostouNoTreinadorDaVila(id, i) {
+    const lista = TREINADORES_VILA[id], tr = lista[i], prog = this.progressoVila(id), nome = NOMES_VILA[id];
+    if (!tr) { this.aviso(`${i === 4 ? 'O Campeão' : 'Este treinador'} da ${nome} ainda não chegou. Volte em breve!`); return; }
+    if (!this.temMonstroDePe()) { this.aviso(`${tr.nome}: Sua equipe está desmaiada. Cure-se e volte!`); return; }
+    if (!prog.dominada && i > prog.vencidos) { this.aviso(`${tr.nome}: Primeiro vença ${lista[prog.vencidos]?.nome || 'os outros treinadores'}.`); return; }
+    if (!prog.dominada && i < prog.vencidos) { this.aviso(`${tr.nome}: Você já me venceu. Agora é com ${lista[prog.vencidos]?.nome || 'o próximo'}!`); return; }
+    this.lutarComTreinadorDaVila(id, i);
+  }
+  lutarComTreinadorDaVila(id, i) {
+    const tr = TREINADORES_VILA[id][i], revanche = !!this.progressoVila(id).dominada;
+    if (tr.fala) this.aviso(tr.fala);
+    const membros = equipeDoTreinador({ ...tr, revanche: tr.revanche || 80 }, revanche).map((dados) => ({ dados }));
+    this.iniciarBatalha({ treinador: tr, indice: i, revanche, membros, zona: 'reino', vila: id });
+  }
+  fimLutaTreinadorDaVila(tipo, b) {
+    const tr = b.treinador, i = b.selvagem.indice, id = b.selvagem.vila, prog = this.progressoVila(id), lista = TREINADORES_VILA[id];
+    if (tipo === 'vitoria') {
+      const primeira = !prog.dominada && i === prog.vencidos;
+      this.aviso(`Você venceu ${tr.campeao ? 'o Campeão ' : ''}${tr.nome}${primeira ? '' : ' de novo'}!`);
+      this.ganharCristais({ comum: 0, forte: 0, supremo: 0, ...(primeira ? tr.premio || { forte: 1 } : { forte: 1 }) });
+      const moedas = tr.moedas || 0;
+      this.bolsa.ganharMoedas(primeira ? moedas : Math.round(moedas / 2));
+      if (primeira) prog.vencidos = i + 1;
+      if (primeira && tr.campeao) this.conquistarVila(id);
+      else if (primeira && lista[i + 1]) this.aviso(`Próximo desafio: ${lista[i + 1].nome}.`);
+      this.mundo.vilas.festa(id, 5);
+      this.mundo.graca = 2.5;
+    } else if (tipo === 'derrota') {
+      this.curarEquipe();
+      this.mundo.irParaFonte();
+      this.aviso(`${tr.nome} venceu. Vocês acordaram na fonte do castelo, curados.`);
+    } else this.mundo.sairDaArenaDaVila(id);
+  }
+  // Vencer o Campeão da vila pela 1ª vez: o título, ouro, 1 ovo e o cofre de ouro da vila
+  conquistarVila(id) {
+    const prog = this.progressoVila(id), titulo = tituloDaVila(id);
+    prog.dominada = true;
+    prog.cofre = { guardado: 0, t: 0 };
+    this.bolsa.ganharMoedas(PREMIO_VILA.ouro);
+    this.aviso(`Você é o novo ${titulo}!`);
+    this.aviso(`A ${NOMES_VILA[id]} vai guardar ${TESOURO_VILA.ouro} de ouro para você a cada ${TESOURO_VILA.cada / 60} minutos de jogo. Pegue no saquinho 💰 da tela.`);
+    if (!this.estado.titulo) this.estado.titulo = titulo; // (o jogador troca o título na Bolsa)
+    this.ovo.receber(1);
+    this.salvar();
+  }
+
+  // ---------- títulos ----------
+  // Todos os títulos que o jogador já ganhou (ele escolhe qual mostrar, na Bolsa)
+  titulos() {
+    const est = this.estado, lista = [];
+    if (est?.campeao) lista.push('Campeão do Reino');
+    for (const id of ORDEM_VILAS) if (est?.vilas?.[id]?.dominada) lista.push(tituloDaVila(id));
+    return lista;
+  }
+  tituloAtual() {
+    const lista = this.titulos();
+    return lista.includes(this.estado?.titulo) ? this.estado.titulo : lista[0] || null;
+  }
+
+  // ---------- o ouro guardado (Reino e vilas): o saquinho da tela ----------
+  // Cada cofre junta enquanto você joga (até o limite). Toque no saquinho para pegar tudo.
+  cofres() {
+    const est = this.estado, lista = [];
+    if (!est) return lista;
+    if (est.tesouro) lista.push([est.tesouro, TESOURO]);
+    for (const id of ORDEM_VILAS) { const c = est.vilas?.[id]?.cofre; if (c) lista.push([c, TESOURO_VILA]); }
+    return lista;
+  }
   passarTesouro(dt) {
-    const T = this.estado?.tesouro;
-    if (!T || (this.modo !== 'mundo' && this.modo !== 'batalha')) return;
-    if (T.guardado >= TESOURO.max) { T.t = 0; return; }
-    T.t += dt;
-    while (T.t >= TESOURO.cada && T.guardado < TESOURO.max) { T.t -= TESOURO.cada; T.guardado += TESOURO.ouro; }
+    if (!this.estado || (this.modo !== 'mundo' && this.modo !== 'batalha')) return;
+    for (const [T, cfg] of this.cofres()) {
+      if (T.guardado >= cfg.max) { T.t = 0; continue; }
+      T.t += dt;
+      while (T.t >= cfg.cada && T.guardado < cfg.max) { T.t -= cfg.cada; T.guardado += cfg.ouro; }
+    }
+    this.atualizarSaco();
   }
   coletarTesouro() {
-    const T = this.estado?.tesouro;
-    if (!T?.guardado) return;
-    const n = T.guardado;
-    T.guardado = 0;
-    this.aviso(`O Reino entregou o seu ouro de Campeão: +${n} de ouro!`);
+    let n = 0;
+    for (const [T] of this.cofres()) { n += T.guardado; T.guardado = 0; }
+    if (!n) { this.aviso('O saquinho ainda está vazio. O ouro chega aos poucos enquanto você joga.'); return; }
+    this.aviso(`Você pegou o ouro de Campeão: +${n} de ouro!`);
     this.estado.moedas += n;
     this.atualizarHudMundo();
+    this.atualizarSaco(true);
     this.salvar();
+  }
+  // O saquinho embaixo do relógio: quanto já juntou, quanto falta para o próximo e se algum cofre encheu
+  atualizarSaco(forcar = false) {
+    const el = $('#saco'), cofres = this.cofres();
+    if (!el) return;
+    if (!cofres.length || this.modo !== 'mundo') { el.hidden = true; return; }
+    el.hidden = false;
+    const total = cofres.reduce((s, [T]) => s + T.guardado, 0);
+    const cheio = cofres.some(([T, cfg]) => T.guardado >= cfg.max);
+    const faltam = cofres.filter(([T, cfg]) => T.guardado < cfg.max).map(([T, cfg]) => cfg.cada - T.t);
+    const seg = faltam.length ? Math.max(0, Math.ceil(Math.min(...faltam))) : 0;
+    const txt = cheio ? `Resgatar ${total}!|toque para pegar` : `+${total} de ouro|próximo em ${Math.floor(seg / 60)}:${String(seg % 60).padStart(2, '0')}`;
+    if (!forcar && el.dataset.txt === txt) return;
+    el.dataset.txt = txt;
+    const [a, b] = txt.split('|');
+    $('#saco-total').textContent = a;
+    $('#saco-tempo').textContent = b;
+    el.classList.toggle('cheio', cheio);
   }
 
   iniciarBatalha(selvagem) {

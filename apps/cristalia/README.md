@@ -175,10 +175,32 @@ O jogo é um **PWA** (aplicativo web instalável). Ele fica no site **https://la
   | Poção de Reviver (amarela) | Levanta 1 monstro desmaiado com metade da vida | 120 |
 
 - **Loja:** a barraca listrada azul e branca da vila do Reino. Chegue perto (aparece "Loja de Poções") e encoste na frente dela. Dá para comprar de 1 em 1 ou de 5 em 5.
-- **Bolsa:** o Campeão do Reino (coroa e ouro do Reino), a bandeira (fincar, guardar, mudar, evoluir), a casa e o jardim, as frutas e o afeto, os itens raros, as poções (cada monstro da equipe e da reserva tem o botão **Curar** ou **Reviver**), os ovos e os cristais (a fusão precisa estar perto da casa). O mundo fica parado enquanto a bolsa está aberta.
+- **Bolsa:** o Campeão do Reino (coroa e ouro do Reino), os **títulos** (escolha qual mostrar), a bandeira (fincar, guardar, mudar, evoluir), a casa e o jardim, as frutas e o afeto, os itens raros, as poções (cada monstro da equipe e da reserva tem o botão **Curar** ou **Reviver**), os ovos e os cristais (a fusão precisa estar perto da casa). O mundo fica parado enquanto a bolsa está aberta.
 - **Na batalha:** o botão do **frasco** (tecla **P**) mostra quantas poções você tem e abre a escolha: **Cura** (no monstro que está lutando) ou **Reviver** (no 1º desmaiado da equipe; depois toque em Trocar para mandar ele de volta). Entre uma poção e outra há **10 s de recarga** (o botão escurece e vai clareando).
 - **Jogos salvos antigos** começam com 0 de ouro e 3 Poções de Cura.
 - **Código:** `js/bolsa.js` (preços, moedas, bolsa e loja) e o botão da batalha em `js/batalha.js`. Fica salvo em `estado.moedas` e `estado.pocoes`.
+
+## Vilas (uma em cada bioma)
+
+Mundo novo, passo 3 (`PLANO.md`). Cada bioma tem uma vila de **30 m de raio**, no lugar que a semente guardou (no Arquipélago, numa ilha), num chão plano.
+
+| Vila | Bioma | Campeão (sempre do elemento do bioma) |
+|---|---|---|
+| Vila da Neve | Gelo (Picos Nevados) | Raio |
+| Vila das Folhas | Floresta | Planta |
+| Vila da Areia | Deserto | Terra |
+| Vila das Cinzas | Vulcânico | Fogo |
+| Vila das Marés | Arquipélago | Água |
+
+- **O que tem:** cerca baixa com **2 entradas** (uma virada para o Reino, outra para fora), a **praça** com uma estátua de cristal na cor do elemento, a **Loja de Poções** (só poções, com os mesmos preços do Reino; as sementes ficam só na Loja do Reino), **5 casas** com a cara do bioma (no Arquipélago, sobre estacas) e, no fundo, a **arena** (coliseu de 13 m, menor que o do Reino, com ~210 bonequinhos na plateia).
+- **Zona segura:** nenhum selvagem entra (eles dão meia-volta antes da cerca) e não dá para fincar a bandeira lá dentro. Uma bandeira que estava onde a vila nasceu volta para a Bolsa.
+- **Arena:** 5 plataformas na areia: **4 treinadores e o Campeão** (a do Campeão é dourada, no fundo). As regras são as do Reino: em ordem, um monstro de cada vez, sem captura; depois de conquistada, todos viram **revanche**. **Os treinadores ainda vão ser feitos pelo Lâmina:** enquanto isso, as plataformas mostram "em breve". Eles entram em `TREINADORES_VILA` (`js/vilas.js`), no mesmo formato dos treinadores do Reino (níveis combinados: Nv.55, 60, 65 e 70, e o Campeão Nv.75 na forma final).
+- **Vencer o Campeão da vila** (1ª vez): você vira o novo campeão. Ganha o **título** ("Campeão da Vila da Areia"), **1.000 de ouro**, **1 ovo** e a vila passa a guardar **75 de ouro a cada 10 minutos de jogo** (até 300). Perder na arena: vocês acordam na fonte do castelo, curados.
+- **O saquinho 💰** (embaixo do relógio): junta o ouro de Campeão do **Reino e de todas as vilas**. Mostra quanto já tem e quanto falta para o próximo; quando algum cofre enche (e para de juntar), ele **brilha dourado** com "Resgatar!". Toque nele em qualquer lugar para pegar tudo. (A fonte do castelo não entrega mais o ouro.)
+- **Títulos:** cada arena conquistada dá um título. Na **Bolsa**, seção Títulos, você escolhe qual usar; ele aparece na tela inicial, com o jogo salvo.
+- **Fica salvo** em `estado.vilas` (`vencidos`, `dominada` e `cofre` de cada vila) e `estado.titulo`.
+- **Leve no celular:** cada vila vira 3 malhas (como o Reino) e a plateia só existe na tela de perto. Dentro de uma vila são ~37 desenhos e ~19 mil triângulos (menos que no Reino).
+- **Código:** `js/vilas.js` (`Vilas`, `NOMES_VILA`, `TREINADORES_VILA`, `TESOURO_VILA`, `PREMIO_VILA`); o chão plano em `alturaBase` (`VILAS` no `js/mapa/gerador.js`); as lutas, o Campeão, o saquinho e os títulos no `js/main.js` (`encostouNoTreinadorDaVila`, `conquistarVila`, `cofres`, `atualizarSaco`, `titulos`). GM, aba Mundo: **Conquistar** cada vila, **zerar as vilas** e **encher todos os cofres**; o teleporte tem as 5 vilas.
 
 ## Ovo Misterioso
 
@@ -233,7 +255,7 @@ O Reino fica **no meio do mapa** (mundo novo, `PLANO.md`): é o lugar seguro ond
 - **Dominar a arena:** vencendo o Rei Julius, você vira o **Campeão do Reino** e ganha:
   - a **Coroa do Rei**: aparece na cabeça do seu personagem (na Bolsa, seção Campeão do Reino, dá para guardar ou vestir);
   - o título **Campeão do Reino** (na Bolsa e no resumo do jogo salvo, na tela de início);
-  - o **ouro do Reino**: **100 de ouro a cada 10 minutos de jogo**, guardando no máximo **600** (1 hora). Para receber, **passe na fonte do castelo**;
+  - o **ouro do Reino**: **100 de ouro a cada 10 minutos de jogo**, guardando no máximo **600** (1 hora). Para receber, **toque no saquinho 💰** da tela (veja "Vilas");
   - **1 Ovo Misterioso** (veja abaixo). A **2ª vitória** contra o Rei dá **2 ovos**.
 - **Revanches** (depois de dominar, em qualquer ordem): cada treinador fica mais forte: **Gill Nv.50, Cris Nv.55, Lana Nv.60, Sheyla Nv.70 e o Rei Nv.100** (com as formas finais).
 - **Fica salvo** em `estado.arena` (`vencidos` de 0 a 5, `dominada`, `vitoriasRei`), `estado.campeao`, `estado.coroa`/`coroaVestida` e `estado.tesouro` (o ouro do Reino guardado). Os níveis de revanche ficam em `revanche` de cada treinador (`TREINADORES`, `js/reino.js`) e o ouro do Reino em `TESOURO` (`js/main.js`).
@@ -893,6 +915,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/jardim.js` | O jardim (sementes, plantar, colher, as plantas em tempo real e os canteiros em 3D) e o afeto (alimentar, Coração do Guardião, satisfeito) |
 | `js/bolsa.js` | Ouro, poções (preços e efeito), Galho Raro, Asa do Anjo e os drops (`DROPS`), a evolução da casa e da bandeira (`CASA`, `BANDEIRA`), a Bolsa (bandeira, casa, itens raros, poções, cristais, ovo) e a loja de poções do Reino |
 | `js/ovo.js` | O Ovo Misterioso: o ovo roxo em 3D, o tempo para chocar, o sorteio e a cena do nascimento |
+| `js/vilas.js` | As 5 vilas: cerca, praça, loja, casas, arena com plateia e plataformas, os treinadores das vilas (`TREINADORES_VILA`, o Lâmina vai fazer) e o ouro de cada vila |
 | `js/reino.js` | O Reino: castelo, praça e fonte, vila e loja, arena fechada com plateia e os 5 treinadores, muralha com os 5 portões, a estrada em anel e as lanternas dos 5 caminhos (tudo junto em poucas malhas) |
 | `js/mapa/config.js` | Configurações do mapa procedural e os perfis de qualidade |
 | `js/mapa/gerador.js` | O gerador do mapa (só matemática): ruído com semente, biomas, altura do chão, rios, lagos, pontos de interesse, lugares da Floresta, direção das dungeons, os 5 caminhos do Reino e os lugares guardados (vilas e masmorras) e a Estrada Real |

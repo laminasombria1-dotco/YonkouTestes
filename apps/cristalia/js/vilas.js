@@ -1,0 +1,259 @@
+// =============================================================
+// AS VILAS (mundo novo, passo 3): uma em cada bioma, 30 m de raio
+//  - Ficam nos lugares que a semente guardou (VILAS no gerador.js), num chão plano.
+//  - Cerca baixa com 2 entradas (uma virada para o Reino, outra para fora),
+//    a praça com a Loja de Poções, 5 casas com a cara do bioma e, no fundo,
+//    uma arena de 13 m com plateia e 5 plataformas: 4 treinadores e o Campeão
+//    (o Campeão é sempre do elemento do bioma).
+//  - Zona segura: nenhum selvagem entra e não dá para fincar a bandeira.
+//  - Vencer o Campeão da vila: você vira o novo campeão, ganha o título
+//    ("Campeão da Vila da Areia"), ouro, 1 ovo (na 1ª vez) e a vila passa a
+//    guardar ouro para você (pegue no saquinho da tela).
+// Para pesar pouco no celular: cada vila vira poucas malhas (como o Reino) e
+// a plateia só aparece quando você está perto.
+// O desenho usa coordenadas "locais" da vila: (0, 0) é o meio e +z aponta para o Reino.
+// =============================================================
+import * as THREE from 'three';
+import { VILAS, NIVEL_AGUA } from './mapa/gerador.js';
+import { alturaEm } from './mapa/altura.js';
+import { peca, brilho, duplo, caixa, cil, cone, prisma, assar, criarPlateia, animarPlateia } from './reino.js';
+import { ELEMENTOS } from './dados.js';
+
+export const NOMES_VILA = { raio: 'Vila da Neve', planta: 'Vila das Folhas', terra: 'Vila da Areia', fogo: 'Vila das Cinzas', agua: 'Vila das Marés' };
+export const ORDEM_VILAS = ['raio', 'planta', 'terra', 'fogo', 'agua'];
+export const tituloDaVila = (id) => `Campeão da ${NOMES_VILA[id]}`;
+
+// O ouro que cada vila conquistada guarda (pegue no saquinho da tela)
+export const TESOURO_VILA = { ouro: 75, cada: 600, max: 300 };
+// O que o Campeão da vila dá na 1ª vitória (além do título, do ouro guardado e de 1 ovo)
+export const PREMIO_VILA = { ouro: 1000 };
+
+// =============================================================
+// OS TREINADORES DAS VILAS (o Lâmina vai fazer)
+// 5 por vila, na ordem da luta: 4 treinadores e, por último, o Campeão
+// (campeao: true, sempre do elemento do bioma). O formato é o mesmo dos
+// treinadores do Reino (TREINADORES no reino.js), por exemplo:
+//   { id: 'areia1', nome: 'Nome', elemento: 'fogo', cor: '#ff6a3d', niveis: [55, 55],
+//     equipe: [['L:fogo', 55], ['L:fogo', 55], ['L:fogo', 55]],
+//     fala: 'O que ele diz antes da luta', premio: { forte: 2 }, moedas: 400, revanche: 80 },
+//   ...o 5º com campeao: true
+// Níveis combinados (provisórios): treinadores Nv.55, 60, 65 e 70; o Campeão Nv.75 (forma final).
+// Enquanto a lista estiver vazia, as plataformas esperam o treinador ("em breve").
+// =============================================================
+export const TREINADORES_VILA = { raio: [], planta: [], terra: [], fogo: [], agua: [] };
+
+// Cores de cada vila (paredes, telhado, madeira, chão das ruas, cerca)
+const ESTILO = {
+  raio:   { parede: '#dfe8f0', telhado: '#5a7aa8', neve: true,  madeira: '#6a5040', rua: '#b8c4d0', cerca: '#7a6450', bandeira: '#ffe066' },
+  planta: { parede: '#c8a878', telhado: '#3f7a3a', neve: false, madeira: '#6a4a2c', rua: '#9c8a6a', cerca: '#5a3a24', bandeira: '#5cd65c' },
+  terra:  { parede: '#ecd6a4', telhado: '#c27a4e', neve: false, madeira: '#8a6a40', rua: '#c8a670', cerca: '#7a5230', bandeira: '#e0a040' },
+  fogo:   { parede: '#5a4a44', telhado: '#2e2220', neve: false, madeira: '#3a2a24', rua: '#6a5a52', cerca: '#3a2a24', bandeira: '#ff6a3d', lava: true },
+  agua:   { parede: '#e8dcc0', telhado: '#e8a23a', neve: false, madeira: '#9a7a4a', rua: '#d8c49a', cerca: '#8a6a40', bandeira: '#3db8ff', palafita: true },
+};
+const PEDRA = '#cbbfa6', AREIA_ARENA = '#e8d6a8', LUZ = '#ffd37a';
+
+// Medidas da arena da vila (menor que a do Reino: 13 m)
+export const ARENA_VILA = { x: 0, z: -9, r0: 7, deg: 5, passo: 1.15, sub: 0.6, porta: 0.3 };
+const RP = ARENA_VILA.r0 + ARENA_VILA.deg * ARENA_VILA.passo + 0.4; // raio da parede de fora (~13 m)
+// As 5 plataformas na areia (a 5ª, do Campeão, no fundo e mais alta)
+const PLATAFORMAS = [[-3.9, 2.6, 0.5], [3.6, 1.6, 0.75], [-3.0, -2.4, 1.0], [3.0, -3.0, 1.25], [0, -5.0, 1.6]];
+const LOJA = { x: -10, z: 17 };
+// as casas olham para o meio da vila (a da frente, para a praça)
+const CASAS = [[10, 17], [-19, 8], [19, 8], [-20, -5], [20, -5]].map(([x, z]) => [x, z, Math.atan2(-x, (z > 12 ? 15 : 4) - z)]);
+
+export class Vilas {
+  constructor(mundo) {
+    this.m = mundo;
+    this.lista = VILAS.map((v) => this.criar(v));
+  }
+
+  // ---------- montar uma vila ----------
+  criar(v) {
+    const h = alturaEm(v.x, v.z); // o chão da vila (plano)
+    const giro = Math.atan2(-Math.cos(v.ang), -Math.sin(v.ang)); // +z do desenho aponta para o Reino
+    const c = Math.cos(giro), s = Math.sin(giro);
+    const paraMundo = (lx, lz) => ({ x: v.x + lx * c + lz * s, z: v.z - lx * s + lz * c });
+    const vila = { id: v.bioma, nome: NOMES_VILA[v.bioma], x: v.x, z: v.z, r: v.r, h, giro, paraMundo, estilo: ESTILO[v.bioma] };
+    const raiz = new THREE.Group();
+    raiz.position.set(v.x, h, v.z);
+    raiz.rotation.y = giro;
+    vila.obst = (lx, lz, r) => { const p = paraMundo(lx, lz); this.m.obstaculos.push({ x: p.x, z: p.z, r, fixo: true }); };
+    this.cerca(vila, raiz);
+    this.ruas(vila, raiz);
+    this.loja(vila, raiz);
+    CASAS.forEach(([x, z, rot]) => this.casa(vila, raiz, x, z, rot));
+    this.arena(vila, raiz);
+    vila.malhas = assar(raiz, this.m.cena);
+    // a plateia (o que se mexe) num grupo à parte, que só aparece de perto
+    vila.vivo = new THREE.Group();
+    vila.vivo.position.copy(raiz.position);
+    vila.vivo.rotation.y = giro;
+    this.m.cena.add(vila.vivo);
+    const A = ARENA_VILA;
+    vila.plateia = criarPlateia(vila.vivo, { x: A.x, z: A.z, r0: A.r0 + 0.5, deg: A.deg, passo: A.passo, subida: A.sub, buracos: [[0, A.porta + 0.08]], espaco: 0.95, semente: 31 + ORDEM_VILAS.indexOf(v.bioma) });
+    vila.festaT = 0;
+    vila.vivo.visible = false;
+    return vila;
+  }
+
+  // Cerca baixa de madeira com 2 entradas (+z: para o Reino; -z: para fora) e um portal em cada
+  cerca(vila, g) {
+    const E = vila.estilo, R = vila.r - 0.5, ABRE = 2.6 / R;
+    const noPortao = (a) => [0, Math.PI].some((e) => Math.abs(Math.atan2(Math.sin(a - e), Math.cos(a - e))) < ABRE);
+    const N = 72;
+    for (let i = 0; i < N; i++) {
+      const a = (i / N) * Math.PI * 2; // (como no Lathe: 0 = +z, PI/2 = +x)
+      const x = Math.sin(a) * R, z = Math.cos(a) * R;
+      if (noPortao(a)) continue;
+      peca(g, caixa(0.25, 1.3, 0.25), E.cerca, [x, 0.65, z]);
+      if (!noPortao(a + Math.PI / N)) peca(g, caixa(0.12, 0.14, (2 * Math.PI * R) / N + 0.1), E.madeira, [Math.sin(a + Math.PI / N) * R, 0.95, Math.cos(a + Math.PI / N) * R], [0, a + Math.PI / N + Math.PI / 2, 0]);
+    }
+    for (let i = 0; i < 160; i++) { const a = (i / 160) * Math.PI * 2; if (!noPortao(a)) vila.obst(Math.sin(a) * R, Math.cos(a) * R, 0.55); }
+    // portais com a bandeirinha da vila e lanternas
+    for (const lado of [1, -1]) {
+      const z = lado * R;
+      for (const x of [-2.4, 2.4]) {
+        peca(g, caixa(0.5, 4, 0.5), E.madeira, [x, 2, z]);
+        brilho(g, caixa(0.35, 0.4, 0.35), LUZ, [x, 4.25, z]);
+        vila.obst(x, z, 0.45);
+      }
+      peca(g, caixa(5.4, 0.5, 0.4), E.madeira, [0, 3.7, z]);
+      duplo(g, caixa(1.6, 0.9, 0.08), E.bandeira, [0, 3.0, z]);
+    }
+  }
+
+  // A rua da entrada do Reino até a praça (e a praça com uma estátua do elemento)
+  ruas(vila, g) {
+    const E = vila.estilo;
+    peca(g, caixa(4.2, 0.1, 9), E.rua, [0, 0.05, 25.5]);
+    peca(g, cil(6, 6, 0.1, 20), E.rua, [0, 0.05, 15]);
+    peca(g, caixa(3.4, 0.1, 6), E.rua, [0, 0.05, 6.5]);   // da praça até o túnel da arena
+    peca(g, caixa(4.2, 0.1, 6), E.rua, [0, 0.05, -26.5]); // a entrada de fora
+    // estátua: base de pedra e um cristal na cor do elemento do bioma
+    peca(g, cil(1.4, 1.6, 1, 8), PEDRA, [0, 0.5, 15]);
+    brilho(g, new THREE.OctahedronGeometry(0.8, 0), ELEMENTOS[vila.id].cor, [0, 2.1, 15]);
+    vila.obst(0, 15, 1.6);
+  }
+
+  // Casa simples com a cara do bioma (paredes, telhado, porta e janelas acesas)
+  casa(vila, raiz, x, z, rot, larg = 5, fundo = 4.4) {
+    const E = vila.estilo, g = new THREE.Group();
+    g.position.set(x, 0, z); g.rotation.y = rot; raiz.add(g);
+    const y0 = E.palafita ? 0.8 : 0; // no Arquipélago, as casas ficam em cima de estacas
+    if (E.palafita) for (const [px, pz] of [[-2, -1.7], [2, -1.7], [-2, 1.7], [2, 1.7]]) peca(g, caixa(0.3, 1, 0.3), E.madeira, [px, 0.5, pz]);
+    peca(g, caixa(larg + 0.3, 0.3, fundo + 0.3), E.madeira, [0, y0 + 0.15, 0]);
+    peca(g, caixa(larg, 2.6, fundo), E.parede, [0, y0 + 1.6, 0]);
+    peca(g, prisma(fundo + 0.8, larg + 0.6, 1.8), E.telhado, [0, y0 + 2.9, 0], [0, Math.PI / 2, 0]);
+    if (E.neve) peca(g, prisma(fundo + 0.9, larg + 0.7, 0.5), '#f4f8fc', [0, y0 + 4.25, 0], [0, Math.PI / 2, 0]);
+    peca(g, caixa(1.1, 1.8, 0.12), E.madeira, [0, y0 + 1.2, fundo / 2 + 0.02]);
+    for (const xx of [-1.6, 1.6]) brilho(g, caixa(0.8, 0.7, 0.1), E.lava ? '#ff8a3a' : LUZ, [xx, y0 + 1.8, fundo / 2 + 0.03]);
+    const c = Math.cos(rot), s = Math.sin(rot);
+    for (const [ox, oz] of [[-1.5, 0], [1.5, 0]]) vila.obst(x + ox * c + oz * s, z - ox * s + oz * c, 2.3);
+  }
+
+  // A Loja de Poções: uma casa com a barraca listrada na frente (encoste na barraca para comprar)
+  loja(vila, raiz) {
+    const E = vila.estilo;
+    this.casa(vila, raiz, LOJA.x, LOJA.z, Math.PI / 2 + 0.6, 6, 5);
+    const b = new THREE.Group(); b.position.set(LOJA.x + 4.2, 0, LOJA.z - 2.2); b.rotation.y = Math.PI / 2 + 0.6; raiz.add(b);
+    peca(b, caixa(2.6, 1, 1), E.madeira, [0, 0.5, 0]);
+    for (const xx of [-1.25, 1.25]) peca(b, caixa(0.12, 2.4, 0.12), E.madeira, [xx, 1.2, -0.4]);
+    for (let i = 0; i < 6; i++) duplo(b, caixa(0.46, 0.08, 1.4), i % 2 ? '#ffffff' : E.bandeira, [-1.15 + i * 0.46, 2.4, -0.1], [0.3, 0, 0]);
+    brilho(b, cil(0.14, 0.14, 0.4, 6), '#e8474a', [-0.6, 1.2, 0]);
+    brilho(b, cil(0.14, 0.14, 0.4, 6), '#ffd23f', [0.6, 1.2, 0]);
+    vila.obst(LOJA.x + 4.2, LOJA.z - 2.2, 1.2);
+    // onde o jogador fica para comprar (na frente da barraca)
+    const c = Math.cos(b.rotation.y), s = Math.sin(b.rotation.y);
+    vila.loja = { ...vila.paraMundo(b.position.x + 1.7 * s, b.position.z + 1.7 * c), nome: vila.nome };
+  }
+
+  // A arena (coliseu menor, 13 m): arquibancada em degraus, parede de fora, túnel e as 5 plataformas
+  arena(vila, raiz) {
+    const A = ARENA_VILA, E = vila.estilo, g = new THREE.Group();
+    g.position.set(A.x, 0, A.z); raiz.add(g);
+    const pts = [new THREE.Vector2(A.r0, 0)];
+    for (let i = 0; i < A.deg; i++) { pts.push(new THREE.Vector2(A.r0 + i * A.passo, A.sub * (i + 1))); pts.push(new THREE.Vector2(A.r0 + (i + 1) * A.passo, A.sub * (i + 1))); }
+    const R = A.r0 + A.deg * A.passo, H = A.sub * A.deg;
+    pts.push(new THREE.Vector2(R, H + 1.2), new THREE.Vector2(RP, H + 1.2), new THREE.Vector2(RP, 0));
+    // (no Lathe o ângulo 0 aponta para +z: o túnel do portão, virado para a praça)
+    duplo(g, new THREE.LatheGeometry(pts, 28, A.porta, Math.PI * 2 - 2 * A.porta), PEDRA);
+    // faixa na cor da vila em cima da parede
+    duplo(g, new THREE.LatheGeometry([new THREE.Vector2(RP + 0.02, H + 0.6), new THREE.Vector2(RP + 0.02, H + 1.2)], 28, A.porta, Math.PI * 2 - 2 * A.porta), E.telhado);
+    // areia
+    peca(g, cil(A.r0 + 0.2, A.r0 + 0.2, 0.1, 24), AREIA_ARENA, [0, 0.06, 0]);
+    // túnel do portão: 2 paredes e o arco com a bandeira
+    const zt = (A.r0 + RP) / 2, comp = RP - A.r0 + 0.6, xT = Math.sin(A.porta) * A.r0;
+    for (const lado of [-1, 1]) {
+      peca(g, caixa(0.6, H + 1.2, comp), PEDRA, [lado * (xT + 0.3), (H + 1.2) / 2, zt]);
+      for (let k = 0; k <= 4; k++) vila.obst(A.x + lado * (xT + 0.3), A.z + A.r0 + (k / 4) * (RP - A.r0), 0.6);
+    }
+    peca(g, caixa(xT * 2 + 1.2, 0.8, 0.8), PEDRA, [0, H + 1.6, RP]);
+    duplo(g, caixa(1.8, 1, 0.08), E.bandeira, [0, H + 0.6, RP + 0.45]);
+    // colisão: a arquibancada (por fora e pela areia), menos o túnel
+    const fora = (a) => Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) < A.porta;
+    for (let i = 0; i < 90; i++) {
+      const a = (i / 90) * Math.PI * 2; if (fora(a)) continue;
+      vila.obst(A.x + Math.sin(a) * (RP + 0.2), A.z + Math.cos(a) * (RP + 0.2), 0.7);
+      vila.obst(A.x + Math.sin(a) * (A.r0 + 0.5), A.z + Math.cos(a) * (A.r0 + 0.5), 0.6);
+    }
+    // as 5 plataformas (a do Campeão é dourada e mais alta)
+    vila.plataformas = PLATAFORMAS.map(([x, z, alt], i) => {
+      const campeao = i === PLATAFORMAS.length - 1;
+      peca(g, cil(1.25, 1.45, alt, 10), PEDRA, [x, alt / 2, z]);
+      peca(g, cil(1.3, 1.3, 0.12, 10), campeao ? '#ffd23f' : E.madeira, [x, alt + 0.06, z]);
+      peca(g, cil(0.05, 0.05, 2.4, 4), E.madeira, [x + 1, alt + 1.2, z - 0.6]);
+      duplo(g, caixa(0.05, 0.7, 0.9), campeao ? ELEMENTOS[vila.id].cor : '#9a9a9a', [x + 1, alt + 2.05, z - 0.15]);
+      vila.obst(A.x + x, A.z + z, 1.5);
+      // a frente da plataforma (virada para o túnel) é onde o jogador encosta para falar
+      const d = Math.hypot(x, z - 7) || 1, fx = x + (-x / d) * 1.9, fz = z + ((7 - z) / d) * 1.9;
+      return { frente: vila.paraMundo(A.x + fx, A.z + fz), topo: { ...vila.paraMundo(A.x + x, A.z + z), y: vila.h + alt + 1.9 }, campeao, armado: true };
+    });
+  }
+
+  // ---------- consultas ----------
+  // A vila em que o ponto está (folga = metros a mais em volta)
+  vilaEm(x, z, folga = 0) {
+    for (const v of this.lista) if (Math.hypot(x - v.x, z - v.z) < v.r + folga) return v;
+    return null;
+  }
+  vila(id) { return this.lista.find((v) => v.id === id); }
+  get lojas() { return this.lista.map((v) => v.loja); }
+
+  // A plataforma mais perto (até 8 m) da vila onde o jogador está
+  treinadorPerto(x, z) {
+    const v = this.vilaEm(x, z);
+    if (!v) return null;
+    let melhor = null, md = 8;
+    v.plataformas.forEach((p, i) => {
+      const dc = Math.hypot(x - p.topo.x, z - p.topo.z);
+      if (dc < md) { md = dc; melhor = { vila: v, i, tr: TREINADORES_VILA[v.id][i] || null, d: Math.hypot(x - p.frente.x, z - p.frente.z), topo: p.topo, p }; }
+      if (!p.armado && Math.hypot(x - p.frente.x, z - p.frente.z) > 3) p.armado = true;
+    });
+    return melhor;
+  }
+
+  // A plateia pula por alguns segundos (quando você vence alguém na arena da vila)
+  festa(id, seg) { const v = this.vila(id); if (v) v.festaT = Math.max(v.festaT, seg); }
+
+  // Quadro a quadro: a plateia só existe na tela de perto (e só se mexe na festa)
+  atualizar(dt, t) {
+    const m = this.m;
+    for (const v of this.lista) {
+      const perto = Math.hypot(m.pos.x - v.x, m.pos.z - v.z) < v.r + 45;
+      v.vivo.visible = perto;
+      if (!perto) continue;
+      if (v.festaT > 0 || v.plateia.pulando) {
+        v.festaT = Math.max(0, v.festaT - dt);
+        animarPlateia(v.plateia, v.festaT, t);
+      }
+    }
+  }
+}
+
+// O ponto de saída da arena de uma vila (pelo túnel, de costas para a arena)
+export function saidaDaArena(v) {
+  const fora = v.paraMundo(ARENA_VILA.x, ARENA_VILA.z + RP + 4), dentro = v.paraMundo(ARENA_VILA.x, ARENA_VILA.z);
+  return { ...fora, ang: Math.atan2(fora.x - dentro.x, fora.z - dentro.z) };
+}
+// (para não haver água dentro da vila: o chão é plano e acima da água)
+export const ALTURA_MINIMA_VILA = NIVEL_AGUA + 0.9;

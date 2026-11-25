@@ -205,7 +205,12 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
           (`LUGARES` no `gerador.js`). O Caminho das Brasas e a Trilha Ancestral saem da borda do Vulcânico e da Floresta.
     - ~~Passo 2 — Mapa na tela + viagem rápida~~ **cancelado pelo Lâmina:** o jogo não vai ter mapa na tela nem viagem rápida.
       (A descoberta das dungeons vira aviso + ícone flutuando em cima da entrada.)
-    - [ ] **Passo 3 — Vilas e arenas** (uma por bioma, até na Água).
+    - [x] **Passo 3 — Vilas e arenas** (uma por bioma, até na Água). *Decisões:* lojas de poções; 30 m de raio com a arena
+          dentro (arena de 13 m, aprovada); nomes Vila da Neve, das Folhas, da Areia, das Cinzas e das Marés; 4 treinadores +
+          o Campeão do elemento do bioma; vencer o Campeão = novo campeão: título (o jogador escolhe), ouro, 1 ovo na 1ª vitória
+          e **75 de ouro a cada 10 min** (até 300) pelo **saquinho** da tela (o do Reino também). Níveis: Nv.55/60/65/70 e o
+          Campeão Nv.75. *Feito:* `js/vilas.js`, o saquinho, os títulos e as lutas (prontas para os treinadores).
+      - [ ] **Os treinadores das vilas** (nomes e equipes): **o Lâmina vai fazer** (`TREINADORES_VILA` no `js/vilas.js`).
     - [ ] **Passo 4 — Masmorras novas** (2 por bioma; as novas são áreas separadas).
     - [ ] **Passo 5 — Dungeons** (a especificação do Lâmina, com o adaptador).
     - [ ] **Passo 6 — Níveis** (o Lâmina vai rever a regra mais para frente).

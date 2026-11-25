@@ -334,8 +334,23 @@ function alturaBioma(x, z) {
   for (let i = 0; i < P.length; i++) if (P[i] > 1e-4) h += P[i] * alturaDoBioma(IDS[i], i, x, z, base);
   return h;
 }
-// Altura do chão (sem as dungeons e a borda: isso o mundo.js junta)
+// Altura do chão (sem as dungeons e a borda: isso o mundo.js junta).
+// As vilas (passo 3 do mundo novo) ficam num chão plano: 30 m de raio e mais 12 m de emenda.
+export const VILAS = LUGARES.filter((l) => l.tipo === 'vila');
+const EMENDA_VILA = 12;
+for (const v of VILAS) v.h = null; // altura do chão da vila (calculada na 1ª vez)
 export function alturaBase(x, z) {
+  let h = alturaSemVila(x, z);
+  for (const v of VILAS) {
+    const d = Math.hypot(x - v.x, z - v.z);
+    if (d > v.r + EMENDA_VILA) continue;
+    if (v.h == null) v.h = Math.max(NIVEL_AGUA + 0.9, alturaSemVila(v.x, v.z)); // nunca na água nem na lava
+    const k = suave(v.r + EMENDA_VILA, v.r + 1, d);
+    h = h * (1 - k) + v.h * k;
+  }
+  return h;
+}
+function alturaSemVila(x, z) {
   const P = pesosEm(x, z);
   const base = relevoBase(x, z);
   let h = 0, fRio = 0;

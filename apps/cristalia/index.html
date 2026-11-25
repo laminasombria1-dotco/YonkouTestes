@@ -273,6 +273,15 @@
   .relogio { position: absolute; top: 56px; right: max(10px, env(safe-area-inset-right, 0px)); font-size: 0.8rem; }
   .relogio .astro { width: 12px; height: 12px; border-radius: 50%; background: var(--sol); box-shadow: 0 0 8px var(--sol); }
   .relogio.noite .astro { background: transparent; box-shadow: 4px -2px 0 0 #dcd6ff; }
+  /* o saquinho do ouro de Campeão (embaixo do relógio) */
+  .saco { position: absolute; top: 92px; right: max(10px, env(safe-area-inset-right, 0px)); display: flex; align-items: center; gap: 8px; padding: 5px 12px 5px 8px; border-radius: 999px; border: 2px solid #ffd23f55; background: var(--painel); color: #fff; font: inherit; cursor: pointer; }
+  .saco .saco-icone { font-size: 1.3rem; line-height: 1; }
+  .saco .saco-txt { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.1; }
+  .saco b { font-size: 0.82rem; }
+  .saco small { font-size: 0.68rem; font-weight: 600; opacity: 0.8; }
+  .saco.cheio { background: linear-gradient(#ffcf3f, #e89a10); color: #3a2400; border-color: #fff8; box-shadow: 0 0 16px #ffd23f; animation: saco-brilho 1.4s ease-in-out infinite; }
+  .saco.cheio small { opacity: 1; }
+  @keyframes saco-brilho { 50% { box-shadow: 0 0 4px #ffd23f; } }
   #zona-nome { position: absolute; top: 18%; left: 50%; transform: translateX(-50%); font-family: var(--f-titulo); font-weight: 600; font-size: 1.5rem;
     white-space: nowrap; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6); opacity: 0; pointer-events: none; }
   #zona-nome.mostrar { animation: zona 2.6s ease-out forwards; }
@@ -645,6 +654,8 @@
       <button class="btn-icone mini btn-tela-cheia" type="button" title="Tela cheia" aria-label="Tela cheia"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>
     </div>
     <div id="relogio" class="pilula relogio"><span class="astro"></span><span id="relogio-texto">Dia</span></div>
+    <!-- o saquinho do ouro de Campeão (Reino e vilas): toque para pegar -->
+    <button id="saco" class="saco" type="button" title="Ouro de Campeão: toque para pegar" hidden><span class="saco-icone">💰</span><span class="saco-txt"><b id="saco-total">+0 de ouro</b><small id="saco-tempo"></small></span></button>
     <!-- a bolsa: casa, poções, cristais e o ovo (no lugar do antigo botão da casa) -->
     <button id="btn-casa" class="btn-casa" type="button" title="Bolsa (B)"><i class="icone-bolsa"></i><span>Bolsa</span></button>
     <!-- monstro invocado (tecla R e T no PC) -->

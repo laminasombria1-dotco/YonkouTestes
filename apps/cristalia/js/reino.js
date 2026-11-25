@@ -81,13 +81,13 @@ const LUZ = '#ffd37a';
 // ---------- peças (as geometrias iguais são reaproveitadas) ----------
 const GEOS = new Map();
 const geo = (k, f) => { if (!GEOS.has(k)) GEOS.set(k, f()); return GEOS.get(k); };
-const caixa = (x, y, z) => geo(`c${x}|${y}|${z}`, () => new THREE.BoxGeometry(x, y, z));
-const cil = (a, b, h, n = 8) => geo(`y${a}|${b}|${h}|${n}`, () => new THREE.CylinderGeometry(a, b, h, n));
-const cone = (r, h, n = 8) => geo(`k${r}|${h}|${n}`, () => new THREE.ConeGeometry(r, h, n));
-const esfera = (r, a = 6, b = 4) => geo(`e${r}|${a}|${b}`, () => new THREE.SphereGeometry(r, a, b));
+export const caixa = (x, y, z) => geo(`c${x}|${y}|${z}`, () => new THREE.BoxGeometry(x, y, z));
+export const cil = (a, b, h, n = 8) => geo(`y${a}|${b}|${h}|${n}`, () => new THREE.CylinderGeometry(a, b, h, n));
+export const cone = (r, h, n = 8) => geo(`k${r}|${h}|${n}`, () => new THREE.ConeGeometry(r, h, n));
+export const esfera = (r, a = 6, b = 4) => geo(`e${r}|${a}|${b}`, () => new THREE.SphereGeometry(r, a, b));
 const ico = (r, d = 0) => geo(`i${r}|${d}`, () => new THREE.IcosahedronGeometry(r, d));
 // telhado de duas águas (prisma): comprimento ao longo de x
-const prisma = (larg, comp, alt) => geo(`p${larg}|${comp}|${alt}`, () => {
+export const prisma = (larg, comp, alt) => geo(`p${larg}|${comp}|${alt}`, () => {
   const f = new THREE.Shape([new THREE.Vector2(-larg / 2, 0), new THREE.Vector2(larg / 2, 0), new THREE.Vector2(0, alt)]);
   const g = new THREE.ExtrudeGeometry(f, { depth: comp, bevelEnabled: false });
   g.translate(0, 0, -comp / 2); g.rotateY(Math.PI / 2);
@@ -103,7 +103,7 @@ const painelArco = (w, h, a, hb) => geo(`a${w}|${h}|${a}|${hb}`, () => {
 
 // Um "rascunho": um grupo comum do Three.js. Cada peça guarda a cor e o tipo
 // (normal, duplo = vista dos dois lados, brilho = acende). No fim, assar() junta tudo.
-function peca(pai, g, cor, pos = [0, 0, 0], rot = [0, 0, 0], tipo = 'normal') {
+export function peca(pai, g, cor, pos = [0, 0, 0], rot = [0, 0, 0], tipo = 'normal') {
   const m = new THREE.Mesh(g);
   m.position.set(pos[0], pos[1], pos[2]);
   m.rotation.set(rot[0], rot[1], rot[2]);
@@ -112,8 +112,8 @@ function peca(pai, g, cor, pos = [0, 0, 0], rot = [0, 0, 0], tipo = 'normal') {
   pai.add(m);
   return m;
 }
-const brilho = (pai, g, cor, pos, rot) => peca(pai, g, cor, pos, rot, 'brilho');
-const duplo = (pai, g, cor, pos, rot) => peca(pai, g, cor, pos, rot, 'duplo');
+export const brilho = (pai, g, cor, pos, rot) => peca(pai, g, cor, pos, rot, 'brilho');
+export const duplo = (pai, g, cor, pos, rot) => peca(pai, g, cor, pos, rot, 'duplo');
 
 // Junta todas as peças do rascunho em até 3 malhas (cores nos vértices)
 const MATS = {};
@@ -128,7 +128,7 @@ function material(tipo) {
   }
   return MATS[tipo];
 }
-function assar(rascunho, cena) {
+export function assar(rascunho, cena) {
   rascunho.updateMatrixWorld(true);
   const baldes = { normal: [], duplo: [], brilho: [], claro: [] };
   rascunho.traverse((o) => { if (o.isMesh) baldes[o.userData.tipo].push(o); });

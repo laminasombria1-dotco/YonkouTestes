@@ -25,6 +25,7 @@ import { REINO } from './dungeon.js';
 import { ARENA_REINO, TREINADORES } from './reino.js';
 import { SEMENTES, ORDEM_SEMENTES, JARDIM, garantirJardim } from './jardim.js';
 import { ESTRADA, ESTRADAS, RAIO_REINO, LUGARES as LUGARES_MAPA } from './mapa/gerador.js';
+import { ORDEM_VILAS, NOMES_VILA } from './vilas.js';
 import { SEMENTE, SEMENTE_PADRAO, centroDe, LAGOS, POIS } from './mapa/gerador.js';
 
 const MAX_NIVEL = NIVEL_MAXIMO; // nível máximo do jogo (100)
@@ -48,7 +49,7 @@ const LUGARES = [
   ['fogo', 'Vulcão', ...perto(centroDe('fogo'), 16)], ['terra', 'Deserto', ...(arco ? [arco.x + Math.cos(arco.ang + 1.57) * 7, arco.z + Math.sin(arco.ang + 1.57) * 7] : perto(centroDe('terra')))],
   ['raio', 'Neve', ...perto(centroDe('raio'))],
   // os lugares guardados para as vilas (passo 3) e as masmorras novas (passo 4)
-  ...LUGARES_MAPA.map((l, i) => [`lugar${i}`, `${l.tipo === 'vila' ? 'Vila' : 'Masmorra'} · ${NOME_BIOMA[l.bioma]}`, l.x, l.z]),
+  ...LUGARES_MAPA.map((l, i) => [`lugar${i}`, l.tipo === 'vila' ? NOMES_VILA[l.bioma] : `Masmorra · ${NOME_BIOMA[l.bioma]}`, ...(l.tipo === 'vila' ? [l.x - Math.cos(l.ang) * 26, l.z - Math.sin(l.ang) * 26] : [l.x, l.z])]),
 ];
 // Arenas que dá para escolher no "Lutar agora"
 const NOMES_ARENA = Object.fromEntries(Object.entries(ARENAS).map(([k, a]) => [k, a.nome]));
@@ -389,6 +390,11 @@ export class PainelGM {
           <button class="gm-btn" type="button" data-gm="madeira">+6 Galhos Raros</button>
           ${[1, 2, 3, 4, 5].map((n) => `<button class="gm-btn" type="button" data-gm="casaNivel" data-n="${n}">Casa nível ${n}</button>`).join('')}
           ${[1, 2].map((n) => `<button class="gm-btn" type="button" data-gm="bandeiraNivel" data-n="${n}">Bandeira nível ${n}</button>`).join('')}</div>
+        <h3>Vilas (arena de cada bioma)</h3>
+        <div class="gm-grade">${ORDEM_VILAS.map((id) => { const p = this.jogo.estado?.vilas?.[id]; return `<button class="gm-btn" type="button" data-gm="vilaProg" data-v="conquistar" data-id="${id}" ${p?.dominada ? 'disabled' : ''}>Conquistar: ${NOMES_VILA[id]}</button>`; }).join('')}
+          <button class="gm-btn" type="button" data-gm="vilaProg" data-v="zerar">Zerar as vilas</button>
+          <button class="gm-btn" type="button" data-gm="cofresCheios">Encher todos os cofres (saquinho)</button></div>
+        <p class="gm-dica">Conquistar = como vencer o Campeão da vila pela 1ª vez (título, ouro, 1 ovo e o cofre). Os treinadores das vilas ainda vão ser feitos.</p>
         <h3>Jardim e afeto</h3>
         <div class="gm-linha">
           <button class="gm-btn" type="button" data-gm="sementes">+5 sementes de cada</button>
@@ -559,7 +565,14 @@ export class PainelGM {
       case 'bandeiraNivel': this.jogo.estado.bandeiraNivel = Number(d.n); this.mundo.trocarModeloBandeira(); this.jogo.aviso(`GM: bandeira no nível ${d.n}.`); this.jogo.salvar(); break;
       case 'moedas': this.jogo.estado.moedas = (this.jogo.estado.moedas || 0) + 1000; this.jogo.atualizarHudMundo(); this.jogo.salvar(); break;
       case 'chocar': if (this.jogo.ovo.dados) { this.jogo.ovo.chocarAgora(); this.fecharPainel(); return; } this.jogo.aviso('GM: você não tem ovo (domine a arena).'); break;
-      case 'tesouroCheio': if (this.jogo.estado.tesouro) { this.jogo.estado.tesouro.guardado = 600; this.jogo.aviso('GM: 600 de ouro esperando na fonte.'); } else this.jogo.aviso('GM: só o Campeão tem ouro do Reino (domine a arena).'); break;
+      case 'tesouroCheio': if (this.jogo.estado.tesouro) { this.jogo.estado.tesouro.guardado = 600; this.jogo.aviso('GM: 600 de ouro esperando no saquinho.'); } else this.jogo.aviso('GM: só o Campeão tem ouro do Reino (domine a arena).'); break;
+      case 'cofresCheios': { const cs = this.jogo.cofres(); for (const [T, cfg] of cs) T.guardado = cfg.max; this.jogo.atualizarSaco(true); this.jogo.aviso(cs.length ? 'GM: todos os cofres cheios.' : 'GM: você ainda não é campeão de nada.'); break; }
+      case 'vilaProg': {
+        const est = this.jogo.estado;
+        if (d.v === 'conquistar') { const p = this.jogo.progressoVila(d.id); p.vencidos = 5; this.jogo.conquistarVila(d.id); }
+        else { est.vilas = {}; if (est.titulo && est.titulo !== 'Campeão do Reino') est.titulo = null; this.jogo.atualizarSaco(true); this.jogo.aviso('GM: vilas zeradas (sem títulos nem cofres das vilas).'); }
+        this.jogo.salvar(); break;
+      }
       case 'arenaProg': {
         const p = this.jogo.progressoArena();
         if (d.v === 'dominar') { p.vencidos = 5; p.dominada = true; p.vitoriasRei = 1; this.jogo.aviso('GM: arena dominada.'); this.jogo.virarCampeao(); }

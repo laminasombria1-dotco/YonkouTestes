@@ -11,6 +11,7 @@ import * as THREE from 'three';
 import { criarModelo, criarTreinador, criarCristal, pintarCristal, criarCoroa, criarCasa, animarCasa, criarBandeira, animarBandeira, animarModelo, criarAuraDupla, animarAura, descartar } from './modelos.js';
 import { CameraOrbita } from './camera.js';
 import { TRACADOS, REINO, tracadoPerto, prenderDungeons, dentroDungeonLivre, semCasaDungeons } from './dungeon.js';
+import { Vilas, saidaDaArena, TREINADORES_VILA } from './vilas.js';
 import { CaminhoDasBrasas } from './brasas.js';
 import { TrilhaAncestral, CRISTAL_ESCONDIDO } from './raizes.js';
 import { Reino, FONTE_REINO, NASCER_REINO, ARENA_REINO, CASA_REINO, nivelRevanche } from './reino.js';
@@ -123,6 +124,7 @@ export class Mundo {
     this.floresta = new TrilhaAncestral(this, alturaEm);
     this.dungeons = [this.dungeon, this.floresta];
     this.reino = new Reino(this, alturaEm);
+    this.vilas = new Vilas(this); // as 5 vilas (uma em cada bioma), com loja e arena
     this.criarMontanhas();
     this.criarEstrelas();
 
@@ -562,6 +564,7 @@ export class Mundo {
   podeFincarBandeira(x, z) {
     if (Math.hypot(x, z) > RAIO_MUNDO - 8) return false;
     if (semCasaDungeons(x, z)) return false; // dentro ou na boca das masmorras não
+    if (this.vilas?.vilaEm(x, z, 4)) return false; // nem dentro das vilas
     if (Math.hypot(x, z) < 6) return false; // em cima da placa do Campo não
     if (!this.chunks.carregado(x, z)) return false;
     if (alturaEm(x, z) < NIVEL_AGUA + 0.3) return false; // nem na água, nem na lava
@@ -719,6 +722,16 @@ export class Mundo {
     descartar(s.modelo);
   }
 
+  // Sai pelo túnel da arena de uma vila (quando desiste de uma luta lá)
+  sairDaArenaDaVila(id) {
+    const p = saidaDaArena(this.vilas.vila(id));
+    this.pos.set(p.x, 0, p.z);
+    this.ang = p.ang;
+    this.orbita.yaw = this.ang + Math.PI;
+    this.graca = 2.5;
+    this.posicionarCamera(1);
+  }
+
   // Sai pelo portão da arena do Reino (quando desiste de uma luta)
   sairDaArena() {
     const fora = REINO.paraMundo(ARENA_REINO.x + 25, ARENA_REINO.z), dentro = REINO.paraMundo(ARENA_REINO.x, ARENA_REINO.z);
@@ -832,7 +845,8 @@ export class Mundo {
       this.periodoAvisado = this.periodo;
       if (this.jogo.estado) this.jogo.aviso(this.periodo === 'noite' ? 'Anoiteceu. Monstros de Lua e Trevas saíram!' : 'Amanheceu. Monstros de Sol e Luz estão por aí!');
     }
-    const nomeZona = REINO.perto(this.pos.x, this.pos.z) ? 'Reino' : naEstrada(this.pos.x, this.pos.z) ? 'Estrada Real' : NOMES_ZONA[zonaAtual === 'agua' && biomaEm(this.pos.x, this.pos.z) === 'agua' ? 'arquipelago' : zonaAtual];
+    const vilaAqui = this.vilas.vilaEm(this.pos.x, this.pos.z);
+    const nomeZona = vilaAqui ? vilaAqui.nome : REINO.perto(this.pos.x, this.pos.z) ? 'Reino' : naEstrada(this.pos.x, this.pos.z) ? 'Estrada Real' : NOMES_ZONA[zonaAtual === 'agua' && biomaEm(this.pos.x, this.pos.z) === 'agua' ? 'arquipelago' : zonaAtual];
     if (this.zonaAvisada !== nomeZona) {
       this.zonaAvisada = nomeZona;
       if (this.jogo.estado) this.jogo.mostrarZona(nomeZona);
@@ -845,11 +859,10 @@ export class Mundo {
       this.jogo.curarEquipe();
       this.jogo.aviso('A fonte do castelo curou sua equipe!');
     }
-    if (naFonte && est.tesouro?.guardado) this.jogo.coletarTesouro(); // o ouro do Reino (Campeão)
 
     // Bandeira: animação de fincar, o pano balançando e a área segura (ela não cura)
     // área segura: em volta da bandeira, na Estrada Real e no Reino
-    const naAreaSegura = this.distanciaBandeira() < AREA_SEGURA_BANDEIRA || naEstrada(this.pos.x, this.pos.z, -2) || REINO.perto(this.pos.x, this.pos.z);
+    const naAreaSegura = this.distanciaBandeira() < AREA_SEGURA_BANDEIRA || naEstrada(this.pos.x, this.pos.z, -2) || REINO.perto(this.pos.x, this.pos.z) || !!this.vilas.vilaEm(this.pos.x, this.pos.z, 2);
     if (this.bandeiraPos) {
       if (this.bandeiraAnim < 1) {
         this.bandeiraAnim = Math.min(1, this.bandeiraAnim + dt * 2.5);
@@ -973,10 +986,20 @@ export class Mundo {
       if (this.jogo.batalha) return;
     }
 
-    // Loja de poções (a barraca listrada da vila): encostou na frente, a loja abre
-    const lj = this.reino.loja, dLoja = est && lj ? Math.hypot(this.pos.x - lj.x, this.pos.z - lj.z) : Infinity;
+    // Treinadores das arenas das vilas (os mesmos passos do Reino)
+    this.vilas.atualizar(dt, t);
+    const tv = est ? this.vilas.treinadorPerto(this.pos.x, this.pos.z) : null;
+    if (tv && tv.d < 1.4 && tv.p.armado && !pausado && this.graca <= 0 && !protegido) {
+      tv.p.armado = false;
+      this.jogo.encostouNoTreinadorDaVila(tv.vila.id, tv.i);
+      if (this.jogo.batalha) return;
+    }
+
+    // Lojas de poções (a barraca listrada do Reino e a de cada vila): encostou na frente, a loja abre
+    let lj = this.reino.loja, dLoja = est && lj ? Math.hypot(this.pos.x - lj.x, this.pos.z - lj.z) : Infinity;
+    for (const l of this.vilas.lojas) { const d = est ? Math.hypot(this.pos.x - l.x, this.pos.z - l.z) : Infinity; if (d < dLoja) { dLoja = d; lj = l; } }
     if (dLoja > 3) this.reino.armadoLoja = true;
-    if (dLoja < 1.6 && this.reino.armadoLoja !== false && !pausado) { this.reino.armadoLoja = false; this.jogo.bolsa.abrirLoja(); }
+    if (dLoja < 1.6 && this.reino.armadoLoja !== false && !pausado) { this.reino.armadoLoja = false; this.jogo.bolsa.abrirLoja(lj.nome || null); }
 
     // Encontro!
     const raioEncontro = maisPerto?.grupoDe ? 0.9 : 0.9 + (maisPerto ? ESPECIES[maisPerto.dados.especie].raio : 0);
@@ -1006,7 +1029,16 @@ export class Mundo {
       this.jogo.mostrarRotulo(`${bolinhas}${marca}${esp.nome} <b>Nv.${maisPerto.dados.nivel}</b>`,
         new THREE.Vector3(maisPerto.x, maisPerto.modelo.position.y + esp.altura + 0.3, maisPerto.z), this.camera);
     } else if (dLoja < 7) {
-      this.jogo.mostrarRotulo('<i style="background:#e8474a"></i>Loja de Poções <b>encoste para comprar</b>', new THREE.Vector3(lj.x, REINO.h + 3, lj.z), this.camera);
+      this.jogo.mostrarRotulo('<i style="background:#e8474a"></i>Loja de Poções <b>encoste para comprar</b>', new THREE.Vector3(lj.x, alturaEm(lj.x, lj.z) + 3, lj.z), this.camera);
+    } else if (tv) {
+      // placa em cima da plataforma da vila: o treinador (ou "em breve", enquanto ele não chegou)
+      const prog = this.jogo.progressoVila(tv.vila.id), tr = tv.tr;
+      if (!tr) this.jogo.mostrarRotulo(`<i style="background:#9a9a9a"></i>${tv.p.campeao ? 'Campeão' : 'Treinador ' + (tv.i + 1)} da ${tv.vila.nome} <b>em breve</b>`, new THREE.Vector3(tv.topo.x, tv.topo.y, tv.topo.z), this.camera);
+      else {
+        const nv = prog.dominada ? `Nv.${tr.revanche || 80}` : tr.niveis[0] === tr.niveis[1] ? `Nv.${tr.niveis[0]}` : `Nv.${tr.niveis[0]}–${tr.niveis[1]}`;
+        const marca = prog.dominada ? ' · revanche' : tv.i < prog.vencidos ? ' · vencido ✓' : tv.i === prog.vencidos ? ' · sua vez!' : ' · depois';
+        this.jogo.mostrarRotulo(`<i style="background:${tr.cor || ELEMENTOS[tr.elemento].cor}"></i>${tr.campeao ? 'Campeão ' : ''}${tr.nome} · ${ELEMENTOS[tr.elemento].nome} <b>${nv}</b>${marca}`, new THREE.Vector3(tv.topo.x, tv.topo.y, tv.topo.z), this.camera);
+      }
     } else if (tp) {
       // placa em cima do treinador: nome, elemento, níveis e se já foi vencido
       const prog = this.jogo.progressoArena(), tr = tp.tr;
@@ -1039,6 +1071,9 @@ export class Mundo {
     }
     // ninguém entra no Reino: dá meia-volta antes da muralha
     if (Math.hypot(s.x, s.z) < RAIO_REINO + 8 + m) { s.ang = Math.atan2(s.x, s.z); return true; }
+    // nem nas vilas (dá meia-volta antes da cerca)
+    const v = this.vilas?.vilaEm(s.x, s.z, 6 + m);
+    if (v) { s.ang = Math.atan2(s.x - v.x, s.z - v.z); return true; }
     if (!this.bandeiraPos) return false;
     const dx = s.x - this.bandeiraPos.x, dz = s.z - this.bandeiraPos.z;
     if (Math.hypot(dx, dz) > AREA_SEGURA_BANDEIRA + (s.grupo ? 3 : 0)) return false;

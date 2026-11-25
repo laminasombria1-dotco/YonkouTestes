@@ -123,7 +123,8 @@ export class Bolsa {
   }
 
   abrir() { this.jogo.painelAberto = true; $('#painel-loja').hidden = true; $('#painel-bolsa').hidden = false; this.render(); }
-  abrirLoja() { this.jogo.painelAberto = true; $('#painel-bolsa').hidden = true; $('#painel-loja').hidden = false; this.renderLoja(); }
+  // nomeVila: a loja de uma vila (só poções); sem nome, a Loja do Reino (poções e sementes)
+  abrirLoja(nomeVila = null) { this.nomeLoja = nomeVila; this.jogo.painelAberto = true; $('#painel-bolsa').hidden = true; $('#painel-loja').hidden = false; this.renderLoja(); }
   preco(id) { return POCOES[id].preco; }
 
   // Galhos Raros e Asas do Anjo que caíram (de sortearDrop)
@@ -190,6 +191,7 @@ export class Bolsa {
   comando(cmd, d) {
     const j = this.jogo, est = this.est;
     if (cmd === 'bandeira') { this.fechar(); j.acaoBandeira(); return; }
+    if (cmd === 'titulo') { est.titulo = d.t; j.aviso(`Agora você é: ${d.t}.`); j.salvar(); }
     if (cmd === 'evoluirCasa') { this.evoluirCasa(); }
     if (cmd === 'evoluirBandeira') { this.evoluirBandeira(); }
     if (cmd === 'usar') {
@@ -268,8 +270,12 @@ export class Bolsa {
     const T = est.tesouro;
     const campeao = est.campeao ? `<div class="bolsa-secao"><h3>👑 Campeão do Reino</h3>
         <div class="bolsa-linha"><button class="bolsa-btn" type="button" data-bolsa="coroa">${est.coroaVestida ? 'Guardar a Coroa do Rei' : 'Vestir a Coroa do Rei'}</button>
-        <small>Ouro do Reino guardado: <b>${T?.guardado || 0}</b> (até 600). Ganha 100 a cada 10 minutos de jogo: busque na fonte do castelo.</small></div></div>` : '';
-    $('#conteudo-bolsa').innerHTML = campeao + `
+        <small>Ouro do Reino guardado: <b>${T?.guardado || 0}</b> (até 600). Ganha 100 a cada 10 minutos de jogo: pegue no saquinho 💰 da tela.</small></div></div>` : '';
+    // títulos: o jogador escolhe qual mostrar
+    const titulos = j.titulos(), atual = j.tituloAtual();
+    const secTitulos = titulos.length ? `<div class="bolsa-secao"><h3>Títulos</h3><div class="bolsa-linha">${titulos.map((t) => `<button class="bolsa-btn" type="button" data-bolsa="titulo" data-t="${t}" ${t === atual ? 'disabled' : ''}>${t === atual ? '✓ ' : ''}${t}</button>`).join('')}</div>
+        <small>Escolha o seu título (ele aparece na tela inicial, com o seu jogo salvo).</small></div>` : '';
+    $('#conteudo-bolsa').innerHTML = campeao + secTitulos + `
       <div class="bolsa-secao"><h3>Bandeira do Reino · nível ${nb}</h3>
         <div class="bolsa-linha"><button class="bolsa-btn" type="button" data-bolsa="bandeira">${txtBandeira}</button><small>${BANDEIRA.texto[nb]}</small></div>
         <div class="bolsa-linha">${evoluirBandeira}</div></div>
@@ -343,14 +349,14 @@ export class Bolsa {
   renderLoja() {
     const est = this.est;
     $('#loja-moedas').textContent = est.moedas;
-    $('#painel-loja h2').firstChild.textContent = 'Loja do Reino ';
+    $('#painel-loja h2').firstChild.textContent = this.nomeLoja ? `Loja da ${this.nomeLoja} ` : 'Loja do Reino ';
     $('#conteudo-loja').innerHTML = Object.entries(POCOES).map(([id, p]) => `
       <div class="loja-item"><i class="frasco ${id}"></i>
         <div><b>${p.nome}</b> <small>(você tem ${est.pocoes[id]})</small><p>${p.texto}</p></div>
         <div class="bolsa-linha"><span class="preco"><i class="moeda"></i>${this.preco(id)}</span>
           <button class="bolsa-btn" type="button" data-bolsa="comprar" data-qual="${id}" data-n="1" ${est.moedas < this.preco(id) ? 'disabled' : ''}>Comprar 1</button>
           <button class="bolsa-btn" type="button" data-bolsa="comprar" data-qual="${id}" data-n="5" ${est.moedas < this.preco(id) * 5 ? 'disabled' : ''}>Comprar 5</button></div>
-      </div>`).join('') + `<h3 class="loja-titulo">Sementes</h3>` + ORDEM_SEMENTES.map((id) => {
+      </div>`).join('') + (this.nomeLoja ? '<p class="vazio">Sementes, só na Loja do Reino.</p>' : `<h3 class="loja-titulo">Sementes</h3>` + ORDEM_SEMENTES.map((id) => {
       const S = SEMENTES[id], pode = (est.casaNivel || 1) >= S.casa;
       return `<div class="loja-item"><i class="fruta" style="--cor:${S.cor}"></i>
         <div><b>${S.nome}</b> <small>(você tem ${est.sementes[id] || 0})</small><p>Cresce em ${tempoTexto(S.tempo)} · cada fruta dá ${S.afeto} de afeto${S.coracao ? ' e mais chance de Coração' : ''} · ${pode ? `casa nível ${S.casa}+` : `<b>precisa da casa nível ${S.casa}</b>`}</p></div>
@@ -358,6 +364,6 @@ export class Bolsa {
           <button class="bolsa-btn" type="button" data-bolsa="comprarSemente" data-qual="${id}" data-n="1" ${est.moedas < S.preco ? 'disabled' : ''}>Comprar 1</button>
           <button class="bolsa-btn" type="button" data-bolsa="comprarSemente" data-qual="${id}" data-n="5" ${est.moedas < S.preco * 5 ? 'disabled' : ''}>Comprar 5</button></div>
       </div>`;
-    }).join('') + '<p class="vazio">Ganhe ouro vencendo monstros, grupos, chefes e os treinadores da arena.</p>';
+    }).join('')) + '<p class="vazio">Ganhe ouro vencendo monstros, grupos, chefes e os treinadores das arenas.</p>';
   }
 }
