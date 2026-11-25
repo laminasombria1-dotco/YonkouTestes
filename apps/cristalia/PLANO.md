@@ -196,6 +196,27 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
         **o lendário só a partir do nível 9, por sorteio (15%)**. **Qualquer monstro na forma final** fora da equipe do
         jogador (chefe ou líder) só é capturado com o **Cristal Supremo**, com 40% da chance normal. Tudo em `MASMORRA`
         (`js/dados.js`) e `spawnarChefe`/`chefeVencido` (`js/dungeon.js`).
-  - [ ] **8.2 — Masmorras de bioma** (proposta primeiro).
-  - [ ] **8.3 — Biomas novos** com vila e arena.
-  - [ ] **8.4 — Regiões** com outros reinos.
+  - [ ] **Mundo novo** (substitui as etapas 8.2 e 8.3; decisões abaixo). Ordem aprovada, cada passo com proposta e imagem antes:
+    - [ ] **Passo 1 — Mapa novo:** redondo, Reino no centro, 5 biomas, arquipélago, as 2 masmorras de hoje no lugar novo.
+    - [ ] **Passo 2 — Mapa na tela + viagem rápida** entre o Reino e as vilas visitadas.
+    - [ ] **Passo 3 — Vilas e arenas** (uma por bioma, até na Água).
+    - [ ] **Passo 4 — Masmorras novas** (2 por bioma; as novas são áreas separadas).
+    - [ ] **Passo 5 — Dungeons** (a especificação do Lâmina, com o adaptador).
+    - [ ] **Passo 6 — Níveis** (o Lâmina vai rever a regra mais para frente).
+  - [ ] **8.4 — Regiões** com outros reinos (futuro).
+
+### Mundo novo: decisões do Lâmina
+- **Mapa redondo**, com os biomas em fatias em volta do **Reino no centro**. O Campo de hoje deixa de existir.
+- **5 biomas** de uns **300 m** cada (~90.000 m²): **Gelo, Deserto, Floresta, Vulcânico e Água**.
+  Cada um só com os seus tipos de monstro.
+- **Água:** um **arquipélago** (ilhas e água rasa onde dá para andar; a maior parte do bioma é água).
+- **Sol, Luz, Lua e Trevas** viram **visitantes raros** de todos os biomas.
+- **Reino com 100 m de raio** (hoje 58 m). O Lâmina vai trazer coisas novas para ele.
+- **Cada bioma:** 3 **dungeons**, 2 **masmorras** e 1 **vila com arena** (até no bioma de Água).
+- **Dungeons e masmorras são coisas diferentes:** dungeons mais fáceis (sorteadas pelo mapa, resetam),
+  masmorras mais difíceis (fixas e escondidas, Nível da Masmorra, chefe na forma final). Dungeons não dão masmorras.
+- **Masmorras novas são áreas separadas** (entra pela porta e o jogo carrega só aquele lugar). O Caminho das Brasas
+  e a Trilha Ancestral continuam como corredores abertos.
+- **Dungeons** (especificação do Lâmina): adaptador sobre o nosso mapa, **brilho falso** no lugar da luz pontual,
+  jogo salvo **na conta e na nuvem** (`estado.dungeons`), **reset em 2 horas** de tempo de jogo.
+- **Níveis:** a regra vai ser revista mais para frente.
