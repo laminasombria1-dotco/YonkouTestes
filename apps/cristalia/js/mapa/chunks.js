@@ -20,7 +20,7 @@ import {
   pesosEm, idDoPeso, N_PESOS, biomaEm, lagoEm, geloEm, naEstradaReal, ESTRADA,
 } from './gerador.js';
 import { alturaVertice, alturaEm, ESPACO } from './altura.js';
-import { TRACADOS, S_LAGO, foraDungeons } from '../dungeon.js';
+import { TRACADOS, REINO, S_LAGO, foraDungeons } from '../dungeon.js';
 
 const T = C.tamChunk, DIV = C.divisoes;
 
@@ -55,6 +55,7 @@ const PALETA = {
   terra: ['#e3c58a', '#d9b87a', '#ecd096'],
   raio: ['#f4f8fc', '#e8f0f8', '#dde8f3'],
   fogo: ['#4a3530', '#3e2c28', '#56403a'],
+  agua: ['#e3cc8e', '#dbc386', '#e6d196'], // ilhas do Arquipélago: areia
 };
 const ENCOSTA = {
   campo: ['#9a9a88', '#8a8f7a'],
@@ -62,14 +63,15 @@ const ENCOSTA = {
   terra: ['#c27a4e', '#b06a42', '#cf8a5a'],
   raio: ['#8fa0b8', '#7d8ea8', '#9aabc2'],
   fogo: ['#2e2220', '#3a2a26'],
+  agua: ['#c9b27a', '#b8a06a', '#8a8f7a'],
 };
 const BORDA = {
   campo: ['#8fa27a', '#9aae84'], planta: ['#3f6a3a', '#4a7a44'], terra: ['#c9a06a', '#b8905a'],
-  raio: ['#c8d6e6', '#b4c4d8'], fogo: ['#7a5a44', '#6a4a3a'],
+  raio: ['#c8d6e6', '#b4c4d8'], fogo: ['#7a5a44', '#6a4a3a'], agua: ['#d9c487', '#cbb67a'],
 };
 const COR = {
   copa: { campo: ['#5fbf4a', '#6fcf5a', '#5fbf4a', '#6fcf5a', '#ffb3d1'], planta: ['#3f8f3a', '#4ea64a', '#2f7a3a'] },
-  pedra: { campo: ['#a8a8b4', '#b9b5aa'], planta: ['#9aa39a', '#8a948a'], terra: ['#d4a46a', '#c98f5a', '#b8804e'], raio: ['#cfe6f2', '#b8d4e6', '#dfeef8'], fogo: ['#4a3530', '#3a2a26'] },
+  pedra: { campo: ['#a8a8b4', '#b9b5aa'], planta: ['#9aa39a', '#8a948a'], terra: ['#d4a46a', '#c98f5a', '#b8804e'], raio: ['#cfe6f2', '#b8d4e6', '#dfeef8'], fogo: ['#4a3530', '#3a2a26'], agua: ['#b9b5aa', '#a8a89a', '#d4c4a0'] },
   flor: ['#ff7eb6', '#ffd23f', '#ffffff', '#b58cff'],
 };
 const c3 = new THREE.Color();
@@ -281,13 +283,9 @@ export class Chunks {
   // jaCalculado: os pesos dos biomas deste ponto já foram calculados (pesosEm) logo antes
   corDoChao(x, z, y, inc, rng, jaCalculado = false) {
     // dungeons: chão de basalto (Brasas) e de floresta fechada (Trilha), como antes
-    const tr = TRACADOS.find((t) => t.local(x, z).s > t.sMin + 8 && t.fora(x, z) < 8);
-    if (tr?.id === 'reino') {
-      const fd = tr.fora(x, z), lp = tr.local(x, z);
-      if (fd > 2) return sorteio(rng, ['#5f8f44', '#6a9a4a', '#7a8a5a']);            // as encostas em volta
-      if (lp.s < tr.sFim + 4 && Math.abs(lp.lat) < 3.2) return sorteio(rng, ['#9c9484', '#a8a090', '#8e877a']); // a Estrada Real no corredor
-      return sorteio(rng, ['#7fbf5a', '#86c45e', '#76b452']);                          // a grama do Reino
-    }
+    // o Reino (no meio do mapa): grama (o calçamento e as praças são peças do reino.js)
+    if (REINO.perto(x, z)) return sorteio(rng, ['#7fbf5a', '#86c45e', '#76b452']);
+    const tr = TRACADOS.find((t) => t !== REINO && t.local(x, z).s > t.sMin + 8 && t.fora(x, z) < 8);
     if (tr?.id === 'brasas') {
       const fd = tr.fora(x, z);
       return fd > 2 ? (rng() < 0.5 ? '#3a2a26' : '#2e2220') : (rng() < 0.08 ? '#c8461a' : sorteio(rng, ['#5a3a30', '#6b4535', '#4d3229']));
@@ -298,7 +296,7 @@ export class Chunks {
       if (Math.abs(lp.s - S_LAGO) < 4.2 && Math.abs(lp.lat) > 2.6) return '#2a6a6a';
       return rng() < 0.1 ? '#6a5236' : sorteio(rng, ['#3f7a3a', '#4a8a40', '#36703a', '#2f6a34']);
     }
-    // a Estrada Real (do Campo até a boca do Reino)
+    // os caminhos do Reino (dos 5 portões para fora)
     { const e = naEstradaReal(x, z); if (e.dentro && e.lat < ESTRADA.largura + 0.4) return sorteio(rng, ['#9c9484', '#a8a090', '#8e877a']); } // pedras do calçamento
     // o lago escondido da Floresta (cores do mapa antigo)
     const dl = Math.hypot(x - LAGOA.x, z - LAGOA.z);
@@ -310,7 +308,7 @@ export class Chunks {
     for (let i = 0; i < N_PESOS; i++) { r -= P[i]; if (r <= 0) { id = idDoPeso(i); break; } }
     if (Math.hypot(x, z) > RAIO_MUNDO - 4) return sorteio(rng, BORDA[id]);
     if (geloEm(x, z)) return sorteio(rng, ['#bfe6f7', '#cfeefb', '#b4def2']);
-    if (y < NIVEL_AGUA - 0.15) return id === 'fogo' ? '#3a1a12' : '#4f9fb8';
+    if (y < NIVEL_AGUA - 0.15) return id === 'fogo' ? '#3a1a12' : id === 'agua' ? (y < -1.3 ? '#2f7fa0' : '#5fc8c0') : '#4f9fb8'; // no Arquipélago: rasa clarinha, funda escura
     if (y < NIVEL_AGUA + 0.45) return id === 'fogo' ? sorteio(rng, ['#c8461a', '#8a2e14']) : id === 'raio' ? '#d8e8f2' : sorteio(rng, ['#e2cd90', '#ecd9a0']);
     if (y > 13 && id !== 'fogo' && inc > 0.55) return sorteio(rng, PALETA.raio); // neve no alto dos picos
     if (inc < 0.72) {
@@ -462,6 +460,11 @@ export class Chunks {
         if (r3 < 0.4) this.pedra(x, z, 0.6 + esc * 1.1, sorteio(rng, COR.pedra.fogo), k);
         else if (r3 < 0.7) this.pedra(x, z, 0.5 + esc * 0.9, null, k, false, true);
         else this.arvoreMorta(x, z, 0.8 + esc * 0.6, k);
+        return;
+      case 'agua': // ilhas do Arquipélago
+        if (r3 < 0.55) this.palmeira(x, z, 0.85 + esc * 0.45, k);
+        else if (r3 < 0.85) this.pedra(x, z, 0.5 + esc * 0.9, sorteio(rng, COR.pedra.agua), k);
+        else this.arbusto(x, z, 0.7 + esc * 0.5, '#5cb553', k);
     }
   }
 

@@ -24,7 +24,7 @@ import { zonaEm, NOMES_ZONA, NASCER, ANG_NASCER } from './mundo.js';
 import { REINO } from './dungeon.js';
 import { ARENA_REINO, TREINADORES } from './reino.js';
 import { SEMENTES, ORDEM_SEMENTES, JARDIM, garantirJardim } from './jardim.js';
-import { ESTRADA } from './mapa/gerador.js';
+import { ESTRADA, ESTRADAS, RAIO_REINO, LUGARES as LUGARES_MAPA } from './mapa/gerador.js';
 import { SEMENTE, SEMENTE_PADRAO, centroDe, LAGOS, POIS } from './mapa/gerador.js';
 
 const MAX_NIVEL = NIVEL_MAXIMO; // nível máximo do jogo (100)
@@ -35,14 +35,20 @@ const TAMANHO_GRUPO = 6; // 5 comuns + 1 líder
 const arco = POIS.find((p) => p.tipo === 'arco'); // o Deserto: ao lado do arco de pedra
 const lagoGrande = LAGOS.find((L) => L.tipo === 'agua' && !L.escondido && L.bioma === 'planta') || LAGOS[0];
 const perto = (c, d = 0) => { const a = Math.atan2(c.z, c.x); return [c.x - Math.cos(a) * d, c.z - Math.sin(a) * d]; };
+const NOME_BIOMA = { raio: 'Gelo', planta: 'Floresta', terra: 'Deserto', fogo: 'Vulcânico', agua: 'Arquipélago' };
+const estradaDe = (id) => ESTRADAS.find((e) => e.bioma === id);
 const LUGARES = [
   ['fonte', 'Castelo', NASCER.x, NASCER.z],
   ['arena', 'Arena', ...(({ x, z }) => [x, z])(REINO.paraMundo(ARENA_REINO.x + 24, ARENA_REINO.z + 4))],
-  ['estrada', 'Estrada Real', ESTRADA.dir.x * 150, ESTRADA.dir.z * 150],
-  ['campo', 'Campo', 16, 16], ['planta', 'Floresta', ...perto(centroDe('planta'))],
+  ['estrada', 'Estrada Real', ESTRADA.dir.x * (RAIO_REINO + 22), ESTRADA.dir.z * (RAIO_REINO + 22)],
+  ['campo', 'Anel tranquilo', estradaDe('terra').dir.x * (RAIO_REINO + 30) + 10, estradaDe('terra').dir.z * (RAIO_REINO + 30)],
+  ['planta', 'Floresta', ...perto(centroDe('planta'))],
   ['agua', 'Lago', ...perto(lagoGrande, -(lagoGrande.r + 4))],
+  ['arquipelago', 'Arquipélago', ...(({ x, z }) => [x, z])(LUGARES_MAPA.find((l) => l.bioma === 'agua' && l.tipo === 'vila') || centroDe('agua'))],
   ['fogo', 'Vulcão', ...perto(centroDe('fogo'), 16)], ['terra', 'Deserto', ...(arco ? [arco.x + Math.cos(arco.ang + 1.57) * 7, arco.z + Math.sin(arco.ang + 1.57) * 7] : perto(centroDe('terra')))],
   ['raio', 'Neve', ...perto(centroDe('raio'))],
+  // os lugares guardados para as vilas (passo 3) e as masmorras novas (passo 4)
+  ...LUGARES_MAPA.map((l, i) => [`lugar${i}`, `${l.tipo === 'vila' ? 'Vila' : 'Masmorra'} · ${NOME_BIOMA[l.bioma]}`, l.x, l.z]),
 ];
 // Arenas que dá para escolher no "Lutar agora"
 const NOMES_ARENA = Object.fromEntries(Object.entries(ARENAS).map(([k, a]) => [k, a.nome]));

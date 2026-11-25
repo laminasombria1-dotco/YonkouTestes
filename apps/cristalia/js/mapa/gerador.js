@@ -64,26 +64,26 @@ export function suave(a, b, x) {
 const S = SEMENTE;
 
 // ---------- biomas ----------
+// Mundo novo: o Reino no meio e os 5 biomas em fatias em volta, numa ORDEM FIXA
+// (config.js). A semente decide o relevo, os rios, as ilhas e os lugares, não a ordem.
 const B = C.biomas;
-const rngMapa = aleatorio(S ^ 0x5bd1e995);
-const ordem = [...B.lista];
-for (let i = ordem.length - 1; i > 0; i--) { const j = Math.floor(rngMapa() * (i + 1)); [ordem[i], ordem[j]] = [ordem[j], ordem[i]]; }
-const N_BIOMAS = Math.max(4, Math.min(8, B.quantidade));
-// Centros dos biomas: em volta do Campo, com distância e tamanho sorteados
+export const RAIO_REINO = C.raioReino;
+export const ANEL_TRANQUILO = C.anelTranquilo;
+export const VERSAO_MAPA = C.versaoMapa;
+const N_BIOMAS = B.lista.length;
+// Centros dos biomas: no meio de cada fatia
 export const BIOMAS = [];
 {
-  const ang0 = rngMapa() * Math.PI * 2, passo = (Math.PI * 2) / N_BIOMAS;
-  for (let i = 0; i < N_BIOMAS; i++) {
-    const id = ordem[i % ordem.length];
-    const a = ang0 + i * passo + (rngMapa() - 0.5) * passo * 0.35;
-    const d = B.distanciaMin + rngMapa() * (B.distanciaMax - B.distanciaMin);
-    const peso = (B.tamanhoMin + rngMapa() * (B.tamanhoMax - B.tamanhoMin)) * (B.tamanhoPorBioma?.[id] ?? 1);
-    BIOMAS.push({ id, x: Math.cos(a) * d, z: Math.sin(a) * d, ang: a, peso });
-  }
+  const ang0 = (B.angulo0 * Math.PI) / 180, passo = (Math.PI * 2) / N_BIOMAS;
+  B.lista.forEach((id, i) => {
+    const a = ang0 + i * passo;
+    BIOMAS.push({ id, x: Math.cos(a) * B.distancia, z: Math.sin(a) * B.distancia, ang: a, peso: B.tamanhoPorBioma?.[id] ?? 1 });
+  });
 }
 export const centroDe = (id) => BIOMAS.find((b) => b.id === id);
+// 'campo' = o chão dentro do Reino (o Campo antigo virou o Reino)
 const IDS = [...BIOMAS.map((b) => b.id), 'campo'];
-const PESOS = new Float32Array(N_BIOMAS + 1); // o último é o Campo
+const PESOS = new Float32Array(N_BIOMAS + 1); // o último é o chão do Reino
 const DIST = new Float32Array(N_BIOMAS);
 let tx = 0, tz = 0;
 function torcer(x, z, amp) {
@@ -92,17 +92,20 @@ function torcer(x, z, amp) {
 }
 // Quanto cada bioma "vale" num ponto (soma 1). Perto das bordas, dois valem um pouco cada.
 export function pesosEm(x, z) {
-  torcer(x, z, B.torcao);
+  // perto do Reino as bordas ficam mais retas (cada portão cai no meio do seu bioma); longe, onduladas
+  torcer(x, z, B.torcao * Math.min(1, Math.max(0.12, (Math.hypot(x, z) - RAIO_REINO) / 170)));
   let dmin = Infinity;
   for (let i = 0; i < N_BIOMAS; i++) {
     const b = BIOMAS[i];
-    DIST[i] = Math.hypot(tx - b.x, tz - b.z) / b.peso;
+    // fatias: conta o ângulo (e um pouco a distância), para cada bioma ir do Reino até a borda
+    const ang = Math.atan2(tz, tx), dAng = Math.abs(Math.atan2(Math.sin(ang - b.ang), Math.cos(ang - b.ang)));
+    DIST[i] = (dAng * 230 + Math.abs(Math.hypot(tx, tz) - B.distancia) * 0.08) / b.peso;
     if (DIST[i] < dmin) dmin = DIST[i];
   }
   let soma = 0;
   for (let i = 0; i < N_BIOMAS; i++) { const w = Math.max(0, 1 - (DIST[i] - dmin) / B.transicao); PESOS[i] = w; soma += w; }
-  torcer(x, z, B.torcao * 0.35); // o Campo é menos torto (a fonte fica sempre nele)
-  const c = suave(C.raioCampo + 9, C.raioCampo - 9, Math.hypot(tx, tz));
+  // o Reino é um círculo certinho (sem torcer)
+  const c = suave(RAIO_REINO + 6, RAIO_REINO - 6, Math.hypot(x, z));
   for (let i = 0; i < N_BIOMAS; i++) PESOS[i] = (PESOS[i] / soma) * (1 - c);
   PESOS[N_BIOMAS] = c;
   return PESOS;
@@ -119,24 +122,29 @@ export function biomaEm(x, z) {
 
 // ---------- saídas das dungeons (pela borda do bioma delas) ----------
 export const SAIDAS = { brasas: centroDe('fogo').ang, raizes: centroDe('planta').ang };
-// ---------- o Reino (fora da borda) e a Estrada Real ----------
-// O Reino sai pela borda no lado mais longe das duas dungeons e das montanhas
-// da Neve (a direção vem da semente). A Estrada Real vai do Campo até a boca do Reino.
-const difAng = (a, b) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
-export const ANG_REINO = (() => {
-  const evitar = [SAIDAS.brasas, SAIDAS.raizes, centroDe('raio').ang];
-  let melhor = 0, folga = -1;
-  for (let i = 0; i < 360; i++) {
-    const a = (i * Math.PI) / 180, f = Math.min(...evitar.map((e) => difAng(a, e)));
-    if (f > folga) { folga = f; melhor = a; }
-  }
-  return melhor;
-})();
-export const ESTRADA = { ang: ANG_REINO, dir: { x: Math.cos(ANG_REINO), z: Math.sin(ANG_REINO) }, inicio: 34, fim: RAIO_MUNDO - 4, largura: 3 };
-// Onde um ponto fica em relação à estrada: ao = ao longo (distância do centro), lat = para o lado
+// ---------- o Reino (no meio) e os 5 caminhos seguros ----------
+// O Reino fica no meio do mapa, com um portão para cada bioma. De cada portão sai um caminho
+// curto e seguro (a "Estrada Real"): nenhum selvagem nasce nele nem chega perto.
+export const ESTRADAS = BIOMAS.map((b) => ({
+  ang: b.ang, bioma: b.id, dir: { x: Math.cos(b.ang), z: Math.sin(b.ang) }, inicio: RAIO_REINO - 8, fim: RAIO_REINO + 38, largura: 3,
+}));
+export const ESTRADA = ESTRADAS[0]; // (medidas iguais para todas: largura, começo e fim)
+// O portão principal do Reino (a frente do castelo) é o da Floresta
+export const ANG_REINO = ESTRADAS.find((e) => e.bioma === 'planta').ang;
+// Onde um ponto fica em relação ao caminho mais perto: ao = ao longo (distância do centro), lat = para o lado
+const RES_ESTRADA = { ao: 0, lat: 0, dentro: false, dir: ESTRADA.dir };
 export function naEstradaReal(x, z) {
-  const ao = x * ESTRADA.dir.x + z * ESTRADA.dir.z, lat = Math.abs(-x * ESTRADA.dir.z + z * ESTRADA.dir.x);
-  return { ao, lat, dentro: ao > ESTRADA.inicio && ao < ESTRADA.fim + 8 };
+  let melhor = null;
+  for (const e of ESTRADAS) {
+    const ao = x * e.dir.x + z * e.dir.z;
+    if (ao < 0) continue;
+    const lat = Math.abs(-x * e.dir.z + z * e.dir.x);
+    if (!melhor || lat < melhor.lat) melhor = { ao, lat, e };
+  }
+  if (!melhor) { RES_ESTRADA.dentro = false; RES_ESTRADA.lat = 999; return RES_ESTRADA; }
+  RES_ESTRADA.ao = melhor.ao; RES_ESTRADA.lat = melhor.lat; RES_ESTRADA.dir = melhor.e.dir;
+  RES_ESTRADA.dentro = melhor.ao > melhor.e.inicio && melhor.ao < melhor.e.fim + 8;
+  return RES_ESTRADA;
 }
 
 // 0 perto do caminho de uma dungeon (sem rio nem lago ali), 1 longe
@@ -145,7 +153,7 @@ function longeDasSaidas(x, z) {
   for (const a of Object.values(SAIDAS)) {
     const c = Math.cos(a), s = Math.sin(a);
     const ao = x * c + z * s, lat = Math.abs(-x * s + z * c);
-    if (ao > 130) f *= suave(18, 34, lat);
+    if (ao > RAIO_MUNDO - 75) f *= suave(18, 34, lat);
   }
   return f;
 }
@@ -169,6 +177,9 @@ export const PONTOS_FLORESTA = {
 // ---------- pontos de interesse (POIs) ----------
 // vulcao: no centro de cada bioma de Lava (cratera com lava)
 // arco: arco de pedra no Deserto · cristalGelo: cristal de gelo gigante na Neve
+// (os lugares do futuro são preenchidos mais abaixo; declarados aqui porque o relevo do Arquipélago usa)
+export const LUGARES = [];
+let LUGARES_AGUA = [];
 export const POIS = [];
 const rngPoi = aleatorio(S ^ 0x2545f491);
 for (const b of BIOMAS) {
@@ -185,6 +196,33 @@ for (const b of BIOMAS) {
   }
 }
 
+// ---------- lugares guardados para o futuro (mundo novo) ----------
+// Em cada bioma: 1 VILA com arena (passo 3) e as MASMORRAS novas (passo 4; 2 por bioma,
+// contando o Caminho das Brasas no Vulcânico e a Trilha Ancestral na Floresta).
+// Ficam presos à semente (o mesmo lugar para todos). Nada nasce em cima deles (nem rio nem lago).
+// No Arquipélago, cada lugar ganha uma ilha.
+{
+  const rngV = aleatorio(S ^ 0x3c6ef372);
+  const acha = (b, tipo, d0, d1, a0, a1, r) => {
+    for (let t = 0; t < 300; t++) {
+      const a = b.ang + a0 + rngV() * (a1 - a0), d = d0 + rngV() * (d1 - d0);
+      const x = Math.cos(a) * d, z = Math.sin(a) * d;
+      if (biomaEm(x, z) !== b.id) continue;
+      if ([...POIS, ...LUGARES, LAGOA, ...PONTOS_FLORESTA.clareiras, PONTOS_FLORESTA.ruina].some((o) => Math.hypot(o.x - x, o.z - z) < (o.r || 6) + r + 20)) continue;
+      if (b.id !== 'agua' && b.id !== 'fogo' && b.id !== 'raio' && alturaBioma(x, z) < 0.3) continue;
+      LUGARES.push({ tipo, bioma: b.id, x, z, r, ang: a });
+      return;
+    }
+  };
+  for (const b of BIOMAS) {
+    acha(b, 'vila', 190, 240, 0.22, 0.42, 30);
+    const corredor = b.id === 'fogo' || b.id === 'planta'; // já tem a masmorra de hoje (no meio da borda)
+    if (!corredor) acha(b, 'masmorra', 300, 345, -0.5, -0.28, 12);
+    acha(b, 'masmorra', 300, 345, 0.28, 0.5, 12);
+  }
+}
+LUGARES_AGUA = LUGARES.filter((l) => l.bioma === 'agua');
+
 // ---------- lagos ----------
 // agua: lago normal (o do Campo, o da Floresta e um oásis no Deserto)
 // gelo: lago congelado na Neve (dá para andar em cima)
@@ -192,13 +230,14 @@ export const LAGOS = [];
 {
   const rngL = aleatorio(S ^ 0x68e31da4);
   const pedidos = [
-    { bioma: 'campo', tipo: 'agua', r: [9, 11], d: [24, 32] },
-    { bioma: 'planta', tipo: 'agua', r: [12, 16], d: [70, 170] },
-    { bioma: 'terra', tipo: 'agua', r: [8, 10], d: [70, 170], oasis: true },
-    { bioma: 'raio', tipo: 'gelo', r: [9, 12], d: [70, 170] },
-    { bioma: 'raio', tipo: 'gelo', r: [6, 9], d: [70, 170] },
+    { bioma: 'planta', tipo: 'agua', r: [12, 16], d: [170, 330] },
+    { bioma: 'planta', tipo: 'agua', r: [9, 12], d: [170, 330] },
+    { bioma: 'terra', tipo: 'agua', r: [8, 10], d: [170, 330], oasis: true },
+    { bioma: 'raio', tipo: 'gelo', r: [9, 12], d: [170, 330] },
+    { bioma: 'raio', tipo: 'gelo', r: [6, 9], d: [170, 330] },
+    { bioma: 'raio', tipo: 'gelo', r: [7, 10], d: [170, 330] },
   ];
-  const evitar = [LAGOA, ...PONTOS_FLORESTA.clareiras, PONTOS_FLORESTA.ruina, ...POIS];
+  const evitar = [LAGOA, ...PONTOS_FLORESTA.clareiras, PONTOS_FLORESTA.ruina, ...POIS, ...LUGARES];
   for (const p of pedidos) {
     for (let t = 0; t < 400; t++) {
       const a = rngL() * Math.PI * 2, d = p.d[0] + rngL() * (p.d[1] - p.d[0]), r = p.r[0] + rngL() * (p.r[1] - p.r[0]);
@@ -236,12 +275,13 @@ export const RESERVAS = [
   ...PONTOS_FLORESTA.gigantes.map((g) => ({ x: g.x, z: g.z, r: 5 * g.e })),
   ...POIS.map((p) => ({ x: p.x, z: p.z, r: p.r + 2 })),
   ...SEGREDOS.map((s) => ({ x: s.x, z: s.z, r: 2 })),
+  ...LUGARES.map((l) => ({ x: l.x, z: l.z, r: l.r })),
 ];
 // Lugares sem rio passando
 const SEM_RIO = [...RESERVAS, ...LAGOS.map((L) => ({ x: L.x, z: L.z, r: L.r }))];
 
 // ---------- altura do chão ----------
-const FATOR_RIO = { campo: 1, planta: 1, terra: 0.55, raio: 0.75, fogo: 0 };
+const FATOR_RIO = { campo: 0, planta: 1, terra: 0.55, raio: 0.75, fogo: 0, agua: 0 };
 // Relevo de cada bioma
 function alturaDoBioma(id, i, x, z, base) {
   switch (id) {
@@ -256,7 +296,7 @@ function alturaDoBioma(id, i, x, z, base) {
     case 'raio': { // Neve: cadeias de montanhas (mais altas no meio do bioma)
       const b = BIOMAS[i];
       const crista = Math.max(0, 1 - Math.abs(fbm(x / 60, z / 60, S + 53, 4) * 2));
-      const massa = Math.min(1, Math.max(0.25, 1.25 - Math.hypot(x - b.x, z - b.z) / (70 * b.peso)));
+      const massa = Math.min(1, Math.max(0.25, 1.25 - Math.hypot(x - b.x, z - b.z) / (120 * b.peso)));
       return 1.5 + crista ** 2.4 * 19 * massa + base * 0.6;
     }
     case 'fogo': { // Lava: chão vulcânico, vulcão com cratera no meio e rios de lava
@@ -268,6 +308,15 @@ function alturaDoBioma(id, i, x, z, base) {
       const canal = suave(0.05, 0.018, Math.abs(fbm(x / 55, z / 55, S + 59, 2)))
         * suave(-0.25, 0, ruido(x / 30, z / 30, S + 61)) * suave(36, 46, dv);
       return h * (1 - canal) - 1.7 * canal;
+    }
+    case 'agua': { // Arquipélago: quase tudo água rasa (dá para andar, mais devagar), ilhas e canais fundos
+      let ilha = fbm(x / 48, z / 48, S + 81, 3);
+      for (const l of LUGARES_AGUA) ilha += 0.9 * suave(l.r + 28, l.r + 4, Math.hypot(x - l.x, z - l.z)); // ilha da vila e das masmorras
+      const t = suave(0.07, 0.27, ilha);
+      const h = -0.85 + t * (1.9 + Math.max(0, base) * 0.8 + Math.max(0, ilha - 0.27) * 6);
+      // canais fundos (não dá para passar), cortados em pedaços: sempre tem caminho por água rasa
+      const canal = suave(0.045, 0.012, Math.abs(fbm(x / 70, z / 70, S + 83, 2))) * suave(-0.15, 0.15, ruido(x / 34, z / 34, S + 85)) * (1 - t);
+      return h * (1 - canal) - 2.3 * canal;
     }
   }
   return base;
@@ -296,12 +345,15 @@ export function alturaBase(x, z) {
     fRio += P[i] * FATOR_RIO[IDS[i]];
   }
   const dc = Math.hypot(x, z);
-  if (dc < 12) h *= dc / 12; // centro plano para a fonte
+  // perto do Reino o chão fica suave (o anel tranquilo: sem paredão de montanha nem mar fundo nos portões)
+  { const k = suave(RAIO_REINO + ANEL_TRANQUILO + 20, RAIO_REINO + 8, dc) * 0.8; if (k > 0) h = h * (1 - k) + (0.7 + base * 0.3) * k; }
   // rios: onde um ruído bem largo passa perto de zero
-  fRio *= suave(16, 28, dc) * longeDasSaidas(x, z);
-  { const e = naEstradaReal(x, z); if (e.ao > ESTRADA.inicio - 10) fRio *= suave(7, 16, e.lat); } // sem rio na Estrada Real
+  fRio *= suave(RAIO_REINO + 12, RAIO_REINO + 30, dc) * longeDasSaidas(x, z);
+  { const e = naEstradaReal(x, z); if (e.ao > ESTRADA.inicio - 10 && e.ao < ESTRADA.fim + 20) fRio *= suave(7, 16, e.lat); } // sem rio nos caminhos do Reino
   if (fRio > 0.02 && C.agua.rios > 0) {
     for (const r of SEM_RIO) { const d = Math.hypot(x - r.x, z - r.z); if (d < r.r + 14) fRio *= suave(r.r + 2, r.r + 14, d); }
+  }
+  if (fRio > 0.02 && C.agua.rios > 0) { // (de novo: perto dos lugares guardados o rio pode ter zerado)
     const L = C.agua.rios * fRio;
     const k = suave(L, L * 0.3, Math.abs(fbm(x / 120, z / 120, S + 67, 3)));
     h = h * (1 - k) - 1.15 * k;

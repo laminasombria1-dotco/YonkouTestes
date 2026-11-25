@@ -35,8 +35,8 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
 - **Equipe:** até 3 monstros. Com a equipe cheia, o capturado vai para a reserva.
 - **Reserva:** no painel Equipe, a aba **Reserva** mostra **todos** os monstros que você tem (os da equipe aparecem marcados). Perder uma batalha nunca apaga monstros: você acorda na casa ou no castelo (veja "Casa").
 - **Proteção:** o jogo guarda uma cópia de cada monstro que você já teve. Se algum sumir da equipe e da reserva por qualquer motivo, ele volta sozinho para a Reserva, com um aviso.
-- **Fonte de cura:** a fonte na praça do castelo, no **Reino**, cura todos os seus monstros. É a única fonte do jogo (a do meio do Campo virou uma placa que aponta para o Reino).
-- **Começo:** o jogo novo começa no Reino, na frente da fonte do castelo, com 3 Poções de Cura e 1 de Reviver. Siga a **Estrada Real** para chegar ao mapa (veja "O Reino").
+- **Fonte de cura:** a fonte na praça do castelo, no **Reino**, cura todos os seus monstros. É a única fonte do jogo.
+- **Começo:** o jogo novo começa no Reino, na frente da fonte do castelo, com 3 Poções de Cura e 1 de Reviver. Saia por um dos **5 portões** do Reino (um para cada bioma) pela **Estrada Real** (veja "O Reino").
 - **Bolsa:** o botão do canto de baixo (tecla **B** no PC). Dentro dela ficam a bandeira, a casa, o jardim, as frutas, os itens raros, as poções, os cristais e os ovos. Veja "Bolsa, ouro e loja".
 - **Nível dos selvagens:** acompanha o nível da sua equipe e aumenta quanto mais longe do centro você vai, até o **Nv.95** (os grupos vão até o Nv.98 e os líderes até o Nv.100). Nas bordas aparecem as formas evoluídas, mas nunca a forma final. A exceção é **em volta da boca do Reino** (55 m): ali só aparecem monstros fracos (Nv.2 a 5, formas iniciais), sem grupos e sem tipo duplo.
 - **Monstros perto de você:** os selvagens e os grupos aparecem em volta do jogador (até ~90 m) e somem quando ficam longe; assim o mapa grande não fica mais pesado.
@@ -190,10 +190,12 @@ O jogo é um **PWA** (aplicativo web instalável). Ele fica no site **https://la
 
 ## O Reino (o novo centro do jogo)
 
-O Reino fica **fora da borda do mapa**, como as dungeons, mas não é dungeon: é o lugar seguro onde o jogo começa. Ele sai pela borda no lado **mais longe das duas dungeons e das montanhas da Neve** (a direção vem da semente do mapa; na semente de todos, fica depois do Deserto). Não tem tela de carregamento: você entra andando.
+O Reino fica **no meio do mapa** (mundo novo, `PLANO.md`): é o lugar seguro onde o jogo começa, com os 5 biomas em volta. Não tem tela de carregamento: você sai andando.
 
-- **Estrada Real:** um calçamento de pedra cinza do Campo até a boca do Reino, com lanternas e bandeiras azuis dos dois lados. Na estrada **nenhum selvagem aparece**, e os que chegam perto dão meia-volta (é área segura, como a casa). Não há rio cortando a estrada. No meio do Campo, uma **placa com uma seta** aponta para ela.
-- **O platô:** redondo (62 m de raio), plano, cercado de montanhas verdes, com uma **muralha** de torres de telhado azul e um **portão**.
+- **O platô:** redondo (**100 m de raio**), plano, com uma **muralha** de torres de telhado azul e **5 portões** (2 torres com bandeira em cada), **um para cada bioma**. O portão principal (na frente do castelo) dá para a Floresta.
+- **Estrada em anel:** um calçamento de pedra a 66 m do meio liga os 5 portões. Entre o anel e a muralha fica **espaço livre** (só alguns pinheiros encostados na muralha), guardado para as coisas novas do Reino.
+- **Estrada Real:** de cada portão sai um caminho curto de pedra (38 m) com lanternas e bandeiras azuis. Nele **nenhum selvagem aparece**, e os que chegam perto dão meia-volta. Os monstros também dão meia-volta antes da muralha: **ninguém entra no Reino**.
+- **Anel tranquilo:** os primeiros **45 m** de cada bioma depois dos portões só têm **monstros fracos** (Nv.2 a 5, formas iniciais), sem grupos e sem tipo duplo. É a área de quem está começando.
 - **Castelo** no meio, no estilo de conto de fadas: muralha branca em quadrado com ameias, 4 torres redondas nos cantos com telhado pontudo cinza-azulado e ponta dourada, o palácio com janelinhas no telhado, a torre de menagem e 2 torres altas e finas, a entrada com arco, varanda de madeira, brasão e escada, sobre uma base de pedra com grama e pinheiros. As paredes brancas usam um material com um pouco de luz própria (ficam brancas até na sombra). Na frente ficam a **praça e a fonte de cura**. É ali que você nasce e acorda.
 - **Vila:** casas de pedra e madeira com telhado azul e janelas acesas. Uma delas é a **loja de poções** (placa pendurada e barraca listrada azul e branca): encoste na barraca para comprar.
 - **Arena fechada** (coliseu de telhado vermelho), ao lado da praça da fonte (nenhuma casa fica perto dela). O **portão** dá para a praça: 2 torres de pedra com telhado vermelho e estandartes, a faixa com as cores dos 5 treinadores em cima do arco e **2 portas de madeira com faixas de ferro**, que **abrem sozinhas** quando você chega a 13 m (ou está lá dentro) e fecham quando você se afasta. Parede de 2 andares de arcos, arquibancada em degraus com **plateia** (~320 bonequinhos coloridos), túnel do portão até a areia (sem teto, para a câmera passar), e o **palco** com as 5 bandeiras. Dentro dela a câmera chega mais perto e fica mais alta.
@@ -237,7 +239,7 @@ O Reino fica **fora da borda do mapa**, como as dungeons, mas não é dungeon: �
 - **Fica salvo** em `estado.arena` (`vencidos` de 0 a 5, `dominada`, `vitoriasRei`), `estado.campeao`, `estado.coroa`/`coroaVestida` e `estado.tesouro` (o ouro do Reino guardado). Os níveis de revanche ficam em `revanche` de cada treinador (`TREINADORES`, `js/reino.js`) e o ouro do Reino em `TESOURO` (`js/main.js`).
 - Lá dentro não aparecem monstros, não nascem árvores do mapa e não dá para fincar a bandeira.
 - **Leve no celular:** todas as peças paradas do Reino viram **4 malhas** (cores normais, peças vistas dos dois lados, o que brilha e as paredes brancas do castelo), e a plateia é **1 lote**. A colisão usa círculos na `mundo.grade`, como o resto.
-- **Código:** a forma (corredor + platô) é o `REINO` em `js/dungeon.js` (`TracadoReino`, com `paraMundo` e `paraLocal`), a direção e a Estrada Real ficam em `js/mapa/gerador.js` (`ANG_REINO`, `ESTRADA`, `naEstradaReal`) e o cenário em `js/reino.js`.
+- **Código:** a forma do platô é o `REINO` em `js/dungeon.js` (`ReinoCentral`, com `paraMundo` e `paraLocal`), os portões e caminhos ficam em `js/mapa/gerador.js` (`ESTRADAS`, `ANG_REINO`, `naEstradaReal`) e o cenário em `js/reino.js` (`PORTOES`, `RAIO_MURALHA`, `RAIO_ANEL`).
 
 ## Evolução da casa
 
@@ -291,9 +293,9 @@ O Reino fica **fora da borda do mapa**, como as dungeons, mas não é dungeon: �
 
 | Tipo | Nv.1 | Nv.12 | Nv.30 | Nv.50 (rara) | Onde aparece |
 |---|---|---|---|---|---|
-| Fogo + Planta | Brotobrasa | Chamafolha | Ardentroco | Florinferno | Floresta, Vulcão, Campo |
-| Água + Fogo | Vaporito | Fumarolo | Gêiserão | Caldeirax | Lago, Vulcão, Campo |
-| Terra + Raio | Imanito | Magnetito | Ferrovolt | Titanvolt | Deserto, Picos Nevados, Campo |
+| Fogo + Planta | Brotobrasa | Chamafolha | Ardentroco | Florinferno | Floresta, Vulcão |
+| Água + Fogo | Vaporito | Fumarolo | Gêiserão | Caldeirax | Arquipélago e lagos, Vulcão |
+| Terra + Raio | Imanito | Magnetito | Ferrovolt | Titanvolt | Deserto, Picos Nevados |
 
 ## Cristais de captura
 
@@ -404,25 +406,27 @@ Sai da borda do mapa pela Floresta, seguindo as lanternas de flor (a direção d
 
 | Região | Bioma | Quem aparece |
 |---|---|---|
-| Reino | Fora da borda, no fim da Estrada Real: castelo, vila, loja e arena | Ninguém (é seguro). Em volta da boca, monstros fracos |
-| Campo | No centro (com a placa que aponta para o Reino) | Um pouco de tudo; Sol e Luz de dia, Lua e Trevas à noite |
+| Reino | No meio do mapa: castelo, vila, loja, arena e os 5 portões | Ninguém (é seguro). Logo depois dos portões, o anel tranquilo (monstros fracos) |
+| Picos Nevados | **Gelo**: montanhas, pinheiros nevados, rochas congeladas, lagos congelados e o cristal de gelo gigante | Raio (Faisquinho), com relâmpagos; Luz de dia, Trevas à noite |
 | Floresta | Floresta: árvores, pinheiros, clareiras e morrinhos | Planta (Musguinho), Espinhal (raro); Luz de dia, Trevas à noite. Daqui sai a Trilha Ancestral |
-| Lago | Em volta dos lagos (no Campo, na Floresta e o oásis do Deserto) | Água (Gotinho), Aquaraia (raro); Lua à noite |
-| Vulcão | Lava: chão vulcânico, vulcão com cratera, rios de lava | Fogo (Brasito), Vulcarapa (raro). Daqui sai o Caminho das Brasas |
-| Deserto | Deserto: dunas, cânions, cactos, arco de pedra e oásis | Terra (Pedrisco) |
-| Picos Nevados | Neve: montanhas, pinheiros nevados, rochas congeladas, lagos congelados e o cristal de gelo gigante | Raio (Faisquinho), com relâmpagos |
+| Deserto | Deserto: dunas, cânions, cactos, arco de pedra e oásis | Terra (Pedrisco); Sol de dia, Lua à noite |
+| Vulcão | **Vulcânico**: chão vulcânico, vulcão com cratera, rios de lava | Fogo (Brasito), Vulcarapa (raro); Sol de dia, Trevas à noite. Daqui sai o Caminho das Brasas |
+| Arquipélago | **Água**: quase todo água rasa (dá para andar, mais devagar), ilhas com palmeiras e canais fundos | Água (Gotinho), Aquaraia (raro); Luz de dia, Lua à noite |
+| Lago | Em volta dos lagos da Floresta e do oásis do Deserto | Água (Gotinho), Aquaraia (raro) |
 
-Os monstros de cada região são os mesmos de antes: o Deserto ocupa o lugar da Pedreira (Terra) e os Picos Nevados, o do Planalto da Tempestade (Raio). Onde fica cada bioma depende da semente do mapa (veja abaixo).
+**Sol, Luz, Lua e Trevas** são **visitantes raros** (cerca de 1 em cada 10 monstros): Sol e Luz de dia, Lua e Trevas à noite. Cada bioma tem só os seus tipos (`APARICOES` no `dados.js`).
 
 ## Mapa procedural
 
 O mapa é **gerado por uma semente** (seed): um número que decide tudo (onde fica cada bioma, o relevo, os rios, os lagos, as árvores). A mesma semente sempre dá o mesmo mapa. **Todos os jogadores usam a mesma semente**: o mundo é um só para todos. O código fica em `js/mapa/`.
 
-- **Tamanho:** mapa redondo de **200 m de raio** (cerca de 5 vezes a área do mapa antigo; atravessar leva ~55 s andando). Na borda o chão sobe e há montanhas.
-- **Biomas:** o **Campo** fica no meio, com a placa do Reino. Em volta, os 4 biomas (Floresta, Deserto, Neve e Lava), em ordem sorteada, com tamanhos diferentes e **bordas onduladas**. Onde dois se encontram, as cores e o relevo se misturam aos poucos.
-- **Relevo:** morrinhos no Campo e na Floresta, dunas e cânions no Deserto, cadeias de montanhas na Neve (com neve no alto dos picos) e um vulcão com cratera de lava no meio da Lava.
-- **Água:** rios (rasos: dá para atravessar andando), lagos (o meio é fundo: não dá para entrar), lagos congelados na Neve (dá para andar em cima) e rios de lava (não dá para entrar).
-- **Pontos de interesse:** o vulcão com lava na cratera, o arco de pedra do Deserto, o oásis com palmeiras, o cristal de gelo gigante da Neve, os lugares fixos da Floresta, as entradas das duas dungeons e a boca do Reino. Perto de alguns tem cristal escondido.
+- **Tamanho (mundo novo, versão 2 do mapa):** mapa redondo de **390 m de raio**, quase 4 vezes o anterior. Do portão do Reino até a borda são ~39 s andando. Na borda o chão sobe e há montanhas.
+- **Biomas:** o **Reino** fica no meio. Em volta, os **5 biomas em fatias** (cada um com ~90.000 m², como um quadrado de 300 × 300), numa **ordem fixa** em que cada um fica ao lado de vizinhos que combinam: **Gelo > Floresta > Deserto > Vulcânico > Arquipélago** (e de volta ao Gelo). Perto do Reino as bordas são quase retas (cada portão cai no meio do seu bioma); longe, ficam **onduladas**. Onde dois se encontram, as cores e o relevo se misturam aos poucos.
+- **Relevo:** morrinhos na Floresta, dunas e cânions no Deserto, cadeias de montanhas no Gelo (com neve no alto dos picos), um vulcão com cratera de lava no meio do Vulcânico e as ilhas do Arquipélago. Perto do Reino o chão fica suave (sem paredão de montanha nem mar fundo nos portões).
+- **Arquipélago:** a maior parte é **água rasa** (dá para andar, a **65% da velocidade**), com **ilhas** de areia e palmeiras e **canais fundos** cortados em pedaços (não dá para entrar neles, mas sempre tem caminho pela água rasa).
+- **Lugares guardados:** a semente já escolheu os lugares das **5 vilas** (passo 3) e das **8 masmorras novas** (passo 4; 2 por bioma, contando o Caminho das Brasas e a Trilha Ancestral). Ali não nasce árvore, rio nem lago, e no Arquipélago cada um ganha uma ilha. Ficam em `LUGARES` (`js/mapa/gerador.js`) e o GM tem um teleporte para cada um (aba Mundo).
+- **Água:** rios (rasos: dá para atravessar andando, mais devagar), lagos (o meio é fundo: não dá para entrar), lagos congelados na Neve (dá para andar em cima) e rios de lava (não dá para entrar).
+- **Pontos de interesse:** o vulcão com lava na cratera, o arco de pedra do Deserto, o oásis com palmeiras, o cristal de gelo gigante da Neve, os lugares fixos da Floresta, as entradas das duas dungeons e os 5 portões do Reino. Perto de alguns tem cristal escondido.
 - **Chunks:** o mapa é dividido em quadrados de **32 m**. Só os chunks perto de você existem na memória; os novos são criados aos poucos enquanto você anda (no máximo ~3 ms por quadro) e os que ficam longe são apagados.
 - **Leve no celular:**
   - cada tipo de objeto (árvore, pedra, cacto...) é desenhado **num lote só por chunk** (InstancedMesh);
@@ -445,9 +449,9 @@ Na primeira vez, o jogo escolhe sozinho: **Fraco** em celular com 4 núcleos ou 
 
 ### Configurações (`js/mapa/config.js`)
 
-Tudo dá para ajustar lá: a semente, o tamanho do mundo, o tamanho dos chunks, os quadrados do chão por chunk (perto e longe), o tamanho do Campo, a quantidade de biomas (4 a 8; com mais de 4 eles se repetem em volta), a distância e o tamanho dos biomas (e quanto cada um ocupa), o quanto as bordas são onduladas, a largura da mistura entre biomas, o nível da água, a largura dos rios, a densidade de objetos de cada bioma, o tempo máximo por quadro criando chunks e os 3 perfis de qualidade.
+Tudo dá para ajustar lá: a semente, o tamanho do mundo, o tamanho dos chunks, os quadrados do chão por chunk (perto e longe), o tamanho do Reino e do anel tranquilo, a ordem dos biomas, a distância do centro de cada bioma (e quanto cada um ocupa), o quanto as bordas são onduladas, a largura da mistura entre biomas, o nível da água, a largura dos rios, a densidade de objetos de cada bioma, o tempo máximo por quadro criando chunks e os 3 perfis de qualidade.
 
-**Trocar a semente muda o mapa de todo mundo:** o jogo salvo de quem estava em outro mapa acorda no castelo, com a casa na mochila (os monstros, itens e níveis não mudam).
+**Trocar a semente (ou a `versaoMapa`) muda o mapa de todo mundo:** o jogo salvo de quem estava em outro mapa acorda no castelo, com a bandeira na mochila (os monstros, itens e níveis não mudam).
 
 ### Para os monstros de cada bioma (futuro)
 
@@ -889,9 +893,9 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/jardim.js` | O jardim (sementes, plantar, colher, as plantas em tempo real e os canteiros em 3D) e o afeto (alimentar, Coração do Guardião, satisfeito) |
 | `js/bolsa.js` | Ouro, poções (preços e efeito), Galho Raro, Asa do Anjo e os drops (`DROPS`), a evolução da casa e da bandeira (`CASA`, `BANDEIRA`), a Bolsa (bandeira, casa, itens raros, poções, cristais, ovo) e a loja de poções do Reino |
 | `js/ovo.js` | O Ovo Misterioso: o ovo roxo em 3D, o tempo para chocar, o sorteio e a cena do nascimento |
-| `js/reino.js` | O Reino: castelo, praça e fonte, vila e loja, arena fechada com plateia e os 5 treinadores, muralha, lanternas da Estrada Real e a placa do Campo (tudo junto em poucas malhas) |
+| `js/reino.js` | O Reino: castelo, praça e fonte, vila e loja, arena fechada com plateia e os 5 treinadores, muralha com os 5 portões, a estrada em anel e as lanternas dos 5 caminhos (tudo junto em poucas malhas) |
 | `js/mapa/config.js` | Configurações do mapa procedural e os perfis de qualidade |
-| `js/mapa/gerador.js` | O gerador do mapa (só matemática): ruído com semente, biomas, altura do chão, rios, lagos, pontos de interesse, lugares da Floresta, direção das dungeons e do Reino e a Estrada Real |
+| `js/mapa/gerador.js` | O gerador do mapa (só matemática): ruído com semente, biomas, altura do chão, rios, lagos, pontos de interesse, lugares da Floresta, direção das dungeons, os 5 caminhos do Reino e os lugares guardados (vilas e masmorras) e a Estrada Real |
 | `js/mapa/altura.js` | `alturaEm(x, z)`: a altura do chão igual aos triângulos desenhados (com as dungeons e a borda), e onde não dá para andar (lago fundo e lava) |
 | `js/mapa/chunks.js` | Os chunks: cria o chão, a água, a lava e os objetos de cada pedaço do mapa, carrega e apaga conforme você anda, e o LOD |
 | `js/mapa/grade.js` | Grade de obstáculos: guarda as árvores, pedras e peças em quadradinhos de 8 m, para a colisão só olhar o que está perto |

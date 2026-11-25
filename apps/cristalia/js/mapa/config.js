@@ -11,24 +11,24 @@
 
 export const CONFIG_MAPA = {
   semente: 20261121,      // seed do mundo (a mesma para todos os jogadores)
-  raioMundo: 200,         // raio do mapa redondo, em metros
+  raioMundo: 390,         // raio do mapa redondo, em metros (mundo novo: 5 biomas de ~300 m em volta do Reino)
+  versaoMapa: 2,          // sobe quando o desenho do mapa muda (o jogo salvo de outro mapa acorda no castelo)
   tamChunk: 32,           // tamanho de cada chunk (m)
   divisoes: 12,           // quadrados do chão por lado do chunk (perto)
   divisoesLonge: 6,       // quadrados do chão por lado do chunk (longe: LOD)
-  raioCampo: 40,          // tamanho do Campo no meio (onde fica a fonte)
+  raioReino: 100,         // o Reino fica no meio do mapa (platô redondo com muralha)
+  anelTranquilo: 45,      // depois dos portões, esses metros de cada bioma só têm monstros fracos (sem grupos)
 
-  // Biomas em volta do Campo. A ordem em volta é sorteada pela semente.
-  //  planta = Floresta, terra = Deserto, raio = Neve (Picos Nevados), fogo = Lava (Vulcão)
+  // Biomas em fatias em volta do Reino, na ORDEM FIXA abaixo (cada um ao lado de vizinhos que combinam):
+  // Gelo > Floresta > Deserto > Vulcânico > Água > (volta ao Gelo).
+  //  raio = Gelo (Picos Nevados), planta = Floresta, terra = Deserto, fogo = Vulcânico, agua = Arquipélago
   biomas: {
-    lista: ['planta', 'terra', 'raio', 'fogo'],
-    quantidade: 4,        // 4 a 8 (com mais de 4, os biomas se repetem em volta)
-    distanciaMin: 105,    // distância do centro de cada bioma até a fonte (m)
-    distanciaMax: 140,
-    tamanhoMin: 0.85,     // tamanho relativo de cada bioma (sorteado entre min e max)
-    tamanhoMax: 1.25,
-    tamanhoPorBioma: { planta: 1.1, terra: 1, raio: 1, fogo: 0.95 }, // distribuição: quem ocupa mais espaço
-    torcao: 55,           // quanto as bordas dos biomas são onduladas (m)
-    transicao: 18,        // largura da mistura entre dois biomas (m)
+    lista: ['raio', 'planta', 'terra', 'fogo', 'agua'],
+    angulo0: -90,         // o 1º bioma (Gelo) fica para o "norte" (graus; -90 = -z)
+    distancia: 250,       // distância do centro de cada bioma até o meio do Reino (m)
+    tamanhoPorBioma: { raio: 1, planta: 1, terra: 1, fogo: 1, agua: 1 }, // quem ocupa mais espaço
+    torcao: 60,           // quanto as bordas dos biomas são onduladas (m)
+    transicao: 22,        // largura da mistura entre dois biomas (m)
   },
 
   agua: {
@@ -37,7 +37,7 @@ export const CONFIG_MAPA = {
   },
 
   // Quantos pontos (de 64 por chunk) ganham um objeto (árvore, pedra, cacto...)
-  densidade: { campo: 0.12, planta: 0.42, terra: 0.15, raio: 0.3, fogo: 0.17 },
+  densidade: { campo: 0.12, planta: 0.42, terra: 0.15, raio: 0.3, fogo: 0.17, agua: 0.1 },
   orcamentoMs: 3,         // tempo máximo por quadro criando chunks (para não travar; sempre sai pelo menos 1)
 };
 

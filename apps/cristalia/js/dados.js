@@ -632,18 +632,21 @@ export function especieDaEscolha(escolha, nivel, final = false) {
 // Onde e quando cada monstro aparece. "L:fogo" = alguém da linha de fogo
 // (a forma depende do nível). Os outros nomes são espécies raras.
 export const APARICOES = {
+  // Mundo novo: cada bioma só com os seus tipos (e os raros dele). Sol, Luz, Lua e Trevas
+  // são VISITANTES RAROS (~1 em 10): Sol e Luz de dia, Lua e Trevas de noite.
+  // campo = dentro do Reino (lá não nasce ninguém; fica para o GM e as arenas)
   campo:  { dia:   [['L:fogo', 2], ['L:agua', 2], ['L:planta', 2], ['L:sol', 3], ['L:luz', 3]],
             noite: [['L:fogo', 1], ['L:agua', 1], ['L:planta', 1], ['L:lua', 3], ['L:trevas', 3]] },
-  fogo:   { dia:   [['L:fogo', 6], ['vulcarapa', 3], ['L:sol', 2]],
-            noite: [['L:fogo', 6], ['vulcarapa', 3], ['L:trevas', 2]] },
-  agua:   { dia:   [['L:agua', 6], ['aquaraia', 3], ['L:luz', 1]],
-            noite: [['L:agua', 5], ['aquaraia', 2], ['L:lua', 3]] },
-  planta: { dia:   [['L:planta', 6], ['espinhal', 3], ['L:luz', 2]],
-            noite: [['L:planta', 5], ['espinhal', 2], ['L:trevas', 3]] },
-  terra:  { dia:   [['L:terra', 8], ['L:sol', 1]],
-            noite: [['L:terra', 8], ['L:lua', 1]] },
-  raio:   { dia:   [['L:raio', 8], ['L:luz', 1]],
-            noite: [['L:raio', 7], ['L:trevas', 1]] },
+  fogo:   { dia:   [['L:fogo', 7], ['vulcarapa', 2], ['L:sol', 1]],
+            noite: [['L:fogo', 7], ['vulcarapa', 2], ['L:trevas', 1]] },
+  agua:   { dia:   [['L:agua', 7], ['aquaraia', 2], ['L:luz', 1]],
+            noite: [['L:agua', 7], ['aquaraia', 2], ['L:lua', 1]] },
+  planta: { dia:   [['L:planta', 7], ['espinhal', 2], ['L:luz', 1]],
+            noite: [['L:planta', 7], ['espinhal', 2], ['L:trevas', 1]] },
+  terra:  { dia:   [['L:terra', 9], ['L:sol', 1]],
+            noite: [['L:terra', 9], ['L:lua', 1]] },
+  raio:   { dia:   [['L:raio', 9], ['L:luz', 1]],
+            noite: [['L:raio', 9], ['L:trevas', 1]] },
 };
 
 // =============================================================

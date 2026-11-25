@@ -22,7 +22,7 @@
 import * as THREE from 'three';
 import { criarModelo, criarCoroa, animarModelo, criarAuraDupla } from './modelos.js';
 import { ESPECIES, ELEMENTOS, DUNGEONS, MASMORRA, niveisDaEtapa, nivelDoChefe, criarMonstro, statsDe, formaPorNivel, especieDaEscolha, dadosMasmorra, sortearChefe } from './dados.js';
-import { SAIDAS, RAIO_MUNDO, ANG_REINO, alturaBase } from './mapa/gerador.js';
+import { SAIDAS, RAIO_MUNDO, ANG_REINO, RAIO_REINO, alturaBase } from './mapa/gerador.js';
 
 const MAX_SOLTOS = 7;            // monstros soltos dentro de cada dungeon
 const RESPAWN_ACAMPAMENTO = 120; // segundos até um acampamento vencido ter outro grupo
@@ -154,29 +154,41 @@ export const RAIZES = new Tracado({
 });
 RAIZES.yAgua = (S_LAGO - (84 - 10)) * 0.03 - 0.7; // altura da água do Lago Escondido
 
-// O Reino: não é dungeon. Um corredor curto atravessa a borda do mapa e chega num
-// platô redondo e plano (62 m de raio) cercado de montanhas, com o castelo no meio.
-// Usa a mesma forma das dungeons: a "arena do chefe" aqui é o platô inteiro.
-class TracadoReino extends Tracado {
-  constructor(cfg) {
-    super(cfg);
-    const b = this.ponto(this.sMin, 0);
-    this.h = alturaBase(b.x, b.z);          // o platô fica na altura do chão na boca
-    this.centro = this.centroChefe;
-    // giro do Reino: o eixo "frente" (+z do desenho) aponta para o mapa
-    this.giro = Math.atan2(-this.dir.x, -this.dir.z);
+// O Reino: não é dungeon. No mundo novo ele fica NO MEIO do mapa: um platô redondo e plano
+// (RAIO_REINO = 100 m) com muralha e 5 portões, um para cada bioma.
+// Tem as mesmas funções dos traçados das dungeons (fora, dentro, perto, altura...),
+// para o resto do jogo tratar todos do mesmo jeito.
+class ReinoCentral {
+  constructor() {
+    this.id = 'reino';
+    this.zona = 'campo';
+    this.centro = { x: 0, z: 0 };
+    this.rChefe = RAIO_REINO;   // (nome antigo: o "platô" inteiro)
+    this.h = 0.8;               // altura do platô
+    // giro do desenho do Reino: o eixo "frente" (+z do desenho) aponta para o portão principal (Floresta)
+    this.giro = Math.atan2(Math.cos(ANG_REINO), Math.sin(ANG_REINO));
+    this.angulo = ANG_REINO;
   }
+  dChefe(x, z) { return Math.hypot(x - this.centro.x, z - this.centro.z); }
   etapaEm() { return -1; }
-  altura(x, z, h) {
-    const { s, lat } = this.local(x, z);
-    const dT = this.dChefe(x, z);
-    let k = 0;
-    if (s > this.sMin - 2 && Math.abs(lat) < this.largura + 34)
-      k = Math.min(1, (s - (this.sMin - 2)) / 10) * Math.min(1, (this.largura + 34 - Math.abs(lat)) / 12);
-    if (dT < this.rChefe + 30) k = Math.max(k, Math.min(1, (this.rChefe + 30 - dT) / 12));
-    return k > 0 ? h * (1 - k) + this.h * k : h;
+  fora(x, z) { return this.dChefe(x, z) - (RAIO_REINO - 4); }
+  dentro(x, z) { return this.dChefe(x, z) < RAIO_REINO; }
+  perto(x, z) { return this.dChefe(x, z) < RAIO_REINO + 4; }
+  reservado(x, z) { return this.dChefe(x, z) < RAIO_REINO + 3; }
+  semCasa(x, z) { return this.dChefe(x, z) < RAIO_REINO + 6; }
+  livre(x, z, raio) { return this.dChefe(x, z) < RAIO_REINO - 2 - raio; }
+  prender(p, raio) {
+    const d = this.dChefe(p.x, p.z) || 1, rl = RAIO_REINO - 2 - raio;
+    return d > rl ? { x: (p.x / d) * rl, z: (p.z / d) * rl } : { x: p.x, z: p.z };
   }
-  // Do desenho do Reino (x, z locais; +z = portão) para o mapa
+  // o platô é plano e emenda suave com o mapa em volta (até 18 m depois da muralha)
+  altura(x, z, h) {
+    const d = this.dChefe(x, z);
+    if (d > RAIO_REINO + 18) return h;
+    const k = Math.min(1, (RAIO_REINO + 18 - d) / 16);
+    return h * (1 - k) + this.h * k;
+  }
+  // Do desenho do Reino (x, z locais; +z = portão principal) para o mapa
   paraMundo(lx, lz) {
     const c = Math.cos(this.giro), s = Math.sin(this.giro);
     return { x: this.centro.x + lx * c + lz * s, z: this.centro.z - lx * s + lz * c };
@@ -187,10 +199,7 @@ class TracadoReino extends Tracado {
     return { x: dx * c - dz * s, z: dx * s + dz * c };
   }
 }
-export const REINO = new TracadoReino({
-  id: 'reino', zona: 'campo', ...saida(ANG_REINO),
-  sInicio: 70, sEtapa: 14, nEtapas: 1, sChefe: 146, rChefe: 62, largura: 9, curvaAmp: 0, sobe: 0,
-});
+export const REINO = new ReinoCentral();
 
 export const TRACADOS = [BRASAS, RAIZES, REINO];
 

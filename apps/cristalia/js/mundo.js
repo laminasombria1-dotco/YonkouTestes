@@ -15,7 +15,7 @@ import { CaminhoDasBrasas } from './brasas.js';
 import { TrilhaAncestral, CRISTAL_ESCONDIDO } from './raizes.js';
 import { Reino, FONTE_REINO, NASCER_REINO, ARENA_REINO, CASA_REINO, nivelRevanche } from './reino.js';
 import { JardimMundo, passarFome } from './jardim.js';
-import { RAIO_MUNDO, NIVEL_AGUA, SEMENTE, LAGOA, RESERVAS, SEGREDOS, ESTRADA, aleatorio, biomaEm, lagoEm, naEstradaReal } from './mapa/gerador.js';
+import { RAIO_MUNDO, NIVEL_AGUA, SEMENTE, LAGOA, RESERVAS, SEGREDOS, ESTRADA, RAIO_REINO, ANEL_TRANQUILO, aleatorio, biomaEm, lagoEm, geloEm, naEstradaReal } from './mapa/gerador.js';
 import { alturaEm, bloqueadoEm } from './mapa/altura.js';
 import { Grade, ListaObstaculos } from './mapa/grade.js';
 import { Chunks } from './mapa/chunks.js';
@@ -24,10 +24,11 @@ import { ESPECIES, ELEMENTOS, APARICOES, PERIODO_DA_LINHA, DUPLAS, ORDEM_DUPLAS,
 
 export { RAIO_MUNDO, alturaEm, SEMENTE };
 const NA_ZONA = { campo: 'no Campo', agua: 'no Lago', fogo: 'no Vulcão', planta: 'na Floresta', terra: 'no Deserto', raio: 'nos Picos Nevados' };
-export const NOMES_ZONA = { campo: 'Campo', agua: 'Lago', fogo: 'Vulcão', planta: 'Floresta', terra: 'Deserto', raio: 'Picos Nevados' };
-const N_CRISTAIS = 40;        // cristais de captura espalhados pelo mapa
+export const NOMES_ZONA = { campo: 'Reino', agua: 'Lago', arquipelago: 'Arquipélago', fogo: 'Vulcão', planta: 'Floresta', terra: 'Deserto', raio: 'Picos Nevados' };
+const N_CRISTAIS = 110;       // cristais de captura espalhados pelo mapa (o mundo novo é quase 4 vezes maior)
 const VER_CRISTAL = 75;       // até essa distância os cristais são desenhados
 const VEL_JOGADOR = 7.5;
+const AGUA_RASA = 0.65;      // na água rasa o jogador anda a 65% da velocidade
 const MAX_SELVAGENS = 18;     // monstros soltos em volta do jogador (aparecem perto e somem quando ficam longe)
 const RAIO_BANDEIRA = 0.8;    // tamanho da bandeira do Reino para colisão (ela não cura: a cura é a fonte do castelo)
 const AREA_SEGURA_BANDEIRA = 10; // monstros não chegam perto da bandeira (onde você renasce)
@@ -72,10 +73,9 @@ function sortearLista(lista) {
 // Estrada Real: nenhum selvagem nasce nela nem chega perto (é segura, como a casa)
 const SEGURA_ESTRADA = ESTRADA.largura + 4;
 function naEstrada(x, z, folga = 0) { const e = naEstradaReal(x, z); return e.dentro && e.lat < SEGURA_ESTRADA + folga; }
-// Perto da boca do Reino só aparecem monstros fracos (formas iniciais)
-const BOCA_REINO = { x: ESTRADA.dir.x * ESTRADA.fim, z: ESTRADA.dir.z * ESTRADA.fim };
-const PERTO_REINO = 55;
-export function pertoDoReino(x, z) { return Math.hypot(x - BOCA_REINO.x, z - BOCA_REINO.z) < PERTO_REINO; }
+// Anel tranquilo: logo depois dos portões do Reino só aparecem monstros fracos (formas iniciais), sem grupos
+const FIM_ANEL = RAIO_REINO + ANEL_TRANQUILO;
+export function pertoDoReino(x, z) { return Math.hypot(x, z) < FIM_ANEL; }
 export const DURACAO_DIA = 240; // segundos para um ciclo completo (metade dia, metade noite)
 
 const CEU_DIA = new THREE.Color('#9fd8ff'), CEU_NOITE = new THREE.Color('#1b2550');
@@ -239,13 +239,13 @@ export class Mundo {
     const NM = Math.round((Math.PI * 2 * RAIO_MUNDO) / 13);
     const extras = [];
     for (const t of TRACADOS) if (t !== REINO) for (let sd = 90; sd < 215; sd += 8) for (const lado of [-1, 1]) extras.push([t, sd, lado]);
-    const NR = 44; // roda de montanhas em volta do Reino
+    const NR = 0; // (o Reino agora fica no meio do mapa: sem montanhas em volta)
     const monts = new THREE.InstancedMesh(new THREE.ConeGeometry(1, 1, 6), new THREE.MeshLambertMaterial({ flatShading: true }), NM + extras.length + NR);
     let nm = 0;
     for (let i = 0; i < NM; i++) {
       const a = (i / NM) * Math.PI * 2 + rng() * 0.1;
       // boca das dungeons: sem montanha
-      if (TRACADOS.some((t) => Math.abs(Math.atan2(Math.sin(a - t.angulo), Math.cos(a - t.angulo))) < 0.3)) continue;
+      if (TRACADOS.some((t) => t !== REINO && Math.abs(Math.atan2(Math.sin(a - t.angulo), Math.cos(a - t.angulo))) < 0.3 * 200 / RAIO_MUNDO)) continue;
       const r = RAIO_MUNDO + 6 + rng() * 8;
       const x = Math.cos(a) * r, z = Math.sin(a) * r;
       const larg = 9 + rng() * 7, alt = 10 + rng() * 12;
@@ -389,8 +389,7 @@ export class Mundo {
       if (opcoes) { x = opcoes.x; z = opcoes.z; } else {
         const a = Math.random() * Math.PI * 2, r = 34 + Math.random() * Math.max(10, this.raioSpawn() - 34);
         x = this.pos.x + Math.cos(a) * r; z = this.pos.z + Math.sin(a) * r;
-        if (Math.hypot(x, z) < 22 || Math.hypot(x, z) > RAIO_MUNDO - 12 || !this.chunks.carregado(x, z)) continue;
-        if (Math.hypot(x - BOCA_REINO.x, z - BOCA_REINO.z) < PERTO_REINO + 20) continue; // perto do Reino, só monstros soltos e fracos
+        if (Math.hypot(x, z) < FIM_ANEL + 15 || Math.hypot(x, z) > RAIO_MUNDO - 12 || !this.chunks.carregado(x, z)) continue; // no anel tranquilo, só monstros soltos e fracos
         if (this.grupos.some((o) => Math.hypot(o.x - x, o.z - z) < DIST_NASCER_GRUPOS)) continue; // longe dos outros grupos
         if (!this.pontoLivre(x, z, 3)) continue;
       }
@@ -799,7 +798,9 @@ export class Mundo {
     const v = pausado || protegido ? { x: 0, z: 0 } : ctrl.vetorDaCamera(this.orbita.yaw);
     const movendo = Math.hypot(v.x, v.z) > 0.05;
     if (movendo) {
-      const vel = VEL_JOGADOR * (this.jogo.gm?.vel || 1); // GM: andar ×2 ou ×3
+      // na água rasa (rios e o Arquipélago) anda mais devagar
+      const naAgua = alturaEm(this.pos.x, this.pos.z) < NIVEL_AGUA - 0.1 && !geloEm(this.pos.x, this.pos.z);
+      const vel = VEL_JOGADOR * (naAgua ? AGUA_RASA : 1) * (this.jogo.gm?.vel || 1); // GM: andar ×2 ou ×3
       this.pos.x += v.x * vel * dt;
       this.pos.z += v.z * vel * dt;
       this.ang = lerpAngulo(this.ang, Math.atan2(v.x, v.z), 1 - Math.exp(-14 * dt));
@@ -831,7 +832,7 @@ export class Mundo {
       this.periodoAvisado = this.periodo;
       if (this.jogo.estado) this.jogo.aviso(this.periodo === 'noite' ? 'Anoiteceu. Monstros de Lua e Trevas saíram!' : 'Amanheceu. Monstros de Sol e Luz estão por aí!');
     }
-    const nomeZona = REINO.perto(this.pos.x, this.pos.z) ? 'Reino' : naEstrada(this.pos.x, this.pos.z) ? 'Estrada Real' : NOMES_ZONA[zonaAtual];
+    const nomeZona = REINO.perto(this.pos.x, this.pos.z) ? 'Reino' : naEstrada(this.pos.x, this.pos.z) ? 'Estrada Real' : NOMES_ZONA[zonaAtual === 'agua' && biomaEm(this.pos.x, this.pos.z) === 'agua' ? 'arquipelago' : zonaAtual];
     if (this.zonaAvisada !== nomeZona) {
       this.zonaAvisada = nomeZona;
       if (this.jogo.estado) this.jogo.mostrarZona(nomeZona);
@@ -1032,10 +1033,12 @@ export class Mundo {
   fugirDaCasa(s) { // (da Estrada Real e da bandeira)
     const e = naEstradaReal(s.x, s.z), m = s.grupo ? 3 : 0;
     if (e.dentro && e.lat < SEGURA_ESTRADA + m) {
-      const lado = -s.x * ESTRADA.dir.z + s.z * ESTRADA.dir.x >= 0 ? 1 : -1; // de que lado da estrada ele está
-      s.ang = Math.atan2(-ESTRADA.dir.z * lado, ESTRADA.dir.x * lado);
+      const d = e.dir, lado = -s.x * d.z + s.z * d.x >= 0 ? 1 : -1; // de que lado do caminho ele está
+      s.ang = Math.atan2(-d.z * lado, d.x * lado);
       return true;
     }
+    // ninguém entra no Reino: dá meia-volta antes da muralha
+    if (Math.hypot(s.x, s.z) < RAIO_REINO + 8 + m) { s.ang = Math.atan2(s.x, s.z); return true; }
     if (!this.bandeiraPos) return false;
     const dx = s.x - this.bandeiraPos.x, dz = s.z - this.bandeiraPos.z;
     if (Math.hypot(dx, dz) > AREA_SEGURA_BANDEIRA + (s.grupo ? 3 : 0)) return false;

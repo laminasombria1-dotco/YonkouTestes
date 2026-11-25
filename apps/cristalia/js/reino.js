@@ -1,20 +1,21 @@
 // =============================================================
 // O REINO: a região nova fora da borda do mapa (o novo centro do jogo)
-//  - Um platô redondo (62 m de raio) cercado de montanhas, com muralha e portão.
+//  - Um platô redondo (100 m de raio) NO MEIO do mapa, com muralha e 5 portões (um por bioma).
 //  - O castelo no meio, a praça com a fonte de cura, a vila (telhados azuis)
 //    com a loja de poções e a arena fechada (telhado vermelho) com a plateia
 //    e os 5 treinadores no palco.
-//  - A Estrada Real: lanternas e bandeiras do Campo até a boca do Reino,
-//    e uma placa no meio do Campo apontando para lá.
+//  - Uma estrada em anel liga os 5 portões; de cada portão sai um caminho seguro
+//    (a Estrada Real) com lanternas e bandeiras. Entre o anel e a muralha fica
+//    espaço livre para as coisas novas do Reino.
 // Para pesar pouco no celular, todas as peças paradas viram poucas malhas:
 // uma com as cores normais, uma com as peças vistas dos dois lados e uma
 // com o que brilha (janelas, poções, lanternas). A plateia é um lote só.
 // O desenho usa coordenadas "locais" do Reino: (0, 0) é o meio do platô e
-// +z aponta para o portão (para o mapa). REINO.paraMundo() converte.
+// +z aponta para o portão principal (o da Floresta). REINO.paraMundo() converte.
 // =============================================================
 import * as THREE from 'three';
 import { REINO } from './dungeon.js';
-import { ESTRADA, naEstradaReal, aleatorio } from './mapa/gerador.js';
+import { ESTRADAS, RAIO_REINO, aleatorio } from './mapa/gerador.js';
 import { ESPECIES, criarMonstro, formaPorNivel, especieDaEscolha } from './dados.js';
 
 // ---------- medidas do Reino (locais) ----------
@@ -24,7 +25,13 @@ export const ARENA_REINO = { x: -34, z: 14 };        // centro da arena (o port�
 // A casa do jogador (fixa): entre a arena e o portão, virada para o caminho do portão (+x).
 // Tem espaço em volta para crescer até o nível 5 e para o jardim.
 export const CASA_REINO = { x: -26, z: 44, rot: Math.PI / 2 };
-export const RAIO_MURALHA = 58;
+export const RAIO_MURALHA = RAIO_REINO - 4; // a muralha (o Reino tem 100 m de raio no mundo novo)
+export const RAIO_ANEL = 66;                 // a estrada em anel que liga os 5 portões (dentro da muralha)
+// Os 5 portões, um para cada bioma: ângulo no desenho do Reino (0 = +x, PI/2 = +z = o portão principal)
+export const PORTOES = ESTRADAS.map((e) => {
+  const l = REINO.paraLocal(e.dir.x * 50, e.dir.z * 50);
+  return { bioma: e.bioma, ang: Math.atan2(l.z, l.x) };
+});
 const ARENA = { r0: 9, deg: 7, passo: 1.2, palco: 0.87, porta: 0.16 }; // areia, degraus, aberturas (radianos)
 
 // Os 5 treinadores da arena, na ordem da luta: Fogo > Trevas > Luz > Água > Planta (o Campeão).
@@ -282,6 +289,16 @@ export class Reino {
     // chão: estrada do portão até a praça, a praça e o caminho da arena
     const CALCADA = '#a8a090';
     peca(R, caixa(6, 0.1, 36), CALCADA, [0, 0.05, 45]);
+    // a estrada em anel e os caminhos do anel até cada portão
+    const nAnel = 84;
+    for (let i = 0; i < nAnel; i++) {
+      const a = (i / nAnel) * Math.PI * 2;
+      peca(R, caixa(5.4, 0.1, 5.6), CALCADA, [Math.cos(a) * RAIO_ANEL, 0.05, Math.sin(a) * RAIO_ANEL], [0, -a, 0]);
+    }
+    for (const p of PORTOES) {
+      const meio = (RAIO_ANEL + RAIO_MURALHA + 2) / 2, comp = RAIO_MURALHA + 2 - RAIO_ANEL;
+      peca(R, caixa(6, 0.1, comp), CALCADA, [Math.cos(p.ang) * meio, 0.05, Math.sin(p.ang) * meio], [0, Math.PI / 2 - p.ang, 0]);
+    }
     peca(R, cil(12, 12, 0.12, 24), AREIA, [0, 0.06, 15]);
     peca(R, cil(11, 11, 0.13, 24), '#e3d2a2', [0, 0.065, 15]);
     peca(R, caixa(6, 0.1, 5), CALCADA, [-12.8, 0.05, 14]); // do portão da arena até a praça
@@ -609,26 +626,44 @@ export class Reino {
     this.obst(36, -26, 9);
   }
 
-  // ---------- muralha com torres e o portão ----------
+  // ---------- muralha com torres e os 5 portões ----------
   muralha() {
-    const RM = RAIO_MURALHA, g = this.raiz;
-    for (let i = 0; i < 48; i++) {
-      const a = (i / 48) * Math.PI * 2; if (Math.abs(a - Math.PI / 2) < 0.08) continue;
-      peca(g, caixa(8, 5, 1.5), PEDRA2, [Math.cos(a) * RM, 2.5, Math.sin(a) * RM], [0, -a + Math.PI / 2, 0]);
-      if (i % 6 === 3) { peca(g, cil(2, 2, 8, 8), PEDRA, [Math.cos(a) * RM, 4, Math.sin(a) * RM]); peca(g, cone(2.6, 4, 8), AZUL, [Math.cos(a) * RM, 10, Math.sin(a) * RM]); }
+    const RM = RAIO_MURALHA, g = this.raiz, ABRE = 4.6 / RM; // meia abertura de cada portão (radianos)
+    const noPortao = (a, folga = 0) => PORTOES.some((p) => Math.abs(Math.atan2(Math.sin(a - p.ang), Math.cos(a - p.ang))) < ABRE + folga);
+    const N = 76;
+    for (let i = 0; i < N; i++) {
+      const a = (i / N) * Math.PI * 2; if (noPortao(a, 0.02)) continue;
+      peca(g, caixa(8.4, 5, 1.5), PEDRA2, [Math.cos(a) * RM, 2.5, Math.sin(a) * RM], [0, -a + Math.PI / 2, 0]);
+      if (i % 6 === 3 && !noPortao(a, 0.08)) { peca(g, cil(2, 2, 8, 8), PEDRA, [Math.cos(a) * RM, 4, Math.sin(a) * RM]); peca(g, cone(2.6, 4, 8), AZUL, [Math.cos(a) * RM, 10, Math.sin(a) * RM]); }
     }
-    for (const x of [-4.5, 4.5]) { peca(g, cil(2, 2, 9, 8), PEDRA, [x, 4.5, RM]); peca(g, cone(2.6, 4, 8), AZUL, [x, 11, RM]); duplo(g, caixa(0.05, 1.8, 1), AZUL, [x + (x > 0 ? 2.1 : -2.1), 5, RM + 0.3]); }
-    // colisão: a muralha toda, menos o portão (|x| < 3)
-    for (let i = 0; i < 270; i++) {
-      const a = (i / 270) * Math.PI * 2, x = Math.cos(a) * RM, z = Math.sin(a) * RM;
-      if (z > 0 && Math.abs(x) < 3) continue;
-      this.obst(x, z, 1.1);
+    // cada portão: 2 torres com bandeira azul
+    for (const p of PORTOES) {
+      const tx = -Math.sin(p.ang), tz = Math.cos(p.ang); // direção ao longo da muralha
+      for (const lado of [-1, 1]) {
+        const x = Math.cos(p.ang) * RM + tx * 4.5 * lado, z = Math.sin(p.ang) * RM + tz * 4.5 * lado;
+        peca(g, cil(2, 2, 9, 8), PEDRA, [x, 4.5, z]); peca(g, cone(2.6, 4, 8), AZUL, [x, 11, z]);
+        duplo(g, caixa(0.05, 1.8, 1), AZUL, [x + Math.cos(p.ang) * 2.1, 5, z + Math.sin(p.ang) * 2.1], [0, Math.PI / 2 - p.ang, 0]);
+        this.obst(x, z, 2.1);
+      }
     }
-    for (const x of [-4.5, 4.5]) this.obst(x, RM, 2.1);
+    // colisão: a muralha toda, menos os portões
+    for (let i = 0; i < 440; i++) {
+      const a = (i / 440) * Math.PI * 2; if (noPortao(a)) continue;
+      this.obst(Math.cos(a) * RM, Math.sin(a) * RM, 1.1);
+    }
   }
 
   arvores() {
     const rng = this.rng;
+    // pinheiros encostados por dentro da muralha (longe dos portões); o resto, entre o anel e a muralha, fica livre
+    for (let i = 0; i < 70; i++) {
+      const a = rng() * Math.PI * 2, d = RAIO_MURALHA - 5 - rng() * 4, x = Math.cos(a) * d, z = Math.sin(a) * d;
+      if (PORTOES.some((p) => Math.abs(Math.atan2(Math.sin(a - p.ang), Math.cos(a - p.ang))) < 0.16)) continue;
+      const e = 0.9 + rng() * 0.5;
+      peca(this.raiz, cil(0.3 * e, 0.4 * e, 1.6 * e, 5), MAD, [x, 0.8 * e, z]);
+      peca(this.raiz, cone(1.8 * e, 4 * e, 6), rng() < 0.5 ? '#3f8a3a' : '#4a9a40', [x, 3.4 * e, z]);
+      this.obst(x, z, 0.5);
+    }
     for (let i = 0; i < 60; i++) {
       const a = rng() * Math.PI * 2, d = 20 + rng() * 34, x = Math.cos(a) * d, z = Math.sin(a) * d;
       if (Math.hypot(x - ARENA_REINO.x, z - ARENA_REINO.z) < 23 || (Math.abs(x) < 15 && z > -16 && z < 60) || (Math.abs(x) < 21 && z > -36 && z < 8) || Math.hypot(x - 36, z + 26) < 12) continue;
@@ -701,33 +736,26 @@ export class Reino {
   }
   desarmar(i) { this.armado[i] = false; }
 
-  // ---------- a Estrada Real: lanternas e bandeiras, e a placa no Campo ----------
+  // ---------- os 5 caminhos (Estrada Real): lanternas e bandeiras do portão para fora ----------
   estrada() {
-    const g = new THREE.Group(), y = this.altura, d = ESTRADA.dir, perp = { x: -d.z, z: d.x };
-    for (let ao = 42, k = 0; ao < ESTRADA.fim - 4; ao += 15, k++) {
-      for (const lado of [-1, 1]) {
-        const x = d.x * ao + perp.x * lado * (ESTRADA.largura + 1.4), z = d.z * ao + perp.z * lado * (ESTRADA.largura + 1.4), h = y(x, z);
-        if (naEstradaReal(x, z).lat > 8) continue;
-        if ((k + (lado > 0 ? 1 : 0)) % 2 === 0) { // lanterna
-          peca(g, caixa(0.18, 2.6, 0.18), MADE, [x, h + 1.3, z]);
-          peca(g, caixa(0.6, 0.12, 0.12), MADE, [x, h + 2.5, z]);
-          brilho(g, caixa(0.34, 0.42, 0.34), LUZ, [x, h + 2.25, z]);
-        } else {                                   // bandeira azul do Reino
-          peca(g, cil(0.06, 0.06, 3.4, 4), MADE, [x, h + 1.7, z]);
-          duplo(g, caixa(0.06, 1.2, 0.8), AZUL, [x, h + 2.7, z], [0, -ESTRADA.ang, 0]);
+    const g = new THREE.Group(), y = this.altura;
+    for (const E of ESTRADAS) {
+      const d = E.dir, perp = { x: -d.z, z: d.x };
+      for (let ao = RAIO_REINO + 4, k = 0; ao < E.fim - 2; ao += 12, k++) {
+        for (const lado of [-1, 1]) {
+          const x = d.x * ao + perp.x * lado * (E.largura + 1.4), z = d.z * ao + perp.z * lado * (E.largura + 1.4), h = y(x, z);
+          if ((k + (lado > 0 ? 1 : 0)) % 2 === 0) { // lanterna
+            peca(g, caixa(0.18, 2.6, 0.18), MADE, [x, h + 1.3, z]);
+            peca(g, caixa(0.6, 0.12, 0.12), MADE, [x, h + 2.5, z]);
+            brilho(g, caixa(0.34, 0.42, 0.34), LUZ, [x, h + 2.25, z]);
+          } else {                                   // bandeira azul do Reino
+            peca(g, cil(0.06, 0.06, 3.4, 4), MADE, [x, h + 1.7, z]);
+            duplo(g, caixa(0.06, 1.2, 0.8), AZUL, [x, h + 2.7, z], [0, -E.ang, 0]);
+          }
+          this.m.obstaculos.push({ x, z, r: 0.3 });
         }
-        this.m.obstaculos.push({ x, z, r: 0.3 });
       }
     }
-    // placa no meio do Campo (onde ficava a fonte): seta para o Reino
-    const h0 = y(0, 0);
-    peca(g, cil(1.2, 1.4, 0.5, 8), PEDRA2, [0, h0 + 0.25, 0]);
-    peca(g, caixa(0.25, 2.8, 0.25), MADE, [0, h0 + 1.6, 0]);
-    const seta = new THREE.Group(); seta.position.set(0, h0 + 2.4, 0); seta.rotation.y = Math.PI / 2 - ESTRADA.ang; g.add(seta);
-    duplo(seta, caixa(0.1, 0.55, 2), '#c89a5a', [0, 0, 0.7]);
-    duplo(seta, cone(0.45, 0.7, 3), '#c89a5a', [0, 0, 1.95], [Math.PI / 2, 0, 0]);
-    duplo(seta, caixa(0.12, 0.3, 0.9), AZUL, [0, 0, 0.6]);
-    this.m.obstaculos.push({ x: 0, z: 0, r: 1.3 });
     this.malhasEstrada = assar(g, this.m.cena);
   }
 }

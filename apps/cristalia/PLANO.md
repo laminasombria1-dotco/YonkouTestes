@@ -197,7 +197,12 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
         jogador (chefe ou líder) só é capturado com o **Cristal Supremo**, com 40% da chance normal. Tudo em `MASMORRA`
         (`js/dados.js`) e `spawnarChefe`/`chefeVencido` (`js/dungeon.js`).
   - [ ] **Mundo novo** (substitui as etapas 8.2 e 8.3; decisões abaixo). Ordem aprovada, cada passo com proposta e imagem antes:
-    - [ ] **Passo 1 — Mapa novo:** redondo, Reino no centro, 5 biomas, arquipélago, as 2 masmorras de hoje no lugar novo.
+    - [x] **Passo 1 — Mapa novo:** redondo, Reino no centro, 5 biomas, arquipélago, as 2 masmorras de hoje no lugar novo.
+          *Feito:* raio de 390 m (`versaoMapa: 2`); ordem fixa Gelo > Floresta > Deserto > Vulcânico > Arquipélago (aprovada);
+          Reino de 100 m de raio no meio com 5 portões, estrada em anel e espaço livre; a Estrada Real virou os 5 caminhos
+          (`ESTRADAS`); **anel tranquilo** de 45 m (aprovado); Arquipélago com água rasa (65% da velocidade), ilhas e canais
+          fundos; Sol, Luz, Lua e Trevas como visitantes raros (~1 em 10); lugares das vilas e das masmorras novas guardados
+          (`LUGARES` no `gerador.js`). O Caminho das Brasas e a Trilha Ancestral saem da borda do Vulcânico e da Floresta.
     - [ ] **Passo 2 — Mapa na tela + viagem rápida** entre o Reino e as vilas visitadas.
     - [ ] **Passo 3 — Vilas e arenas** (uma por bioma, até na Água).
     - [ ] **Passo 4 — Masmorras novas** (2 por bioma; as novas são áreas separadas).

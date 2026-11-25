@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { Controles } from './controles.js';
 import { Mundo, SEMENTE } from './mundo.js';
+import { VERSAO_MAPA } from './mapa/gerador.js';
 import { QUALIDADES, ORDEM_QUALIDADES, lerQualidade, gravarQualidade } from './mapa/config.js';
 import { Batalha } from './batalha.js';
 import { Plataforma, CenaEvolucao } from './plataforma.js';
@@ -233,7 +234,7 @@ class Jogo {
       if (s.voltaram?.length) setTimeout(() => this.aviso(`Recuperados para a reserva: ${s.voltaram.join(', ')}.`), 600);
       if (s.hora != null) this.mundo.hora = s.hora;
       // jogo salvo em outro mapa (o mapa antigo, ou outra semente): acorda no castelo e a casa volta para a mochila
-      const outroMapa = s.semente !== SEMENTE;
+      const outroMapa = s.semente !== SEMENTE || (s.mapa || 1) !== VERSAO_MAPA; // a versão sobe quando o desenho do mapa muda
       if (outroMapa && this.estado.bandeira) this.estado.bandeira = null;
       this.entrarNoMundo();
       if (s.pos && !outroMapa) { this.mundo.pos.set(s.pos.x, 0, s.pos.z); this.mundo.chunks.carregarTudoPerto(s.pos.x, s.pos.z); this.mundo.posicionarCamera(1); }
@@ -1052,7 +1053,7 @@ class Jogo {
     if (!this.estado || !this.conta) return;
     const voltaram = protegerColecao(this.estado);
     if (voltaram.length) { this.aviso(`Recuperados para a reserva: ${voltaram.join(', ')}.`); this.atualizarHudMundo?.(); }
-    gravarTexto(this.chaveSave(), JSON.stringify({ v: 3, temporada: TEMPORADA, t: Date.now(), estado: this.estado, pos: { x: this.mundo.pos.x, z: this.mundo.pos.z }, hora: this.mundo.hora, semente: SEMENTE }));
+    gravarTexto(this.chaveSave(), JSON.stringify({ v: 3, temporada: TEMPORADA, t: Date.now(), estado: this.estado, pos: { x: this.mundo.pos.x, z: this.mundo.pos.z }, hora: this.mundo.hora, semente: SEMENTE, mapa: VERSAO_MAPA }));
     if (this.conta.nuvem) this.nuvemPendente = true;
   }
 

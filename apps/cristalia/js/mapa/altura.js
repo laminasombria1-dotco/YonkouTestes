@@ -26,7 +26,7 @@ export function alturaVertice(i, j) {
   let h = cache.get(k);
   if (h === undefined) {
     h = alturaContinua(i * ESPACO, j * ESPACO);
-    if (cache.size > 120000) cache.clear(); // nunca deveria chegar aqui (o mapa inteiro tem ~40 mil pontos)
+    if (cache.size > 300000) cache.clear(); // nunca deveria chegar aqui (o mapa inteiro tem ~100 mil pontos)
     cache.set(k, h);
   }
   return h;
