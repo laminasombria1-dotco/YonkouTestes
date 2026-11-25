@@ -47,8 +47,9 @@ export const TREINADORES = [
   { id: 'sheyla', nome: 'Sheyla', elemento: 'agua', cor: '#3d7bd9', niveis: [40, 45], ang: -125, r: 6.3, alt: 1.4,
     equipe: [['L:agua', 40], ['aquaraia', 43], ['L:agua', 45]], fala: 'Sheyla: A maré está do meu lado. Venha!', premio: { forte: 3 }, moedas: 170, revanche: 70 },
   // o Rei já começa no Nv.50, com a forma final de todos os monstros
+  // (o Espinhal dele já vem como Mandacarão, a forma final do raro)
   { id: 'julius', nome: 'Julius', elemento: 'planta', cor: '#3faf5a', niveis: [50, 50], ang: 180, r: 6.6, alt: 2, campeao: true,
-    equipe: [['L:planta', 50], ['espinhal', 50], ['L:planta', 50], ['L:planta', 50]], fala: 'Rei Julius: Chegou longe. Mostre que merece esta coroa!', premio: { forte: 3, supremo: 2 }, moedas: 500, revanche: 100 },
+    equipe: [['L:planta', 50], ['mandacarao', 50], ['L:planta', 50], ['L:planta', 50]], fala: 'Rei Julius: Chegou longe. Mostre que merece esta coroa!', premio: { forte: 3, supremo: 2 }, moedas: 500, revanche: 100 },
 ];
 // Depois que a arena for dominada (todos vencidos 1 vez), cada um luta no seu nível de revanche
 export const nivelRevanche = (tr) => tr.revanche || 50;

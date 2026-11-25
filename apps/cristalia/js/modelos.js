@@ -849,10 +849,10 @@ function linhaTerraRaio(c, u, e) {
 
 const LINHAS_MODELO = { fogo: linhaFogo, agua: linhaAgua, planta: linhaPlanta, terra: linhaTerra, raio: linhaRaio, sol: linhaSol, lua: linhaLua, luz: linhaLuz, trevas: linhaTrevas,
   fogoPlanta: linhaFogoPlanta, aguaFogo: linhaAguaFogo, terraRaio: linhaTerraRaio,
-  aquaraia: linhaAquaraia, vulcarapa: linhaVulcarapa }; // raros com formas novas (a chave é a da linha em LINHAS_RARAS)
+  aquaraia: linhaAquaraia, vulcarapa: linhaVulcarapa, espinhal: linhaEspinhal }; // raros com formas novas (a chave é a da linha em LINHAS_RARAS)
 
 // =============================================================
-// RAROS ainda sem formas novas (a Aquaraia e a Vulcarapa ficam em linhaAquaraia e linhaVulcarapa)
+// LENDÁRIOS (os 3 raros com formas novas ficam em linhaVulcarapa, linhaAquaraia e linhaEspinhal)
 // =============================================================
 // ---------- Raro de Fogo: Vulcarapa > Basaltuga > Crateruga > Colossarapa ----------
 // Tartaruga-artilharia: o vulcão do casco cresce a cada forma. A fumaça sobe da boca (u.fumacas).
@@ -1007,20 +1007,98 @@ function linhaAquaraia(c, u, e) {
   u.sombra.scale.set(1.6, 1.05, 1);
 }
 
-function espinhal(c) {
-  const cacto = mat('#4f9d5a'), espinho = mat('#fff2b0');
-  p(c, G.ico(0.6, 1), cacto, [0, 0.66, 0], null, [1, 0.9, 1.1]);
-  for (let i = 0; i < 16; i++) {
-    const teta = (i / 16) * Math.PI * 2 * 2.3;
-    const phi = 0.35 + (i % 4) * 0.33;
-    const n = V(Math.sin(phi) * Math.sin(teta), Math.cos(phi), -Math.abs(Math.sin(phi) * Math.cos(teta)) - 0.15).normalize();
-    apontar(p(c, G.cone(0.06, 0.34, 4), espinho, [n.x * 0.6, 0.66 + n.y * 0.55, n.z * 0.62]), n);
+// ---------- Raro de Planta: Espinhal > Cactouriço > Espinhaço > Mandacarão ----------
+// Ouriço-cacto: a cada forma, mais espinhos; o Mandacarão é um mandacaru (cacto do sertão).
+// espinhos espalhados numa bola (sem cobrir o rosto, que fica em +z)
+function espinhosEmBola(c, n, cy, r, comp, m, grosso = 0.06) {
+  for (let i = 0; i < n; i++) {
+    const t = (i + 0.5) / n, phi = Math.acos(1 - 2 * t), teta = i * 2.39996;
+    const v = V(Math.sin(phi) * Math.cos(teta), Math.cos(phi), Math.sin(phi) * Math.sin(teta));
+    if (v.z > 0.55 && v.y < 0.6) continue;
+    apontar(p(c, G.cone(grosso, comp, 4), m, [v.x * r, cy + v.y * r * 0.92, v.z * r]), v);
   }
-  p(c, G.esf(1), mat('#c9e6a0'), [0, 0.6, 0.45], null, [0.34, 0.3, 0.2]);
-  p(c, G.esf(1), mat('#1b1b30'), [0, 0.58, 0.66], null, 0.05);
-  p(c, G.ico(0.14, 0), mat('#ff4f5e'), [0, 1.25, -0.02]);
-  patas(c, cacto, 0.36, 1, 0.28, 0.25, 0.1);
-  olhos(c, 0.72, 0.6, 0.14, 0.09);
+}
+// braço de cacto: sai do lado e sobe
+function bracoCacto(c, m, s, y, alt, r) {
+  p(c, G.cil(r, r, 0.4, 7), m, [s * 0.55, y, 0], [0, 0, Math.PI / 2]);
+  p(c, G.cil(r, r, alt, 7), m, [s * 0.75, y + alt / 2 - r, 0]);
+  p(c, G.esf(1, 7, 5), m, [s * 0.75, y + alt - r, 0], null, r);
+}
+// florzinha de 5 pétalas
+function florCacto(c, m, x, y, z, tam, abre = 0.45) {
+  for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2; p(c, G.cone(tam * 0.36, tam, 4), m, [x + Math.cos(a) * tam * 0.3, y, z + Math.sin(a) * tam * 0.3], [Math.sin(a) * abre, 0, -Math.cos(a) * abre]); }
+}
+
+function linhaEspinhal(c, u, e) {
+  if (e === 0) { // Espinhal (o de sempre)
+    const cacto = mat('#4f9d5a'), espinho = mat('#fff2b0');
+    p(c, G.ico(0.6, 1), cacto, [0, 0.66, 0], null, [1, 0.9, 1.1]);
+    for (let i = 0; i < 16; i++) {
+      const teta = (i / 16) * Math.PI * 2 * 2.3;
+      const phi = 0.35 + (i % 4) * 0.33;
+      const n = V(Math.sin(phi) * Math.sin(teta), Math.cos(phi), -Math.abs(Math.sin(phi) * Math.cos(teta)) - 0.15).normalize();
+      apontar(p(c, G.cone(0.06, 0.34, 4), espinho, [n.x * 0.6, 0.66 + n.y * 0.55, n.z * 0.62]), n);
+    }
+    p(c, G.esf(1), mat('#c9e6a0'), [0, 0.6, 0.45], null, [0.34, 0.3, 0.2]);
+    p(c, G.esf(1), mat('#1b1b30'), [0, 0.58, 0.66], null, 0.05);
+    p(c, G.ico(0.14, 0), mat('#ff4f5e'), [0, 1.25, -0.02]);
+    patas(c, cacto, 0.36, 1, 0.28, 0.25, 0.1);
+    olhos(c, 0.72, 0.6, 0.14, 0.09);
+    return;
+  }
+  const pes = (m) => { for (const [x, z] of [[-0.3, 0.25], [0.3, 0.25], [-0.3, -0.25], [0.3, -0.25]]) p(c, G.cil(0.09, 0.11, 0.24, 5), m, [x, 0.12, z]); };
+  if (e === 1) { // Cactouriço: bola cheia de espinhos, bracinhos e botão de flor
+    const cacto = mat('#3f9a52'), espinho = mat('#fff2b0');
+    p(c, G.ico(0.7, 1), cacto, [0, 0.78, 0], null, [1, 0.92, 1.08]);
+    espinhosEmBola(c, 30, 0.78, 0.7, 0.45, espinho);
+    for (const s of [-1, 1]) bracoCacto(c, cacto, s, 0.75, 0.55, 0.13);
+    p(c, G.esf(1), mat('#c9e6a0'), [0, 0.7, 0.55], null, [0.38, 0.32, 0.2]);
+    p(c, G.esf(1), mat('#1b1b30'), [0, 0.66, 0.76], null, 0.05);
+    florCacto(c, mat('#ff6fa8'), 0, 1.47, 0, 0.22, 0.4);
+    pes(cacto);
+    olhos(c, 0.86, 0.66, 0.16, 0.1);
+    return;
+  }
+  if (e === 2) { // Espinhaço: ouriço-cacto gigante com crista de espinhos dourados
+    const cacto = mat('#2f7f45'), espinho = mat('#fff2b0'), grande = mat('#f4d27a'), rosa = mat('#ff5f9a');
+    p(c, G.ico(0.78, 1), cacto, [0, 0.95, 0], null, [1, 1.12, 1.05]);
+    espinhosEmBola(c, 44, 0.95, 0.8, 0.55, espinho, 0.07);
+    for (let i = 0; i < 7; i++) {
+      const ang = -0.9 + (i / 6) * 1.8;
+      const v = V(0, Math.cos(ang), -Math.sin(ang) - 0.2).normalize();
+      apontar(p(c, G.cone(0.13, 1.0, 4), grande, [0, 0.95 + v.y * 0.85, v.z * 0.85]), v);
+    }
+    for (const s of [-1, 1]) { bracoCacto(c, cacto, s, 0.9, 0.75, 0.15); florCacto(c, rosa, s * 0.75, 1.72, 0, 0.22, 0.5); }
+    p(c, G.esf(1), mat('#b8dc8e'), [0, 0.9, 0.62], null, [0.42, 0.36, 0.22]);
+    p(c, G.esf(1), mat('#1b1b30'), [0, 0.84, 0.85], null, 0.06);
+    pes(cacto);
+    olhos(c, 1.06, 0.74, 0.18, 0.11);
+    return;
+  }
+  // Mandacarão: coluna alta com costelas, 2 braços, espinhos dourados e a grande flor branca
+  const cacto = mat('#2a7a4a'), costela = mat('#3a9a5e'), ouro = brilho('#ffd36a', 0.45), branco = mat('#fffaf0');
+  p(c, G.cil(0.55, 0.65, 1.9, 8), cacto, [0, 1.1, 0]);
+  for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2 + Math.PI / 8; if (Math.cos(a) > 0.7) continue; p(c, G.cil(0.1, 0.1, 1.8, 4), costela, [Math.sin(a) * 0.62, 1.1, Math.cos(a) * 0.62]); }
+  p(c, G.esf(1, 8, 5), cacto, [0, 2.05, 0], null, [0.55, 0.3, 0.55]);
+  for (const s of [-1, 1]) { bracoCacto(c, cacto, s, 1.0, 1.25, 0.2); florCacto(c, branco, s * 0.75, 2.1, 0, 0.25, 0.8); }
+  for (let i = 0; i < 40; i++) {
+    const a = (i % 8) / 8 * Math.PI * 2 + Math.PI / 8, y = 0.35 + Math.floor(i / 8) * 0.38;
+    if (Math.cos(a) > 0.7) continue;
+    apontar(p(c, G.cone(0.06, 0.45, 4), ouro, [Math.sin(a) * 0.72, y, Math.cos(a) * 0.72]), V(Math.sin(a), 0.3, Math.cos(a)));
+  }
+  p(c, G.esf(1), mat('#b8dc8e'), [0, 1.15, 0.5], null, [0.4, 0.42, 0.2]);
+  for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; p(c, G.cone(0.14, 0.5, 4), branco, [Math.cos(a) * 0.2, 2.3, Math.sin(a) * 0.2], [Math.sin(a) * 0.9, 0, -Math.cos(a) * 0.9]); }
+  const miolo = p(c, G.esf(1), brilho('#ffe14a', 0.7), [0, 2.3, 0], null, 0.12);
+  u.pulsos.push({ obj: miolo, base: 0.12, amp: 0.15, vel: 3 });
+  // 4 espinhos dourados girando em volta
+  for (let i = 0; i < 4; i++) {
+    const g = new THREE.Group();
+    p(g, G.cone(0.06, 0.5, 4), ouro, [0, 0, 0], [Math.PI / 2, 0, 0]);
+    c.add(g);
+    u.orbitas.push({ obj: g, raio: 1.35, vel: 1.1, y: 1.4, fase: (i / 4) * Math.PI * 2 });
+  }
+  pes(cacto);
+  olhos(c, 1.3, 0.66, 0.2, 0.11);
 }
 
 // ---------- SUPER RARO: Ignárion, o chefe do Trono de Magma ----------
@@ -1166,7 +1244,7 @@ function silvarion(c, u) {
   olhos(c, yC + 0.08, zC + 0.28, 0.15, 0.08, '#1fe0a0');
 }
 
-const RAROS_MODELO = { espinhal, ignarion, silvarion };
+const RAROS_MODELO = { ignarion, silvarion };
 
 // =============================================================
 // JUNTAR PEÇAS (deixa o jogo leve no celular)

@@ -6,8 +6,8 @@
 // recarga, puxão ou cura, mexa aqui. Como cada golpe funciona e aparece na
 // batalha fica em musguinho-batalha.js.
 //
-// Só esta linha usa estes golpes. Espinhal, Silvárion e os tipos duplos com
-// Planta (Brotobrasa e evoluções) continuam com os golpes de sempre (em dados.js).
+// Só esta linha usa estes golpes. O Espinhal (espinhal.js) e o Brotobrasa
+// (brotobrasa.js) têm os deles; o Silvárion continua com os de dados.js.
 // =============================================================
 
 // Golpes da linha. Campos:

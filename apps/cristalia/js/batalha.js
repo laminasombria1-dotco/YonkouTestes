@@ -25,6 +25,7 @@ import { HabilidadesBrotobrasa } from './habilidades/brotobrasa-batalha.js';
 import { HabilidadesImanito } from './habilidades/imanito-batalha.js';
 import { HabilidadesAquaraia } from './habilidades/aquaraia-batalha.js';
 import { HabilidadesVulcarapa } from './habilidades/vulcarapa-batalha.js';
+import { HabilidadesEspinhal } from './habilidades/espinhal-batalha.js';
 import { CameraOrbita } from './camera.js';
 import { aplicarPocao, RECARGA_POCAO } from './bolsa.js';
 import { criarModelo, criarCristal, criarCoroa, animarModelo, piscar, descartar, tocarGolpe, pararGolpe } from './modelos.js';
@@ -109,7 +110,7 @@ export class Lutador {
   // breu = bônus de dano da área da linha de Trevas (fica em c.breu = { cfg, t })
   // casco / blindado / arrancada / bafo = golpes da linha do Vaporito (no casco anda na metade da velocidade)
   // luarLento / luarVel = lentidão de quem está no luar inimigo / velocidade do Plenilúnio no próprio luar
-  get fatorVel() { return (this.veloz ? 1 + this.veloz.bonus : 1) * (this.sol ? 1 + this.sol.cfg.velocidade : 1) * (this.lento > 0 ? 0.5 : 1) * (this.tem('encharcado') ? 0.55 : 1) * (this.tem('parasita') ? 0.7 : 1) * (this.casco ? 0.5 : 1) * (this.luarLento ? 1 - this.luarLento.f : 1) * (this.luarVel ? 1 + this.luarVel.f : 1) * (this.mod?.vel ?? 1); }
+  get fatorVel() { return (this.veloz ? 1 + this.veloz.bonus : 1) * (this.sol ? 1 + this.sol.cfg.velocidade : 1) * (this.lento > 0 ? 0.5 : 1) * (this.tem('encharcado') ? 0.55 : 1) * (this.tem('parasita') ? 0.7 : 1) * (this.casco ? 0.5 : 1) * (this.luarLento ? 1 - this.luarLento.f : 1) * (this.luarVel ? 1 + this.luarVel.f : 1) * (this.espinhos ? 1 - this.espinhos.n * this.espinhos.f : 1) * (this.mod?.vel ?? 1); } // espinhos = Espinhado (agulhas do Espinhal)
 }
 
 export class Batalha {
@@ -136,6 +137,7 @@ export class Batalha {
     this.imanito = new HabilidadesImanito(this); // pedras orbitais, ímã e repulsão da linha do Imanito
     this.aquaraia = new HabilidadesAquaraia(this); // rasante, bolhas, mergulho, rastro e redemoinho da Aquaraia (raro)
     this.vulcarapa = new HabilidadesVulcarapa(this); // recuo, bombas de lava, Modo Vulcão e poças da Vulcarapa (raro)
+    this.espinhal = new HabilidadesEspinhal(this); // rolamento, agulhas que cravam, ricochete e explosão de espinhos do Espinhal (raro)
     this.periodo = jogo.mundo.periodo;
 
     this.idx = idxInicial;
@@ -338,6 +340,7 @@ export class Batalha {
       if (A.morto) continue;
       if (A.combo?.dash || B.combo?.dash) continue; // combo da linha do Lunico: o dash atravessa o alvo
       if (A.dash?.rasante || B.dash?.rasante || A.dash?.mergulho || B.dash?.mergulho) continue; // Aquaraia voando: passa por cima
+      if (A.dash?.rolar || B.dash?.rolar) continue; // Espinhal rolando: atravessa
       const d = dist(A, B), min = A.raio + B.raio;
       if (d < min && d > 0.001) {
         const ex = (A.pos.x - B.pos.x) / d, ez = (A.pos.z - B.pos.z) / d, f = (min - d) / 2;
@@ -391,6 +394,7 @@ export class Batalha {
     this.imanito.atualizar(dt);
     this.aquaraia.atualizar(dt);
     this.vulcarapa.atualizar(dt);
+    this.espinhal.atualizar(dt);
     if (this.captura) this.atualizarCaptura(dt);
 
     if (this.trocaAuto > 0) {
@@ -606,7 +610,13 @@ export class Batalha {
 
   executar(c, p) {
     const gp = p.gp, dir = p.dir;
-    if (gp.recuo) {
+    if (gp.rolar) {
+      this.espinhal.iniciarRolamento(c, gp, dir, this.efeitoDoGolpe(c, gp)); // bola de espinhos que rola (e quica)
+    } else if (gp.agulhas) {
+      this.espinhal.atirar(c, gp, dir, this.efeitoDoGolpe(c, gp)); // leque de agulhas que cravam
+    } else if (gp.nova) {
+      this.espinhal.iniciarNova(c, gp, this.efeitoDoGolpe(c, gp)); // agulhas para todos os lados
+    } else if (gp.recuo) {
       this.vulcarapa.iniciarRecuo(c, gp, dir, this.efeitoDoGolpe(c, gp)); // explode na frente e pula para trás
     } else if (gp.bomba) {
       this.vulcarapa.lancarBombas(c, gp, p.pontos, p.aviso, this.efeitoDoGolpe(c, gp)); // bombas de lava em arco
@@ -859,6 +869,7 @@ export class Batalha {
     this.imanito.parar(l);
     this.aquaraia.parar(l);
     this.vulcarapa.parar(l);
+    this.espinhal.parar(l);
     l.veloz = null;
     l.breu = null;
     if (l.lado === 'inimigo') {
@@ -956,6 +967,7 @@ export class Batalha {
       ds.t -= dt;
       if (ds.dashRaio) this.faisquinho.atualizarDash(c); // dash elétrico marca quem passar perto
       if (ds.rasante) this.aquaraia.atualizarRasante(c, ds, dt);   // Aquaraia: voo que atravessa
+      if (ds.rolar) this.espinhal.atualizarRolamento(c, ds, dt);   // Espinhal: bola de espinhos (quica)
       if (ds.mergulho) this.aquaraia.atualizarMergulho(c, ds, dt); // Aquaraia: sobe e cai
       if (ds.gp && !ds.acertou) {
         // o golpe de perto acerta o primeiro adversário que encostar
@@ -1004,6 +1016,7 @@ export class Batalha {
     if (c.lento > 0 && !c.morto) m.userData.corpo.position.y *= 0.3;
     if (this.aquaraia.dele(c)) this.aquaraia.alturaDoVoo(c); // Aquaraia lá no alto (mergulho)
     if (c.vulcao) this.vulcarapa.visualModelo(c); // Vulcarapa fincada no Modo Vulcão
+    if (this.espinhal.dele(c)) this.espinhal.visualModelo(c); // Espinhal rolando
     c.movendo = false;
   }
 
@@ -1226,7 +1239,7 @@ export class Batalha {
     est.pedras[tipo.id]--;
     const sucesso = garantida || Math.random() < chanceCaptura(this.ini.dados, this.tipoCristal);
     if (this.jog.prep) this.cancelarPreparo(this.jog);
-    for (const l of this.inimigos) { if (l.prep) this.cancelarPreparo(l); l.dash = null; l.rajada = null; this.brasito.parar(l); this.gotinho.parar(l, false); this.musguinho.parar(l); this.pedrisco.parar(l); this.faisquinho.parar(l, false); this.lunico.parar(l); this.lumino.parar(l); this.vaporito.parar(l); this.brotobrasa.parar(l); this.imanito.parar(l); this.aquaraia.parar(l); this.vulcarapa.parar(l); }
+    for (const l of this.inimigos) { if (l.prep) this.cancelarPreparo(l); l.dash = null; l.rajada = null; this.brasito.parar(l); this.gotinho.parar(l, false); this.musguinho.parar(l); this.pedrisco.parar(l); this.faisquinho.parar(l, false); this.lunico.parar(l); this.lumino.parar(l); this.vaporito.parar(l); this.brotobrasa.parar(l); this.imanito.parar(l); this.aquaraia.parar(l); this.vulcarapa.parar(l); this.espinhal.parar(l); }
     const cr = criarCristal(1.1, this.tipoCristal);
     this.cena.add(cr);
     this.captura = {
@@ -1362,6 +1375,7 @@ export class Batalha {
     this.imanito.parar(velho);
     this.aquaraia.parar(velho);
     this.vulcarapa.parar(velho);
+    this.espinhal.parar(velho);
     this.cena.remove(velho.modelo);
     descartar(velho.modelo);
     this.particulas(velho.pos, '#8ff4ff', 12, 1);
@@ -1446,7 +1460,8 @@ export class Batalha {
     const luar = l.luarVel ? `<span style="--cor:#e2ddff">Fúria Lunar +${Math.round(l.luarVel.f * 100)}%</span>` : '';
     const breu = l.breu ? `<span style="--cor:#b57be8">Trevas +${Math.round(l.breu.cfg.dano * 100)}% ${l.breu.t.toFixed(0)}s</span>` : '';
     const marcas = l.marcas ? `<span style="--cor:#f7e43a">Marcado ×${l.marcas.n} ${l.marcas.t.toFixed(0)}s</span>` : '';
-    return veloz + escudo + sol + breu + luar + redoma + casco + blindado + pedras + marcas + Object.entries(l.status).map(([k, v]) => `<span style="--cor:${EFEITOS[k].cor}">${EFEITOS[k].nome} ${v.toFixed(1)}s</span>`).join('');
+    const espinhos = l.espinhos ? `<span style="--cor:#c9f08a">Espinhos ${l.espinhos.n} ${l.espinhos.t.toFixed(0)}s</span>` : '';
+    return veloz + escudo + sol + breu + luar + redoma + casco + blindado + pedras + marcas + espinhos + Object.entries(l.status).map(([k, v]) => `<span style="--cor:${EFEITOS[k].cor}">${EFEITOS[k].nome} ${v.toFixed(1)}s</span>`).join('');
   }
 
   // Placa em cima de cada inimigo: só o nome e uma barrinha de vida
@@ -1472,8 +1487,8 @@ export class Batalha {
       p.el.classList.toggle('chefe', this.chefe);
       p.el.classList.toggle('lider', !!l.dados.lider);
       p.el.classList.toggle('furia', !!l.furia);
-      // marcas da linha do Faisquinho: "⚡2" ao lado do nome
-      const txtMarca = l.marcas ? '⚡' + l.marcas.n : '';
+      // marcas da linha do Faisquinho: "⚡2" ao lado do nome; espinhos cravados do Espinhal: "Espinhos 3"
+      const txtMarca = (l.marcas ? '⚡' + l.marcas.n : '') + (l.espinhos ? (l.marcas ? ' ' : '') + 'Espinhos ' + l.espinhos.n : '');
       if (p.txtMarca !== txtMarca) { p.txtMarca = txtMarca; p.marca.textContent = txtMarca; }
       const pos = this.jogo.projetar(l.pos.clone().setY(l.altura + 0.6), this.camera);
       p.el.hidden = pos.atras;

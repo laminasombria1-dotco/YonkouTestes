@@ -221,7 +221,7 @@ O Reino fica **fora da borda do mapa**, como as dungeons, mas não é dungeon: �
   | Cris | linha de Trevas Nv.25, linha da Lua Nv.27, linha de Trevas Nv.29 |
   | Lana | linha da Luz Nv.30, linha do Sol Nv.32, linha da Luz Nv.34 |
   | Sheyla | linha da Água Nv.40, Aquaraia Nv.43, linha da Água Nv.45 (na revanche, Nv.70, a Aquaraia vem como **Mantaré**) |
-  | Rei Julius | **todos no Nv.50 e na forma final**: Florestral, Espinhal, Florestral e Florestral (4 monstros) |
+  | Rei Julius | **todos no Nv.50 e na forma final**: Florestral, Mandacarão (o Espinhal na forma final), Florestral e Florestral (4 monstros) |
 
   A forma de cada linha depende do nível: Nv.12 em diante a 1ª evolução, Nv.30 a 2ª, e do **Nv.50** a forma final (os treinadores podem ter a forma final; os selvagens do mapa não). Os raros com formas novas também mudam pelo nível (Nv.55, 70 e 90).
 - **Regras da luta:** não dá para capturar (os botões de cristal somem), e **Fugir = desistir**: você sai pelo portão da arena.
@@ -448,8 +448,7 @@ Os atributos seguem a mesma regra para os 3: a base da forma inicial × 1 / 1,7 
 |---|---|---|---|---|
 | Fogo | Vulcarapa | Basaltuga | Crateruga | Colossarapa |
 | Água | Aquaraia | Ventaraia | Mantaré | Leviaraia |
-
-Raro ainda sem evolução (o próximo da fase 6): Espinhal (planta).
+| Planta | Espinhal | Cactouriço | Espinhaço | Mandacarão |
 Super raros (chefes): Ignárion (Ígneo, Caminho das Brasas) e Silvárion (Silvestre, Trilha Ancestral).
 
 ## Vida e dano
@@ -586,6 +585,21 @@ A Vulcarapa é a **artilharia**: lenta, quer ficar **longe**, bombardeia com lav
 - A IA usa o Modo Vulcão só com você longe e o Recuo quando você chega perto; ela tenta ficar a uns 7 m.
 - Mais detalhes em `js/habilidades/README.md`.
 
+## Golpes do Espinhal (raro de Planta)
+
+O Espinhal é um ouriço-cacto: os espinhos **cravam** (cada um deixa o inimigo mais lento), a bola e as agulhas **ricocheteiam** nas pedras e na borda, e a área solta **agulhas para todos os lados**. Os números ficam em `js/habilidades/espinhal.js`; como funcionam e aparecem, em `js/habilidades/espinhal-batalha.js`.
+
+| Forma | Perto | Disparo | Área |
+|---|---|---|---|
+| Espinhal (Nv.1) | **Rolamento**: vira bola de espinhos e rola 5 m | **Agulhas**: 3 em leque, 9 m; cada uma crava um espinho | **Explosão de Espinhos**: 8 agulhas para todos os lados |
+| Cactouriço (Nv.55) | Rolamento de 6 m | Agulhas + enraizado | 10 agulhas + enraizado |
+| Espinhaço (Nv.70) | **Rolamento Ricochete**: quica 1 vez nas pedras e na borda | **Agulhas Ricochete**: 5 que quicam 1 vez | **Explosão Dupla**: 2 ondas de 10 |
+| Mandacarão (Nv.90, rara) | **Rolamento Tempestade**: 8 m, quica até 3 vezes, solta 4 agulhas a cada batida | 7 agulhas que quicam 2 vezes | **Floração do Mandacaru**: 3 ondas de 12 agulhas; enraizado dura 50% mais |
+
+- **Espinhado:** cada espinho cravado deixa **6% mais lento** (até 5 = 30%), por 4 s (renova a cada espinho). No Mandacarão, com 5 espinhos o inimigo fica **Enraizado** 1 s e os espinhos caem. Aparece ao lado do nome do inimigo ("Espinhos 3") e embaixo da sua vida quando é você. Chefes e o Campeão ficam lentos só pela metade.
+- O **Rei Julius** usa o **Mandacarão** (já no Nv.50 e na revanche no Nv.100).
+- Mais detalhes em `js/habilidades/README.md`.
+
 ## Golpes da linha do Musguinho (Planta)
 
 A linha do Musguinho é lenta e resistente: em vez de correr atrás, ela **puxa, prende e se cura**. Os números ficam em `js/habilidades/musguinho.js`; como funcionam e aparecem, em `js/habilidades/musguinho-batalha.js`.
@@ -602,7 +616,7 @@ A linha do Musguinho é lenta e resistente: em vez de correr atrás, ela **puxa,
 - O inimigo avisa a vinha com uma **faixa vermelha estreita** e a área com o **círculo vermelho**. A moita e o bosque ficam visíveis no chão: saia de dentro.
 - O enraizado das folhas é sorteado **uma vez por inimigo a cada uso** (18%).
 - Esta linha não ganha o "disparo ×2/×3": no lugar, ganha mais folhas (1 → 2 → 3).
-- Espinhal, Silvárion e os tipos duplos com Planta (Brotobrasa e evoluções) continuam com os golpes de Planta de sempre.
+- O Espinhal e o Brotobrasa têm golpes próprios; o Silvárion continua com os golpes de sempre.
 
 ## Golpes da linha do Pedrisco (Terra)
 
@@ -816,7 +830,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/brasas.js` | Cenário do Caminho das Brasas (braseiros, forja, rio de lava, Trono de Magma, vulcão) |
 | `js/raizes.js` | Cenário da Trilha Ancestral e da Floresta (cogumelos, ruínas, lago, raízes, Árvore-Mãe, vaga-lumes, monstros extras) |
 | `js/arena.js` | Arenas: chão, obstáculos, clima animado e perigos de cada região (com chance), e o escurecer do Astro Negro |
-| `js/habilidades/` | **Habilidades próprias das linhas de monstros** (uma pasta só para isso). Veja o `README.md` de lá. Hoje: linha do Brasito (`brasito.js` com os números, `brasito-batalha.js` com o lança-chamas, o rabo de fogo e a velocidade), linha do Gotinho (`gotinho.js` e `gotinho-batalha.js`, com o jato, o hidrocanhão, as ondas, o maremoto e o escudo), linha do Musguinho (`musguinho.js` e `musguinho-batalha.js`, com a folha bumerangue, a vinha que puxa, as raízes, a moita e o bosque), linha do Pedrisco (`pedrisco.js` e `pedrisco-batalha.js`, com a pedra em arco que quica, o punho sísmico, o tremor e os pilares), linha do Faisquinho (`faisquinho.js` e `faisquinho-batalha.js`, com as marcas, o dash elétrico, o tiro que marca, o choque e as nuvens), linha do Solito (`solito.js` e `solito-batalha.js`, com o sol que dá bônus, o laser e o calor), linha do Lunico (`lunico.js` e `lunico-batalha.js`, com o combo de dashes, as fases da lua e o luar que cura), linha do Lumino (`lumino.js` e `lumino-batalha.js`, com o passo de luz, o estilhaço que se divide e a redoma que devolve os tiros), linha do Imanito, tipo duplo Terra + Raio (`imanito.js` e `imanito-batalha.js`, as pedras orbitais, o ímã e a repulsão), linha do Brotobrasa, tipo duplo Fogo + Planta (`brotobrasa.js` e `brotobrasa-batalha.js`, as flores de fogo que explodem), linha do Vaporito, tipo duplo Água + Fogo (`vaporito.js` e `vaporito-batalha.js`, o tanque: arrancada, bafo de vapor e casco), a Aquaraia, raro de Água (`aquaraia.js` e `aquaraia-batalha.js`, o rasante que atravessa, as bolhas guiadas, o mergulho, o rastro e o redemoinho), a Vulcarapa, raro de Fogo (`vulcarapa.js` e `vulcarapa-batalha.js`, a artilharia: o recuo, as bombas de lava em arco, o Modo Vulcão e as poças de lava) e a linha do Breuzinho (`trevas.js` e `trevas-batalha.js`, com a mordida, a bola com olhos de alcance curto e a área que escurece e dá bônus de dano) |
+| `js/habilidades/` | **Habilidades próprias das linhas de monstros** (uma pasta só para isso). Veja o `README.md` de lá. Hoje: linha do Brasito (`brasito.js` com os números, `brasito-batalha.js` com o lança-chamas, o rabo de fogo e a velocidade), linha do Gotinho (`gotinho.js` e `gotinho-batalha.js`, com o jato, o hidrocanhão, as ondas, o maremoto e o escudo), linha do Musguinho (`musguinho.js` e `musguinho-batalha.js`, com a folha bumerangue, a vinha que puxa, as raízes, a moita e o bosque), linha do Pedrisco (`pedrisco.js` e `pedrisco-batalha.js`, com a pedra em arco que quica, o punho sísmico, o tremor e os pilares), linha do Faisquinho (`faisquinho.js` e `faisquinho-batalha.js`, com as marcas, o dash elétrico, o tiro que marca, o choque e as nuvens), linha do Solito (`solito.js` e `solito-batalha.js`, com o sol que dá bônus, o laser e o calor), linha do Lunico (`lunico.js` e `lunico-batalha.js`, com o combo de dashes, as fases da lua e o luar que cura), linha do Lumino (`lumino.js` e `lumino-batalha.js`, com o passo de luz, o estilhaço que se divide e a redoma que devolve os tiros), linha do Imanito, tipo duplo Terra + Raio (`imanito.js` e `imanito-batalha.js`, as pedras orbitais, o ímã e a repulsão), linha do Brotobrasa, tipo duplo Fogo + Planta (`brotobrasa.js` e `brotobrasa-batalha.js`, as flores de fogo que explodem), linha do Vaporito, tipo duplo Água + Fogo (`vaporito.js` e `vaporito-batalha.js`, o tanque: arrancada, bafo de vapor e casco), a Aquaraia, raro de Água (`aquaraia.js` e `aquaraia-batalha.js`, o rasante que atravessa, as bolhas guiadas, o mergulho, o rastro e o redemoinho), a Vulcarapa, raro de Fogo (`vulcarapa.js` e `vulcarapa-batalha.js`, a artilharia: o recuo, as bombas de lava em arco, o Modo Vulcão e as poças de lava), o Espinhal, raro de Planta (`espinhal.js` e `espinhal-batalha.js`, o rolamento que quica, as agulhas que cravam e a explosão de espinhos) e a linha do Breuzinho (`trevas.js` e `trevas-batalha.js`, com a mordida, a bola com olhos de alcance curto e a área que escurece e dá bônus de dano) |
 | `js/nuvem.js` | Contas e jogo salvo na nuvem (Firebase, direto pela internet, sem a biblioteca do Firebase): criar conta, entrar, entrar de novo com 1 toque, ler e gravar o jogo salvo, e a senha do GM |
 | `js/companheiro.js` | O monstro invocado: invocar e guardar, seguir o treinador, os botões e a troca de controle (o treinador fica parado e protegido) |
 | `js/treino.js` | O modo treino: os golpes do monstro invocado no mapa, "no ar", usando o mesmo motor da batalha (sem inimigos e sem dano) |

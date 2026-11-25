@@ -20,6 +20,7 @@ import { GOLPES_LUNICO, GOLPES_POR_FORMA_LUNICO, MELHORIAS_LUNICO, TEXTOS_LUNICO
 import { GOLPES_TREVAS, GOLPES_POR_FORMA_TREVAS, MELHORIAS_TREVAS, TEXTOS_TREVAS, NOVIDADES_TREVAS } from './habilidades/trevas.js';
 import { GOLPES_AQUARAIA, GOLPES_POR_FORMA_AQUARAIA, MELHORIAS_AQUARAIA, TEXTOS_AQUARAIA, NOVIDADES_AQUARAIA } from './habilidades/aquaraia.js';
 import { GOLPES_VULCARAPA, GOLPES_POR_FORMA_VULCARAPA, MELHORIAS_VULCARAPA, TEXTOS_VULCARAPA, NOVIDADES_VULCARAPA } from './habilidades/vulcarapa.js';
+import { GOLPES_ESPINHAL, GOLPES_POR_FORMA_ESPINHAL, MELHORIAS_ESPINHAL, TEXTOS_ESPINHAL, NOVIDADES_ESPINHAL } from './habilidades/espinhal.js';
 
 // Linhas com habilidades próprias: golpes por forma, melhorias e textos
 const HABILIDADES_DA_LINHA = {
@@ -39,6 +40,7 @@ const HABILIDADES_DA_LINHA = {
   // raros com formas novas (a chave é a da linha em LINHAS_RARAS)
   aquaraia: { golpes: GOLPES_POR_FORMA_AQUARAIA, melhorias: MELHORIAS_AQUARAIA, textos: TEXTOS_AQUARAIA, novidades: NOVIDADES_AQUARAIA },
   vulcarapa: { golpes: GOLPES_POR_FORMA_VULCARAPA, melhorias: MELHORIAS_VULCARAPA, textos: TEXTOS_VULCARAPA, novidades: NOVIDADES_VULCARAPA },
+  espinhal: { golpes: GOLPES_POR_FORMA_ESPINHAL, melhorias: MELHORIAS_ESPINHAL, textos: TEXTOS_ESPINHAL, novidades: NOVIDADES_ESPINHAL },
 };
 
 // Ordem em que os elementos aparecem nas telas
@@ -190,6 +192,8 @@ export const GOLPES = {
   ...GOLPES_AQUARAIA,
   // golpes próprios da Vulcarapa e das formas dela (números em js/habilidades/vulcarapa.js)
   ...GOLPES_VULCARAPA,
+  // golpes próprios do Espinhal e das formas dele (números em js/habilidades/espinhal.js)
+  ...GOLPES_ESPINHAL,
   // golpes próprios da linha do Musguinho (números em js/habilidades/musguinho.js)
   ...GOLPES_MUSGUINHO,
   // golpes próprios da linha do Pedrisco (números em js/habilidades/pedrisco.js)
@@ -498,15 +502,8 @@ for (const [k, linha] of Object.entries(DUPLAS)) {
     };
   });
 }
-Object.assign(ESPECIES, {
-  espinhal: {
-    nome: 'Espinhal', elemento: 'planta', linha: null, estagio: 0, raro: true, tamanho: 1.1, captura: 0.35, raio: 0.75, altura: 2,
-    descricao: 'Ouriço-cacto. Chicoteia de longe e machuca muito.',
-    base: { hp: 50, atk: 15, def: 11, vel: 5.6 }, golpes: ['chicote', 'folhas', 'raizes'], evoluiPara: null, nivelEvolucao: null,
-  },
-});
 // =============================================================
-// RAROS COM FORMAS NOVAS (fase 6: Aquaraia e Vulcarapa; depois o Espinhal)
+// RAROS COM FORMAS NOVAS (fase 6: Vulcarapa, Aquaraia e Espinhal)
 // A forma de hoje é a inicial (Nv.1 a 54). 1ª evolução no Nv.55 e 2ª no Nv.70, sozinhas;
 // evolução rara no Nv.90, com botão (missão no Nv.85 + itens + ouro).
 // Mesma regra de atributos para os 3 raros: a base da forma inicial × MULT_RARO.
@@ -517,7 +514,7 @@ const MULT_RARO = [1, 1.7, 2.0, 2.35];
 const MULT_VEL_RARO = [1, 1.04, 1.08, 1.12];
 const TAMANHO_RARO = [1, 1.12, 1.24, 1.36];  // multiplica o tamanho da forma inicial
 const CAPTURA_RARO = [1, 0.7, 0.45, 0.25];   // multiplica a chance de captura da forma inicial
-export const ORDEM_LINHAS_RARAS = ['vulcarapa', 'aquaraia'];
+export const ORDEM_LINHAS_RARAS = ['vulcarapa', 'aquaraia', 'espinhal'];
 // Cada raro: elemento, atributos e medidas da forma inicial + as 4 formas [id, nome, descrição]
 export const LINHAS_RARAS = {
   vulcarapa: { elemento: 'fogo', base: { hp: 62, atk: 12, def: 15, vel: 4.3 }, tamanho: 1.25, captura: 0.35, raio: 0.85, altura: 2.3, formas: [
@@ -531,6 +528,12 @@ export const LINHAS_RARAS = {
     ['ventaraia', 'Ventaraia', 'Arraia de asas longas que surfa no vento. O rabo virou um ferrão.'],
     ['mantare', 'Mantaré', 'Manta gigante com uma crista de onda nas costas. Bolhas giram em volta dela.'],
     ['leviaraia', 'Leviaraia', 'Manta das profundezas que aprendeu a voar. Brilha como o fundo do mar e carrega um anel de água.'],
+  ] },
+  espinhal: { elemento: 'planta', base: { hp: 50, atk: 15, def: 11, vel: 5.6 }, tamanho: 1.1, captura: 0.35, raio: 0.75, altura: 2, formas: [
+    ['espinhal', 'Espinhal', 'Ouriço-cacto. Rola como uma bola de espinhos e machuca muito.'],
+    ['cactourico', 'Cactouriço', 'Bola de cacto cheia de espinhos, com dois bracinhos e um botão de flor.'],
+    ['espinhaco', 'Espinhaço', 'Ouriço-cacto gigante com uma crista de espinhos dourados nas costas.'],
+    ['mandacarao', 'Mandacarão', 'Um mandacaru do sertão. Quando a grande flor branca abre, chovem agulhas.'],
   ] },
 };
 for (const [k, L] of Object.entries(LINHAS_RARAS)) {

@@ -72,7 +72,7 @@ Musguinho (Nv.1) > Moitão (Nv.12) > Troncudo (Nv.30) > Florestral (Nv.50, evolu
 - Chances de Enraizado: área 35%, vinha do Florestral 25%, folhas 18% (uma vez por inimigo a cada uso, juntando todas as folhas e passagens).
 - A moita e o bosque somem se quem plantou desmaiar ou for trocado. A cura do Bosque não funciona com Combustão.
 - O inimigo avisa a vinha com uma **faixa vermelha estreita** e as áreas com o círculo vermelho.
-- Só a linha do Musguinho usa estes golpes. Espinhal, Silvárion e os tipos duplos com Planta continuam com os golpes de `dados.js`.
+- Só a linha do Musguinho usa estes golpes. O Espinhal e o Brotobrasa têm os deles; o Silvárion continua com os de `dados.js`.
 
 **Exemplos de mudança (em `musguinho.js`):**
 - Puxão maior: `chicoteVinha` → `vinha.puxa` (metros) e `alcance`.
@@ -307,6 +307,29 @@ Vulcarapa (Nv.1) > Basaltuga (Nv.55) > Crateruga (Nv.70) > Colossarapa (Nv.90, e
 - Bomba mais longe: `bombaLava` → `bomba.alcance`; mais bombas: `bomba.quantidade`.
 - Torre mais rápida ou mais longa: `modoVulcao` → `vulcao.intervalo` e `vulcao.duracao`.
 - Poças maiores ou mais fortes: `POCA_PEQUENA`, `POCA_RECUO` e `POCA_GRANDE` no começo do arquivo.
+
+### Planta (raro): Espinhal (`espinhal.js` e `espinhal-batalha.js`)
+Espinhal (Nv.1) > Cactouriço (Nv.55) > Espinhaço (Nv.70) > Mandacarão (Nv.90, evolução rara). Ouriço-cacto: **espinhos que cravam**, **ricochete** e **agulhas para todos os lados**. Não repete o Musguinho.
+
+| Forma | Perto | Disparo | Área |
+|---|---|---|---|
+| Espinhal | **Rolamento**: 5 m (14 m/s), atravessa (força 13) | **Agulhas**: 3 em leque, 20 m/s, 9 m (força 6 cada) | **Explosão de Espinhos**: 8 agulhas, 7 m (força 8 cada) |
+| Cactouriço | Rolamento de 6 m | Agulhas + **enraizado** | 10 agulhas + **enraizado** |
+| Espinhaço | **Rolamento Ricochete**: 6 m, quica 1 vez | **Agulhas Ricochete**: 5, quicam 1 vez, 10 m | **Explosão Dupla**: 2 ondas de 10 (0,25 s entre elas) |
+| Mandacarão | **Rolamento Tempestade**: 8 m, quica 3 vezes, 4 agulhas (40% da força) a cada batida | 7 agulhas, quicam 2 vezes, 11 m | **Floração do Mandacaru**: 3 ondas de 12 agulhas, 9 m |
+
+- **Agulhas:** NÃO entram em `batalha.projeteis`: ficam em `this.agulhas` e são todas desenhadas num **InstancedMesh** só (no máximo `MAX_AGULHAS` = 64 no ar e 24 cravadas). Por isso a redoma do Lumino e as pedras do Imanito não seguram as agulhas. Cada agulha acerta um inimigo e some; o efeito (Enraizado) é sorteado uma vez por inimigo a cada uso.
+- **Ricochete (`quicar`):** na borda redonda, reflete na normal; nos obstáculos, testa virar só o x, só o z ou voltar (funciona com as pedras da arena e com as árvores do mapa no treino). Depois de quicar, pode acertar de novo quem já acertou.
+- **Rolamento (`rolar`):** usa o dash da batalha (`c.dash.rolar`) e atravessa os inimigos. Sem quiques, para na pedra ou na borda. O modelo gira para a frente (`visualModelo`).
+- **Espinhado (`ESPINHADO` em `espinhal.js`):** fica em `l.espinhos = { n, t, f }`; `fatorVel` em `../batalha.js` usa `1 - n × f`. A placa do inimigo mostra "Espinhos N" (como o "⚡" das marcas do Faisquinho). No Mandacarão (`trava`), com 5 espinhos aplica Enraizado e zera os espinhos.
+- **IA:** usa os golpes como os de sempre (corpo de perto, disparo de 2,5 a 12 m, área com você dentro do `raio`).
+- Leve para o celular de referência: modelos de 7 a 13 malhas e todas as agulhas num desenho só; no pior quadro o Mandacarão fica bem abaixo do Plenilúnio.
+- O **Rei Julius** usa o Mandacarão (`'mandacarao'` na equipe dele em `../reino.js`), já no Nv.50.
+
+**Exemplos de mudança (em `espinhal.js`):**
+- Mais quiques: `rolamentoTempestade` → `rolar.quiques`; agulhas que quicam mais: `agulhasMandacaru` → `agulhas.quiques`.
+- Mais agulhas: `agulhas.quantidade` ou `nova.porOnda` e `nova.ondas`.
+- Espinhado mais forte: `ESPINHADO.lento` (0,06 = 6% por espinho) e `ESPINHADO.max`.
 
 ## Modo treino (monstro invocado no mapa)
 
