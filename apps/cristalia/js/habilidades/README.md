@@ -26,7 +26,7 @@ Brasito (Nv.1) > Brasalobo (Nv.12) > Fornalobo (Nv.30) > Magmalobo (Nv.50, evolu
 - O lança-chamas acerta em 5 pedaços enquanto o jato dura. A queimadura é sorteada **uma vez por alvo** a cada uso (23%). O Rabo de Fogo tem 45%.
 - Obstáculos seguram o fogo do lança-chamas.
 - Esta linha não ganha o "disparo ×2/×3" das outras: no lugar, ganha o que está na tabela.
-- Só a linha do Brasito usa estes golpes. Vulcarapa e os tipos duplos com Fogo continuam com os golpes de Fogo de `dados.js`.
+- Só a linha do Brasito usa estes golpes. A Vulcarapa e os tipos duplos com Fogo têm os deles.
 - **Modelo do Blender (só o Brasito):** a batalha avisa o modelo quando um golpe começa (`tocarGolpe` em `../batalha.js`) e quando o giro começa (`ajustarGiro` em `brasito-batalha.js`). No `.glb`, a volta do Rabo de Fogo vem da animação, então o jogo não gira o modelo de novo, e o rabo cresce pela animação. Veja `../../modelos/README.md`.
 
 **Exemplos de mudança (em `brasito.js`):**
@@ -284,6 +284,29 @@ Aquaraia (Nv.1) > Ventaraia (Nv.55) > Mantaré (Nv.70) > Leviaraia (Nv.90, evolu
 - Bolhas que viram mais: `bolhasGuiadas` → `bolha.guiada` (radianos por segundo).
 - Mais tempo no ar: `mergulhoAquaraia` → `mergulho.sobe`; bônus no Encharcado: `mergulho.encharcado` (0,25 = +25%).
 - Redemoinho mais forte: `quedaLeviata` → `mergulho.redemoinho.puxa` e `poder`.
+
+### Fogo (raro): Vulcarapa (`vulcarapa.js` e `vulcarapa-batalha.js`)
+Vulcarapa (Nv.1) > Basaltuga (Nv.55) > Crateruga (Nv.70) > Colossarapa (Nv.90, evolução rara). **Artilharia**: lenta, quer ficar longe, bombardeia em arco e enche o chão de poças de lava. Não repete o Vaporito (o tanque).
+
+| Forma | Perto | Disparo | Área |
+|---|---|---|---|
+| Vulcarapa | **Recuo de Lava**: leque de fogo na frente (2,5 m, força 12) e pula 4 m para trás | **Bomba de Lava**: arco de 3 a 11 m, área de 1,5 m, força 16 | **Modo Vulcão**: erupção de 3 m ao fincar; 4 s fincada; 1 bomba a cada 1,2 s (força 10, até 11 m) |
+| Basaltuga | Recuo de 5 m (força 14) | Bomba + **queimadura** | Modo Vulcão de 5 s + **queimadura** |
+| Crateruga | **Recuo Explosivo**: poça de lava de 1,6 m por 3 s onde ela estava | **Bomba Dupla**: a 2ª cai 2 m à frente de para onde o alvo anda (parado: de um lado); poças de 1,2 m por 2,5 s | **Cratera Viva**: 6 s, 1 bomba a cada 0,9 s, com poças |
+| Colossarapa | **Recuo do Colosso**: 6 m, poça de 2 m, **atordoa** 0,5 s | **Chuva de Meteoros**: 3 bombas (no alvo e 2,2 m para cada lado) | **Erupção Ancestral**: 8 s, 2 bombas a cada 0,9 s (nos 2 inimigos mais perto) e erupção final de 5 m (força 34) |
+
+- **Recuo (`recuo`):** usa o dash da batalha (`c.dash.recuo`), olhando para a frente. Para no obstáculo e na borda. Termina o Modo Vulcão.
+- **Bomba (`bomba`):** como a pedra em arco do Pedrisco (os lugares ficam marcados na preparação, `pontosBomba` e `avisoBombas`), mas com outro campo (`bomba`, não `arco`). Cada bomba é 1 peça. A Bomba Dupla mede para onde o alvo anda entre os quadros (`velDe`).
+- **Modo Vulcão (`vulcao`):** fica em `c.vulcao`. `podeAndar()` em `../batalha.js` devolve falso enquanto ele existe (não anda nem esquiva). A recarga só começa quando ele acaba (como o Sol do Solito). No treino, sem inimigos, as bombas caem à frente, em pontos sorteados até 8 m.
+- **Poças (`poca`):** 1 disco cada, no máximo `MAX_POCAS_LAVA` (4) por monstro; um pedaço de dano a cada 0,5 s e metade da chance de queimar do golpe. Somem quando a dona sai da luta.
+- **IA:** fica a uns 7 m (`artilharia` em `pensarIA`), usa o Modo Vulcão com você a mais de 4 m e o Recuo quando você chega perto.
+- Leve para o celular de referência: modelos de 7 a 15 malhas; no pior quadro (Chuva de Meteoros + Modo Vulcão) a Colossarapa fica na faixa do Plenilúnio em desenhos por quadro.
+
+**Exemplos de mudança (em `vulcarapa.js`):**
+- Pulo maior: `recuoLava` → `recuo.distancia`.
+- Bomba mais longe: `bombaLava` → `bomba.alcance`; mais bombas: `bomba.quantidade`.
+- Torre mais rápida ou mais longa: `modoVulcao` → `vulcao.intervalo` e `vulcao.duracao`.
+- Poças maiores ou mais fortes: `POCA_PEQUENA`, `POCA_RECUO` e `POCA_GRANDE` no começo do arquivo.
 
 ## Modo treino (monstro invocado no mapa)
 

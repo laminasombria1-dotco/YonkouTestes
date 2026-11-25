@@ -24,6 +24,7 @@ import { HabilidadesVaporito } from './habilidades/vaporito-batalha.js';
 import { HabilidadesBrotobrasa } from './habilidades/brotobrasa-batalha.js';
 import { HabilidadesImanito } from './habilidades/imanito-batalha.js';
 import { HabilidadesAquaraia } from './habilidades/aquaraia-batalha.js';
+import { HabilidadesVulcarapa } from './habilidades/vulcarapa-batalha.js';
 import { CameraOrbita } from './camera.js';
 import { aplicarPocao, RECARGA_POCAO } from './bolsa.js';
 import { criarModelo, criarCristal, criarCoroa, animarModelo, piscar, descartar, tocarGolpe, pararGolpe } from './modelos.js';
@@ -102,7 +103,7 @@ export class Lutador {
   get frac() { return this.dados.hp / this.stats.hpMax; }
   golpe(i) { return GOLPES[this.esp.golpes[i]]; }
   tem(efeito) { return this.status[efeito] > 0; }
-  podeAndar() { return !this.tem('paralisia') && !this.tem('sono') && !this.tem('enraizado'); }
+  podeAndar() { return !this.vulcao && !this.tem('paralisia') && !this.tem('sono') && !this.tem('enraizado'); } // vulcao = Modo Vulcão da Vulcarapa (fincada)
   podeAtacar() { return !this.tem('paralisia') && !this.tem('sono') && !this.tem('medo'); }
   // veloz = velocidade extra da Investida da linha do Brasito | sol = bônus do Sol da linha do Solito
   // breu = bônus de dano da área da linha de Trevas (fica em c.breu = { cfg, t })
@@ -134,6 +135,7 @@ export class Batalha {
     this.brotobrasa = new HabilidadesBrotobrasa(this); // flores de fogo (armadilhas) da linha do Brotobrasa
     this.imanito = new HabilidadesImanito(this); // pedras orbitais, ímã e repulsão da linha do Imanito
     this.aquaraia = new HabilidadesAquaraia(this); // rasante, bolhas, mergulho, rastro e redemoinho da Aquaraia (raro)
+    this.vulcarapa = new HabilidadesVulcarapa(this); // recuo, bombas de lava, Modo Vulcão e poças da Vulcarapa (raro)
     this.periodo = jogo.mundo.periodo;
 
     this.idx = idxInicial;
@@ -388,6 +390,7 @@ export class Batalha {
     this.brotobrasa.atualizar(dt);
     this.imanito.atualizar(dt);
     this.aquaraia.atualizar(dt);
+    this.vulcarapa.atualizar(dt);
     if (this.captura) this.atualizarCaptura(dt);
 
     if (this.trocaAuto > 0) {
@@ -449,6 +452,9 @@ export class Batalha {
         if (gp.florescer) { if (d < 6) opcoes.push(i, i); continue; } // flores por onde anda
         if (gp.bafo) { if (d < gp.alcance * 0.9 + e.raio) opcoes.push(i, i); continue; } // bafo: só de perto
         if (gp.arrancada) { if (d > 1.5 && d < gp.arrancada.distancia + 0.5) opcoes.push(i, i); continue; } // arrancada
+        if (gp.vulcao) { if (!e.vulcao && d > 4 && d < gp.vulcao.alcance) opcoes.push(i, i, i); continue; } // Modo Vulcão: só com você longe
+        if (gp.bomba) { if (d > gp.bomba.minimo && d < gp.bomba.alcance + 1) opcoes.push(i, i); continue; } // bomba de lava em arco
+        if (gp.recuo) { if (d < gp.alcance + 1.5) opcoes.push(i, i, i); continue; } // recuo: quando você chega perto
         if (gp.mergulho) { if (d > 1.5 && d < gp.mergulho.alcance + 1) opcoes.push(i, i); continue; } // mergulho da Aquaraia: cai em você
         if (gp.onda) { if (d < gp.onda.distancia * 0.9) opcoes.push(i, i, i); } // onda que anda para a frente
         else if (gp.tipo === 'area' && d < gp.raio * 0.85 + (gp.dash || 0)) opcoes.push(i, i, i);
@@ -468,7 +474,8 @@ export class Batalha {
       const g0 = e.golpe(0);
       const vinha = g0.vinha || g0.espinhos ? g0.alcance * 0.7 : g0.sol ? 6 : g0.ima ? 4 : 1.8; // o ímã puxa de longe // com a vinha ou o punho sísmico fica mais longe; o sol não é de perto
       const repulsaoPronta = e.golpe(2).repulsao && e.rec[2] <= 0.2; // Imanito: chega perto para empurrar
-      const prefere = e.rec[0] <= 0.2 ? vinha : repulsaoPronta ? 1.8 : (e.rec[1] <= 0.3 ? 6 : 4.5);
+      const artilharia = !!e.golpe(1).bomba; // Vulcarapa: fica longe e bombardeia
+      const prefere = artilharia ? 7 : e.rec[0] <= 0.2 ? vinha : repulsaoPronta ? 1.8 : (e.rec[1] <= 0.3 ? 6 : 4.5);
       let fx = 0, fz = 0;
       if (d > prefere + 0.5) { fx += ax; fz += az; } else if (d < prefere - 0.5) { fx -= ax; fz -= az; }
       fx += -az * ia.strafe * 0.7;
@@ -517,6 +524,10 @@ export class Batalha {
       // pedra em arco: os lugares onde ela cai ficam marcados desde já (e não mudam)
       const quedas = this.pedrisco.quedas(c, gp, alvo.pos);
       c.prep = { gp, t: prep, total: prep, dir, quedas, aviso: this.pedrisco.avisoArco(quedas, gp, inimigo) };
+    } else if (gp.bomba) {
+      // bombas de lava da Vulcarapa: os lugares onde caem ficam marcados desde já
+      const pontos = this.vulcarapa.pontosBomba(c, gp.bomba, alvo);
+      c.prep = { gp, t: prep, total: prep, dir, pontos, aviso: this.vulcarapa.avisoBombas(pontos, gp.bomba.area, inimigo) };
     } else if (gp.mergulho) {
       // mergulho da Aquaraia: o lugar onde ela vai cair fica marcado desde já
       const ponto = this.aquaraia.pontoMergulho(c, gp, alvo.pos);
@@ -595,7 +606,13 @@ export class Batalha {
 
   executar(c, p) {
     const gp = p.gp, dir = p.dir;
-    if (gp.rasante) {
+    if (gp.recuo) {
+      this.vulcarapa.iniciarRecuo(c, gp, dir, this.efeitoDoGolpe(c, gp)); // explode na frente e pula para trás
+    } else if (gp.bomba) {
+      this.vulcarapa.lancarBombas(c, gp, p.pontos, p.aviso, this.efeitoDoGolpe(c, gp)); // bombas de lava em arco
+    } else if (gp.vulcao) {
+      this.vulcarapa.iniciarVulcao(c, gp, this.efeitoDoGolpe(c, gp)); // finca e o vulcão atira sozinho
+    } else if (gp.rasante) {
       this.aquaraia.iniciarRasante(c, gp, dir, this.efeitoDoGolpe(c, gp)); // voo que atravessa
     } else if (gp.mergulho) {
       this.aquaraia.iniciarMergulho(c, gp, p.ponto, p.aviso, this.efeitoDoGolpe(c, gp)); // sobe e cai
@@ -841,6 +858,7 @@ export class Batalha {
     this.brotobrasa.parar(l);
     this.imanito.parar(l);
     this.aquaraia.parar(l);
+    this.vulcarapa.parar(l);
     l.veloz = null;
     l.breu = null;
     if (l.lado === 'inimigo') {
@@ -985,6 +1003,7 @@ export class Batalha {
     else if (c.brilhando && !c.prep) { piscar(m, 0); c.brilhando = false; }
     if (c.lento > 0 && !c.morto) m.userData.corpo.position.y *= 0.3;
     if (this.aquaraia.dele(c)) this.aquaraia.alturaDoVoo(c); // Aquaraia lá no alto (mergulho)
+    if (c.vulcao) this.vulcarapa.visualModelo(c); // Vulcarapa fincada no Modo Vulcão
     c.movendo = false;
   }
 
@@ -1207,7 +1226,7 @@ export class Batalha {
     est.pedras[tipo.id]--;
     const sucesso = garantida || Math.random() < chanceCaptura(this.ini.dados, this.tipoCristal);
     if (this.jog.prep) this.cancelarPreparo(this.jog);
-    for (const l of this.inimigos) { if (l.prep) this.cancelarPreparo(l); l.dash = null; l.rajada = null; this.brasito.parar(l); this.gotinho.parar(l, false); this.musguinho.parar(l); this.pedrisco.parar(l); this.faisquinho.parar(l, false); this.lunico.parar(l); this.lumino.parar(l); this.vaporito.parar(l); this.brotobrasa.parar(l); this.imanito.parar(l); this.aquaraia.parar(l); }
+    for (const l of this.inimigos) { if (l.prep) this.cancelarPreparo(l); l.dash = null; l.rajada = null; this.brasito.parar(l); this.gotinho.parar(l, false); this.musguinho.parar(l); this.pedrisco.parar(l); this.faisquinho.parar(l, false); this.lunico.parar(l); this.lumino.parar(l); this.vaporito.parar(l); this.brotobrasa.parar(l); this.imanito.parar(l); this.aquaraia.parar(l); this.vulcarapa.parar(l); }
     const cr = criarCristal(1.1, this.tipoCristal);
     this.cena.add(cr);
     this.captura = {
@@ -1342,6 +1361,7 @@ export class Batalha {
     this.brotobrasa.parar(velho);
     this.imanito.parar(velho);
     this.aquaraia.parar(velho);
+    this.vulcarapa.parar(velho);
     this.cena.remove(velho.modelo);
     descartar(velho.modelo);
     this.particulas(velho.pos, '#8ff4ff', 12, 1);

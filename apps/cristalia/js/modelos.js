@@ -849,21 +849,87 @@ function linhaTerraRaio(c, u, e) {
 
 const LINHAS_MODELO = { fogo: linhaFogo, agua: linhaAgua, planta: linhaPlanta, terra: linhaTerra, raio: linhaRaio, sol: linhaSol, lua: linhaLua, luz: linhaLuz, trevas: linhaTrevas,
   fogoPlanta: linhaFogoPlanta, aguaFogo: linhaAguaFogo, terraRaio: linhaTerraRaio,
-  aquaraia: linhaAquaraia }; // raros com formas novas (a chave é a da linha em LINHAS_RARAS)
+  aquaraia: linhaAquaraia, vulcarapa: linhaVulcarapa }; // raros com formas novas (a chave é a da linha em LINHAS_RARAS)
 
 // =============================================================
-// RAROS ainda sem formas novas (a Aquaraia fica em linhaAquaraia, lá em cima)
+// RAROS ainda sem formas novas (a Aquaraia e a Vulcarapa ficam em linhaAquaraia e linhaVulcarapa)
 // =============================================================
-function vulcarapa(c, u) {
-  const pele = mat('#93b26c');
-  p(c, G.esf(1), pele, [0, 0.45, 0], null, [0.75, 0.38, 0.9]);
-  p(c, G.cil(0.32, 0.85, 0.75, 7), mat('#7a4e33'), [0, 0.95, -0.05]);
-  p(c, G.cil(0.26, 0.26, 0.08, 7), brilho('#ff5a1f', 0.8), [0, 1.33, -0.05]);
-  p(c, G.ico(0.33, 1), pele, [0, 0.55, 0.85]);
-  for (const [x, z] of [[-0.5, 0.45], [0.5, 0.45], [-0.5, -0.45], [0.5, -0.45]]) p(c, G.cil(0.15, 0.17, 0.34, 6), pele, [x, 0.17, z]);
-  const fumaca = p(c, G.ico(0.2, 0), mat('#c9c3b8', { transparent: true, opacity: 0.8 }), [0, 1.6, -0.05]);
-  u.fumacas.push({ obj: fumaca, x: 0, y: 1.5, z: -0.05, alt: 0.7 });
-  olhos(c, 0.66, 1.1, 0.14, 0.09);
+// ---------- Raro de Fogo: Vulcarapa > Basaltuga > Crateruga > Colossarapa ----------
+// Tartaruga-artilharia: o vulcão do casco cresce a cada forma. A fumaça sobe da boca (u.fumacas).
+function corpoTartaruga(c, pele, k, cabecaZ) {
+  p(c, G.esf(1), pele, [0, 0.42 * k, 0], null, [0.8 * k, 0.36 * k, 0.95 * k]);
+  p(c, G.ico(0.34 * k, 1), pele, [0, 0.55 * k, cabecaZ * k]);
+  for (const [x, z] of [[-0.55, 0.5], [0.55, 0.5], [-0.55, -0.5], [0.55, -0.5]]) p(c, G.cil(0.16 * k, 0.19 * k, 0.36 * k, 6), pele, [x * k, 0.18 * k, z * k]);
+}
+
+function linhaVulcarapa(c, u, e) {
+  const fumaca = (y, z, tam, alt) => u.fumacas.push({ obj: p(c, G.ico(tam, 0), mat('#c9c3b8', { transparent: true, opacity: 0.8 }), [0, y, z]), x: 0, y, z, alt });
+  if (e === 0) { // Vulcarapa (a de sempre)
+    const pele = mat('#93b26c');
+    p(c, G.esf(1), pele, [0, 0.45, 0], null, [0.75, 0.38, 0.9]);
+    p(c, G.cil(0.32, 0.85, 0.75, 7), mat('#7a4e33'), [0, 0.95, -0.05]);
+    p(c, G.cil(0.26, 0.26, 0.08, 7), brilho('#ff5a1f', 0.8), [0, 1.33, -0.05]);
+    p(c, G.ico(0.33, 1), pele, [0, 0.55, 0.85]);
+    for (const [x, z] of [[-0.5, 0.45], [0.5, 0.45], [-0.5, -0.45], [0.5, -0.45]]) p(c, G.cil(0.15, 0.17, 0.34, 6), pele, [x, 0.17, z]);
+    fumaca(1.5, -0.05, 0.2, 0.7);
+    olhos(c, 0.66, 1.1, 0.14, 0.09);
+    return;
+  }
+  if (e === 1) { // Basaltuga: placas de basalto com lava acesa nas rachaduras
+    const pele = mat('#6f8a5a'), basalto = mat('#3b3a40'), lava = brilho('#ff5a1f', 0.9);
+    corpoTartaruga(c, pele, 1, 0.9);
+    p(c, G.esf(1, 7, 5), brilho('#ff6a1f', 0.9), [0, 0.66, -0.05], null, [0.82, 0.5, 0.94]);
+    for (const [x, z] of [[0, 0], [-0.4, 0.28], [0.4, 0.28], [-0.4, -0.32], [0.4, -0.32], [0, 0.55], [0, -0.58], [-0.68, 0], [0.68, 0]]) {
+      const ex = 0.86, ey = 0.52, ez = 0.98;
+      const y = ey * Math.sqrt(Math.max(0.05, 1 - (x / ex) ** 2 - (z / ez) ** 2));
+      apontar(p(c, G.cil(0.25, 0.27, 0.12, 6), basalto, [x, 0.68 + y, z - 0.05]), V(x / (ex * ex), y / (ey * ey), z / (ez * ez)));
+    }
+    p(c, G.cil(0.28, 0.5, 0.6, 7), basalto, [0, 1.3, -0.1]);
+    p(c, G.cil(0.24, 0.24, 0.06, 7), lava, [0, 1.6, -0.1]);
+    for (const s of [-1, 1]) { p(c, G.cil(0.08, 0.14, 0.25, 5), basalto, [s * 0.55, 1.0, -0.35], [0, 0, -s * 0.5]); p(c, G.esf(1), lava, [s * 0.6, 1.12, -0.35], null, 0.06); }
+    fumaca(1.8, -0.1, 0.22, 0.8);
+    olhos(c, 0.66, 1.18, 0.15, 0.09);
+    return;
+  }
+  if (e === 2) { // Crateruga: o casco é a borda de uma cratera com um lago de lava
+    const k = 1.08, pele = mat('#5a6a4a'), rocha = mat('#4a3a36'), escuro = mat('#2c2428'), lava = brilho('#ff5a1f', 1);
+    corpoTartaruga(c, pele, k, 0.95);
+    p(c, G.cil(0.95, 1.0, 0.55, 9), rocha, [0, 0.82, -0.05]);
+    p(c, G.cil(0.78, 0.78, 0.06, 9), lava, [0, 1.11, -0.05]);
+    for (let i = 0; i < 9; i++) {
+      const a = (i / 9) * Math.PI * 2;
+      p(c, G.cone(0.14, 0.4, 4), escuro, [Math.sin(a) * 0.88, 1.25, Math.cos(a) * 0.88 - 0.05], [Math.cos(a) * -0.3, 0, Math.sin(a) * 0.3]);
+    }
+    for (const [x, z, h] of [[0, -0.25, 0.6], [-0.35, 0.2, 0.38], [0.35, 0.2, 0.38]]) {
+      p(c, G.cil(0.08, 0.24, h, 6), escuro, [x, 1.12 + h / 2, z]);
+      p(c, G.esf(1), lava, [x, 1.12 + h, z], null, 0.08);
+    }
+    for (const [x, z] of [[-0.6, 0.55], [0.6, 0.55], [-0.6, -0.55], [0.6, -0.55]]) p(c, G.dode(0.16), escuro, [x * k, 0.38, z * k]);
+    fumaca(1.9, -0.25, 0.22, 0.8);
+    olhos(c, 0.7, 1.33, 0.16, 0.1, '#ffb030');
+    return;
+  }
+  // Colossarapa: obsidiana com rios de lava, vulcão gigante, chifres e 3 pedras de lava girando
+  const k = 1.15, pele = mat('#4a4a44'), obsidiana = mat('#1f1a22'), lava = brilho('#ff5a1f', 1), ouro = brilho('#ffb030', 0.8);
+  corpoTartaruga(c, pele, k, 0.95);
+  p(c, G.esf(1, 9, 6), obsidiana, [0, 0.85, -0.05], null, [1.05, 0.62, 1.15]);
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2 + 0.3;
+    p(c, G.cil(0.05, 0.08, 0.9, 4), lava, [Math.sin(a) * 0.66, 1.05, Math.cos(a) * 0.72 - 0.05], [Math.cos(a) * 0.9, 0, -Math.sin(a) * 0.9]);
+  }
+  p(c, G.cil(0.32, 0.75, 1.0, 8), obsidiana, [0, 1.75, -0.15]);
+  p(c, G.cil(0.3, 0.3, 0.06, 8), lava, [0, 2.26, -0.15]);
+  p(c, G.cone(0.2, 0.55, 6), brilho('#ffd06a', 1), [0, 2.5, -0.15]);
+  for (const s of [-1, 1]) p(c, G.cone(0.08, 0.45, 4), ouro, [s * 0.2, 0.95, 1.12], [-0.5, 0, s * 0.4]);
+  for (let i = 0; i < 3; i++) {
+    const g = new THREE.Group();
+    p(g, G.dode(0.2), obsidiana);
+    p(g, G.ico(0.13, 0), lava, [0.06, 0.06, 0.06]);
+    c.add(g);
+    u.orbitas.push({ obj: g, raio: 1.55, vel: 0.7, y: 1.6, fase: (i / 3) * Math.PI * 2 });
+  }
+  fumaca(2.9, -0.15, 0.3, 1.1);
+  olhos(c, 0.72, 1.4, 0.17, 0.1, '#ff6a1f');
 }
 
 // ---------- Raro de Água: Aquaraia > Ventaraia > Mantaré > Leviaraia ----------
@@ -1100,7 +1166,7 @@ function silvarion(c, u) {
   olhos(c, yC + 0.08, zC + 0.28, 0.15, 0.08, '#1fe0a0');
 }
 
-const RAROS_MODELO = { vulcarapa, espinhal, ignarion, silvarion };
+const RAROS_MODELO = { espinhal, ignarion, silvarion };
 
 // =============================================================
 // JUNTAR PEÇAS (deixa o jogo leve no celular)

@@ -157,7 +157,11 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
         Rasante que atravessa (+ rastro d'água e ferrão), Bolhas (guiadas nas finais) e Mergulho (sobe sem levar dano;
         redemoinho e +25% em quem está Encharcado nas finais). `js/habilidades/aquaraia.js` e `aquaraia-batalha.js`,
         modelo em `linhaAquaraia` (`js/modelos.js`).
-  - [ ] **Vulcarapa** (Fogo): artilharia (lenta, lança lava de longe, em arco), para não repetir o Vaporito.
+  - [x] **Vulcarapa** (Fogo): Basaltuga (Nv.55), Crateruga (Nv.70) e Colossarapa (Nv.90). Artilharia: Recuo (pula
+        para trás; poça de lava e atordoar nas finais), Bomba de Lava em arco (2 e 3 bombas com poças nas finais) e
+        Modo Vulcão (finca e o vulcão atira sozinho; erupção final na Colossarapa). Mesma regra de atributos (o Lâmina
+        aprovou manter, mesmo ficando mais resistente que o Caldeirax). `js/habilidades/vulcarapa.js` e
+        `vulcarapa-batalha.js`, modelo em `linhaVulcarapa` (`js/modelos.js`).
   - [ ] **Espinhal** (Planta). Decidir que forma o Rei Julius usa (ele luta no Nv.50 e na revanche no Nv.100).
 - [ ] **Fase 7 — Formas novas dos lendários:** 6 formas.
 - [ ] **Fase 8 — Conteúdo do Nv.50+:** masmorras que crescem, chefes de masmorra (monstros

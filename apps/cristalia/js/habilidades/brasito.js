@@ -6,8 +6,8 @@
 // recarga ou velocidade, mexa aqui. Como cada golpe funciona e aparece na
 // batalha fica em brasito-batalha.js.
 //
-// Só esta linha usa estes golpes. Vulcarapa e os tipos duplos com Fogo
-// continuam com os golpes de Fogo de sempre (em dados.js).
+// Só esta linha usa estes golpes. A Vulcarapa (vulcarapa.js) e os tipos duplos
+// com Fogo (brotobrasa.js, vaporito.js) têm os golpes deles.
 // =============================================================
 
 // Golpes da linha. Campos:

@@ -30,6 +30,7 @@ import { HabilidadesVaporito } from './habilidades/vaporito-batalha.js';
 import { HabilidadesBrotobrasa } from './habilidades/brotobrasa-batalha.js';
 import { HabilidadesImanito } from './habilidades/imanito-batalha.js';
 import { HabilidadesAquaraia } from './habilidades/aquaraia-batalha.js';
+import { HabilidadesVulcarapa } from './habilidades/vulcarapa-batalha.js';
 
 export const COLEIRA = 20; // metros: até onde o monstro vai longe do treinador
 
@@ -71,6 +72,7 @@ export class Treino extends Batalha {
     t.brotobrasa = new HabilidadesBrotobrasa(t);
     t.imanito = new HabilidadesImanito(t);
     t.aquaraia = new HabilidadesAquaraia(t);
+    t.vulcarapa = new HabilidadesVulcarapa(t);
     // o monstro (posição medida a partir do treinador)
     const j = new Lutador(dados, 'jogador');
     j.pos.set(posMundo.x - t.centro.x, 0, posMundo.z - t.centro.z);
@@ -135,6 +137,7 @@ export class Treino extends Batalha {
     this.brotobrasa.atualizar(dt);
     this.imanito.atualizar(dt);
     this.aquaraia.atualizar(dt);
+    this.vulcarapa.atualizar(dt);
     // a camada acompanha o chão embaixo do monstro
     const w = this.posMundo();
     this.cena.position.y += (alturaEm(w.x, w.z) - this.cena.position.y) * (1 - Math.exp(-10 * dt));

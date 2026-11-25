@@ -217,7 +217,7 @@ O Reino fica **fora da borda do mapa**, como as dungeons, mas não é dungeon: �
 
   | Treinador | Monstros (1ª vez) |
   |---|---|
-  | Gill | linha do Fogo Nv.20, Vulcarapa Nv.22, linha do Fogo Nv.24 |
+  | Gill | linha do Fogo Nv.20, Vulcarapa Nv.22, linha do Fogo Nv.24 (na revanche, Nv.50, a Vulcarapa continua na forma inicial: ela evolui no Nv.55) |
   | Cris | linha de Trevas Nv.25, linha da Lua Nv.27, linha de Trevas Nv.29 |
   | Lana | linha da Luz Nv.30, linha do Sol Nv.32, linha da Luz Nv.34 |
   | Sheyla | linha da Água Nv.40, Aquaraia Nv.43, linha da Água Nv.45 (na revanche, Nv.70, a Aquaraia vem como **Mantaré**) |
@@ -446,9 +446,10 @@ Os atributos seguem a mesma regra para os 3: a base da forma inicial × 1 / 1,7 
 
 | Raro | Forma inicial (Nv.1) | 1ª evolução (Nv.55) | 2ª evolução (Nv.70) | Evolução rara (Nv.90) |
 |---|---|---|---|---|
+| Fogo | Vulcarapa | Basaltuga | Crateruga | Colossarapa |
 | Água | Aquaraia | Ventaraia | Mantaré | Leviaraia |
 
-Raros ainda sem evolução (próximos da fase 6): Vulcarapa (fogo) e Espinhal (planta).
+Raro ainda sem evolução (o próximo da fase 6): Espinhal (planta).
 Super raros (chefes): Ignárion (Ígneo, Caminho das Brasas) e Silvárion (Silvestre, Trilha Ancestral).
 
 ## Vida e dano
@@ -567,6 +568,22 @@ A Aquaraia **ataca pelo ar e foge**: é frágil e rápida, atravessa os inimigos
 | Leviaraia (Nv.90, rara) | **Rasante do Leviatã**: 8 m, rastro largo por 4 s, ferrão 80% | **Chuva de Bolhas**: 5 guiadas | **Queda do Leviatã**: sobe 1 s, área de 4,5 m, redemoinho de 4 m por 4 s; encharcado dura 50% mais |
 
 - O inimigo avisa o mergulho com o **círculo vermelho onde ele vai cair** e o rasante com a faixa vermelha.
+- Mais detalhes em `js/habilidades/README.md`.
+
+## Golpes da Vulcarapa (raro de Fogo)
+
+A Vulcarapa é a **artilharia**: lenta, quer ficar **longe**, bombardeia com lava em arco e enche o chão de **poças de lava**. A defesa dela é **pular para trás**. No **Modo Vulcão** ela finca no chão e o vulcão das costas atira sozinho, como uma torre. Os números ficam em `js/habilidades/vulcarapa.js`; como funcionam e aparecem, em `js/habilidades/vulcarapa-batalha.js`.
+
+| Forma | Perto | Disparo | Área |
+|---|---|---|---|
+| Vulcarapa (Nv.1) | **Recuo de Lava**: explosão na frente e pula **4 m para trás** | **Bomba de Lava**: arco de 3 a 11 m, cai onde o alvo estava | **Modo Vulcão**: finca 4 s (não anda) e o vulcão atira sozinho a cada 1,2 s |
+| Basaltuga (Nv.55) | Recuo de 5 m | Bomba + queimadura | Modo Vulcão de 5 s + queimadura |
+| Crateruga (Nv.70) | **Recuo Explosivo**: deixa uma **poça de lava** onde estava | **Bomba Dupla**: 2 bombas com **poças** | **Cratera Viva**: 6 s, uma bomba a cada 0,9 s, com poças |
+| Colossarapa (Nv.90, rara) | **Recuo do Colosso**: 6 m e **atordoa** | **Chuva de Meteoros**: 3 bombas | **Erupção Ancestral**: 8 s, 2 bombas por vez e uma **grande erupção** de 5 m no fim; queimadura dura 50% mais |
+
+- O **Recuo termina o Modo Vulcão** (é a saída de emergência). Fincada, ela pode usar o disparo, mas não anda nem esquiva.
+- Cada bomba marca no chão onde vai cair (círculo **vermelho** quando é do inimigo) e passa por cima dos obstáculos.
+- A IA usa o Modo Vulcão só com você longe e o Recuo quando você chega perto; ela tenta ficar a uns 7 m.
 - Mais detalhes em `js/habilidades/README.md`.
 
 ## Golpes da linha do Musguinho (Planta)
@@ -799,7 +816,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/brasas.js` | Cenário do Caminho das Brasas (braseiros, forja, rio de lava, Trono de Magma, vulcão) |
 | `js/raizes.js` | Cenário da Trilha Ancestral e da Floresta (cogumelos, ruínas, lago, raízes, Árvore-Mãe, vaga-lumes, monstros extras) |
 | `js/arena.js` | Arenas: chão, obstáculos, clima animado e perigos de cada região (com chance), e o escurecer do Astro Negro |
-| `js/habilidades/` | **Habilidades próprias das linhas de monstros** (uma pasta só para isso). Veja o `README.md` de lá. Hoje: linha do Brasito (`brasito.js` com os números, `brasito-batalha.js` com o lança-chamas, o rabo de fogo e a velocidade), linha do Gotinho (`gotinho.js` e `gotinho-batalha.js`, com o jato, o hidrocanhão, as ondas, o maremoto e o escudo), linha do Musguinho (`musguinho.js` e `musguinho-batalha.js`, com a folha bumerangue, a vinha que puxa, as raízes, a moita e o bosque), linha do Pedrisco (`pedrisco.js` e `pedrisco-batalha.js`, com a pedra em arco que quica, o punho sísmico, o tremor e os pilares), linha do Faisquinho (`faisquinho.js` e `faisquinho-batalha.js`, com as marcas, o dash elétrico, o tiro que marca, o choque e as nuvens), linha do Solito (`solito.js` e `solito-batalha.js`, com o sol que dá bônus, o laser e o calor), linha do Lunico (`lunico.js` e `lunico-batalha.js`, com o combo de dashes, as fases da lua e o luar que cura), linha do Lumino (`lumino.js` e `lumino-batalha.js`, com o passo de luz, o estilhaço que se divide e a redoma que devolve os tiros), linha do Imanito, tipo duplo Terra + Raio (`imanito.js` e `imanito-batalha.js`, as pedras orbitais, o ímã e a repulsão), linha do Brotobrasa, tipo duplo Fogo + Planta (`brotobrasa.js` e `brotobrasa-batalha.js`, as flores de fogo que explodem), linha do Vaporito, tipo duplo Água + Fogo (`vaporito.js` e `vaporito-batalha.js`, o tanque: arrancada, bafo de vapor e casco), a Aquaraia, raro de Água (`aquaraia.js` e `aquaraia-batalha.js`, o rasante que atravessa, as bolhas guiadas, o mergulho, o rastro e o redemoinho) e a linha do Breuzinho (`trevas.js` e `trevas-batalha.js`, com a mordida, a bola com olhos de alcance curto e a área que escurece e dá bônus de dano) |
+| `js/habilidades/` | **Habilidades próprias das linhas de monstros** (uma pasta só para isso). Veja o `README.md` de lá. Hoje: linha do Brasito (`brasito.js` com os números, `brasito-batalha.js` com o lança-chamas, o rabo de fogo e a velocidade), linha do Gotinho (`gotinho.js` e `gotinho-batalha.js`, com o jato, o hidrocanhão, as ondas, o maremoto e o escudo), linha do Musguinho (`musguinho.js` e `musguinho-batalha.js`, com a folha bumerangue, a vinha que puxa, as raízes, a moita e o bosque), linha do Pedrisco (`pedrisco.js` e `pedrisco-batalha.js`, com a pedra em arco que quica, o punho sísmico, o tremor e os pilares), linha do Faisquinho (`faisquinho.js` e `faisquinho-batalha.js`, com as marcas, o dash elétrico, o tiro que marca, o choque e as nuvens), linha do Solito (`solito.js` e `solito-batalha.js`, com o sol que dá bônus, o laser e o calor), linha do Lunico (`lunico.js` e `lunico-batalha.js`, com o combo de dashes, as fases da lua e o luar que cura), linha do Lumino (`lumino.js` e `lumino-batalha.js`, com o passo de luz, o estilhaço que se divide e a redoma que devolve os tiros), linha do Imanito, tipo duplo Terra + Raio (`imanito.js` e `imanito-batalha.js`, as pedras orbitais, o ímã e a repulsão), linha do Brotobrasa, tipo duplo Fogo + Planta (`brotobrasa.js` e `brotobrasa-batalha.js`, as flores de fogo que explodem), linha do Vaporito, tipo duplo Água + Fogo (`vaporito.js` e `vaporito-batalha.js`, o tanque: arrancada, bafo de vapor e casco), a Aquaraia, raro de Água (`aquaraia.js` e `aquaraia-batalha.js`, o rasante que atravessa, as bolhas guiadas, o mergulho, o rastro e o redemoinho), a Vulcarapa, raro de Fogo (`vulcarapa.js` e `vulcarapa-batalha.js`, a artilharia: o recuo, as bombas de lava em arco, o Modo Vulcão e as poças de lava) e a linha do Breuzinho (`trevas.js` e `trevas-batalha.js`, com a mordida, a bola com olhos de alcance curto e a área que escurece e dá bônus de dano) |
 | `js/nuvem.js` | Contas e jogo salvo na nuvem (Firebase, direto pela internet, sem a biblioteca do Firebase): criar conta, entrar, entrar de novo com 1 toque, ler e gravar o jogo salvo, e a senha do GM |
 | `js/companheiro.js` | O monstro invocado: invocar e guardar, seguir o treinador, os botões e a troca de controle (o treinador fica parado e protegido) |
 | `js/treino.js` | O modo treino: os golpes do monstro invocado no mapa, "no ar", usando o mesmo motor da batalha (sem inimigos e sem dano) |
