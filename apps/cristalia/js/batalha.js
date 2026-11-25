@@ -23,6 +23,7 @@ import { HabilidadesLumino } from './habilidades/lumino-batalha.js';
 import { HabilidadesVaporito } from './habilidades/vaporito-batalha.js';
 import { HabilidadesBrotobrasa } from './habilidades/brotobrasa-batalha.js';
 import { HabilidadesImanito } from './habilidades/imanito-batalha.js';
+import { HabilidadesAquaraia } from './habilidades/aquaraia-batalha.js';
 import { CameraOrbita } from './camera.js';
 import { aplicarPocao, RECARGA_POCAO } from './bolsa.js';
 import { criarModelo, criarCristal, criarCoroa, animarModelo, piscar, descartar, tocarGolpe, pararGolpe } from './modelos.js';
@@ -132,6 +133,7 @@ export class Batalha {
     this.vaporito = new HabilidadesVaporito(this); // arrancada, bafo e casco da linha do Vaporito (tanque)
     this.brotobrasa = new HabilidadesBrotobrasa(this); // flores de fogo (armadilhas) da linha do Brotobrasa
     this.imanito = new HabilidadesImanito(this); // pedras orbitais, ímã e repulsão da linha do Imanito
+    this.aquaraia = new HabilidadesAquaraia(this); // rasante, bolhas, mergulho, rastro e redemoinho da Aquaraia (raro)
     this.periodo = jogo.mundo.periodo;
 
     this.idx = idxInicial;
@@ -333,6 +335,7 @@ export class Batalha {
       const A = todos[a], B = todos[b];
       if (A.morto) continue;
       if (A.combo?.dash || B.combo?.dash) continue; // combo da linha do Lunico: o dash atravessa o alvo
+      if (A.dash?.rasante || B.dash?.rasante || A.dash?.mergulho || B.dash?.mergulho) continue; // Aquaraia voando: passa por cima
       const d = dist(A, B), min = A.raio + B.raio;
       if (d < min && d > 0.001) {
         const ex = (A.pos.x - B.pos.x) / d, ez = (A.pos.z - B.pos.z) / d, f = (min - d) / 2;
@@ -384,6 +387,7 @@ export class Batalha {
     this.vaporito.atualizar(dt);
     this.brotobrasa.atualizar(dt);
     this.imanito.atualizar(dt);
+    this.aquaraia.atualizar(dt);
     if (this.captura) this.atualizarCaptura(dt);
 
     if (this.trocaAuto > 0) {
@@ -445,6 +449,7 @@ export class Batalha {
         if (gp.florescer) { if (d < 6) opcoes.push(i, i); continue; } // flores por onde anda
         if (gp.bafo) { if (d < gp.alcance * 0.9 + e.raio) opcoes.push(i, i); continue; } // bafo: só de perto
         if (gp.arrancada) { if (d > 1.5 && d < gp.arrancada.distancia + 0.5) opcoes.push(i, i); continue; } // arrancada
+        if (gp.mergulho) { if (d > 1.5 && d < gp.mergulho.alcance + 1) opcoes.push(i, i); continue; } // mergulho da Aquaraia: cai em você
         if (gp.onda) { if (d < gp.onda.distancia * 0.9) opcoes.push(i, i, i); } // onda que anda para a frente
         else if (gp.tipo === 'area' && d < gp.raio * 0.85 + (gp.dash || 0)) opcoes.push(i, i, i);
         if (gp.tipo === 'corpo' && d < gp.alcance + 1.2) opcoes.push(i, i);
@@ -512,6 +517,10 @@ export class Batalha {
       // pedra em arco: os lugares onde ela cai ficam marcados desde já (e não mudam)
       const quedas = this.pedrisco.quedas(c, gp, alvo.pos);
       c.prep = { gp, t: prep, total: prep, dir, quedas, aviso: this.pedrisco.avisoArco(quedas, gp, inimigo) };
+    } else if (gp.mergulho) {
+      // mergulho da Aquaraia: o lugar onde ela vai cair fica marcado desde já
+      const ponto = this.aquaraia.pontoMergulho(c, gp, alvo.pos);
+      c.prep = { gp, t: prep, total: prep, dir, ponto, aviso: this.aquaraia.avisoMergulho(ponto, gp, inimigo) };
     } else c.prep = { gp, t: prep, total: prep, dir, aviso: this.criarAviso(c, gp, dir, inimigo) };
     c.angAlvo = Math.atan2(dir.x, dir.z);
     tocarGolpe(c.modelo, gp.tipo, prep); // modelo do Blender (.glb): toca a animação do golpe
@@ -586,7 +595,11 @@ export class Batalha {
 
   executar(c, p) {
     const gp = p.gp, dir = p.dir;
-    if (gp.vinha) {
+    if (gp.rasante) {
+      this.aquaraia.iniciarRasante(c, gp, dir, this.efeitoDoGolpe(c, gp)); // voo que atravessa
+    } else if (gp.mergulho) {
+      this.aquaraia.iniciarMergulho(c, gp, p.ponto, p.aviso, this.efeitoDoGolpe(c, gp)); // sobe e cai
+    } else if (gp.vinha) {
       this.musguinho.iniciarVinha(c, gp, dir, this.efeitoDoGolpe(c, gp)); // chicote de vinha: estica e puxa
     } else if (gp.espinhos) {
       this.pedrisco.iniciarPunho(c, gp, dir, this.efeitoDoGolpe(c, gp)); // punho sísmico: espinhos à frente
@@ -732,7 +745,7 @@ export class Batalha {
     const avisaTipo = !opcoes.leve || opcoes.primeiro; // no lança-chamas, só no 1º pedaço
     if (mult > 1 && avisaTipo) this.jogo.numero('Super efetivo!', topo.clone().setY(topo.y + 0.9), '#ffd23f', 'pequeno');
     else if (mult < 1 && avisaTipo) this.jogo.numero('Pouco efetivo', topo.clone().setY(topo.y + 0.9), '#c9d6e8', 'pequeno');
-    this.particulas(alvo.pos, ELEMENTOS[gp.elemento].cor, 8, 0.9);
+    this.particulas(alvo.pos, ELEMENTOS[gp.elemento].cor, opcoes.particulas ?? 8, 0.9); // opcoes.particulas = menos faíscas (bolhas da Aquaraia)
     if (alvo.dados.hp <= 0) { this.desmaiar(alvo); return true; }
     if (alvo.esp.chefe && !alvo.furia && alvo.frac < 0.5) {
       alvo.furia = true;
@@ -827,6 +840,7 @@ export class Batalha {
     this.vaporito.parar(l);
     this.brotobrasa.parar(l);
     this.imanito.parar(l);
+    this.aquaraia.parar(l);
     l.veloz = null;
     l.breu = null;
     if (l.lado === 'inimigo') {
@@ -923,6 +937,8 @@ export class Batalha {
       c.pos.addScaledVector(ds.dir, ds.vel * dt);
       ds.t -= dt;
       if (ds.dashRaio) this.faisquinho.atualizarDash(c); // dash elétrico marca quem passar perto
+      if (ds.rasante) this.aquaraia.atualizarRasante(c, ds, dt);   // Aquaraia: voo que atravessa
+      if (ds.mergulho) this.aquaraia.atualizarMergulho(c, ds, dt); // Aquaraia: sobe e cai
       if (ds.gp && !ds.acertou) {
         // o golpe de perto acerta o primeiro adversário que encostar
         const alvo = this.alvosDe(c).find((o) => dist(c, o) < c.raio + o.raio + 0.5);
@@ -968,6 +984,7 @@ export class Batalha {
     if (c.flash > 0) { piscar(m, c.flash / 0.18, '#ff3d5e'); c.brilhando = true; }
     else if (c.brilhando && !c.prep) { piscar(m, 0); c.brilhando = false; }
     if (c.lento > 0 && !c.morto) m.userData.corpo.position.y *= 0.3;
+    if (this.aquaraia.dele(c)) this.aquaraia.alturaDoVoo(c); // Aquaraia lá no alto (mergulho)
     c.movendo = false;
   }
 
@@ -1010,6 +1027,17 @@ export class Batalha {
       this.projeteis.push({ mesh: obj, faisca: true, fixo: true, pos, dir, gp, dono: c, lado: c.lado, vida: gp.alcance / gp.velocidade, fator, efeito: this.efeitoDoGolpe(c, gp) });
       return;
     }
+    if (this.aquaraia.dele(c) && gp.bolha) {
+      // bolhas da Aquaraia: balançam e (nas evoluções finais) fazem curva até o inimigo
+      const obj = this.aquaraia.projetil(gp, fator);
+      const dir = new THREE.Vector3(Math.sin(ang), 0, Math.cos(ang));
+      const pos = c.pos.clone().addScaledVector(dir, c.raio + 0.3).setY(0.8 * c.esp.tamanho);
+      obj.position.copy(pos);
+      this.cena.add(obj);
+      this.projeteis.push({ mesh: obj, aquaBolha: { t: 0, y: pos.y, fase: Math.random() * 6 }, fixo: true, pos, dir, gp, dono: c, lado: c.lado,
+        vida: gp.bolha.alcance / gp.velocidade, fator, efeito: this.efeitoDoGolpe(c, gp) });
+      return;
+    }
     if (this.gotinho.dele(c) && gp.visual) {
       // tiro da linha do Gotinho: jato fino (atravessa) ou bola do Hidrocanhão (explode)
       const obj = this.gotinho.projetil(gp, ang, fator);
@@ -1045,6 +1073,7 @@ export class Batalha {
       else if (p.luaFase) this.lunico.atualizarProjetil(p, dt);
       else if (p.luzCristal || p.luzRaio) this.lumino.atualizarProjetil(p, dt);
       else if (p.pedraIma) this.imanito.atualizarProjetil(p, dt);
+      else if (p.aquaBolha) this.aquaraia.atualizarProjetil(p, dt);
       else if (p.bumerangue) { /* a folha gira em moverFolha */ }
       else if (p.gp.elemento === 'lua') p.mesh.rotation.y += dt * 14;
       else if (p.gp.elemento !== 'planta' && p.gp.elemento !== 'raio') p.mesh.rotation.x += dt * 8;
@@ -1058,7 +1087,7 @@ export class Batalha {
       }
       const alvo = acabou ? null : alvos.find((o) => !p.atingidos?.has(o) && Math.hypot(p.pos.x - o.pos.x, p.pos.z - o.pos.z) < (p.raio ?? p.gp.raio) + o.raio);
       if (alvo) {
-        const acertou = this.aplicarDano(p.dono, alvo, p.gp, p.dir, { fator: p.fator, efeito: p.bumerangue ? this.musguinho.efeitoDaFolha(p, alvo) : p.efeito });
+        const acertou = this.aplicarDano(p.dono, alvo, p.gp, p.dir, { fator: p.fator, efeito: p.bumerangue ? this.musguinho.efeitoDaFolha(p, alvo) : p.efeito, particulas: p.aquaBolha ? 3 : undefined });
         if (p.faisca && acertou) this.faisquinho.aoAcertarTiro(p, alvo); // marca e deixa o Choque pronto
         if (p.pedraIma && acertou) this.imanito.aoAcertar(p, alvo);     // pedra de corrente: raio em quem está perto
         if (p.bumerangue) {
@@ -1078,6 +1107,7 @@ export class Batalha {
       else if (acabou && p.gotinho && p.vida > 0) this.gotinho.impacto(p, null);
       if (acabou && p.luaFase) this.lunico.impacto(p, alvo); // a Lua Cheia explode
       if (acabou && p.luzCristal && !p.bateu) this.lumino.dividir(p, alvo); // o cristal se divide em raios
+      if (acabou && p.aquaBolha) this.aquaraia.estourar(p); // a bolha estoura
       if (acabou) {
         this.cena.remove(p.mesh);
         if (!p.trevas && !p.fixo) p.mesh.material.dispose(); // os tiros de Trevas usam materiais fixos
@@ -1177,7 +1207,7 @@ export class Batalha {
     est.pedras[tipo.id]--;
     const sucesso = garantida || Math.random() < chanceCaptura(this.ini.dados, this.tipoCristal);
     if (this.jog.prep) this.cancelarPreparo(this.jog);
-    for (const l of this.inimigos) { if (l.prep) this.cancelarPreparo(l); l.dash = null; l.rajada = null; this.brasito.parar(l); this.gotinho.parar(l, false); this.musguinho.parar(l); this.pedrisco.parar(l); this.faisquinho.parar(l, false); this.lunico.parar(l); this.lumino.parar(l); this.vaporito.parar(l); this.brotobrasa.parar(l); this.imanito.parar(l); }
+    for (const l of this.inimigos) { if (l.prep) this.cancelarPreparo(l); l.dash = null; l.rajada = null; this.brasito.parar(l); this.gotinho.parar(l, false); this.musguinho.parar(l); this.pedrisco.parar(l); this.faisquinho.parar(l, false); this.lunico.parar(l); this.lumino.parar(l); this.vaporito.parar(l); this.brotobrasa.parar(l); this.imanito.parar(l); this.aquaraia.parar(l); }
     const cr = criarCristal(1.1, this.tipoCristal);
     this.cena.add(cr);
     this.captura = {
@@ -1311,6 +1341,7 @@ export class Batalha {
     this.vaporito.parar(velho);
     this.brotobrasa.parar(velho);
     this.imanito.parar(velho);
+    this.aquaraia.parar(velho);
     this.cena.remove(velho.modelo);
     descartar(velho.modelo);
     this.particulas(velho.pos, '#8ff4ff', 12, 1);

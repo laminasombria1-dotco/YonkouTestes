@@ -6,8 +6,8 @@
 // recarga, empurrão ou escudo, mexa aqui. Como cada golpe funciona e aparece
 // na batalha fica em gotinho-batalha.js.
 //
-// Só esta linha usa estes golpes. Aquaraia e os tipos duplos com Água
-// (Vaporito e evoluções) continuam com os golpes de Água de sempre (em dados.js).
+// Só esta linha usa estes golpes. A Aquaraia (aquaraia.js) e o Vaporito
+// (vaporito.js) têm os golpes deles.
 // =============================================================
 
 // Golpes da linha. Campos:

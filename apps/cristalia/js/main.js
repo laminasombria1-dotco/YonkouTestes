@@ -16,7 +16,7 @@ import { Bolsa, MOEDAS, sortearDrop } from './bolsa.js';
 import { afetoDe } from './jardim.js';
 import { Ovo } from './ovo.js';
 import {
-  ESPECIES, ELEMENTOS, GOLPES, ORDEM_ELEMENTOS, RAROS, NOMES_ESTAGIO, NIVEIS_EVOLUCAO,
+  ESPECIES, ELEMENTOS, GOLPES, ORDEM_ELEMENTOS, RAROS, NOMES_ESTAGIO, NIVEIS_EVOLUCAO, NIVEIS_EVOLUCAO_RARO, ORDEM_LINHAS_RARAS,
   criarMonstro, statsDe, xpParaProximo, xpDaVitoria, verificarEvolucao, formasDaLinha, fracoContra,
   textosMelhoria, novidadesDaEvolucao, melhoriaDe, EFEITOS, EFEITO_DO_ELEMENTO, chanceDoEfeito, pct,
   CRISTAIS, CUSTO_FUSAO, ORDEM_DUPLAS, DUPLAS, nomeDupla, nomeTipo, fundoTipo, fracoContraEspecie, forteContraEspecie,
@@ -425,11 +425,12 @@ class Jogo {
     if (!this.plataforma) this.plataforma = new Plataforma(this);
     $('#col-titulo').textContent = modo === 'inicial' ? 'Escolha seu primeiro parceiro' : 'Monstruário';
     $('#col-escolher').hidden = modo !== 'inicial';
-    // no modo "ver" aparecem também os de tipo duplo e os raros
-    const abas = [...ORDEM_ELEMENTOS, ...(modo === 'ver' ? [...ORDEM_DUPLAS, 'raros'] : [])];
+    // no modo "ver" aparecem também os de tipo duplo, os raros com formas novas (uma aba cada) e os outros raros
+    const abas = [...ORDEM_ELEMENTOS, ...(modo === 'ver' ? [...ORDEM_DUPLAS, ...ORDEM_LINHAS_RARAS, 'raros'] : [])];
     $('#col-abas').innerHTML = abas.map((a) => {
       let cor, nome;
       if (a === 'raros') { cor = '#ffffff'; nome = 'Raros'; }
+      else if (ORDEM_LINHAS_RARAS.includes(a)) { cor = ELEMENTOS[ESPECIES[a].elemento].cor; nome = ESPECIES[a].nome + ' (raro)'; }
       else if (DUPLAS[a]) { const [x, y] = DUPLAS[a].elementos.map((el) => ELEMENTOS[el].cor); cor = x; nome = nomeDupla(a); return `<button type="button" data-aba="${a}" class="dupla" style="--cor:${x};--cor2:${y}"><i></i>${nome}</button>`; }
       else { cor = ELEMENTOS[a].cor; nome = ELEMENTOS[a].nome; }
       return `<button type="button" data-aba="${a}" style="--cor:${cor}"><i></i>${nome}</button>`;
@@ -446,14 +447,15 @@ class Jogo {
 
   selecionarAba(aba, forma) {
     this.colecao.aba = aba;
-    const ids = aba === 'raros' ? RAROS : formasDaLinha(aba);
+    const ids = aba === 'raros' ? RAROS.filter((id) => !ESPECIES[id].linhaRara) : formasDaLinha(aba);
     this.colecao.ids = ids;
     this.plataforma.mostrar(ids, aba !== 'raros', forma);
     document.querySelectorAll('#col-abas [data-aba]').forEach((b) => b.classList.toggle('ativa', b.dataset.aba === aba));
     $(`#col-abas [data-aba="${aba}"]`)?.scrollIntoView({ block: 'nearest', inline: 'center' });
     $('#col-formas').innerHTML = ids.map((id, i) => {
       const e = ESPECIES[id];
-      const nv = e.superRaro ? 'Super raro' : e.raro ? 'Raro' : `Nv.${i === 0 ? 1 : NIVEIS_EVOLUCAO[i - 1]}${i === 3 ? ' · rara' : ''}`;
+      const niveis = e.linhaRara ? NIVEIS_EVOLUCAO_RARO : NIVEIS_EVOLUCAO;
+      const nv = e.superRaro ? 'Super raro' : e.raro && !e.linhaRara ? 'Raro' : `Nv.${i === 0 ? 1 : niveis[i - 1]}${i === 3 ? ' · rara' : ''}`;
       return `<button type="button" data-forma="${i}" style="--cor:${ELEMENTOS[e.elemento].cor}"><small>${nv}</small>${e.nome}</button>`;
     }).join('');
     $('#col-escolher').textContent = aba !== 'raros' ? `Escolher ${ESPECIES[ids[0]].nome}` : '';
@@ -469,11 +471,11 @@ class Jogo {
     const e = ESPECIES[id], el = ELEMENTOS[e.elemento];
     const barra = (k, nome, txt) => `<div class="stat"><span>${nome}</span><i><b style="width:${Math.round((e.base[k] / MAXIMOS[k]) * 100)}%"></b></i><em>${txt}</em></div>`;
     // atributos mostrados no nível em que a forma aparece
-    const nivelForma = e.chefe ? 25 : e.raro ? 1 : [1, ...NIVEIS_EVOLUCAO][e.estagio];
+    const nivelForma = e.chefe ? 25 : e.linhaRara ? [1, ...NIVEIS_EVOLUCAO_RARO][e.estagio] : e.raro ? 1 : [1, ...NIVEIS_EVOLUCAO][e.estagio];
     const st = statsDe(id, nivelForma);
     let evo;
     if (e.chefe) evo = `Super raro: é o chefe ${e.onde}. Não evolui. Só um <b>Cristal Supremo</b> segura ele.`;
-    else if (e.raro) evo = 'Monstro raro: não evolui.';
+    else if (e.raro && !e.linhaRara) evo = 'Monstro raro: não evolui.';
     else if (e.evoluiPara) {
       const prox = novidadesDaEvolucao(id, e.evoluiPara);
       evo = `Evolui no <b>Nv.${e.nivelEvolucao}</b> para <b>${ESPECIES[e.evoluiPara].nome}</b>${prox.length ? ': ' + prox.join(', ') : ''}.`;
@@ -506,7 +508,7 @@ class Jogo {
       status = `<p class="status">Você começa com ${ESPECIES[this.colecao.ids[0]].nome}. Esta forma vem com a evolução.</p>`;
     }
     $('#col-detalhe').innerHTML = `
-      <div class="cab"><span class="tag" style="--cor:${fundoTipo(e)}">${nomeTipo(e)}</span><span class="estagio">${e.superRaro ? 'Super raro · Chefe' : e.raro ? 'Raro' : NOMES_ESTAGIO[e.estagio]}</span></div>
+      <div class="cab"><span class="tag" style="--cor:${fundoTipo(e)}">${nomeTipo(e)}</span><span class="estagio">${e.superRaro ? 'Super raro · Chefe' : e.linhaRara ? 'Raro · ' + NOMES_ESTAGIO[e.estagio] : e.raro ? 'Raro' : NOMES_ESTAGIO[e.estagio]}</span></div>
       <h3>${e.nome}</h3>
       <p class="desc">${e.descricao}</p>
       <p class="evo">${evo}</p>

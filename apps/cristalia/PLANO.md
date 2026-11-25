@@ -149,6 +149,16 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
       até 600, buscado na fonte) em `js/main.js`; coroa em `mundo.vestirCoroa`; vários ovos (`estado.ovos`)
       e `CHANCES_OVO` (70/25/5) em `js/ovo.js`. A 2ª vitória contra o Rei dá 2 ovos (só uma vez).
 - [ ] **Fase 6 — Formas novas dos raros:** 9 formas (nome, modelo e habilidades).
+      *Regras aprovadas:* a **mesma regra de atributos para os 3 raros**: base da forma inicial × 1 / 1,7 / 2,0 / 2,35
+      (`MULT_RARO`); evolução no Nv.55 e 70 sozinha e a rara no Nv.90 (`NIVEIS_EVOLUCAO_RARO`, `EVOLUCAO_RARA_RARO`).
+      Os treinadores usam a forma do raro pelo nível (a Aquaraia da Sheyla vira Mantaré na revanche Nv.70).
+      Tudo em `LINHAS_RARAS` e `especieDaEscolha` (`js/dados.js`); cada raro ganha uma aba no Monstruário.
+  - [x] **Aquaraia** (Água): Ventaraia (Nv.55), Mantaré (Nv.70) e Leviaraia (Nv.90). "Ataca pelo ar e foge":
+        Rasante que atravessa (+ rastro d'água e ferrão), Bolhas (guiadas nas finais) e Mergulho (sobe sem levar dano;
+        redemoinho e +25% em quem está Encharcado nas finais). `js/habilidades/aquaraia.js` e `aquaraia-batalha.js`,
+        modelo em `linhaAquaraia` (`js/modelos.js`).
+  - [ ] **Vulcarapa** (Fogo): artilharia (lenta, lança lava de longe, em arco), para não repetir o Vaporito.
+  - [ ] **Espinhal** (Planta). Decidir que forma o Rei Julius usa (ele luta no Nv.50 e na revanche no Nv.100).
 - [ ] **Fase 7 — Formas novas dos lendários:** 6 formas.
 - [ ] **Fase 8 — Conteúdo do Nv.50+:** masmorras que crescem, chefes de masmorra (monstros
       normais), biomas com vila e arena.

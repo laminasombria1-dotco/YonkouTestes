@@ -848,10 +848,11 @@ function linhaTerraRaio(c, u, e) {
 }
 
 const LINHAS_MODELO = { fogo: linhaFogo, agua: linhaAgua, planta: linhaPlanta, terra: linhaTerra, raio: linhaRaio, sol: linhaSol, lua: linhaLua, luz: linhaLuz, trevas: linhaTrevas,
-  fogoPlanta: linhaFogoPlanta, aguaFogo: linhaAguaFogo, terraRaio: linhaTerraRaio };
+  fogoPlanta: linhaFogoPlanta, aguaFogo: linhaAguaFogo, terraRaio: linhaTerraRaio,
+  aquaraia: linhaAquaraia }; // raros com formas novas (a chave é a da linha em LINHAS_RARAS)
 
 // =============================================================
-// RAROS (sem evolução)
+// RAROS ainda sem formas novas (a Aquaraia fica em linhaAquaraia, lá em cima)
 // =============================================================
 function vulcarapa(c, u) {
   const pele = mat('#93b26c');
@@ -865,15 +866,79 @@ function vulcarapa(c, u) {
   olhos(c, 0.66, 1.1, 0.14, 0.09);
 }
 
-function aquaraia(c, u) {
-  const dorso = mat('#3a8ee0'), claro = mat('#bfe8ff');
-  p(c, G.octa(1), dorso, [0, 1.1, 0], null, [1.5, 0.26, 1.0]);
-  p(c, G.octa(1), claro, [0, 1.04, 0.05], null, [1.2, 0.2, 0.8]);
-  p(c, G.cone(0.07, 1.4, 4), dorso, [0, 1.1, -1.4], [-Math.PI / 2, 0, 0]);
-  for (const s of [-1, 1]) p(c, G.cone(0.08, 0.35, 4), claro, [s * 0.3, 1.12, 0.95], [Math.PI / 2, 0, 0]);
-  olhos(c, 1.27, 0.5, 0.3, 0.1);
+// ---------- Raro de Água: Aquaraia > Ventaraia > Mantaré > Leviaraia ----------
+// A forma inicial é a arraia de sempre. Nas evoluções as asas ficam separadas para
+// bater de verdade (u.asas), o rabo ganha ferrão e bolhas/gotas giram em volta (u.orbitas).
+function asaRaia(c, u, s, dorso, borda, larg, prof, y, pontas, corPonta) {
+  const g = new THREE.Group();
+  g.position.set(s * 0.35, y, 0);
+  c.add(g);
+  p(g, G.octa(1), dorso, [s * larg * 0.5, 0, -0.05], null, [larg * 0.62, 0.2, prof]);
+  p(g, G.octa(1), borda, [s * larg * 0.5, -0.05, 0], null, [larg * 0.5, 0.15, prof * 0.8]);
+  for (let i = 0; i < pontas; i++) { // pontinhas na borda de trás da asa
+    const t = (i + 1) / (pontas + 1);
+    p(g, G.cone(0.1, 0.4, 4), corPonta, [s * larg * (0.2 + t * 0.75), 0.02, -prof * 0.55 * (1 - Math.abs(t - 0.5))], [-Math.PI / 2 - 0.3, 0, 0]);
+  }
+  u.asas.push({ obj: g, lado: s, base: 0 });
+}
+
+function linhaAquaraia(c, u, e) {
   u.voa = true;
-  u.sombra.scale.set(1.1, 0.8, 1);
+  if (e === 0) { // Aquaraia (a de sempre)
+    const dorso = mat('#3a8ee0'), claro = mat('#bfe8ff');
+    p(c, G.octa(1), dorso, [0, 1.1, 0], null, [1.5, 0.26, 1.0]);
+    p(c, G.octa(1), claro, [0, 1.04, 0.05], null, [1.2, 0.2, 0.8]);
+    p(c, G.cone(0.07, 1.4, 4), dorso, [0, 1.1, -1.4], [-Math.PI / 2, 0, 0]);
+    for (const s of [-1, 1]) p(c, G.cone(0.08, 0.35, 4), claro, [s * 0.3, 1.12, 0.95], [Math.PI / 2, 0, 0]);
+    olhos(c, 1.27, 0.5, 0.3, 0.1);
+    u.sombra.scale.set(1.1, 0.8, 1);
+    return;
+  }
+  if (e === 1) { // Ventaraia: asas longas, rabo com ferrão e fitas de vento
+    const dorso = mat('#2f9ad8'), claro = mat('#d8f4ff'), vento = mat('#ffffff', { transparent: true, opacity: 0.85 });
+    p(c, G.octa(1), dorso, [0, 1.1, 0.1], null, [0.75, 0.3, 1.05]);
+    p(c, G.octa(1), claro, [0, 1.04, 0.15], null, [0.6, 0.22, 0.85]);
+    for (const s of [-1, 1]) asaRaia(c, u, s, dorso, claro, 1.25, 0.8, 1.1, 2, vento);
+    p(c, G.cone(0.07, 1.9, 4), dorso, [0, 1.1, -1.75], [-Math.PI / 2, 0, 0]);
+    p(c, G.cone(0.12, 0.4, 4), claro, [0, 1.1, -2.75], [-Math.PI / 2, 0, 0]);
+    for (const s of [-1, 1]) p(c, G.cone(0.05, 1.1, 3), vento, [s * 0.9, 1.15, -0.95], [-Math.PI / 2, 0, s * 0.2]);
+    for (const s of [-1, 1]) p(c, G.cone(0.08, 0.4, 4), claro, [s * 0.3, 1.14, 1.15], [Math.PI / 2, 0, 0]);
+    olhos(c, 1.3, 0.75, 0.32, 0.11);
+    u.sombra.scale.set(1.4, 0.9, 1);
+    return;
+  }
+  if (e === 2) { // Mantaré: manta azul-escura com manchas, crista de onda e 3 bolhas
+    const dorso = mat('#1f4f9a'), claro = mat('#e8f6ff'), crista = mat('#7fd6ff'), mancha = mat('#ffffff');
+    p(c, G.octa(1), dorso, [0, 1.15, 0.1], null, [0.85, 0.36, 1.2]);
+    p(c, G.octa(1), claro, [0, 1.07, 0.18], null, [0.7, 0.25, 1.0]);
+    for (const s of [-1, 1]) asaRaia(c, u, s, dorso, claro, 1.4, 0.9, 1.15, 3, crista);
+    for (const [x, z] of [[-0.35, 0.2], [0.35, 0.2], [0, -0.3], [-0.2, -0.65], [0.2, -0.65]]) p(c, G.esf(1, 6, 4), mancha, [x, 1.43, z], null, [0.13, 0.04, 0.13]);
+    for (const s of [-1, 1]) p(c, G.cone(0.14, 0.6, 4), dorso, [s * 0.42, 1.12, 1.35], [Math.PI / 2 - 0.2, 0, -s * 0.5]);
+    p(c, G.cone(0.08, 2.2, 4), dorso, [0, 1.15, -2.0], [-Math.PI / 2, 0, 0]);
+    p(c, G.cone(0.15, 0.5, 4), brilho('#6fe0ff', 0.7), [0, 1.15, -3.15], [-Math.PI / 2, 0, 0]);
+    for (let i = 0; i < 3; i++) p(c, G.cone(0.12, 0.42, 4), crista, [0, 1.55 - i * 0.05, 0.25 - i * 0.35], [-0.5, 0, 0]);
+    const bolha = mat('#a8e6ff', { transparent: true, opacity: 0.7 });
+    for (let i = 0; i < 3; i++) u.orbitas.push({ obj: p(c, G.esf(1, 8, 6), bolha, [0, 1.5, 0], null, 0.2), raio: 1.25, vel: 1.2, y: 1.5, fase: (i / 3) * Math.PI * 2 });
+    olhos(c, 1.32, 0.9, 0.42, 0.12);
+    u.sombra.scale.set(1.5, 1, 1);
+    return;
+  }
+  // Leviaraia: manta das profundezas com pontos que brilham, coroa, rabo de cristal e anel de água
+  const dorso = mat('#1b2560'), claro = mat('#9fe9ff'), luz = brilho('#4ff0ff', 0.9), ouro = brilho('#ffe9a0', 0.6);
+  p(c, G.octa(1), dorso, [0, 1.25, 0.1], null, [0.95, 0.4, 1.35]);
+  p(c, G.octa(1), claro, [0, 1.16, 0.18], null, [0.75, 0.27, 1.1]);
+  for (const s of [-1, 1]) asaRaia(c, u, s, dorso, luz, 1.55, 1.0, 1.25, 4, luz);
+  for (let i = 0; i < 6; i++) for (const s of [-1, 1]) p(c, G.esf(1, 6, 4), luz, [s * (0.18 + i * 0.03), 1.6 - i * 0.02, 0.6 - i * 0.32], null, 0.07);
+  for (const s of [-1, 1]) p(c, G.cone(0.16, 0.75, 4), dorso, [s * 0.48, 1.22, 1.5], [Math.PI / 2 - 0.2, 0, -s * 0.5]);
+  for (const [x, h] of [[-0.22, 0.45], [0, 0.65], [0.22, 0.45]]) p(c, G.cone(0.1, h, 4), ouro, [x, 1.6 + h * 0.4, 0.75], [-0.25, 0, x]);
+  p(c, G.cone(0.09, 2.6, 4), dorso, [0, 1.25, -2.25], [-Math.PI / 2, 0, 0]);
+  p(c, G.octa(0.25), luz, [0, 1.25, -3.6], null, [0.7, 0.7, 1.4]);
+  const anel = p(c, G.toro(0.95, 0.06, Math.PI * 2, 5, 18), mat('#6fd8ff', { transparent: true, opacity: 0.75 }), [0, 2.35, -0.1], [Math.PI / 2, 0, 0]);
+  u.pulsos.push({ obj: anel, base: 1, amp: 0.06, vel: 2.5 });
+  const gota = brilho('#8ff0ff', 0.6, { transparent: true, opacity: 0.85 });
+  for (let i = 0; i < 4; i++) u.orbitas.push({ obj: p(c, G.ico(0.18, 0), gota, [0, 1.5, 0]), raio: 1.45, vel: 1, y: 1.5, fase: (i / 4) * Math.PI * 2 });
+  olhos(c, 1.42, 1.05, 0.46, 0.12, '#7ff6ff');
+  u.sombra.scale.set(1.6, 1.05, 1);
 }
 
 function espinhal(c) {
@@ -1035,7 +1100,7 @@ function silvarion(c, u) {
   olhos(c, yC + 0.08, zC + 0.28, 0.15, 0.08, '#1fe0a0');
 }
 
-const RAROS_MODELO = { vulcarapa, aquaraia, espinhal, ignarion, silvarion };
+const RAROS_MODELO = { vulcarapa, espinhal, ignarion, silvarion };
 
 // =============================================================
 // JUNTAR PEÇAS (deixa o jogo leve no celular)

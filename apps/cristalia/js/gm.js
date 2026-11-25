@@ -17,7 +17,7 @@
 import {
   ESPECIES, ELEMENTOS, ORDEM_ELEMENTOS, ORDEM_DUPLAS, RAROS, NOMES_ESTAGIO, ARENAS, DUNGEONS, CRISTAIS,
   formasDaLinha, formaPorNivel, criarMonstro, statsDe, xpParaProximo, niveisDaEtapa, nivelDoChefe, nomeDupla, nomeTipo, verificarEvolucao,
-  NIVEL_MAXIMO, evoluirUmaVez, missaoDe,
+  NIVEL_MAXIMO, evoluirUmaVez, missaoDe, especieDaEscolha, ORDEM_LINHAS_RARAS,
 } from './dados.js';
 import { criarModelo, criarCoroa, criarAuraDupla } from './modelos.js';
 import { zonaEm, NOMES_ZONA, NASCER, ANG_NASCER } from './mundo.js';
@@ -210,13 +210,14 @@ export class PainelGM {
   opcoesEspecies(escolhida) {
     const op = (id) => {
       const e = ESPECIES[id];
-      const etapa = e.chefe ? 'chefe' : e.raro ? 'raro' : NOMES_ESTAGIO[e.estagio].toLowerCase();
+      const etapa = e.chefe ? 'chefe' : e.linhaRara ? 'raro, ' + NOMES_ESTAGIO[e.estagio].toLowerCase() : e.raro ? 'raro' : NOMES_ESTAGIO[e.estagio].toLowerCase();
       return `<option value="${id}" ${id === escolhida ? 'selected' : ''}>${esc(e.nome)} (${etapa})</option>`;
     };
     const grupos = [
       ...ORDEM_ELEMENTOS.map((el) => [ELEMENTOS[el].nome, formasDaLinha(el)]),
       ...ORDEM_DUPLAS.map((k) => [nomeDupla(k) + ' (tipo duplo)', formasDaLinha(k)]),
-      ['Raros e chefes', RAROS],
+      ...ORDEM_LINHAS_RARAS.map((k) => [ESPECIES[k].nome + ' (raro)', formasDaLinha(k)]),
+      ['Raros e chefes', RAROS.filter((id) => !ESPECIES[id].linhaRara)],
     ];
     return grupos.map(([nome, ids]) => `<optgroup label="${esc(nome)}">${ids.map(op).join('')}</optgroup>`).join('');
   }
@@ -744,7 +745,7 @@ export class PainelGM {
     let r = Math.random() * total, escolha = lista[0][0];
     for (const [e, w] of lista) { r -= w; if (r <= 0) { escolha = e; break; } }
     const nv = niveisDaEtapa(this.mundo.mediaEquipe(), 0, id).comum;
-    const especie = escolha.startsWith('L:') ? formaPorNivel(escolha.slice(2), nv) : escolha;
+    const especie = especieDaEscolha(escolha, nv);
     this.aparecer(especie, nv);
   }
 

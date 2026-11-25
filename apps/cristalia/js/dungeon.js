@@ -21,7 +21,7 @@
 // =============================================================
 import * as THREE from 'three';
 import { criarModelo, criarCoroa, animarModelo, criarAuraDupla } from './modelos.js';
-import { ESPECIES, ELEMENTOS, DUNGEONS, niveisDaEtapa, nivelDoChefe, criarMonstro, statsDe, formaPorNivel } from './dados.js';
+import { ESPECIES, ELEMENTOS, DUNGEONS, niveisDaEtapa, nivelDoChefe, criarMonstro, statsDe, formaPorNivel, especieDaEscolha } from './dados.js';
 import { SAIDAS, RAIO_MUNDO, ANG_REINO, alturaBase } from './mapa/gerador.js';
 
 const MAX_SOLTOS = 7;            // monstros soltos dentro de cada dungeon
@@ -478,7 +478,7 @@ export class DungeonAberta {
       if (etapa < 0 || etapa >= T.nEtapas) continue;
       const nv = niveisDaEtapa(m.mediaEquipe(), etapa, this.id).comum + Math.round(Math.random() * 2);
       const escolha = sortear(this.cfg.aparicoes);
-      const especie = escolha.startsWith('L:') ? formaPorNivel(escolha.slice(2), nv) : escolha;
+      const especie = especieDaEscolha(escolha, nv);
       const esp = ESPECIES[especie];
       const dados = criarMonstro(especie, nv);
       const modelo = criarModelo(especie);

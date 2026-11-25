@@ -49,7 +49,7 @@ Gotinho (Nv.1) > Marolo (Nv.12) > Marulhão (Nv.30) > Tsunamar (Nv.50, evoluçã
 - Chances de Encharcado: Onda, Onda Dupla e Maremoto 45% (cada onda sorteia), cada tiro 23%.
 - O inimigo avisa a Onda com uma **faixa vermelha** do tamanho dela e o Maremoto com o círculo vermelho de sempre. Obstáculos seguram as ondas e o anel.
 - Esta linha não ganha o "disparo ×2/×3" das outras: no lugar, ganha o que está na tabela.
-- Só a linha do Gotinho usa estes golpes. Aquaraia e os tipos duplos com Água continuam com os golpes de `dados.js`.
+- Só a linha do Gotinho usa estes golpes. A Aquaraia tem os dela (veja abaixo); o Vaporito também.
 
 **Exemplos de mudança (em `gotinho.js`):**
 - Onda mais longa ou mais larga: `ondaGotinho` → `onda.distancia` e `onda.largura`.
@@ -259,6 +259,31 @@ Breuzinho (Nv.1) > Sombrelo (Nv.12) > Umbrafel (Nv.30) > Noctífero (Nv.50, evol
 **Exemplos de mudança (em `trevas.js`):**
 - Bônus de dano: `vazioSombrio` → `trevas.dano` (0,05 = 5%); tempo: `trevas.duracao`; quanto escurece: `trevas.escuro`.
 - Tiro mais longe: `olharSombrio` → `alcance` (em metros).
+
+### Água (raro): Aquaraia (`aquaraia.js` e `aquaraia-batalha.js`)
+Aquaraia (Nv.1) > Ventaraia (Nv.55) > Mantaré (Nv.70) > Leviaraia (Nv.90, evolução rara). **Ataca pelo ar e foge.**
+É o 1º raro com formas novas: a chave em `HABILIDADES_DA_LINHA` é a da linha em `LINHAS_RARAS` (`aquaraia`).
+
+| Forma | Perto | Disparo | Área |
+|---|---|---|---|
+| Aquaraia | **Rasante**: voo de 5 m (16 m/s) que **atravessa** os inimigos, força 12 | **Bolhas**: 3 em leque, 8 m, força 6 | **Mergulho**: sobe 0,7 s (sem levar dano), cai até 6 m à frente, área de 3 m, força 20 |
+| Ventaraia | **Rasante de Vento**: 6 m + **Rastro d'Água** (1,2 m de largura, 2,5 s, 25% de encharcar a cada 0,5 s) | Bolhas + **encharcado** | Mergulho + **encharcado**, empurra 2 m |
+| Mantaré | **Rasante com Ferrão**: 6,5 m; no fim, o ferrão bate no inimigo mais perto atrás dela (até 3,5 m) com 60% | **Bolhas Guiadas**: viram até 2,2 rad/s na direção do inimigo, 10 m | **Mergulho das Marés**: 3,5 m (força 24) + **Redemoinho** de 3 m por 3 s (puxa 1,6 m/s, força 3 a cada 0,5 s); **+25% em quem está Encharcado** |
+| Leviaraia | **Rasante do Leviatã**: 8 m, rastro de 1,8 m por 4 s, ferrão 80% | **Chuva de Bolhas**: 5 bolhas guiadas, 11 m | **Queda do Leviatã**: sobe 1 s, área de 4,5 m (força 36), redemoinho de 4 m por 4 s (puxa 2 m/s). Encharcado dura 50% mais |
+
+- **Rasante e Mergulho usam o dash da batalha** (`c.dash.rasante` e `c.dash.mergulho`): enquanto voa, não anda, não ataca e não esquiva, e passa por cima dos outros (a regra "ninguém ocupa o mesmo lugar" fica desligada para ela). Bater numa pedra ou na borda para o voo ali.
+- **Mergulho:** o lugar onde ela cai é marcado já na preparação (`pontoMergulho` e `avisoMergulho`, como a pedra em arco do Pedrisco) e não muda. Na subida ela fica sem levar dano (`invul`). A altura do voo é aplicada depois da animação (`alturaDoVoo`), e a sombra fica no chão.
+- **Rastro (`rastro`):** uma faixa no chão, do começo ao fim do voo. No máximo 2 por monstro (o mais velho some).
+- **Redemoinho (`redemoinho`):** 1 por monstro. Chefes e o Campeão são puxados só pela metade (igual ao ímã do Imanito).
+- **Bolhas (`bolha`):** 1 peça cada e poucas faíscas ao acertar (`particulas: 3` em `aplicarDano`), porque saem 5 juntas. As guiadas só viram para inimigos na frente ou do lado.
+- **IA:** usa o mergulho com você a mais de 1,5 m e até o alcance; o rasante e as bolhas como os golpes de sempre.
+- Leve para o celular de referência: modelos de 5 a 16 malhas; no pior quadro a Leviaraia fica perto do Plenilúnio em desenhos por quadro.
+
+**Exemplos de mudança (em `aquaraia.js`):**
+- Voo mais longo: `rasanteLeviata` → `rasante.distancia`; rastro que dura mais: `rasante.rastro.duracao`.
+- Bolhas que viram mais: `bolhasGuiadas` → `bolha.guiada` (radianos por segundo).
+- Mais tempo no ar: `mergulhoAquaraia` → `mergulho.sobe`; bônus no Encharcado: `mergulho.encharcado` (0,25 = +25%).
+- Redemoinho mais forte: `quedaLeviata` → `mergulho.redemoinho.puxa` e `poder`.
 
 ## Modo treino (monstro invocado no mapa)
 

@@ -20,7 +20,7 @@ import { alturaEm, bloqueadoEm } from './mapa/altura.js';
 import { Grade, ListaObstaculos } from './mapa/grade.js';
 import { Chunks } from './mapa/chunks.js';
 import { lerQualidade } from './mapa/config.js';
-import { ESPECIES, ELEMENTOS, APARICOES, PERIODO_DA_LINHA, DUPLAS, ORDEM_DUPLAS, INTERVALO_DUPLO, CRISTAIS, criarMonstro, statsDe, formaPorNivel, nomeTipo } from './dados.js';
+import { ESPECIES, ELEMENTOS, APARICOES, PERIODO_DA_LINHA, DUPLAS, ORDEM_DUPLAS, INTERVALO_DUPLO, CRISTAIS, criarMonstro, statsDe, formaPorNivel, especieDaEscolha, nomeTipo } from './dados.js';
 
 export { RAIO_MUNDO, alturaEm, SEMENTE };
 const NA_ZONA = { campo: 'no Campo', agua: 'no Lago', fogo: 'no Vulcão', planta: 'na Floresta', terra: 'no Deserto', raio: 'nos Picos Nevados' };
@@ -373,7 +373,8 @@ export class Mundo {
 
   especieDe(escolha, nivel) {
     if (escolha.startsWith('L:')) return { especie: formaPorNivel(escolha.slice(2), nivel), nivel };
-    return { especie: escolha, nivel: Math.max(3, nivel + 1) };
+    const nv = Math.max(3, nivel + 1);
+    return { especie: especieDaEscolha(escolha, nv), nivel: nv }; // raro com formas novas: forma pelo nível
   }
 
   // ---------- grupos de monstros ----------

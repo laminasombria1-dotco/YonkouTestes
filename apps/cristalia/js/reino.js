@@ -15,7 +15,7 @@
 import * as THREE from 'three';
 import { REINO } from './dungeon.js';
 import { ESTRADA, naEstradaReal, aleatorio } from './mapa/gerador.js';
-import { ESPECIES, criarMonstro, formaPorNivel } from './dados.js';
+import { ESPECIES, criarMonstro, formaPorNivel, especieDaEscolha } from './dados.js';
 
 // ---------- medidas do Reino (locais) ----------
 export const FONTE_REINO = { x: 0, z: 15 };          // a fonte de cura, na praça
@@ -57,7 +57,7 @@ export const nivelRevanche = (tr) => tr.revanche || 50;
 export function equipeDoTreinador(tr, revanche) {
   return tr.equipe.map(([e, nv], i) => {
     const nivel = revanche ? nivelRevanche(tr) : nv;
-    const especie = e.startsWith('L:') ? formaPorNivel(e.slice(2), nivel, true) : e; // treinador: forma final pelo nível
+    const especie = especieDaEscolha(e, nivel, true); // treinador: forma pelo nível (até a final; os raros também)
     const d = criarMonstro(especie, nivel);
     d.onda = i + 1; // entram um de cada vez, nesta ordem
     return d;
