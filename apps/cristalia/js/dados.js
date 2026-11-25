@@ -21,6 +21,7 @@ import { GOLPES_TREVAS, GOLPES_POR_FORMA_TREVAS, MELHORIAS_TREVAS, TEXTOS_TREVAS
 import { GOLPES_AQUARAIA, GOLPES_POR_FORMA_AQUARAIA, MELHORIAS_AQUARAIA, TEXTOS_AQUARAIA, NOVIDADES_AQUARAIA } from './habilidades/aquaraia.js';
 import { GOLPES_VULCARAPA, GOLPES_POR_FORMA_VULCARAPA, MELHORIAS_VULCARAPA, TEXTOS_VULCARAPA, NOVIDADES_VULCARAPA } from './habilidades/vulcarapa.js';
 import { GOLPES_ESPINHAL, GOLPES_POR_FORMA_ESPINHAL, MELHORIAS_ESPINHAL, TEXTOS_ESPINHAL, NOVIDADES_ESPINHAL } from './habilidades/espinhal.js';
+import { GOLPES_IGNARION, GOLPES_POR_FORMA_IGNARION, MELHORIAS_IGNARION, TEXTOS_IGNARION, NOVIDADES_IGNARION } from './habilidades/ignarion.js';
 
 // Linhas com habilidades próprias: golpes por forma, melhorias e textos
 const HABILIDADES_DA_LINHA = {
@@ -41,6 +42,8 @@ const HABILIDADES_DA_LINHA = {
   aquaraia: { golpes: GOLPES_POR_FORMA_AQUARAIA, melhorias: MELHORIAS_AQUARAIA, textos: TEXTOS_AQUARAIA, novidades: NOVIDADES_AQUARAIA },
   vulcarapa: { golpes: GOLPES_POR_FORMA_VULCARAPA, melhorias: MELHORIAS_VULCARAPA, textos: TEXTOS_VULCARAPA, novidades: NOVIDADES_VULCARAPA },
   espinhal: { golpes: GOLPES_POR_FORMA_ESPINHAL, melhorias: MELHORIAS_ESPINHAL, textos: TEXTOS_ESPINHAL, novidades: NOVIDADES_ESPINHAL },
+  // lendários com formas novas (a chave também é a da linha em LINHAS_RARAS)
+  ignarion: { golpes: GOLPES_POR_FORMA_IGNARION, melhorias: MELHORIAS_IGNARION, textos: TEXTOS_IGNARION, novidades: NOVIDADES_IGNARION },
 };
 
 // Ordem em que os elementos aparecem nas telas
@@ -194,6 +197,8 @@ export const GOLPES = {
   ...GOLPES_VULCARAPA,
   // golpes próprios do Espinhal e das formas dele (números em js/habilidades/espinhal.js)
   ...GOLPES_ESPINHAL,
+  // golpes próprios do Ignárion e das formas dele (números em js/habilidades/ignarion.js)
+  ...GOLPES_IGNARION,
   // golpes próprios da linha do Musguinho (números em js/habilidades/musguinho.js)
   ...GOLPES_MUSGUINHO,
   // golpes próprios da linha do Pedrisco (números em js/habilidades/pedrisco.js)
@@ -297,9 +302,9 @@ export const DURACAO_EFEITO_DISPARO = 0.5;
 export function melhoriaDe(especie) {
   const e = ESPECIES[especie];
   // o chefe já luta com todas as melhorias (Silvárion também planta a semente com o disparo)
-  if (e.chefe) return e.efeitoDisparo ? { ...MELHORIAS[3], efeitoDisparo: true } : MELHORIAS[3];
   const propria = HABILIDADES_DA_LINHA[e.linha]?.melhorias;
   if (propria) return propria[e.estagio];
+  if (e.chefe) return e.efeitoDisparo ? { ...MELHORIAS[3], efeitoDisparo: true } : MELHORIAS[3];
   if (e.raro) return MELHORIAS[0];
   const m = MELHORIAS[e.estagio];
   return e.dupla ? { ...m, efeitoDisparo: e.estagio >= 2 } : m;
@@ -514,8 +519,25 @@ const MULT_RARO = [1, 1.7, 2.0, 2.35];
 const MULT_VEL_RARO = [1, 1.04, 1.08, 1.12];
 const TAMANHO_RARO = [1, 1.12, 1.24, 1.36];  // multiplica o tamanho da forma inicial
 const CAPTURA_RARO = [1, 0.7, 0.45, 0.25];   // multiplica a chance de captura da forma inicial
-export const ORDEM_LINHAS_RARAS = ['vulcarapa', 'aquaraia', 'espinhal'];
+export const ORDEM_LINHAS_RARAS = ['vulcarapa', 'aquaraia', 'espinhal', 'ignarion'];
+// =============================================================
+// LENDÁRIOS COM FORMAS NOVAS (fase 7: Ignárion; depois o Silvárion)
+// A forma de hoje é a inicial (Nv.1 a 64). As 3 evoluções (Nv.65, 75 e 90) são TODAS
+// com o botão: missão + itens + ouro. Mesma regra de atributos para todos os lendários.
+// A forma inicial continua sendo o chefe da masmorra (chefe, captura só com Cristal Supremo).
+// =============================================================
+export const NIVEIS_EVOLUCAO_LENDARIO = [65, 75, 90];
+export const EVOLUCOES_LENDARIAS = [
+  { missaoNoNivel: 60, contaDesde: 50, alvo: 60, custo: { asas: 2, coracoes: 2, ouro: 4000 } },
+  { missaoNoNivel: 70, contaDesde: 60, alvo: 60, custo: { asas: 4, coracoes: 4, ouro: 8000 } },
+  { missaoNoNivel: 85, contaDesde: 80, alvo: 60, custo: { asas: 6, coracoes: 6, ouro: 15000 } },
+];
+const MULT_LENDARIO = [1, 1.3, 1.6, 2.0];
+export const NOMES_ESTAGIO_LENDARIO = ['Forma inicial', '1ª evolução', '2ª evolução', '3ª evolução'];
+
 // Cada raro: elemento, atributos e medidas da forma inicial + as 4 formas [id, nome, descrição]
+// Lendários (lendario: true): tamanho, raio e altura de cada forma (as formas mudam muito) e
+// "inicial" = o que só a forma inicial tem (é o chefe da masmorra).
 export const LINHAS_RARAS = {
   vulcarapa: { elemento: 'fogo', base: { hp: 62, atk: 12, def: 15, vel: 4.3 }, tamanho: 1.25, captura: 0.35, raio: 0.85, altura: 2.3, formas: [
     ['vulcarapa', 'Vulcarapa', 'Tartaruga com um vulcão no casco. Lenta, gosta de atacar de longe.'],
@@ -535,29 +557,34 @@ export const LINHAS_RARAS = {
     ['espinhaco', 'Espinhaço', 'Ouriço-cacto gigante com uma crista de espinhos dourados nas costas.'],
     ['mandacarao', 'Mandacarão', 'Um mandacaru do sertão. Quando a grande flor branca abre, chovem agulhas.'],
   ] },
+  ignarion: { elemento: 'igneo', lendario: true, base: { hp: 95, atk: 18, def: 16, vel: 6.2 }, captura: 0.04, cristalMin: 2,
+    tamanhos: [1.5, 1.6, 1.7, 1.8], raios: [1.5, 1.6, 1.7, 1.8], alturas: [2.4, 4.2, 4.6, 5.6],
+    inicial: { chefe: true, onde: 'do Caminho das Brasas, no Trono de Magma' }, formas: [
+    ['ignarion', 'Ignárion', 'Dragãozinho do fogo ígneo. Dorme no Trono de Magma e acorda a cada amanhecer. Seu fogo queima até monstros de fogo.'],
+    ['pirarion', 'Pirárion', 'Dragão de pescoço longo com uma crista de fogo e asas de brasa.'],
+    ['magmarion', 'Magmárion', 'Ficou de pé: o corpo virou placas de magma rachadas e os chifres cresceram.'],
+    ['infernarion', 'Infernárion', 'O senhor do fogo ígneo. Asas enormes, um anel de espinhos nas costas e um coração de fogo no peito.'],
+  ] },
 };
 for (const [k, L] of Object.entries(LINHAS_RARAS)) {
   L.formas.forEach(([id, nome, descricao], e) => {
-    const t = TAMANHO_RARO[e];
+    const t = TAMANHO_RARO[e], lenda = !!L.lendario;
+    const mult = lenda ? MULT_LENDARIO[e] : MULT_RARO[e];
     ESPECIES[id] = {
-      nome, descricao, elemento: L.elemento, elementos: [L.elemento], linha: k, linhaRara: true, raro: true, estagio: e, cristalMin: 0,
-      tamanho: L.tamanho * t, captura: L.captura * CAPTURA_RARO[e], raio: L.raio * t, altura: L.altura * t,
-      base: { hp: L.base.hp * MULT_RARO[e], atk: L.base.atk * MULT_RARO[e], def: L.base.def * MULT_RARO[e], vel: L.base.vel * MULT_VEL_RARO[e] },
+      nome, descricao, elemento: L.elemento, elementos: [L.elemento], linha: k, linhaRara: true, raro: true, estagio: e,
+      lendario: lenda, superRaro: lenda, cristalMin: L.cristalMin ?? 0,
+      tamanho: lenda ? L.tamanhos[e] : L.tamanho * t, captura: L.captura * (lenda ? 1 : CAPTURA_RARO[e]),
+      raio: lenda ? L.raios[e] : L.raio * t, altura: lenda ? L.alturas[e] : L.altura * t,
+      base: { hp: L.base.hp * mult, atk: L.base.atk * mult, def: L.base.def * mult, vel: L.base.vel * MULT_VEL_RARO[e] },
       golpes: HABILIDADES_DA_LINHA[k].golpes[e],
       evoluiPara: L.formas[e + 1]?.[0] ?? null,
-      nivelEvolucao: NIVEIS_EVOLUCAO_RARO[e] ?? null,
-      evolucaoRara: e === 2 ? EVOLUCAO_RARA_RARO : null,
+      nivelEvolucao: (lenda ? NIVEIS_EVOLUCAO_LENDARIO : NIVEIS_EVOLUCAO_RARO)[e] ?? null,
+      evolucaoRara: lenda ? EVOLUCOES_LENDARIAS[e] ?? null : e === 2 ? EVOLUCAO_RARA_RARO : null,
+      ...(e === 0 ? L.inicial : null),
     };
   });
 }
-// SUPER RARO: o chefe do Trono de Magma, no fim do Caminho das Brasas
-ESPECIES.ignarion = {
-  onde: 'do Caminho das Brasas, no Trono de Magma',
-  nome: 'Ignárion', elemento: 'igneo', elementos: ['igneo'], linha: null, estagio: 3, raro: true, superRaro: true, chefe: true,
-  tamanho: 1.9, captura: 0.04, cristalMin: 2, raio: 1.7, altura: 3.6,
-  descricao: 'Senhor da cratera. Dorme no Trono de Magma e acorda a cada amanhecer. Seu fogo ígneo queima até monstros de fogo.',
-  base: { hp: 95, atk: 18, def: 16, vel: 6.2 }, golpes: ['mordidaMagma', 'cometaIgneo', 'cataclismo'], evoluiPara: null, nivelEvolucao: null,
-};
+// O Ignárion (chefe do Trono de Magma, no fim do Caminho das Brasas) agora fica em LINHAS_RARAS (lendário).
 // SUPER RARO: o chefe do Santuário da Árvore-Mãe, no fim da Trilha Ancestral (Floresta)
 ESPECIES.silvarion = {
   onde: 'da Trilha Ancestral, no Santuário da Árvore-Mãe',
@@ -593,7 +620,7 @@ export function formaPorNivel(k, nivel, final = false) {
 export function especieDaEscolha(escolha, nivel, final = false) {
   if (escolha.startsWith('L:')) return formaPorNivel(escolha.slice(2), nivel, final);
   const e = ESPECIES[escolha];
-  if (e?.linhaRara && e.estagio === 0) return formaPorNivel(e.linha, nivel, final);
+  if (e?.linhaRara && !e.lendario && e.estagio === 0) return formaPorNivel(e.linha, nivel, final); // lendário: só pelo botão
   return escolha;
 }
 

@@ -331,6 +331,28 @@ Espinhal (Nv.1) > Cactouriço (Nv.55) > Espinhaço (Nv.70) > Mandacarão (Nv.90,
 - Mais agulhas: `agulhas.quantidade` ou `nova.porOnda` e `nova.ondas`.
 - Espinhado mais forte: `ESPINHADO.lento` (0,06 = 6% por espinho) e `ESPINHADO.max`.
 
+### Ígneo (lendário): Ignárion (`ignarion.js` e `ignarion-batalha.js`)
+Ignárion (Nv.1) > Pirárion (Nv.65) > Magmárion (Nv.75) > Infernárion (Nv.90). As 3 evoluções são **com o botão** (`EVOLUCOES_LENDARIAS` em `../dados.js`). A forma inicial continua sendo o **chefe** do Trono de Magma (fúria, Cristal Supremo) e usa tudo isto.
+
+| Forma | Perto | Disparo | Área | Ignição |
+|---|---|---|---|---|
+| Ignárion | Mordida de Magma (de `../dados.js`, força 24) | **Cometa Ígneo**: 3, explosão de 1,5 m (força 14) | **Cataclismo**: 6 m (força 36) | 5 s, +20% |
+| Pirárion | **Mordida e Arremesso**: 5 m, voo 0,55 s | 4 cometas | Cataclismo + 5 fissuras de 7 m (50% da força) | 6 s, +25% |
+| Magmárion | Arremesso de 7 m + explosão de 2 m (60%) | 5 cometas, explosão de 2 m | 7 fissuras de 8 m | 7 s, +25%, aura de 2 m (força 4 a cada 0,5 s) |
+| Infernárion | **Fauces do Inferno**: 8 m + explosão de 3 m (70%) + Combustão garantida | **Cometa Supremo**: 5 + 1 gigante (explosão de 3 m, 180%) | **Apocalipse Ígneo**: 7 m (força 42) + 8 fissuras com fogo no chão por 2 s | 8 s, +30%, aura e explosão de 5 m (força 40) no fim |
+
+- **Calor (`CALOR`):** fica em `c.calorIgneo` (de 0 a 1; **não** use `c.calor`, que é a área do Solito). `aplicarDano` em `../batalha.js` chama `aoAcertar` e `aoApanhar` quando o dano passa; a Ignição fica em `c.ignicao` e entra no dano (`ignicao`). Aparece "Calor N%" / "IGNIÇÃO Ns" embaixo da vida e na placa do inimigo.
+- **Arremesso (`arremesso`):** morde o inimigo da frente; ele fica em `alvo.arremesso` (atordoado, voando em arco com cambalhota) e cai atrás de quem mordeu. Se bater numa pedra ou na borda no caminho, para ali e leva `BATIDA` (+50%, atordoa 0,6 s).
+- **Cometas (`cometas`):** ficam em `this.cometas` (no máximo 10), 1 peça cada; explodem ao acertar, na pedra, na borda ou no fim do alcance.
+- **Fissuras (`cataclismo.fissuras`):** faixas de fogo que crescem do centro para fora e acertam cada inimigo uma vez; uma leva por monstro.
+- **IA:** usa os golpes como os de sempre (mordida de perto, cometas de 2,5 a 12 m, área com você dentro do `raio`).
+- **Modelos** (`linhaIgnarion` em `../modelos.js`, feitos pela arte do Lâmina): as peças acesas usam um material só com a cor em cada peça (`pa` e `MAT_ACESO`), para juntarem num desenho só. Infernárion: 31 peças (o Plenilúnio tem 34).
+
+**Exemplos de mudança (em `ignarion.js`):**
+- Ignição mais longa ou mais forte: `CALOR.ignicao` → `duracao` e `dano`; barra que enche mais rápido: `CALOR.porAcerto`.
+- Arremesso mais longe: `mordidaArremesso` → `arremesso.distancia`.
+- Mais fissuras: `cataclismoFissuras` → `cataclismo.fissuras.n`.
+
 ## Modo treino (monstro invocado no mapa)
 
 Os golpes desta pasta também rodam no mapa, no modo treino (`../treino.js`), quando você controla o monstro invocado. O treino usa a mesma `Batalha`, mas sem inimigos e sem dano (`alvosDe` e `vivos` devolvem lista vazia, e `aplicarDano` não faz nada).

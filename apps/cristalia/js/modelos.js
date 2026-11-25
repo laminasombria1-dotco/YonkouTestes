@@ -849,7 +849,7 @@ function linhaTerraRaio(c, u, e) {
 
 const LINHAS_MODELO = { fogo: linhaFogo, agua: linhaAgua, planta: linhaPlanta, terra: linhaTerra, raio: linhaRaio, sol: linhaSol, lua: linhaLua, luz: linhaLuz, trevas: linhaTrevas,
   fogoPlanta: linhaFogoPlanta, aguaFogo: linhaAguaFogo, terraRaio: linhaTerraRaio,
-  aquaraia: linhaAquaraia, vulcarapa: linhaVulcarapa, espinhal: linhaEspinhal }; // raros com formas novas (a chave é a da linha em LINHAS_RARAS)
+  aquaraia: linhaAquaraia, vulcarapa: linhaVulcarapa, espinhal: linhaEspinhal, ignarion: linhaIgnarion }; // raros e lendários com formas novas (a chave é a da linha em LINHAS_RARAS)
 
 // =============================================================
 // LENDÁRIOS (os 3 raros com formas novas ficam em linhaVulcarapa, linhaAquaraia e linhaEspinhal)
@@ -1101,73 +1101,322 @@ function linhaEspinhal(c, u, e) {
   olhos(c, 1.3, 0.66, 0.2, 0.11);
 }
 
-// ---------- SUPER RARO: Ignárion, o chefe do Trono de Magma ----------
-// Fera de obsidiana com rachaduras de fogo ígneo, chifres, asas de brasa e cauda de chamas
-function ignarion(c, u) {
-  const obs = mat('#2a1a22'), obs2 = mat('#3a2430');
-  const igneo = brilho('#ff3d6a', 0.9), fogoM = brilho('#ffb030', 0.9), lava = brilho('#ff6a1f', 0.85);
-  const yT = 0.95;
-  // corpo e peito
-  p(c, G.ico(0.75, 1), obs, [0, yT, 0], null, [1, 0.85, 1.45]);
-  p(c, G.ico(0.5, 1), obs2, [0, yT - 0.05, 0.75], null, [1, 0.95, 0.9]);
-  // rachaduras brilhando no corpo
-  for (let i = 0; i < 7; i++) {
-    const a = (i / 7) * Math.PI * 2;
-    p(c, G.caixa(0.05, 0.45, 0.05), igneo, [Math.cos(a) * 0.72, yT + Math.sin(a * 2) * 0.12, Math.sin(a) * 0.9], [0, a, 0.4]);
+// ---------- Peças ACESAS (fogo, magma, brilho) dos lendários ----------
+// Todas usam UM material só (sem luz, a cor fica gravada em cada peça). Assim as peças acesas
+// de um mesmo grupo viram um desenho só (juntarPecas), o que deixa o modelo bem mais leve.
+const MAT_ACESO = new THREE.MeshBasicMaterial({ vertexColors: true });
+MAT_ACESO.userData.fixo = true;
+const GEO_COR = new Map();
+function geoCor(g, cor) {
+  const k = g.uuid + '|' + cor;
+  if (!GEO_COR.has(k)) {
+    const c2 = g.clone(), col = new THREE.Color(cor), n = c2.attributes.position.count, arr = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { arr[i * 3] = col.r; arr[i * 3 + 1] = col.g; arr[i * 3 + 2] = col.b; }
+    c2.setAttribute('color', new THREE.BufferAttribute(arr, 3));
+    GEO_COR.set(k, c2);
   }
-  // espinhos de fogo nas costas
-  for (let i = 0; i < 6; i++) {
-    const z = 0.55 - i * 0.32;
-    p(c, G.cone(0.13, 0.55 - Math.abs(i - 2) * 0.05, 4), obs2, [0, yT + 0.58, z], [-0.3, 0, 0]);
-    const ch = p(c, G.cone(0.08, 0.35, 4), igneo, [0, yT + 0.9, z - 0.08], [-0.3, 0, 0]);
-    u.pulsos.push({ obj: ch, base: 1, amp: 0.25, vel: 6 + i });
-  }
-  // pescoço e cabeça
-  const zC = 1.45, yC = yT + 0.75;
-  p(c, G.cil(0.28, 0.38, 0.7, 6), obs, [0, yT + 0.4, 1.05], [0.9, 0, 0]);
-  p(c, G.ico(0.42, 1), obs, [0, yC, zC], null, [1, 0.9, 1.15]);
-  p(c, G.caixa(0.5, 0.22, 0.55), obs2, [0, yC - 0.2, zC + 0.42]);
-  p(c, G.caixa(0.42, 0.06, 0.5), lava, [0, yC - 0.32, zC + 0.42]); // boca acesa
-  for (const s of [-1, 1]) {
-    // chifres
-    apontar(p(c, G.cone(0.1, 0.75, 5), mat('#e8dcc0'), [s * 0.25, yC + 0.4, zC - 0.15]), V(s * 0.5, 1, -0.7));
-    apontar(p(c, G.cone(0.07, 0.45, 5), mat('#e8dcc0'), [s * 0.36, yC + 0.12, zC - 0.2]), V(s, 0.3, -0.6));
-    // patas com garras
-    for (const z of [0.55, -0.6]) {
-      p(c, G.cil(0.17, 0.22, 0.7, 6), obs, [s * 0.5, 0.35, z]);
-      p(c, G.caixa(0.32, 0.12, 0.36), obs2, [s * 0.5, 0.06, z + 0.08]);
-      for (const k of [-1, 0, 1]) p(c, G.cone(0.04, 0.16, 4), mat('#e8dcc0'), [s * 0.5 + k * 0.09, 0.06, z + 0.3], [Math.PI / 2, 0, 0]);
-      p(c, G.caixa(0.04, 0.35, 0.04), igneo, [s * 0.66, 0.4, z]);
+  return GEO_COR.get(k);
+}
+// pa = "peça acesa": como p(), mas com uma cor de fogo em vez de material
+function pa(pai, g, cor, pos, rot = null, esc = null) { return p(pai, geoCor(g, cor), MAT_ACESO, pos, rot, esc); }
+
+// ---------- LENDÁRIO: Ignárion > Pirárion > Magmárion > Infernárion ----------
+// Cada forma é mais espetacular que a anterior (a ideia do Lâmina):
+// dragãozinho de 4 patas > dragão de pescoço longo com asas grandes > colosso de magma de pé >
+// senhor do fogo de pé, com asas enormes, anel de espinhos e coração de fogo.
+const COR_IGN = { corpo: '#241820', barriga: '#8a4a66', rosa: '#ff3d7a', laranja: '#ff8a2a', amarelo: '#ffd040', chifre: '#4a3440', garra: '#efe2cc' };
+
+// Membrana de asa de morcego (forma própria, guardada uma vez por formato).
+// W = pulso, F = pontas dos dedos, B = onde a asa encosta no corpo (coordenadas da asa direita:
+// x para fora, y para cima, z para trás). Cores: magenta perto dos ossos, laranja nas bordas.
+function geoMembrana(chave, W, F, B) {
+  return geo('membrana|' + chave, () => {
+    const pos = [], cor = [];
+    const ROSA = new THREE.Color('#d8266a'), MEIO = new THREE.Color('#ff4a52'), BORDA = new THREE.Color('#ffa02a');
+    const tri = (a, ca, b2, cb, c2, cc) => { pos.push(...a, ...b2, ...c2); cor.push(ca.r, ca.g, ca.b, cb.r, cb.g, cb.b, cc.r, cc.g, cc.b); };
+    const R = [0, 0, 0];
+    const lerp = (p, q, k) => p.map((v, i) => v + (q[i] - v) * k);
+    // entre um dedo e o próximo: um "recorte" puxado para o pulso (borda de morcego)
+    const pontas = [...F, B];
+    tri(R, ROSA, W, ROSA, F[0], BORDA);
+    for (let i = 0; i < pontas.length - 1; i++) {
+      const p = pontas[i], q = pontas[i + 1];
+      const centro = i === pontas.length - 2 ? R : W;
+      const rec = lerp(lerp(p, q, 0.5), centro, 0.32);
+      tri(centro, ROSA, p, BORDA, rec, MEIO);
+      tri(centro, ROSA, rec, MEIO, q, i === pontas.length - 2 ? ROSA : BORDA);
+      if (centro === W) tri(R, ROSA, W, ROSA, q, BORDA); // fecha o miolo da asa
     }
-    // asas de brasa (membrana em leque)
-    const asa = new THREE.Group();
-    asa.position.set(s * 0.55, yT + 0.5, 0.05);
-    for (let k = 0; k < 4; k++) {
-      const osso = p(asa, G.cil(0.03, 0.05, 1.3 - k * 0.15, 4), obs2, [0, 0, 0]);
-      apontar(osso, V(s * 1, 0.6 - k * 0.32, -0.4 - k * 0.1));
-      osso.position.set(s * (0.55 - k * 0.04), 0.35 - k * 0.2, -0.3 - k * 0.12);
-      p(asa, G.cone(0.22, 1.15 - k * 0.12, 3), k % 2 ? lava : igneo, [s * (0.6 - k * 0.04), 0.3 - k * 0.2, -0.32 - k * 0.12], [0, 0, -s * (1.0 - k * 0.3)], [1, 1, 0.25]);
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(cor, 3));
+    g.computeVertexNormals();
+    return g;
+  });
+}
+
+// Asa de dragão: ossos escuros, membrana em degradê e chamas nas pontas. Bate (u.asas).
+function asaDragao(c, u, s, pos, chave, W, F, B, k = 1, abre = 0.25, ct = 1) {
+  const g = new THREE.Group();
+  g.position.set(...pos);
+  const m = new THREE.Group();
+  m.scale.set(s * k, k, k); // espelha a asa esquerda
+  g.add(m);
+  const osso = mat(COR_IGN.corpo), ponta = COR_IGN.laranja, chama = COR_IGN.amarelo;
+  const membrana = new THREE.MeshLambertMaterial({ vertexColors: true, emissive: '#5a0a24', emissiveIntensity: 0.6, side: THREE.DoubleSide, flatShading: true });
+  m.add(new THREE.Mesh(geoMembrana(chave, W, F, B), membrana));
+  const vW = V(...W);
+  const ossoEntre = (a, b, r) => {
+    const d = V(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+    const o = p(m, G.cil(r * 0.6, r, d.length(), 4), osso, [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2]);
+    apontar(o, d);
+  };
+  ossoEntre([0, 0, 0], W, 0.07);
+  for (const f of F) {
+    ossoEntre(W, f, 0.045);
+    const d = V(f[0] - W[0], f[1] - W[1], f[2] - W[2]).normalize();
+    apontar(pa(m, G.cone(0.09 * ct, 0.42 * ct, 4), chama, [f[0] + d.x * 0.15 * ct, f[1] + d.y * 0.15 * ct, f[2] + d.z * 0.15 * ct], null, [1, 1, 0.35]), d);
+  }
+  apontar(p(m, G.cone(0.06, 0.22, 4), mat(COR_IGN.garra), [W[0], W[1] + 0.1, W[2]]), V(0.2, 1, 0.3)); // garrinha do pulso
+  // chamas pequenas no meio da borda
+  for (let i = 0; i < F.length - 1; i++) {
+    const mid = [(F[i][0] + F[i + 1][0]) / 2, (F[i][1] + F[i + 1][1]) / 2, (F[i][2] + F[i + 1][2]) / 2];
+    const d = V(mid[0] - vW.x, mid[1] - vW.y, mid[2] - vW.z).normalize();
+    apontar(pa(m, G.cone(0.07 * ct, 0.3 * ct, 4), ponta, [mid[0] - d.x * 0.25, mid[1] - d.y * 0.25, mid[2] - d.z * 0.25], null, [1, 1, 0.35]), d);
+  }
+  c.add(g);
+  u.asas.push({ obj: g, lado: s, base: s * abre });
+  return g;
+}
+
+// Chama de várias pontas (amarela por dentro, laranja e rosa por fora). Pulsa.
+function chamaIgnea(pai, u, pos, tam, dir = V(0, 1, 0)) {
+  const g = new THREE.Group();
+  g.position.set(...pos);
+  apontar(g, dir);
+  const lar = COR_IGN.laranja, ama = COR_IGN.amarelo, ros = COR_IGN.rosa;
+  pa(g, G.cone(0.13 * tam, 0.7 * tam, 5), ama, [0, 0.35 * tam, 0]);
+  for (let i = 0; i < 5; i++) { // línguas de fogo abertas em coroa
+    const a = (i / 5) * Math.PI * 2;
+    pa(g, G.cone(0.09 * tam, (0.42 + (i % 2) * 0.14) * tam, 4), i % 2 ? ama : lar, [Math.cos(a) * 0.1 * tam, 0.2 * tam, Math.sin(a) * 0.1 * tam], [Math.sin(a) * 0.45, 0, -Math.cos(a) * 0.45]);
+  }
+  for (let i = 0; i < 3; i++) { const a = (i / 3) * Math.PI * 2 + 0.5; pa(g, G.cone(0.06 * tam, 0.26 * tam, 4), ros, [Math.cos(a) * 0.17 * tam, 0.08 * tam, Math.sin(a) * 0.17 * tam], [Math.sin(a) * 0.8, 0, -Math.cos(a) * 0.8]); }
+  pai.add(g);
+  u.pulsos.push({ obj: g, base: 1, amp: 0.15, vel: 7 + Math.random() * 3 });
+  return g;
+}
+
+// Tubo liso passando por vários pontos (pescoço, chifre): cilindros entre os pontos e bolinhas nas juntas
+function tubo(pai, m, pts, raios, ponta = null) {
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i], b2 = pts[i + 1], d = V(b2[0] - a[0], b2[1] - a[1], b2[2] - a[2]);
+    apontar(p(pai, G.cil(raios[i + 1], raios[i], d.length(), 6), m, [(a[0] + b2[0]) / 2, (a[1] + b2[1]) / 2, (a[2] + b2[2]) / 2]), d);
+    if (i > 0) p(pai, G.ico(raios[i], 0), m, a);
+  }
+  if (ponta) {
+    const n = pts.length, a = pts[n - 2], b2 = pts[n - 1], d = V(b2[0] - a[0], b2[1] - a[1], b2[2] - a[2]).normalize();
+    apontar(p(pai, G.cone(raios[n - 1], ponta, 5), m, [b2[0] + d.x * ponta / 2, b2[1] + d.y * ponta / 2, b2[2] + d.z * ponta / 2]), d);
+  }
+}
+
+// Cauda em segmentos (balança) com espinhos e, se quiser, chama na ponta
+function caudaDragao(c, u, pos, n, r0, passo, sobe, espinhos, chama) {
+  const g = new THREE.Group();
+  g.position.set(...pos);
+  const corpo = mat(COR_IGN.corpo), esp = COR_IGN.rosa;
+  let y = 0, z = 0;
+  for (let i = 0; i < n; i++) {
+    const r = r0 * (1 - i / (n + 1));
+    y += sobe[i] ?? 0; z -= passo;
+    p(g, G.ico(r, 0), corpo, [0, y, z], null, [1, 0.9, 1.5]);
+    if (espinhos && i % 1 === 0) pa(g, G.cone(r * 0.45, r * 1.4, 4), esp, [0, y + r * 0.9, z], [-0.5, 0, 0]);
+  }
+  if (chama) chamaIgnea(g, u, [0, y + 0.1, z - passo * 0.6], chama, V(0, 0.8, -0.5));
+  c.add(g);
+  u.caudas.push(g);
+  return g;
+}
+
+// Chifre curvo: sai da cabeça para o lado, sobe e vira para dentro (s = lado)
+function chifreGrande(pai, m, base, s, tam) {
+  const [x, y, z] = base, t = tam;
+  tubo(pai, m, [[x, y, z], [x + s * 0.3 * t, y + 0.04 * t, z - 0.04 * t], [x + s * 0.55 * t, y + 0.22 * t, z - 0.08 * t], [x + s * 0.62 * t, y + 0.52 * t, z - 0.06 * t], [x + s * 0.48 * t, y + 0.78 * t, z]],
+    [0.13 * t, 0.12 * t, 0.1 * t, 0.075 * t, 0.055 * t], 0.24 * t);
+}
+
+// Placas de magma: um miolo laranja aceso e placas escuras por cima (as frestas brilham)
+function placasMagma(c, centro, raios, placas, rPlaca) {
+  pa(c, G.ico(1, 1), '#ff7a1a', centro, null, raios);
+  for (const [x, y] of placas) {
+    // ponto na frente do elipsoide, virado para fora
+    const nx = x / raios[0], ny = y / raios[1];
+    const nz = Math.sqrt(Math.max(0.05, 1 - nx * nx - ny * ny));
+    const pos = [centro[0] + x, centro[1] + y, centro[2] + nz * raios[2] * 1.02];
+    apontar(p(c, G.cil(rPlaca, rPlaca * 1.05, 0.08, 6), mat(COR_IGN.corpo), pos), V(nx / raios[0], ny / raios[1], nz / raios[2]));
+  }
+}
+
+// Perna de dragão em pé (gira ao andar: u.pernas) e braço com garras (u.bracos)
+function pernaDragao(c, x, quadril, coxa, canela, grossa, joelho) {
+  const g = new THREE.Group();
+  g.position.set(x, quadril, 0);
+  const corpo = mat(COR_IGN.corpo);
+  p(g, G.cil(grossa * 0.8, grossa, coxa, 6), corpo, [0, -coxa / 2, 0.05]);
+  p(g, G.cil(grossa * 0.6, grossa * 0.75, canela, 6), corpo, [0, -coxa - canela / 2 + 0.05, -0.05]);
+  p(g, G.caixa(grossa * 1.6, 0.16, grossa * 2.4), corpo, [0, -quadril + 0.08, 0.12]);
+  for (const k of [-1, 0, 1]) p(g, G.cone(0.05, 0.2, 4), mat(COR_IGN.garra), [k * grossa * 0.5, -quadril + 0.07, 0.12 + grossa * 1.25], [Math.PI / 2, 0, 0]);
+  if (joelho) pa(g, G.ico(grossa * 0.55, 0), '#ff7a1a', [0, -coxa + 0.02, grossa * 0.75]);
+  c.add(g);
+  return g;
+}
+function bracoDragao(c, s, ombro, comp, grossa, chama, u) {
+  const g = new THREE.Group();
+  g.position.set(...ombro);
+  const corpo = mat(COR_IGN.corpo);
+  p(g, G.cil(grossa * 0.8, grossa, comp * 0.5, 6), corpo, [s * 0.05, -comp * 0.25, 0], [0, 0, s * 0.15]);
+  p(g, G.cil(grossa * 0.65, grossa * 0.8, comp * 0.5, 6), corpo, [s * 0.1, -comp * 0.72, 0.12], [0.35, 0, 0]);
+  p(g, G.ico(grossa * 0.9, 0), corpo, [s * 0.12, -comp * 0.98, 0.22]);
+  for (const k of [-1, 0, 1]) p(g, G.cone(0.045, 0.2, 4), mat(COR_IGN.garra), [s * 0.12 + k * grossa * 0.45, -comp * 1.05, 0.32], [Math.PI / 2 + 0.5, 0, 0]);
+  if (chama) chamaIgnea(g, u, [s * 0.02, -comp * 0.5, -grossa * 0.9], chama, V(s * 0.3, 0.2, -1));
+  c.add(g);
+  return g;
+}
+
+function linhaIgnarion(c, u, e) {
+  const corpo = mat(COR_IGN.corpo), barriga = mat(COR_IGN.barriga), chifre = mat(COR_IGN.chifre);
+  const rosa = COR_IGN.rosa, magma = '#ff7a1a';
+  const garra = mat(COR_IGN.garra);
+  // pata de 4 patas: coxa grossa, canela e pé com 3 garras
+  const pata = (x, z, alto, gr) => {
+    p(c, G.cil(gr * 0.85, gr * 1.15, alto * 0.55, 6), corpo, [x, alto * 0.7, z]);
+    p(c, G.cil(gr * 0.65, gr * 0.8, alto * 0.5, 6), corpo, [x, alto * 0.28, z + 0.04]);
+    p(c, G.caixa(gr * 1.7, gr * 0.6, gr * 2.2), corpo, [x, gr * 0.3, z + gr * 0.5]);
+    for (const k of [-1, 0, 1]) p(c, G.cone(gr * 0.22, gr * 0.75, 4), garra, [x + k * gr * 0.55, gr * 0.28, z + gr * 1.65], [Math.PI / 2, 0, 0]);
+  };
+  if (e === 0) {
+    // ---- Ignárion: dragãozinho de 4 patas, cabeça grande, asinhas e chama na cauda ----
+    p(c, G.ico(0.45, 1), corpo, [0, 0.62, -0.05], null, [0.85, 0.75, 1.35]);
+    p(c, G.ico(0.45, 1), barriga, [0, 0.52, 0.08], null, [0.68, 0.55, 1.2]);
+    tubo(c, corpo, [[0, 0.72, 0.45], [0, 0.88, 0.75], [0, 1.02, 0.95]], [0.24, 0.2, 0.19]);
+    p(c, G.ico(0.36, 1), corpo, [0, 1.1, 1.08], null, [0.95, 0.85, 1.05]);
+    p(c, G.ico(0.28, 1), corpo, [0, 1.0, 1.42], null, [0.8, 0.62, 1.05]);
+    pa(c, G.caixa(0.26, 0.04, 0.3), rosa, [0, 0.9, 1.48]);
+    for (const s of [-1, 1]) {
+      chifreGrande(c, chifre, [s * 0.16, 1.32, 0.98], s, 0.55);
+      pata(s * 0.3, 0.38, 0.5, 0.1);
+      pata(s * 0.3, -0.42, 0.5, 0.1);
+      asaDragao(c, u, s, [s * 0.25, 0.92, 0.1], 'ign0', [0.42, 0.42, -0.05], [[0.95, 0.7, -0.25], [0.95, 0.2, -0.45], [0.6, -0.1, -0.55]], [0.05, -0.08, -0.5], 1, 0.35, 0.55);
     }
-    c.add(asa);
-    u.asas.push({ obj: asa, base: s * 0.2, lado: s });
+    for (let i = 0; i < 4; i++) pa(c, G.cone(0.06, 0.22, 4), rosa, [0, 1.0 - i * 0.03, 0.35 - i * 0.26], [-0.4, 0, 0]);
+    caudaDragao(c, u, [0, 0.58, -0.62], 6, 0.16, 0.2, [0, 0.04, 0.08, 0.12, 0.15, 0.17], false, 0.55);
+    olhos(c, 1.16, 1.33, 0.17, 0.09, COR_IGN.rosa);
+    u.sombra.scale.set(0.9, 1.4, 1);
+    return;
   }
-  // cauda em segmentos com chama na ponta
-  const cauda = new THREE.Group();
-  cauda.position.set(0, yT, -1.0);
-  for (let i = 0; i < 5; i++) {
-    p(cauda, G.ico(0.27 - i * 0.04, 0), obs, [0, 0.02 - i * 0.1, -0.2 - i * 0.24], null, [1, 0.9, 1.5]);
-    p(cauda, G.cone(0.05, 0.2, 4), igneo, [0, 0.22 - i * 0.12, -0.2 - i * 0.24], [-0.4, 0, 0]);
+  if (e === 1) {
+    // ---- Pirárion: pescoço longo, crista de fogo, asas grandes e cauda com chama ----
+    p(c, G.ico(0.55, 1), corpo, [0, 1.0, -0.05], null, [0.85, 0.72, 1.4]);
+    p(c, G.ico(0.55, 1), barriga, [0, 0.88, 0.08], null, [0.68, 0.55, 1.25]);
+    // pescoço liso em S e a barriga clara na frente dele
+    tubo(c, corpo, [[0, 1.2, 0.55], [0, 1.6, 0.82], [0, 2.0, 0.92], [0, 2.32, 0.95]], [0.3, 0.24, 0.2, 0.18]);
+    tubo(c, barriga, [[0, 1.12, 0.72], [0, 1.55, 0.96], [0, 1.95, 1.05], [0, 2.22, 1.06]], [0.2, 0.16, 0.13, 0.11]);
+    // cabeça
+    p(c, G.ico(0.32, 1), corpo, [0, 2.5, 1.02], null, [0.9, 0.82, 1.1]);
+    p(c, G.ico(0.25, 1), corpo, [0, 2.4, 1.36], null, [0.78, 0.6, 1.15]);
+    pa(c, G.caixa(0.22, 0.04, 0.3), rosa, [0, 2.3, 1.42]);
+    for (const s of [-1, 1]) {
+      chifreGrande(c, chifre, [s * 0.16, 2.7, 0.9], s, 0.5);
+      apontar(p(c, G.cone(0.05, 0.4, 4), chifre, [s * 0.26, 2.55, 0.84]), V(s * 0.8, 0.3, -1));
+      pata(s * 0.36, 0.48, 0.75, 0.14);
+      pata(s * 0.36, -0.5, 0.75, 0.14);
+      asaDragao(c, u, s, [s * 0.3, 1.4, 0.05], 'ign1', [0.9, 0.85, -0.1], [[2.1, 1.25, -0.45], [2.15, 0.45, -0.8], [1.7, -0.2, -1.0], [1.0, -0.45, -0.95]], [0.15, -0.25, -0.85], 1, 0.35);
+    }
+    // crista de fogo na cabeça (várias chamas para trás)
+    chamaIgnea(c, u, [0, 2.75, 0.98], 0.75, V(0, 1, -0.25));
+    chamaIgnea(c, u, [0, 2.68, 0.78], 0.6, V(0, 0.7, -0.8));
+    chamaIgnea(c, u, [0, 2.5, 0.66], 0.45, V(0, 0.4, -1));
+    for (let i = 0; i < 6; i++) pa(c, G.cone(0.08, 0.32, 4), rosa, [0, 1.42 - i * 0.04, 0.35 - i * 0.26], [-0.5, 0, 0]);
+    caudaDragao(c, u, [0, 0.95, -0.7], 8, 0.22, 0.27, [0, -0.06, -0.08, -0.06, 0, 0.06, 0.12, 0.15], true, 0.75);
+    olhos(c, 2.57, 1.28, 0.17, 0.085, COR_IGN.rosa);
+    u.sombra.scale.set(1.1, 1.6, 1);
+    return;
   }
-  const chamaCauda = p(cauda, G.cone(0.2, 0.7, 5), fogoM, [0, -0.45, -1.55], [-1.8, 0, 0]);
-  u.pulsos.push({ obj: chamaCauda, base: 1, amp: 0.3, vel: 8 });
-  c.add(cauda);
-  u.caudas.push(cauda);
-  // brasas ígneas girando em volta
+  if (e === 2) {
+    // ---- Magmárion: colosso de pé, coberto de placas de magma rachadas, chifres grandes ----
+    u.pernas = [pernaDragao(c, -0.42, 1.05, 0.55, 0.5, 0.3, true), pernaDragao(c, 0.42, 1.05, 0.55, 0.5, 0.3, true)];
+    p(c, G.ico(0.75, 1), corpo, [0, 1.65, 0], null, [1.05, 1.0, 0.85]);
+    // placas escuras por cima de um miolo aceso: só as frestas brilham
+    // grade de placas hexagonais bem juntas: sobram só as frestas finas acesas
+    const grade = [];
+    for (let lin = 0; lin < 7; lin++) {
+      const y = 0.58 - lin * 0.2;
+      for (let col = -3; col <= 3; col++) {
+        const x = col * 0.21 + (lin % 2) * 0.105;
+        if ((x / 0.64) ** 2 + (y / 0.74) ** 2 < 0.97) grade.push([x, y]);
+      }
+    }
+    placasMagma(c, [0, 1.62, 0.12], [0.66, 0.76, 0.6], grade, 0.12);
+    for (const s of [-1, 1]) {
+      p(c, G.dode(0.36), corpo, [s * 0.78, 2.15, 0]);
+      pa(c, G.caixa(0.04, 0.3, 0.04), magma, [s * 0.86, 2.15, 0.33], [0, 0, s * 0.5]);
+    }
+    u.bracos = [bracoDragao(c, -1, [-1.0, 2.05, -0.05], 1.2, 0.24, 0, u), bracoDragao(c, 1, [1.0, 2.05, -0.05], 1.2, 0.24, 0, u)];
+    for (const s of [-1, 1]) for (const [y, r] of [[1.78, 0.4], [1.45, -0.3]]) pa(c, G.caixa(0.04, 0.32, 0.04), magma, [s * 0.74, y, 0.25], [0.3, 0, s * r]); // rachaduras dos lados
+    // cabeça de touro, olhos acesos e chifres grandes curvos
+    p(c, G.ico(0.34, 1), corpo, [0, 2.55, 0.3], null, [1.05, 0.85, 1.0]);
+    p(c, G.ico(0.25, 1), corpo, [0, 2.45, 0.58], null, [0.9, 0.62, 0.85]);
+    pa(c, G.caixa(0.04, 0.2, 0.04), magma, [0, 2.62, 0.62], [0, 0, 0]); // racha na testa
+    for (const s of [-1, 1]) chifreGrande(c, chifre, [s * 0.26, 2.7, 0.22], s, 1.0);
+    for (const s of [-1, 1]) asaDragao(c, u, s, [s * 0.4, 2.2, -0.45], 'ign2', [0.9, 0.95, -0.2], [[2.0, 1.4, -0.5], [2.1, 0.55, -0.75], [1.65, -0.15, -0.9], [0.95, -0.45, -0.8]], [0.1, -0.4, -0.6], 1, 0.3);
+    caudaDragao(c, u, [0, 1.05, -0.55], 6, 0.3, 0.3, [0, -0.12, -0.12, -0.08, -0.04, 0], true, 0);
+    for (let i = 0; i < 2; i++) u.orbitas.push({ obj: pa(c, G.octa(0.13), '#ff6a2a', [0, 0, 0], null, [1, 1.7, 1]), raio: 1.0, vel: 0.9, y: 3.0, fase: i * Math.PI });
+    olhos(c, 2.6, 0.58, 0.16, 0.075, '#ffb030');
+    u.sombra.scale.set(1.3, 1.3, 1);
+    return;
+  }
+  // ---- Infernárion: senhor do fogo de pé, asas enormes, anel de espinhos e coração de fogo ----
+  u.pernas = [pernaDragao(c, -0.32, 1.25, 0.65, 0.6, 0.26, false), pernaDragao(c, 0.32, 1.25, 0.65, 0.6, 0.26, false)];
+  p(c, G.ico(0.6, 1), corpo, [0, 1.95, 0], null, [1.05, 1.25, 0.8]);
+  p(c, G.ico(0.5, 1), barriga, [0, 1.9, 0.2], null, [0.82, 1.18, 0.7]);
+  // coração de fogo no peito, com rachaduras saindo dele
+  const coracao = new THREE.Group();
+  coracao.position.set(0, 2.05, 0.56);
+  const fogoC = '#ffa020', luzC = '#fff0a0';
+  for (const s of [-1, 1]) pa(coracao, G.ico(0.15, 1), fogoC, [s * 0.12, 0.1, 0], null, [1, 1, 0.45]);
+  pa(coracao, G.cone(0.26, 0.36, 6), fogoC, [0, -0.1, 0], [Math.PI, 0, 0], [1, 1, 0.45]);
+  for (const s of [-1, 1]) pa(coracao, G.ico(0.08, 1), luzC, [s * 0.07, 0.07, 0.06], null, [1, 1, 0.45]);
+  pa(coracao, G.cone(0.14, 0.22, 6), luzC, [0, -0.06, 0.06], [Math.PI, 0, 0], [1, 1, 0.45]);
+  c.add(coracao);
+  u.pulsos.push({ obj: coracao, base: 1, amp: 0.1, vel: 4 });
   for (let i = 0; i < 6; i++) {
-    const o = p(c, G.octa(0.1), i % 2 ? igneo : fogoM, [0, 0, 0], null, [1, 1.8, 1]);
-    u.orbitas.push({ obj: o, raio: 1.6, vel: 1.4, y: yT + 0.6 + (i % 3) * 0.3, fase: (i / 6) * Math.PI * 2 });
+    const a = (i / 6) * Math.PI * 2 + 0.3;
+    pa(c, G.caixa(0.04, 0.34, 0.03), magma, [Math.sin(a) * 0.36, 2.05 + Math.cos(a) * 0.42, 0.52], [0, 0, -a]);
   }
-  olhos(c, yC + 0.1, zC + 0.38, 0.17, 0.1, '#ff3d6a');
+  for (const s of [-1, 1]) p(c, G.dode(0.28), corpo, [s * 0.66, 2.6, 0]);
+  u.bracos = [bracoDragao(c, -1, [-0.72, 2.55, 0.05], 1.25, 0.18, 0.65, u), bracoDragao(c, 1, [0.72, 2.55, 0.05], 1.25, 0.18, 0.65, u)];
+  // pescoço, cabeça, chifres curvos e coroa de fogo
+  tubo(c, corpo, [[0, 2.7, 0.0], [0, 3.0, 0.12]], [0.26, 0.2]);
+  p(c, G.ico(0.32, 1), corpo, [0, 3.25, 0.22], null, [0.95, 0.85, 1.05]);
+  p(c, G.ico(0.23, 1), corpo, [0, 3.15, 0.52], null, [0.8, 0.6, 1.05]);
+  pa(c, G.caixa(0.2, 0.04, 0.22), rosa, [0, 3.05, 0.58]);
+  for (const s of [-1, 1]) chifreGrande(c, chifre, [s * 0.24, 3.42, 0.12], s, 0.8);
+  chamaIgnea(c, u, [0, 3.48, 0.2], 0.9, V(0, 1, -0.1));
+  // anel de espinhos (auréola) atrás da cabeça
+  const anel = new THREE.Group();
+  anel.position.set(0, 3.3, -0.55);
+  pa(anel, G.toro(1.1, 0.075, Math.PI * 2, 5, 28), '#ff3d8a', [0, 0, 0]);
+  for (let i = 0; i < 14; i++) {
+    const a = (i / 14) * Math.PI * 2;
+    apontar(pa(anel, G.cone(0.07, i % 2 ? 0.32 : 0.5, 4), i % 2 ? '#ff3d8a' : COR_IGN.amarelo, [Math.cos(a) * 1.25, Math.sin(a) * 1.25, 0]), V(Math.cos(a), Math.sin(a), 0));
+  }
+  c.add(anel);
+  u.pulsos.push({ obj: anel, base: 1, amp: 0.04, vel: 2 });
+  // asas enormes
+  const W = [1.1, 1.2, -0.15], F = [[2.9, 1.9, -0.45], [3.1, 0.9, -0.7], [2.7, -0.1, -0.9], [2.0, -0.75, -0.95], [1.1, -0.95, -0.8]];
+  for (const s of [-1, 1]) asaDragao(c, u, s, [s * 0.35, 2.5, -0.35], 'ign3', W, F, [0.1, -0.7, -0.55], 1, 0.3);
+  caudaDragao(c, u, [0, 1.35, -0.45], 7, 0.24, 0.28, [-0.1, -0.15, -0.12, -0.08, -0.02, 0.05, 0.1], true, 0.8);
+  olhos(c, 3.28, 0.5, 0.15, 0.075, COR_IGN.rosa);
+  u.sombra.scale.set(1.4, 1.3, 1);
 }
 
 // ---------- SUPER RARO: Silvárion, o chefe do Santuário da Árvore-Mãe ----------
@@ -1244,7 +1493,7 @@ function silvarion(c, u) {
   olhos(c, yC + 0.08, zC + 0.28, 0.15, 0.08, '#1fe0a0');
 }
 
-const RAROS_MODELO = { ignarion, silvarion };
+const RAROS_MODELO = { silvarion };
 
 // =============================================================
 // JUNTAR PEÇAS (deixa o jogo leve no celular)
@@ -1259,7 +1508,7 @@ const RAROS_MODELO = { ignarion, silvarion };
 const SEM_INDICE = new WeakMap();
 const _m3 = new THREE.Matrix3(), _v3 = new THREE.Vector3();
 function chaveMaterial(m) {
-  return [m.type, m.color?.getHexString(), m.emissive?.getHexString(), m.emissiveIntensity, m.transparent, m.opacity, m.side, m.flatShading].join('|');
+  return [m.type, m.color?.getHexString(), m.emissive?.getHexString(), m.emissiveIntensity, m.transparent, m.opacity, m.side, m.flatShading, m.vertexColors].join('|');
 }
 function semIndice(geo) {
   if (!SEM_INDICE.has(geo)) SEM_INDICE.set(geo, geo.index ? geo.toNonIndexed() : geo);
@@ -1285,6 +1534,9 @@ export function juntarPecas(raiz, fixos = new Set()) {
       let total = 0;
       const geos = lista.map((o) => { const geo = semIndice(o.geometry); total += geo.attributes.position.count; return geo; });
       const pos = new Float32Array(total * 3), nor = new Float32Array(total * 3);
+      // peças com cor em cada vértice (material "aceso" dos lendários): a cor vai junto
+      const temCor = geos.every((g2) => g2.attributes.color);
+      const cor = temCor ? new Float32Array(total * 3) : null;
       let k = 0;
       lista.forEach((o, i) => {
         o.updateMatrix();
@@ -1299,6 +1551,7 @@ export function juntarPecas(raiz, fixos = new Set()) {
             pos[k] = _v3.x; pos[k + 1] = _v3.y; pos[k + 2] = _v3.z;
             if (N) _v3.fromBufferAttribute(N, j).applyMatrix3(_m3).normalize(); else _v3.set(0, 1, 0);
             nor[k] = _v3.x; nor[k + 1] = _v3.y; nor[k + 2] = _v3.z;
+            if (cor) { const C = geos[i].attributes.color; cor[k] = C.getX(j); cor[k + 1] = C.getY(j); cor[k + 2] = C.getZ(j); }
             k += 3;
           }
         }
@@ -1307,6 +1560,7 @@ export function juntarPecas(raiz, fixos = new Set()) {
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
       geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+      if (cor) geo.setAttribute('color', new THREE.BufferAttribute(cor, 3));
       geo.computeBoundingSphere();
       const junto = new THREE.Mesh(geo, lista[0].material);
       junto.userData.geometriaPropria = true; // é só deste modelo: some junto com ele

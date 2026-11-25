@@ -210,13 +210,13 @@ export class PainelGM {
   opcoesEspecies(escolhida) {
     const op = (id) => {
       const e = ESPECIES[id];
-      const etapa = e.chefe ? 'chefe' : e.linhaRara ? 'raro, ' + NOMES_ESTAGIO[e.estagio].toLowerCase() : e.raro ? 'raro' : NOMES_ESTAGIO[e.estagio].toLowerCase();
+      const etapa = e.lendario ? 'lendário, ' + (e.chefe ? 'chefe' : e.estagio + 'ª evolução') : e.chefe ? 'chefe' : e.linhaRara ? 'raro, ' + NOMES_ESTAGIO[e.estagio].toLowerCase() : e.raro ? 'raro' : NOMES_ESTAGIO[e.estagio].toLowerCase();
       return `<option value="${id}" ${id === escolhida ? 'selected' : ''}>${esc(e.nome)} (${etapa})</option>`;
     };
     const grupos = [
       ...ORDEM_ELEMENTOS.map((el) => [ELEMENTOS[el].nome, formasDaLinha(el)]),
       ...ORDEM_DUPLAS.map((k) => [nomeDupla(k) + ' (tipo duplo)', formasDaLinha(k)]),
-      ...ORDEM_LINHAS_RARAS.map((k) => [ESPECIES[k].nome + ' (raro)', formasDaLinha(k)]),
+      ...ORDEM_LINHAS_RARAS.map((k) => [ESPECIES[k].nome + (ESPECIES[k].lendario ? ' (lendário)' : ' (raro)'), formasDaLinha(k)]),
       ['Raros e chefes', RAROS.filter((id) => !ESPECIES[id].linhaRara)],
     ];
     return grupos.map(([nome, ids]) => `<optgroup label="${esc(nome)}">${ids.map(op).join('')}</optgroup>`).join('');

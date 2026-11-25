@@ -328,13 +328,14 @@ Sai da borda do mapa pelo bioma de Lava, depois do Vulcão, seguindo a estrada d
 - Não dá para fincar a bandeira lá dentro (calor demais). Finque antes da entrada.
 - Quanto mais fundo, mais escuro fica o céu, com cinzas caindo e brasas subindo.
 
-### Chefe: Ignárion (super raro)
+### Chefe: Ignárion (lendário)
 
 - Fica no **Trono de Magma**, no fim do caminho, aos pés de um vulcão gigante.
 - Tipo **Ígneo**, um elemento novo: um fogo mais forte, que é super efetivo contra Planta, Terra e até Fogo. Só a **Água** é forte contra ele.
 - Efeito do Ígneo: **Combustão**, que tira 6% da vida por segundo e impede cura.
 - Nível: 1,4× o nível da equipe + 22 (Nv.26 com equipe Nv.3).
 - Com menos da metade da vida, entra em **fúria** e ataca bem mais rápido.
+- Usa os golpes de lendário (veja "Golpes do Ignárion"), com o **Calor Ígneo**: quando a barra enche, entra em **Ignição** (mais dano por 5 s). A placa mostra "Calor N%".
 - Só é capturado com **Cristal Supremo**, e a chance é bem baixa.
 - Vencido ou capturado, deixa 3 Cristais Fortes e 2 Supremos, e vale o dobro de experiência. Ele volta no próximo amanhecer.
 
@@ -449,7 +450,15 @@ Os atributos seguem a mesma regra para os 3: a base da forma inicial × 1 / 1,7 
 | Fogo | Vulcarapa | Basaltuga | Crateruga | Colossarapa |
 | Água | Aquaraia | Ventaraia | Mantaré | Leviaraia |
 | Planta | Espinhal | Cactouriço | Espinhaço | Mandacarão |
-Super raros (chefes): Ignárion (Ígneo, Caminho das Brasas) e Silvárion (Silvestre, Trilha Ancestral).
+Lendários (os chefes das masmorras; fase 7 do `PLANO.md`): a forma de hoje vale do Nv.1 ao 64 e as **3 evoluções são todas com o botão**
+(missão + itens + ouro): Nv.65 (missão no Nv.60, inimigos do Nv.50+; 2 Asas, 2 Corações, 4.000 de ouro), Nv.75 (Nv.70, Nv.60+; 4/4/8.000)
+e Nv.90 (Nv.85, Nv.80+; 6/6/15.000). Atributos iguais para todos os lendários: a base × 1 / 1,3 / 1,6 / 2,0 (`MULT_LENDARIO` no `js/dados.js`).
+
+| Lendário | Forma inicial (Nv.1) | 1ª evolução (Nv.65) | 2ª evolução (Nv.75) | 3ª evolução (Nv.90) |
+|---|---|---|---|---|
+| Ígneo | Ignárion (dragãozinho de 4 patas) | Pirárion (pescoço longo, crista de fogo) | Magmárion (de pé, placas de magma) | Infernárion (asas enormes, anel de espinhos, coração de fogo) |
+
+Ainda sem formas novas: Silvárion (Silvestre, Trilha Ancestral).
 
 ## Vida e dano
 
@@ -598,6 +607,22 @@ O Espinhal é um ouriço-cacto: os espinhos **cravam** (cada um deixa o inimigo 
 
 - **Espinhado:** cada espinho cravado deixa **6% mais lento** (até 5 = 30%), por 4 s (renova a cada espinho). No Mandacarão, com 5 espinhos o inimigo fica **Enraizado** 1 s e os espinhos caem. Aparece ao lado do nome do inimigo ("Espinhos 3") e embaixo da sua vida quando é você. Chefes e o Campeão ficam lentos só pela metade.
 - O **Rei Julius** usa o **Mandacarão** (já no Nv.50 e na revanche no Nv.100).
+- Mais detalhes em `js/habilidades/README.md`.
+
+## Golpes do Ignárion (lendário Ígneo)
+
+O Ignárion tem o **Calor Ígneo**: cada golpe que acerta enche 8% da barra (e cada dano que leva, 4%). Cheia, ele entra em **Ignição** sozinho e bate mais forte. Os números ficam em `js/habilidades/ignarion.js`; como funcionam e aparecem, em `js/habilidades/ignarion-batalha.js`.
+
+| Forma | Perto | Disparo | Área | Ignição |
+|---|---|---|---|---|
+| Ignárion (Nv.1) | **Mordida de Magma** | **Cometa Ígneo**: 3 cometas que explodem | **Cataclismo**: 6 m em volta | 5 s, +20% |
+| Pirárion (Nv.65) | **Mordida e Arremesso**: joga o alvo 5 m por cima da cabeça, para trás (bateu numa pedra: +50% e atordoa) | 4 cometas | Cataclismo + **5 Fissuras Ígneas** que correm pelo chão | 6 s, +25% |
+| Magmárion (Nv.75) | Arremesso de 7 m e o alvo **explode** onde cai | 5 cometas | 7 fissuras | 7 s, +25%, **aura** que queima perto |
+| Infernárion (Nv.90) | **Fauces do Inferno**: 8 m, explosão de 3 m e Combustão garantida | **Cometa Supremo**: 5 + 1 gigante | **Apocalipse Ígneo**: 8 fissuras que deixam fogo no chão | 8 s, +30%, aura e **explosão** no fim |
+
+- Todos os golpes podem causar **Combustão** (já na forma inicial, como o chefe de sempre).
+- O chefe do Trono de Magma (forma inicial) usa tudo isso, inclusive o Calor.
+- Chefes e o Campeão são arremessados só pela metade da distância.
 - Mais detalhes em `js/habilidades/README.md`.
 
 ## Golpes da linha do Musguinho (Planta)
@@ -830,7 +855,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/brasas.js` | Cenário do Caminho das Brasas (braseiros, forja, rio de lava, Trono de Magma, vulcão) |
 | `js/raizes.js` | Cenário da Trilha Ancestral e da Floresta (cogumelos, ruínas, lago, raízes, Árvore-Mãe, vaga-lumes, monstros extras) |
 | `js/arena.js` | Arenas: chão, obstáculos, clima animado e perigos de cada região (com chance), e o escurecer do Astro Negro |
-| `js/habilidades/` | **Habilidades próprias das linhas de monstros** (uma pasta só para isso). Veja o `README.md` de lá. Hoje: linha do Brasito (`brasito.js` com os números, `brasito-batalha.js` com o lança-chamas, o rabo de fogo e a velocidade), linha do Gotinho (`gotinho.js` e `gotinho-batalha.js`, com o jato, o hidrocanhão, as ondas, o maremoto e o escudo), linha do Musguinho (`musguinho.js` e `musguinho-batalha.js`, com a folha bumerangue, a vinha que puxa, as raízes, a moita e o bosque), linha do Pedrisco (`pedrisco.js` e `pedrisco-batalha.js`, com a pedra em arco que quica, o punho sísmico, o tremor e os pilares), linha do Faisquinho (`faisquinho.js` e `faisquinho-batalha.js`, com as marcas, o dash elétrico, o tiro que marca, o choque e as nuvens), linha do Solito (`solito.js` e `solito-batalha.js`, com o sol que dá bônus, o laser e o calor), linha do Lunico (`lunico.js` e `lunico-batalha.js`, com o combo de dashes, as fases da lua e o luar que cura), linha do Lumino (`lumino.js` e `lumino-batalha.js`, com o passo de luz, o estilhaço que se divide e a redoma que devolve os tiros), linha do Imanito, tipo duplo Terra + Raio (`imanito.js` e `imanito-batalha.js`, as pedras orbitais, o ímã e a repulsão), linha do Brotobrasa, tipo duplo Fogo + Planta (`brotobrasa.js` e `brotobrasa-batalha.js`, as flores de fogo que explodem), linha do Vaporito, tipo duplo Água + Fogo (`vaporito.js` e `vaporito-batalha.js`, o tanque: arrancada, bafo de vapor e casco), a Aquaraia, raro de Água (`aquaraia.js` e `aquaraia-batalha.js`, o rasante que atravessa, as bolhas guiadas, o mergulho, o rastro e o redemoinho), a Vulcarapa, raro de Fogo (`vulcarapa.js` e `vulcarapa-batalha.js`, a artilharia: o recuo, as bombas de lava em arco, o Modo Vulcão e as poças de lava), o Espinhal, raro de Planta (`espinhal.js` e `espinhal-batalha.js`, o rolamento que quica, as agulhas que cravam e a explosão de espinhos) e a linha do Breuzinho (`trevas.js` e `trevas-batalha.js`, com a mordida, a bola com olhos de alcance curto e a área que escurece e dá bônus de dano) |
+| `js/habilidades/` | **Habilidades próprias das linhas de monstros** (uma pasta só para isso). Veja o `README.md` de lá. Hoje: linha do Brasito (`brasito.js` com os números, `brasito-batalha.js` com o lança-chamas, o rabo de fogo e a velocidade), linha do Gotinho (`gotinho.js` e `gotinho-batalha.js`, com o jato, o hidrocanhão, as ondas, o maremoto e o escudo), linha do Musguinho (`musguinho.js` e `musguinho-batalha.js`, com a folha bumerangue, a vinha que puxa, as raízes, a moita e o bosque), linha do Pedrisco (`pedrisco.js` e `pedrisco-batalha.js`, com a pedra em arco que quica, o punho sísmico, o tremor e os pilares), linha do Faisquinho (`faisquinho.js` e `faisquinho-batalha.js`, com as marcas, o dash elétrico, o tiro que marca, o choque e as nuvens), linha do Solito (`solito.js` e `solito-batalha.js`, com o sol que dá bônus, o laser e o calor), linha do Lunico (`lunico.js` e `lunico-batalha.js`, com o combo de dashes, as fases da lua e o luar que cura), linha do Lumino (`lumino.js` e `lumino-batalha.js`, com o passo de luz, o estilhaço que se divide e a redoma que devolve os tiros), linha do Imanito, tipo duplo Terra + Raio (`imanito.js` e `imanito-batalha.js`, as pedras orbitais, o ímã e a repulsão), linha do Brotobrasa, tipo duplo Fogo + Planta (`brotobrasa.js` e `brotobrasa-batalha.js`, as flores de fogo que explodem), linha do Vaporito, tipo duplo Água + Fogo (`vaporito.js` e `vaporito-batalha.js`, o tanque: arrancada, bafo de vapor e casco), a Aquaraia, raro de Água (`aquaraia.js` e `aquaraia-batalha.js`, o rasante que atravessa, as bolhas guiadas, o mergulho, o rastro e o redemoinho), a Vulcarapa, raro de Fogo (`vulcarapa.js` e `vulcarapa-batalha.js`, a artilharia: o recuo, as bombas de lava em arco, o Modo Vulcão e as poças de lava), o Espinhal, raro de Planta (`espinhal.js` e `espinhal-batalha.js`, o rolamento que quica, as agulhas que cravam e a explosão de espinhos), o Ignárion, lendário Ígneo (`ignarion.js` e `ignarion-batalha.js`, o Calor e a Ignição, o arremesso, os cometas e as fissuras) e a linha do Breuzinho (`trevas.js` e `trevas-batalha.js`, com a mordida, a bola com olhos de alcance curto e a área que escurece e dá bônus de dano) |
 | `js/nuvem.js` | Contas e jogo salvo na nuvem (Firebase, direto pela internet, sem a biblioteca do Firebase): criar conta, entrar, entrar de novo com 1 toque, ler e gravar o jogo salvo, e a senha do GM |
 | `js/companheiro.js` | O monstro invocado: invocar e guardar, seguir o treinador, os botões e a troca de controle (o treinador fica parado e protegido) |
 | `js/treino.js` | O modo treino: os golpes do monstro invocado no mapa, "no ar", usando o mesmo motor da batalha (sem inimigos e sem dano) |

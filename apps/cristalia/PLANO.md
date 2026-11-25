@@ -168,5 +168,14 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
         InstancedMesh. **O Rei Julius usa o Mandacarão** já no Nv.50 (decisão do Lâmina). `js/habilidades/espinhal.js`
         e `espinhal-batalha.js`, modelo em `linhaEspinhal` (`js/modelos.js`).
 - [ ] **Fase 7 — Formas novas dos lendários:** 6 formas.
+      *Regras aprovadas:* as 3 evoluções (Nv.65, 75 e 90) com botão (`EVOLUCOES_LENDARIAS`, missões nos Nv.60/70/85,
+      contam inimigos Nv.50/60/80+, custos 2/4/6 Asas, 2/4/6 Corações e 4.000/8.000/15.000 de ouro); **mesma regra de
+      atributos para todos os lendários**: base × 1 / 1,3 / 1,6 / 2,0 (`MULT_LENDARIO`). Ficam em `LINHAS_RARAS` com
+      `lendario: true`. **O chefe da masmorra usa tudo o que o monstro tiver.** Os modelos seguem a arte do Lâmina
+      (cada forma mais espetacular que a anterior).
+  - [x] **Ignárion** (Ígneo): Pirárion (Nv.65), Magmárion (Nv.75) e Infernárion (Nv.90). Calor Ígneo e Ignição,
+        Mordida e Arremesso, Cometa Ígneo (gigante no fim) e Cataclismo com Fissuras Ígneas. `js/habilidades/ignarion.js`
+        e `ignarion-batalha.js`, modelo em `linhaIgnarion` (`js/modelos.js`).
+  - [ ] **Silvárion** (Silvestre).
 - [ ] **Fase 8 — Conteúdo do Nv.50+:** masmorras que crescem, chefes de masmorra (monstros
       normais), biomas com vila e arena.
