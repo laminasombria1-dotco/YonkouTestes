@@ -1,0 +1,129 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#1d2533;overflow:hidden}</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.min.js", "three/addons/": "./lib/addons/" } }</script></head>
+<body><script src="familias.js"></script><script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+window.THREE = THREE;
+window.D = await import('./js/dados.js');
+window.M = await import('./js/modelos.js');
+const W = 1280, H = 720, TOPO = 56, BASE = 64, AH = H - TOPO - BASE;
+const R = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+R.setSize(W, AH); R.setScissorTest(true);
+const tela = document.createElement('canvas'); tela.width = W; tela.height = H; document.body.appendChild(tela);
+const g = tela.getContext('2d');
+const cena = new THREE.Scene(); cena.background = new THREE.Color('#2a3446');
+cena.add(new THREE.HemisphereLight('#ffffff', '#445566', 1.6));
+const luz = new THREE.DirectionalLight('#ffffff', 1.7); luz.position.set(3, 6, 4); cena.add(luz);
+const grade = new THREE.GridHelper(12, 12, '#7d8aa3', '#46526a'); cena.add(grade);
+const camA = new THREE.PerspectiveCamera(32, (W / 2) / AH, 0.1, 300), camB = camA.clone();
+const tiro = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), new THREE.MeshBasicMaterial({ color: '#fff27a' })); cena.add(tiro);
+const anel = new THREE.Mesh(new THREE.RingGeometry(0.85, 1, 40), new THREE.MeshBasicMaterial({ color: '#ffd04a', transparent: true, side: THREE.DoubleSide })); anel.rotation.x = -Math.PI / 2; anel.position.y = 0.03; cena.add(anel);
+let atual = null;
+const suave = (x) => x * x * (3 - 2 * x);
+function valor(chaves, f) {
+  if (f <= chaves[0][0]) return chaves[0][1];
+  for (let i = 1; i < chaves.length; i++) {
+    const [f1, v1] = chaves[i], [f0, v0] = chaves[i - 1];
+    if (f <= f1) return v0 + (v1 - v0) * suave((f - f0) / Math.max(1e-6, f1 - f0));
+  }
+  return chaves[chaves.length - 1][1];
+}
+function enquadrar(h, extra = 1, obj = null) {
+  let cy = h * 0.5, tam = h;
+  if (obj) { const b = new THREE.Box3().setFromObject(obj); const s = b.getSize(new THREE.Vector3()); cy = b.getCenter(new THREE.Vector3()).y; tam = Math.max(s.x, s.y, s.z * 0.8); }
+  const d = tam * 2.6 * extra + 2.2;
+  camA.position.set(d * 0.62, cy + d * 0.28, d * 0.78); camA.lookAt(0, cy, 0.2);
+  camB.position.set(-d * 1.0, cy + d * 0.08, 0.25); camB.lookAt(0, cy, 0.25);
+}
+// Monta a lista de quadros de uma família (ou do Brasito .glb)
+window.preparar = async (fam) => {
+  if (atual) { cena.remove(atual.modelo); atual = null; }
+  if (fam === 'brasito') {
+    const gltf = await new GLTFLoader().loadAsync('modelos/brasito.glb');
+    const mod = gltf.scene; const b = new THREE.Box3().setFromObject(mod); const k = 1.68 / (b.max.y - b.min.y); mod.scale.setScalar(k);
+    cena.add(mod);
+    const mixer = new THREE.AnimationMixer(mod);
+    const ordem = [['Brasito_Parado', 2], ['Parado_Ansioso', 1], ['Andar', 3], ['Brasito_Arrancada', 1], ['Brasito_Correndo', 6], ['Brasito_Investida', 1, { f: 5, t: 'flash' }], ['Brasito_LancaChamas', 1, { f: 8, t: 'tiro' }], ['Brasito_RaboDeFogo', 1, { f: 17, t: 'anel' }]];
+    const quadros = [];
+    for (const [nome, loop, ev] of ordem) {
+      const clip = gltf.animations.find((c) => c.name === nome); const q = Math.round(clip.duration * 24);
+      for (let l = 0; l < loop; l++) for (let f = 0; f <= (l === loop - 1 ? q + 8 : q - 1); f++) quadros.push({ est: { nome, q, ev: ev ? [ev] : [] }, clip, f: Math.min(f, q), voltas: loop, volta: l });
+    }
+    atual = { modelo: mod, mixer, quadros, h: 1.68, titulo: 'QUADRÚPEDE — Brasito (animações do Blender, já prontas)' };
+    enquadrar(1.68, 1.1);
+    return quadros.length;
+  }
+  const F = FAMILIAS[fam];
+  const mod = M.criarModelo(F.rep); mod.userData.sombra.visible = true; cena.add(mod);
+  const h = new THREE.Box3().setFromObject(mod.userData.corpo).getSize(new THREE.Vector3()).y;
+  const quadros = [];
+  for (const est of F.estados) {
+    const voltas = est.loop || 1;
+    for (let l = 0; l < voltas; l++) for (let f = 0; f < est.q; f++) quadros.push({ est, f, voltas, volta: l });
+    for (let f = 0; f < 10; f++) quadros.push({ est, f: est.q, voltas, volta: voltas - 1 }); // pausa no fim
+  }
+  atual = { modelo: mod, quadros, h, F, esc: Math.max(1, h / 1.6), titulo: F.nome.toUpperCase() + ' — exemplo: ' + D.ESPECIES[F.rep].nome };
+  M.animarModelo(mod, 0, false); enquadrar(h, 1, mod.userData.corpo);
+  { const c = mod.userData.corpo; c.position.y = 0; c.updateMatrixWorld(true); const C = -new THREE.Box3().setFromObject(c).min.y / Math.max(1, h / 1.6);
+    for (const est of F.estados) for (const ch of Object.values(est.k)) for (const kk of ch) if (typeof kk[1] === 'string') kk[1] = eval(kk[1].replace('C', '(' + C + ')')); }
+  return quadros.length;
+};
+const rad = THREE.MathUtils.degToRad;
+window.quadro = (i) => {
+  const A = atual, Q = A.quadros[i], est = Q.est, f = Q.f;
+  let dano = 0, tiroK = -1, anelK = -1, flash = 0;
+  for (const e of est.ev || []) {
+    const d = f - e.f;
+    if (e.t === 'tiro' && d >= 0 && d < 12) tiroK = d / 12;
+    if (e.t === 'anel' && d >= 0 && d < 12) anelK = d / 12;
+    if (e.t === 'flash' && d >= 0 && d < 4) flash = 1 - d / 4;
+    if (e.t === 'dano' && d >= 0 && d < 6) dano = 1 - d / 6;
+  }
+  if (A.mixer) {
+    A.mixer.stopAllAction(); const a = A.mixer.clipAction(Q.clip); a.play(); a.time = f / 24; A.mixer.update(0);
+  } else {
+    const u = A.modelo.userData, c = u.corpo, k = est.k, v = (n, pad) => k[n] ? valor(k[n], f) : pad, e = A.esc;
+    const t = (i / 24);
+    const mov = /Andar|Correr/.test(est.nome);
+    M.animarModelo(A.modelo, t, mov); // rabos, asas, giros, fumaças: como no jogo
+    c.position.set(v('px', 0) * e, v('py', A.F.voa ? 0.25 : 0) * e, v('pz', 0) * e);
+    c.rotation.set(rad(v('rx', 0)), rad(v('ry', 0)), rad(v('rz', 0)));
+    c.scale.set(u.tamanho * v('sx', 1), u.tamanho * v('sy', 1), u.tamanho * v('sz', 1));
+    if (u.pernas) {
+      const pa = v('pernas', 0), ba = v('bracos', 0), p2 = v('pernas2', 0), b2 = v('bracos2', 0);
+      u.pernas[0].rotation.x = rad(pa + p2); u.pernas[1].rotation.x = rad(-pa + p2);
+      u.bracos[0].rotation.x = rad(ba + b2 + v('bD', 0)); u.bracos[1].rotation.x = rad(-ba + b2 + v('bE', 0));
+    }
+    M.piscar(A.modelo, Math.max(dano, flash * 0.6), dano ? '#ff3030' : '#ffffff');
+  }
+  const h = A.h;
+  tiro.visible = tiroK >= 0; tiro.scale.setScalar(0.12 * Math.max(1, h / 1.6)); tiro.position.set(0, h * 0.5, h * 0.45 + tiroK * (3 + h));
+  anel.visible = anelK >= 0; anel.scale.setScalar(0.6 + anelK * (2 + h)); anel.material.opacity = 1 - anelK;
+  // desenha as duas vistas
+  R.setViewport(0, 0, W / 2, AH); R.setScissor(0, 0, W / 2, AH); R.render(cena, camA);
+  R.setViewport(W / 2, 0, W / 2, AH); R.setScissor(W / 2, 0, W / 2, AH); R.render(cena, camB);
+  g.fillStyle = '#121822'; g.fillRect(0, 0, W, H);
+  g.drawImage(R.domElement, 0, TOPO);
+  g.fillStyle = '#ffffff22'; g.fillRect(W / 2 - 1, TOPO, 2, AH);
+  g.font = 'bold 22px sans-serif'; g.fillStyle = '#ffd36b'; g.fillText(A.titulo, 18, 36);
+  g.font = '16px sans-serif'; g.fillStyle = '#cfd8e6';
+  g.fillText('Vista 3/4', 18, TOPO + 24); g.fillText('Vista de lado (a frente para a direita)', W / 2 + 18, TOPO + 24);
+  // barra de baixo: nome do estado, quadro e linha do tempo com as chaves
+  const y0 = H - BASE;
+  g.font = 'bold 20px sans-serif'; g.fillStyle = '#ffffff';
+  g.fillText(est.nome + (Q.voltas > 1 ? `  (repete — volta ${Q.volta + 1}/${Q.voltas})` : ''), 18, y0 + 26);
+  g.font = '18px monospace'; g.fillStyle = '#9fe3ff';
+  const txt = `quadro ${String(Math.min(f, est.q)).padStart(2, '0')}/${est.q}  ·  ${(Math.min(f, est.q) / 24).toFixed(2).replace('.', ',')} s  ·  24 qps`;
+  g.fillText(txt, W - 18 - g.measureText(txt).width, y0 + 26);
+  const bx = 18, bw = W - 36, by = y0 + 42;
+  g.fillStyle = '#2f3a4d'; g.fillRect(bx, by, bw, 8);
+  const chaves = new Set();
+  if (est.k) for (const ch of Object.values(est.k)) for (const [ff] of ch) chaves.add(ff);
+  g.fillStyle = '#ffd36b'; for (const ff of chaves) g.fillRect(bx + bw * ff / est.q - 2, by - 4, 4, 16);
+  for (const e of est.ev || []) { g.fillStyle = '#ff6a4a'; g.beginPath(); g.arc(bx + bw * e.f / est.q, by + 4, 7, 0, 7); g.fill(); }
+  g.fillStyle = '#9fe3ff'; g.fillRect(bx, by, bw * Math.min(f, est.q) / est.q, 8);
+  if (flash > 0 || tiroK >= 0 && tiroK < 0.4 || anelK >= 0 && anelK < 0.4) { g.font = 'bold 30px sans-serif'; g.fillStyle = '#ff6a4a'; g.fillText('O GOLPE SAI AQUI!', W / 2 - 140, TOPO + 70); }
+  return tela.toDataURL('image/jpeg', 0.88);
+};
+window.pronto = true;
+</script></body></html>
