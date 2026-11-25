@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import {
   ESPECIES, GOLPES, ELEMENTOS, EFEITOS, EFEITO_DO_ELEMENTO, PODER_DISPARO_EXTRA, DURACAO_EFEITO_PERTO, DURACAO_EFEITO_DISPARO,
   multiplicadorContra, chanceCaptura, melhoriaDe, statsDe, modificadorArena, fatorDanoNivel, CRISTAIS, nomeTipo, fundoTipo, DANO_GERAL,
-  fracoContraEspecie, chanceDoEfeito, pct,
+  fracoContraEspecie, chanceDoEfeito, pct, cristalMinimo, ehFormaFinal,
 } from './dados.js';
 import { VisualTrevas } from './habilidades/trevas-batalha.js';
 import { HabilidadesBrasito } from './habilidades/brasito-batalha.js';
@@ -34,6 +34,7 @@ import { criarModelo, criarCristal, criarCoroa, animarModelo, piscar, descartar,
 
 const MAX_ATIVOS = 2;      // quantos inimigos de um grupo lutam ao mesmo tempo (o próximo par só entra quando estes caírem)
 const ESCALA_LIDER = 1.3;  // o líder do grupo é maior
+const ESCALA_CHEFE = 1.4;  // o chefe sorteado da masmorra é ainda maior
 import { Arena, RAIO_ARENA } from './arena.js';
 
 export { RAIO_ARENA };
@@ -219,10 +220,12 @@ export class Batalha {
     const dados = this.fila.shift();
     if (!dados) return;
     const l = new Lutador(dados, 'inimigo');
-    if (dados.lider) {
-      l.escala = ESCALA_LIDER;
-      l.modelo.scale.setScalar(ESCALA_LIDER);
-      const coroa = criarCoroa(1.2);
+    // líder (coroa) e chefe sorteado da masmorra (maior, coroa grande; o lendário já é grande)
+    const chefeGrande = dados.chefe && !l.esp.chefe;
+    if (dados.lider || chefeGrande) {
+      l.escala = chefeGrande ? ESCALA_CHEFE : ESCALA_LIDER;
+      l.modelo.scale.setScalar(l.escala);
+      const coroa = criarCoroa(chefeGrande ? 1.1 : 1.2);
       coroa.position.y = l.esp.altura + 0.15;
       l.modelo.add(coroa);
       l.coroa = coroa;
@@ -793,7 +796,7 @@ export class Batalha {
     else if (mult < 1 && avisaTipo) this.jogo.numero('Pouco efetivo', topo.clone().setY(topo.y + 0.9), '#c9d6e8', 'pequeno');
     this.particulas(alvo.pos, ELEMENTOS[gp.elemento].cor, opcoes.particulas ?? 8, 0.9); // opcoes.particulas = menos faíscas (bolhas da Aquaraia)
     if (alvo.dados.hp <= 0) { this.desmaiar(alvo); return true; }
-    if (alvo.esp.chefe && !alvo.furia && alvo.frac < 0.5) {
+    if ((alvo.esp.chefe || alvo.dados.chefe) && !alvo.furia && alvo.frac < 0.5) {
       alvo.furia = true;
       const corFuria = ELEMENTOS[alvo.esp.elemento].cor;
       piscar(alvo.modelo, 0.6, corFuria);
@@ -1215,7 +1218,7 @@ export class Batalha {
   // ---------- captura ----------
   // Escolhe sozinho o cristal mais fraco que funciona no alvo (para não gastar os fortes à toa)
   cristalAutomatico() {
-    const min = this.ini?.esp.cristalMin || 0, p = this.jogo.estado.pedras;
+    const min = this.ini ? cristalMinimo(this.ini.dados) : 0, p = this.jogo.estado.pedras;
     for (let k = min; k < CRISTAIS.length; k++) if (p[CRISTAIS[k].id] > 0) return k;
     return min;
   }
@@ -1228,7 +1231,7 @@ export class Batalha {
   }
   fecharSeletor() { this.jogo.ui.seletor.hidden = true; }
   escolherCristal(k) {
-    const min = this.ini?.esp.cristalMin || 0;
+    const min = this.ini ? cristalMinimo(this.ini.dados) : 0;
     if (k < min) { this.jogo.aviso(`Precisa de ${CRISTAIS[min].nome} ou melhor.`); return; }
     if (this.jogo.estado.pedras[CRISTAIS[k].id] <= 0) { this.jogo.aviso(`Sem ${CRISTAIS[k].nome}.`); return; }
     this.tipoCristal = k;
@@ -1251,9 +1254,10 @@ export class Batalha {
     if (this.treinador) { this.jogo.aviso('Não dá para capturar o monstro de um treinador!'); return; }
     const est = this.jogo.estado, tipo = CRISTAIS[this.tipoCristal];
     const garantida = !!this.jogo.gm?.capturaGarantida; // GM: qualquer cristal segura qualquer monstro
-    const min = garantida ? 0 : this.ini.esp.cristalMin || 0;
+    const min = garantida ? 0 : cristalMinimo(this.ini.dados);
     if (this.tipoCristal < min) {
-      this.jogo.aviso(`${this.ini.esp.nome} é de tipo duplo: só um ${CRISTAIS[min].nome} (ou melhor) segura ele.`);
+      const porque = ehFormaFinal(this.ini.esp) ? 'está na forma final' : this.ini.esp.dupla ? 'é de tipo duplo' : 'é muito forte';
+      this.jogo.aviso(`${this.ini.esp.nome} ${porque}: só um ${CRISTAIS[min].nome}${min < 2 ? ' (ou melhor)' : ''} segura ele.`);
       return;
     }
     if (est.pedras[tipo.id] <= 0) {
@@ -1431,10 +1435,11 @@ export class Batalha {
     const e = this.ini;
     this.alvoHud = e;
     if (!e) return;
-    if (!this.cristalEscolhido || this.tipoCristal < (e.esp.cristalMin || 0)) this.tipoCristal = this.cristalAutomatico();
-    if (e.esp.dupla && !this.avisouDuplo?.has(e)) {
+    if (!this.cristalEscolhido || this.tipoCristal < cristalMinimo(e.dados)) this.tipoCristal = this.cristalAutomatico();
+    const final = ehFormaFinal(e.esp) && !this.treinador;
+    if ((e.esp.dupla || final) && !this.avisouDuplo?.has(e)) {
       (this.avisouDuplo ||= new Set()).add(e);
-      this.jogo.aviso(`Tipo duplo: só ${CRISTAIS[e.esp.cristalMin].nome} ou melhor.`);
+      this.jogo.aviso(final ? `${e.esp.nome} está na forma final: só o Cristal Supremo segura, e é mais difícil.` : `Tipo duplo: só ${CRISTAIS[e.esp.cristalMin].nome} ou melhor.`);
     }
   }
 
@@ -1544,7 +1549,7 @@ export class Batalha {
     if (!el.children.length) { // os botões são criados uma vez só (trocar no meio do toque faria perder o toque)
       el.innerHTML = CRISTAIS.map((c, k) => `<button type="button" data-acao="cristal${k}" style="--c:${c.cor}"><span class="losango"></span><span></span><small></small></button>`).join('');
     }
-    const p = this.jogo.estado.pedras, min = e.esp.cristalMin || 0;
+    const p = this.jogo.estado.pedras, min = cristalMinimo(e.dados);
     CRISTAIS.forEach((c, k) => {
       const bt = el.children[k], [, nome, chance] = bt.children;
       const tn = `${c.curto} ×${p[c.id]}`, tc = k < min ? 'não segura' : Math.round(chanceCaptura(e.dados, k) * 100) + '%';
@@ -1575,7 +1580,7 @@ export class Batalha {
     const sj = this.htmlStatus(j);
     if (ui.bjStatus.innerHTML !== sj) ui.bjStatus.innerHTML = sj;
     this.atualizarPlacas();
-    const cr = CRISTAIS[this.tipoCristal], min = e.esp.cristalMin || 0;
+    const cr = CRISTAIS[this.tipoCristal], min = cristalMinimo(e.dados);
     const txtCr = `${cr.id}|${this.jogo.estado.pedras[cr.id]}|${this.tipoCristal < min}`;
     if (this.txtCristal !== txtCr) {
       this.txtCristal = txtCr;

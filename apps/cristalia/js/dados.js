@@ -737,15 +737,53 @@ export const DUNGEONS = {
 // Mantido para o código antigo: etapas e aparições do Caminho das Brasas
 export const ETAPAS = DUNGEONS.brasas.etapas;
 export const APARICOES_DUNGEON = DUNGEONS.brasas.aparicoes;
-export function niveisDaEtapa(media, etapa, dungeon = 'brasas') {
+// Teto suave dos níveis: até o Nv.50 vale a conta antiga (com o teto de antes, 48/50);
+// depois, os níveis acompanham a equipe (média + folga), até o Nv.100.
+export function tetoSuave(bruto, tetoAntigo, media, folga) {
+  return Math.min(bruto, Math.max(tetoAntigo, media + folga));
+}
+export function niveisDaEtapa(media, etapa, dungeon = 'brasas', nivelMasmorra = 1) {
   const e = DUNGEONS[dungeon].etapas[etapa];
+  const extra = MASMORRA.niveisPorNivel * (nivelMasmorra - 1); // Nível da Masmorra: +3 níveis por nível
   return {
-    comum: Math.min(48, Math.round(media * 1.1 + 2 + e.extraComum)),
-    lider: Math.min(50, Math.round(media * 1.4 + 8 + e.extraLider)),
+    comum: Math.min(98, Math.round(tetoSuave(media * 1.1 + 2 + e.extraComum, 48, media, 3 + e.extraComum) + extra)),
+    lider: Math.min(100, Math.round(tetoSuave(media * 1.4 + 8 + e.extraLider, 50, media, 5 + e.extraLider) + extra)),
   };
 }
 // O chefe fica sempre acima do líder da última etapa
-export function nivelDoChefe(media) { return Math.min(50, Math.round(media * 1.4 + 22)); }
+export function nivelDoChefe(media, nivelMasmorra = 1) {
+  return Math.min(100, Math.round(tetoSuave(media * 1.4 + 22, 50, media, 16) + MASMORRA.niveisPorNivel * (nivelMasmorra - 1)));
+}
+
+// =============================================================
+// NÍVEL DA MASMORRA (fase 8.1): cada masmorra tem o seu, de 1 a 10, salvo na conta
+// (estado.masmorras). Cada vitória contra o chefe sobe 1 nível.
+//  niveisPorNivel = níveis a mais em todos os monstros de lá, a cada nível
+//  dropPorNivel   = chance a mais de Galho e de Asa, a cada nível
+//  finalLider     = a partir deste nível, os líderes podem vir na forma final (chanceFinalLider)
+//  chefes         = quem pode ser o chefe (sorteado cada vez que ele volta); desde = nível mínimo
+//  lendario       = o lendário só aparece a partir do nível 9, por sorteio (chanceLendario)
+// =============================================================
+export const MASMORRA = {
+  nivelMax: 10, niveisPorNivel: 3, dropPorNivel: 0.02,
+  finalLider: 5, chanceFinalLider: 0.5,
+  lendarioDesde: 9, chanceLendario: 0.15,
+  chefes: {
+    brasas: [['magmalobo', 1], ['florinferno', 1], ['caldeirax', 1], ['colossarapa', 5]],
+    raizes: [['florestral', 1], ['florinferno', 1], ['mandacarao', 5]],
+  },
+};
+// Os dados da masmorra no jogo salvo (cria se não tiver: saves antigos começam no nível 1)
+export function dadosMasmorra(estado, id) {
+  estado.masmorras ||= {};
+  return (estado.masmorras[id] ||= { nivel: 1, vitorias: 0, chefe: null, espera: false });
+}
+// Sorteia o chefe da masmorra para o nível dela (o lendário só a partir do nível 9)
+export function sortearChefe(id, nivel, sorte = Math.random) {
+  if (nivel >= MASMORRA.lendarioDesde && sorte() < MASMORRA.chanceLendario) return DUNGEONS[id].chefe;
+  const lista = MASMORRA.chefes[id].filter(([, desde]) => nivel >= desde);
+  return lista[Math.floor(sorte() * lista.length)][0];
+}
 
 // Linhas que só existem de dia ou de noite
 export const PERIODO_DA_LINHA = { sol: 'dia', luz: 'dia', lua: 'noite', trevas: 'noite' };
@@ -761,24 +799,37 @@ export const DANO_POR_NIVEL = 0.15;
 // 0,7 = 30% menos que antes. Para deixar as lutas mais rápidas, suba; mais longas, desça.
 export const DANO_GERAL = 0.7;
 
-export function fatorDanoNivel(nivel) {
-  return 1 + (nivel - 1) * DANO_POR_NIVEL;
+// Depois do Nv.50 os atributos crescem pela METADE por nível (decisão do Lâmina, fase 8.1).
+// Assim um Nv.100 fica ~4 vezes mais forte que um Nv.50 (sem isso, ~13 vezes).
+export const NIVEL_CORTE = 50;
+export const CRESCE_DEPOIS_DO_CORTE = 0.5;
+// Quantos "níveis de crescimento" o monstro tem (Nv.1 = 0; no Nv.100 = 49 + 25 = 74)
+export function niveisDeCrescimento(nivel) {
+  if (nivel <= NIVEL_CORTE) return nivel - 1;
+  return NIVEL_CORTE - 1 + (nivel - NIVEL_CORTE) * CRESCE_DEPOIS_DO_CORTE;
 }
 
-// Ataque e defesa crescem 12% por nível; a vida cresce 20%
+export function fatorDanoNivel(nivel) {
+  return 1 + niveisDeCrescimento(nivel) * DANO_POR_NIVEL;
+}
+
+// Ataque e defesa crescem 12% por nível; a vida cresce 20% (metade disso depois do Nv.50)
 export function statsDe(especie, nivel) {
   const b = ESPECIES[especie].base;
-  const f = 1 + (nivel - 1) * 0.12;
+  const n = niveisDeCrescimento(nivel);
+  const f = 1 + n * 0.12;
   return {
-    hpMax: Math.round(b.hp * VIDA_BASE * (1 + (nivel - 1) * VIDA_POR_NIVEL)),
+    hpMax: Math.round(b.hp * VIDA_BASE * (1 + n * VIDA_POR_NIVEL)),
     atk: b.atk * f,
     def: b.def * f,
-    vel: b.vel * (1 + (nivel - 1) * 0.015),
+    vel: b.vel * (1 + n * 0.015),
   };
 }
 
+// Experiência para subir: do Nv.50 para cima pede o DOBRO (o conteúdo novo dura mais)
+export const XP_DEPOIS_DO_CORTE = 2;
 export function xpParaProximo(nivel) {
-  return 12 + nivel * 8;
+  return (12 + nivel * 8) * (nivel >= NIVEL_CORTE ? XP_DEPOIS_DO_CORTE : 1);
 }
 
 export function xpDaVitoria(nivelInimigo) {
@@ -880,8 +931,20 @@ export const CUSTO_FUSAO = 3;
 // Devolve 0 se o cristal for fraco demais para essa espécie.
 export function chanceCaptura(monstro, tipoCristal = 0) {
   const esp = ESPECIES[monstro.especie];
-  if (tipoCristal < (esp.cristalMin || 0)) return 0;
+  if (tipoCristal < cristalMinimo(monstro)) return 0;
   const fracVida = monstro.hp / statsDe(monstro.especie, monstro.nivel).hpMax;
-  const c = esp.captura * CRISTAIS[tipoCristal].poder * (1.7 - 1.5 * fracVida);
-  return Math.min(0.95, Math.max(0.05, c));
+  const dificil = ehFormaFinal(esp) ? CAPTURA_FORMA_FINAL : 1;
+  const c = esp.captura * dificil * CRISTAIS[tipoCristal].poder * (1.7 - 1.5 * fracVida);
+  return Math.min(0.95, Math.max(dificil < 1 ? 0.02 : 0.05, c));
+}
+// Forma final (a última forma das linhas, tipos duplos e raros; o lendário tem as regras dele):
+// fora da equipe do jogador ela só aparece nos chefes e líderes de masmorra e nos treinadores.
+// Para capturar: só o Cristal Supremo, e com chance menor (decisão do Lâmina, fase 8.1).
+export const CAPTURA_FORMA_FINAL = 0.4;
+export function ehFormaFinal(esp) {
+  return !esp.lendario && esp.estagio === 3 && !esp.evoluiPara;
+}
+export function cristalMinimo(monstro) {
+  const esp = ESPECIES[monstro.especie];
+  return ehFormaFinal(esp) ? 2 : esp.cristalMin || 0;
 }

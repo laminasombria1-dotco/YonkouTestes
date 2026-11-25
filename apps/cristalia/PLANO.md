@@ -9,8 +9,8 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
 - **O progresso de todos será zerado** quando a atualização entrar: todo mundo começa do zero
   (jogo salvo novo no celular e na nuvem; as contas continuam as mesmas).
 - **Aparelho de referência:** 8 GB de RAM + MediaTek Helio G95 (veja o `CLAUDE.md`).
-- **Nível máximo: 100.** O nível dá bônus de atributos; o Lâmina ainda vai decidir quanto
-  (os atributos gerais vão diminuir). Deixar fácil de trocar.
+- **Nível máximo: 100.** O nível dá bônus de atributos; depois do Nv.50 eles crescem pela metade
+  (decidido na fase 8.1, fácil de trocar em `CRESCE_DEPOIS_DO_CORTE`).
 
 ## 1. Evolução
 ### Linhas normais e tipos duplos (as 12 linhas de 4 formas)
@@ -116,8 +116,8 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
 ## Cuidados combinados
 - **Peso no celular:** casas, plantas e efeitos com peças juntadas e materiais repetidos.
 - **Ouro de tempos em tempos** com valor pequeno e limite de acúmulo (não deixar o ouro fácil).
-- **Ainda falta decidir:** os atributos depois do Nv.50 e se a experiência diminui contra
-  inimigos muito mais fracos.
+- **Decidido na fase 8.1:** depois do Nv.50 os atributos crescem pela metade e a experiência para subir
+  dobra; não há desconto extra contra inimigos fracos (a fórmula já dá pouco por eles).
 
 ## Fases
 - [x] **Fase 1 — Evolução nova:** Nv.12/30/50, botão da evolução rara, missões, custos,
@@ -183,3 +183,19 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
         `silvarion-batalha.js`, modelo em `linhaSilvarion` (`js/modelos.js`).
 - [ ] **Fase 8 — Conteúdo do Nv.50+:** masmorras que crescem, chefes de masmorra (monstros
       normais), biomas com vila e arena.
+      *Dividida em etapas (aprovado):* 8.1 (tudo até o Nv.100 + chefes novos), 8.2 (masmorras de bioma escondidas,
+      com proposta e imagens do mapa antes), 8.3 (biomas novos com vila e arena, depois que o Lâmina criar os biomas)
+      e 8.4 (regiões com outros reinos, para o futuro).
+  - [x] **8.1 — Nv.100, Nível da Masmorra e chefes sorteados.**
+        *Decisões do Lâmina:* selvagens até o Nv.95 (nunca na forma final), grupos e masmorras até o Nv.98/100;
+        **atributos pela metade depois do Nv.50** (`NIVEL_CORTE`, `CRESCE_DEPOIS_DO_CORTE`); **experiência em dobro do
+        Nv.50 para cima** (`XP_DEPOIS_DO_CORTE`), sem regra extra contra inimigos fracos. **Nível da Masmorra** de 1 a 10
+        (`estado.masmorras`; +1 por vitória contra o chefe, +3 níveis nos monstros e +2% de Galho e Asa por nível, líderes
+        na forma final a partir do nível 5). **Chefe sorteado** entre as formas finais do tipo (Brasas: Magmalobo,
+        Florinferno, Caldeirax e a Colossarapa no nível 5; Trilha: Florestral, Florinferno e o Mandacarão no nível 5);
+        **o lendário só a partir do nível 9, por sorteio (15%)**. **Qualquer monstro na forma final** fora da equipe do
+        jogador (chefe ou líder) só é capturado com o **Cristal Supremo**, com 40% da chance normal. Tudo em `MASMORRA`
+        (`js/dados.js`) e `spawnarChefe`/`chefeVencido` (`js/dungeon.js`).
+  - [ ] **8.2 — Masmorras de bioma** (proposta primeiro).
+  - [ ] **8.3 — Biomas novos** com vila e arena.
+  - [ ] **8.4 — Regiões** com outros reinos.

@@ -51,7 +51,7 @@ export class HabilidadesAquaraia {
   dele(c) { return c.esp.linha === 'aquaraia'; }
   naLuta(l) { return !!l && !l.morto && l.modelo.visible && (l === this.b.jog || this.b.inimigos.includes(l)); }
   // chefes e o Campeão são puxados só pela metade (igual ao ímã do Imanito)
-  resistente(o) { return !!o.esp.chefe || (!!this.b.treinador?.campeao && o.lado === 'inimigo'); }
+  resistente(o) { return !!(o.esp.chefe || o.dados.chefe) || (!!this.b.treinador?.campeao && o.lado === 'inimigo'); }
 
   // ---------- gotinhas (partículas) ----------
   gota(pos, vel, tam, vida, mat = AGUA_CLARA) {

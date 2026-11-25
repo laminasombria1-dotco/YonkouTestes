@@ -44,7 +44,7 @@ export class HabilidadesEspinhal {
   dele(c) { return c.esp.linha === 'espinhal'; }
   naLuta(l) { return !!l && !l.morto && l.modelo.visible && (l === this.b.jog || this.b.inimigos.includes(l)); }
   // chefes e o Campeão ficam lentos só pela metade
-  resistente(o) { return !!o.esp.chefe || (!!this.b.treinador?.campeao && o.lado === 'inimigo'); }
+  resistente(o) { return !!(o.esp.chefe || o.dados.chefe) || (!!this.b.treinador?.campeao && o.lado === 'inimigo'); }
 
   faiscas(pos, n, forca) {
     for (let i = 0; i < n; i++) {

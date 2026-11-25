@@ -21,11 +21,12 @@
 // =============================================================
 import * as THREE from 'three';
 import { criarModelo, criarCoroa, animarModelo, criarAuraDupla } from './modelos.js';
-import { ESPECIES, ELEMENTOS, DUNGEONS, niveisDaEtapa, nivelDoChefe, criarMonstro, statsDe, formaPorNivel, especieDaEscolha } from './dados.js';
+import { ESPECIES, ELEMENTOS, DUNGEONS, MASMORRA, niveisDaEtapa, nivelDoChefe, criarMonstro, statsDe, formaPorNivel, especieDaEscolha, dadosMasmorra, sortearChefe } from './dados.js';
 import { SAIDAS, RAIO_MUNDO, ANG_REINO, alturaBase } from './mapa/gerador.js';
 
 const MAX_SOLTOS = 7;            // monstros soltos dentro de cada dungeon
 const RESPAWN_ACAMPAMENTO = 120; // segundos até um acampamento vencido ter outro grupo
+const ESCALA_CHEFE = 1.5;        // o chefe sorteado (forma final) fica maior que os outros
 
 // ---------- 1) o traçado do corredor ----------
 export class Tracado {
@@ -452,7 +453,7 @@ export class DungeonAberta {
       if (a.grupo && !m.grupos.includes(a.grupo)) { a.grupo = null; a.espera = RESPAWN_ACAMPAMENTO; }
       if (a.espera > 0) { a.espera -= dt; continue; }
       if (!a.grupo && d < 42 && d > 16) {
-        a.grupo = m.spawnarGrupo({ x: a.x, z: a.z, zona: this.cfg.zonaSoltos, niveis: niveisDaEtapa(m.mediaEquipe(), a.etapa, this.id), lista: this.cfg.aparicoes, acampamento: a, escalonado: true });
+        a.grupo = m.spawnarGrupo({ x: a.x, z: a.z, zona: this.cfg.zonaSoltos, niveis: niveisDaEtapa(m.mediaEquipe(), a.etapa, this.id, this.nivelMasmorra), lista: this.cfg.aparicoes, acampamento: a, escalonado: true, finalLider: this.liderFinal() });
       } else if (a.grupo && d > 60) {
         m.removerGrupo(a.grupo, true);
         a.grupo = null;
@@ -476,7 +477,7 @@ export class DungeonAberta {
       if (this.obstaculos.some((o) => Math.hypot(o.x - p.x, o.z - p.z) < o.r + 1)) continue;
       const etapa = T.etapaEm(p.x, p.z);
       if (etapa < 0 || etapa >= T.nEtapas) continue;
-      const nv = niveisDaEtapa(m.mediaEquipe(), etapa, this.id).comum + Math.round(Math.random() * 2);
+      const nv = Math.min(98, niveisDaEtapa(m.mediaEquipe(), etapa, this.id, this.nivelMasmorra).comum + Math.round(Math.random() * 2));
       const escolha = sortear(this.cfg.aparicoes);
       const especie = especieDaEscolha(escolha, nv);
       const esp = ESPECIES[especie];
@@ -491,20 +492,69 @@ export class DungeonAberta {
     }
   }
 
+  // ---------- Nível da Masmorra (salvo na conta) ----------
+  get salvo() { return this.m.jogo.estado ? dadosMasmorra(this.m.jogo.estado, this.id) : null; }
+  get nivelMasmorra() { return this.salvo?.nivel || 1; }
+  // a partir do nível 5, metade dos líderes vem na forma final
+  liderFinal() { return this.nivelMasmorra >= MASMORRA.finalLider && Math.random() < MASMORRA.chanceFinalLider; }
+
   // ---------- chefe ----------
+  // Cada vez que o chefe volta, ele é sorteado entre as formas finais do tipo da masmorra
+  // (MASMORRA.chefes). O lendário só pode aparecer a partir do nível 9. O sorteio fica salvo,
+  // para não trocar de chefe ao fechar e abrir o jogo.
+  idDoChefe() {
+    const sv = this.salvo;
+    if (!sv) return this.cfg.chefe;
+    if (!sv.chefe || !ESPECIES[sv.chefe]) sv.chefe = sortearChefe(this.id, sv.nivel);
+    return sv.chefe;
+  }
+  get nomeChefe() { return ESPECIES[this.chefe?.dados.especie || this.idDoChefe()].nome; }
+
   spawnarChefe() {
-    const m = this.m, T = this.t, id = this.cfg.chefe;
-    const dados = criarMonstro(id, nivelDoChefe(m.mediaEquipe()));
+    const m = this.m, T = this.t, id = this.idDoChefe(), esp = ESPECIES[id];
+    const dados = criarMonstro(id, nivelDoChefe(m.mediaEquipe(), this.nivelMasmorra));
+    dados.chefe = true; // chefe de masmorra: Fúria, coroa e o tesouro (sai quando é capturado)
     const modelo = criarModelo(id);
-    const coroa = criarCoroa(1.6);
-    coroa.position.y = ESPECIES[id].altura + 0.2;
+    const escala = esp.chefe ? 1 : ESCALA_CHEFE; // o lendário já é grande
+    modelo.scale.setScalar(escala);
+    const coroa = criarCoroa(1.6 / escala);
+    coroa.position.y = esp.altura + 0.2 / escala;
     modelo.add(coroa);
     const pos = this.ponto(T.sChefe + 3, 0);
     modelo.position.set(pos.x, this.y(pos.x, pos.z), pos.z);
     modelo.rotation.y = Math.atan2(-T.dir.x, -T.dir.z); // olhando para a entrada
     this.cena.add(modelo);
-    this.chefe = { dados, modelo, chefe: true, fixo: true, x: pos.x, z: pos.z, ang: modelo.rotation.y, estado: 'parado', t: 99, zona: this.cfg.zonaChefe, periodo: null, vel: 0 };
+    this.chefe = { dados, modelo, chefe: true, masmorra: this, fixo: true, x: pos.x, z: pos.z, ang: modelo.rotation.y, estado: 'parado', t: 99, zona: this.cfg.zonaChefe, periodo: null, vel: 0 };
     m.selvagens.push(this.chefe);
+    if (esp.lendario && m.jogo.estado && !this.povoando) m.jogo.aviso(`O ${esp.nome} despertou no ${this.cfg.fim}!`);
+  }
+
+  // Vitória contra o chefe (vencido ou capturado): o Nível da Masmorra sobe 1
+  // e o próximo chefe será sorteado de novo no amanhecer
+  chefeVencido() {
+    const sv = this.salvo;
+    if (!sv) return;
+    sv.vitorias++;
+    sv.chefe = null;
+    sv.espera = true;
+    if (sv.nivel < MASMORRA.nivelMax) {
+      sv.nivel++;
+      this.m.jogo.aviso(`${this.cfg.nome} subiu para o Nível ${sv.nivel}! Os monstros de lá ficaram mais fortes.`);
+      if (sv.nivel === MASMORRA.finalLider) this.m.jogo.aviso('Agora os líderes de lá podem vir na forma final.');
+      if (sv.nivel === MASMORRA.lendarioDesde) this.m.jogo.aviso(`Dizem que o ${ESPECIES[this.cfg.chefe].nome} pode despertar no ${this.cfg.fim}...`);
+    }
+  }
+
+  // Ao entrar no jogo (novo ou carregado): o chefe volta como estava salvo
+  aoCarregar() {
+    if (this.chefe && this.m.selvagens.includes(this.chefe)) this.m.removerSelvagem(this.chefe);
+    this.chefe = null;
+    this.esperaAmanhecer = !!this.salvo?.espera;
+    this.periodoVisto = this.m.periodo;
+    this.etapaAvisada = -1;
+    this.povoando = true;
+    if (!this.esperaAmanhecer) this.spawnarChefe();
+    this.povoando = false;
   }
 
   atualizarChefe() {
@@ -519,8 +569,9 @@ export class DungeonAberta {
       this.periodoVisto = m.periodo;
       if (m.periodo === 'dia') {
         this.esperaAmanhecer = false;
+        if (this.salvo) this.salvo.espera = false;
         this.spawnarChefe();
-        if (m.jogo.estado) m.jogo.aviso(`${ESPECIES[this.cfg.chefe].nome} voltou ao ${this.cfg.fim}.`);
+        if (m.jogo.estado && !ESPECIES[this.chefe.dados.especie].lendario) m.jogo.aviso(`${this.nomeChefe} é o novo chefe do ${this.cfg.fim}.`);
       }
     }
     if (!this.chefe && !this.esperaAmanhecer) this.spawnarChefe();
@@ -535,15 +586,16 @@ export class DungeonAberta {
     const dentro = etapa >= 0;
     // aviso de etapa ao entrar em cada parte
     if (etapa !== this.etapaAvisada && m.jogo.estado) {
-      const nomeChefe = ESPECIES[this.cfg.chefe].nome;
+      const nomeChefe = this.nomeChefe;
       if (etapa >= 0 && etapa < T.nEtapas && etapa > this.etapaAvisada) {
-        const nv = niveisDaEtapa(m.mediaEquipe(), etapa, this.id);
-        m.jogo.mostrarZona(this.cfg.etapas[etapa].nome);
+        const nv = niveisDaEtapa(m.mediaEquipe(), etapa, this.id, this.nivelMasmorra);
+        m.jogo.mostrarZona(etapa === 0 && this.etapaAvisada < 0 ? `${this.cfg.nome} · Nível ${this.nivelMasmorra}` : this.cfg.etapas[etapa].nome);
+        if (etapa === 0 && this.etapaAvisada < 0) m.jogo.aviso(this.cfg.etapas[0].nome + '.');
         m.jogo.aviso(`Grupos daqui: comuns Nv.${nv.comum}, líderes Nv.${nv.lider}.`);
       } else if (etapa === T.nEtapas) {
         m.jogo.mostrarZona(this.cfg.fim);
         if (this.chefe) m.jogo.aviso(`O chefe ${nomeChefe} (Nv.${this.chefe.dados.nivel}) espera no ${this.cfg.fim}. Encoste nele para lutar.`);
-        else m.jogo.aviso(`O ${this.cfg.fim} está vazio. ${nomeChefe} volta no próximo amanhecer.`);
+        else m.jogo.aviso(`O ${this.cfg.fim} está vazio. Um novo chefe chega no próximo amanhecer.`);
       } else if (etapa === -1 && this.etapaAvisada >= 0) {
         m.jogo.mostrarZona(this.cfg.regiao);
       }

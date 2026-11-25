@@ -11,7 +11,7 @@
 //  - Loja: a barraca listrada da vila do Reino. Encoste nela para comprar.
 // Na batalha, as poções ficam no botão do frasco (recarga de 10 s): batalha.js.
 // =============================================================
-import { ESPECIES, ELEMENTOS, statsDe } from './dados.js';
+import { ESPECIES, ELEMENTOS, MASMORRA, statsDe } from './dados.js';
 import { SEMENTES, ORDEM_SEMENTES, JARDIM, AFETO, garantirJardim, faseDo, tempoTexto, plantar, colher, afetoDe, alimentar } from './jardim.js';
 
 export const POCOES = {
@@ -52,13 +52,18 @@ export const DROPS = {
   chefeMasmorra: { galho: 0.70, asa: 0.45, os2: 0.25 },
   reiDungeon: { galho: 0.50, asa: 0.25, os2: 0.10 }, // as dungeons ainda vão ser feitas
 };
-export function sortearDrop(qual, sorte = Math.random()) {
-  const D = DROPS[qual], soGalho = D.galho - D.os2, soAsa = D.asa - D.os2;
+// bonus = chance a mais de galho e de asa (Nível da Masmorra: +2% a cada nível).
+// Os "dois juntos" sobem o dobro, assim a chance de não cair nada continua a mesma (10%).
+export function sortearDrop(qual, sorte = Math.random(), bonus = 0) {
+  const B = DROPS[qual], D = { galho: B.galho + bonus, asa: B.asa + bonus, os2: B.os2 + bonus * 2 };
+  const soGalho = D.galho - D.os2, soAsa = D.asa - D.os2;
   if (sorte < D.os2) return { galhos: 1, asas: 1 };
   if (sorte < D.os2 + soGalho) return { galhos: 1, asas: 0 };
   if (sorte < D.os2 + soGalho + soAsa) return { galhos: 0, asas: 1 };
   return { galhos: 0, asas: 0 };
 }
+
+export function bonusDrop(nivelMasmorra = 1) { return MASMORRA.dropPorNivel * (nivelMasmorra - 1); }
 
 // Ouro de cada vitória (os treinadores têm o deles, em reino.js)
 export const MOEDAS = { selvagem: [5, 10], comumGrupo: 4, liderGrupo: 10, chefe: 300 };

@@ -44,7 +44,7 @@ export class HabilidadesImanito {
   dele(c) { return c.esp.linha === 'terraRaio'; }
   naLuta(l) { return !!l && !l.morto && l.modelo.visible && (l === this.b.jog || this.b.inimigos.includes(l)); }
   // chefes e o Campeão sentem só a metade do puxão e do empurrão
-  resistente(o) { return !!o.esp.chefe || (!!this.b.treinador?.campeao && o.lado === 'inimigo'); }
+  resistente(o) { return !!(o.esp.chefe || o.dados.chefe) || (!!this.b.treinador?.campeao && o.lado === 'inimigo'); }
 
   faisca(pos, vel, tam, vida) {
     const m = new THREE.Mesh(GEO_FAISCA, FAISCA);

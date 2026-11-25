@@ -48,7 +48,7 @@ export class HabilidadesIgnarion {
   dele(c) { return c?.esp.linha === 'ignarion'; }
   naLuta(l) { return !!l && !l.morto && l.modelo.visible && (l === this.b.jog || this.b.inimigos.includes(l)); }
   // chefes e o Campeão são arremessados só pela metade da distância
-  resistente(o) { return !!o.esp.chefe || (!!this.b.treinador?.campeao && o.lado === 'inimigo'); }
+  resistente(o) { return !!(o.esp.chefe || o.dados.chefe) || (!!this.b.treinador?.campeao && o.lado === 'inimigo'); }
 
   // ---------- brasas (partículas) ----------
   brasa(pos, vel, tam, vida, mat = BRASA) {

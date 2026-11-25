@@ -12,7 +12,7 @@ import { Plataforma, CenaEvolucao } from './plataforma.js';
 import { carregarModelos3D } from './modelos.js';
 import { Companheiro } from './companheiro.js';
 import { TREINADORES, equipeDoTreinador } from './reino.js';
-import { Bolsa, MOEDAS, sortearDrop } from './bolsa.js';
+import { Bolsa, MOEDAS, sortearDrop, bonusDrop } from './bolsa.js';
 import { afetoDe } from './jardim.js';
 import { Ovo } from './ovo.js';
 import {
@@ -20,7 +20,7 @@ import {
   criarMonstro, statsDe, xpParaProximo, xpDaVitoria, verificarEvolucao, formasDaLinha, fracoContra,
   textosMelhoria, novidadesDaEvolucao, melhoriaDe, EFEITOS, EFEITO_DO_ELEMENTO, chanceDoEfeito, pct,
   CRISTAIS, CUSTO_FUSAO, ORDEM_DUPLAS, DUPLAS, nomeDupla, nomeTipo, fundoTipo, fracoContraEspecie, forteContraEspecie,
-  DURACAO_EFEITO_DISPARO, NIVEL_MAXIMO, missaoDe, contarNaMissao, requisitosEvolucaoRara, fazerEvolucaoRara,
+  DURACAO_EFEITO_DISPARO, NIVEL_MAXIMO, missaoDe, contarNaMissao, requisitosEvolucaoRara, fazerEvolucaoRara, ehFormaFinal,
 } from './dados.js';
 import { chaveNome, problemaNome, ErroNuvem, criarConta, entrar, renovar, Nuvem, senhaDoGM, SENHA_MIN } from './nuvem.js';
 
@@ -482,7 +482,7 @@ class Jogo {
     else if (e.evoluiPara) {
       const prox = novidadesDaEvolucao(id, e.evoluiPara);
       evo = `Evolui no <b>Nv.${e.nivelEvolucao}</b> para <b>${ESPECIES[e.evoluiPara].nome}</b>${prox.length ? ': ' + prox.join(', ') : ''}.`;
-    } else evo = 'Forma final da linha.';
+    } else evo = !ehFormaFinal(e) ? 'Forma final da linha.' : 'Forma final da linha. Na natureza, só chefes e líderes de masmorra vêm assim: só um <b>Cristal Supremo</b> segura, e é mais difícil.';
     const mel = melhoriaDe(id);
     const golpes = e.golpes.map((g) => {
       const gp = GOLPES[g];
@@ -548,6 +548,8 @@ class Jogo {
 
   entrarNoMundo() {
     Bolsa.garantir(this.estado); // saves antigos: moedas e poções
+    // atributos novos depois do Nv.50 (fase 8.1): a vida salva não passa do máximo novo
+    for (const mo of [...this.estado.equipe, ...this.estado.reserva]) mo.hp = Math.min(mo.hp, statsDe(mo.especie, mo.nivel).hpMax);
     if (this.estado.arena?.ovoPendente) this.ovo.receber(); // dominou antes de o ovo existir
     // a bandeira salva volta para o lugar onde estava; a casa do Reino fica no nível salvo
     const bd = this.estado.bandeira;
@@ -781,7 +783,7 @@ class Jogo {
     // Experiência: soma de todos os derrotados/capturados (em grupo, 60% de cada)
     if (vencidos.length && ativo.hp > 0) {
       // tipo duplo vale 50% a mais
-      const bonus = (d) => (ESPECIES[d.especie].chefe ? 2 : ESPECIES[d.especie].dupla ? 1.5 : 1);
+      const bonus = (d) => (ESPECIES[d.especie].chefe || d.chefe ? 2 : ESPECIES[d.especie].dupla ? 1.5 : 1);
       const xp = Math.round(vencidos.reduce((s, d) => s + xpDaVitoria(d.nivel) * bonus(d), 0) * (b.grupo && !b.treinador ? 0.6 : 1));
       const subiu = this.ganharXp(ativo, xp);
       this.aviso(`${nomeAtivo} ganhou ${xp} de experiência.`);
@@ -794,8 +796,10 @@ class Jogo {
     // o chefe deixa um tesouro, vencido ou capturado
     if (b.chefe && vencidos.length) {
       ganho.forte += 3; ganho.supremo += 2;
-      const chefe = ESPECIES[b.chefeEspecie] || ESPECIES.ignarion;
-      this.aviso(b.capturados.length ? `Você capturou ${chefe.nome}, o chefe ${chefe.onde}!` : `Você venceu ${chefe.nome}! Ele volta no próximo amanhecer.`);
+      const chefe = ESPECIES[b.chefeEspecie] || ESPECIES.ignarion, masmorra = b.selvagem.masmorra;
+      const onde = masmorra ? `do ${masmorra.cfg.fim}` : chefe.onde || 'da masmorra';
+      this.aviso(b.capturados.length ? `Você capturou ${chefe.nome}, o chefe ${onde}!` : `Você venceu ${chefe.nome}, o chefe ${onde}! Um novo chefe chega no próximo amanhecer.`);
+      masmorra?.chefeVencido(); // o Nível da Masmorra sobe
     }
     for (const d of b.treinador ? [] : b.derrotados) { // treinador: o prêmio é fixo (fimLutaTreinador)
       const esp = ESPECIES[d.especie];
@@ -809,11 +813,11 @@ class Jogo {
       if (!b.chefe) for (const d of b.derrotados) moedas += b.grupo ? (d.lider ? MOEDAS.liderGrupo : MOEDAS.comumGrupo) : MOEDAS.selvagem[0] + Math.floor(Math.random() * (MOEDAS.selvagem[1] - MOEDAS.selvagem[0] + 1));
       this.bolsa.ganharMoedas(moedas);
       // Galho Raro e Asa do Anjo: por sorte, só do chefe da masmorra (os acampamentos e o mapa não dão)
-      if (b.chefe && vencidos.length) this.bolsa.ganharItens(sortearDrop('chefeMasmorra'));
+      if (b.chefe && vencidos.length) this.bolsa.ganharItens(sortearDrop('chefeMasmorra', Math.random(), bonusDrop(b.selvagem.masmorra?.nivelMasmorra)));
     }
     for (const novo of b.capturados) {
       novo.hp = Math.max(1, novo.hp);
-      delete novo.lider; delete novo.onda; delete novo.forca;
+      delete novo.lider; delete novo.onda; delete novo.forca; delete novo.chefe;
       if (!this.estado.capturados.includes(novo.especie)) this.estado.capturados.push(novo.especie);
       if (this.estado.equipe.length < MAX_EQUIPE) {
         this.estado.equipe.push(novo);

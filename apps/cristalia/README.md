@@ -38,7 +38,7 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
 - **Fonte de cura:** a fonte na praça do castelo, no **Reino**, cura todos os seus monstros. É a única fonte do jogo (a do meio do Campo virou uma placa que aponta para o Reino).
 - **Começo:** o jogo novo começa no Reino, na frente da fonte do castelo, com 3 Poções de Cura e 1 de Reviver. Siga a **Estrada Real** para chegar ao mapa (veja "O Reino").
 - **Bolsa:** o botão do canto de baixo (tecla **B** no PC). Dentro dela ficam a bandeira, a casa, o jardim, as frutas, os itens raros, as poções, os cristais e os ovos. Veja "Bolsa, ouro e loja".
-- **Nível dos selvagens:** acompanha o nível da sua equipe e aumenta quanto mais longe do centro você vai. Nas bordas aparecem as formas evoluídas. A exceção é **em volta da boca do Reino** (55 m): ali só aparecem monstros fracos (Nv.2 a 5, formas iniciais), sem grupos e sem tipo duplo.
+- **Nível dos selvagens:** acompanha o nível da sua equipe e aumenta quanto mais longe do centro você vai, até o **Nv.95** (os grupos vão até o Nv.98 e os líderes até o Nv.100). Nas bordas aparecem as formas evoluídas, mas nunca a forma final. A exceção é **em volta da boca do Reino** (55 m): ali só aparecem monstros fracos (Nv.2 a 5, formas iniciais), sem grupos e sem tipo duplo.
 - **Monstros perto de você:** os selvagens e os grupos aparecem em volta do jogador (até ~90 m) e somem quando ficam longe; assim o mapa grande não fica mais pesado.
 - O progresso é salvo sozinho: no celular a cada 5 s e na nuvem (veja abaixo).
 - **Tela cheia:** botão na tela inicial, no mapa e na batalha. Alguns navegadores não deixam (o iPhone, por exemplo); nesse caso, use "Adicionar à tela inicial".
@@ -257,7 +257,7 @@ O Reino fica **fora da borda do mapa**, como as dungeons, mas não é dungeon: �
   | Chefe de masmorra | 25% | 45% | 20% | 10% |
   | Rei de dungeon (as dungeons ainda vão ser feitas) | 10% | 40% | 15% | 35% |
 
-  No total: no chefe, **70%** de cair galho e **45%** de cair asa; no rei, 50% e 25%.
+  No total: no chefe, **70%** de cair galho e **45%** de cair asa; no rei, 50% e 25%. O **Nível da Masmorra** soma **+2%** nos dois a cada nível (no nível 10: 88% e 63%; a chance de não cair nada continua 10%).
 
 - **Fica salvo** em `estado.casaNivel` e `estado.galhos` (as Asas em `estado.asas` e os Corações em `estado.coracoes`). Os números ficam em `CASA` e `DROPS` (com `sortearDrop`), no `js/bolsa.js`; o desenho dos 5 níveis em `criarCasa(nivel)`, no `js/modelos.js` (as peças do mesmo material viram uma malha só).
 
@@ -303,6 +303,7 @@ O Reino fica **fora da borda do mapa**, como as dungeons, mas não é dungeon: �
 | Forte | Roxo | 1,5× | Brilhos roxos no mapa (raros), líder de grupo (+1), vencer um tipo duplo (+1), fundir 3 comuns |
 | Supremo | Dourado | 2,2× | Brilhos dourados (muito raros), tipos duplos evoluídos (às vezes), fundir 3 fortes |
 
+- **Forma final** (a última forma das linhas, dos tipos duplos e dos raros): fora da sua equipe, ela só aparece nos chefes e líderes de masmorra (e nos treinadores). Para capturar, **só o Cristal Supremo** segura, e a chance cai para **40%** da normal (`CAPTURA_FORMA_FINAL`, `ehFormaFinal` e `cristalMinimo` no `dados.js`).
 - **Fundir:** no painel **Equipe**, perto da sua casa, 3 cristais iguais viram 1 do tipo acima.
 - Na batalha, o jogo escolhe sozinho o cristal mais fraco que funciona no alvo; o botão **Tipo** troca na mão.
 - Os cristais do chão reaparecem 1 minuto depois, com a cor sorteada de novo.
@@ -328,7 +329,29 @@ Sai da borda do mapa pelo bioma de Lava, depois do Vulcão, seguindo a estrada d
 - Não dá para fincar a bandeira lá dentro (calor demais). Finque antes da entrada.
 - Quanto mais fundo, mais escuro fica o céu, com cinzas caindo e brasas subindo.
 
+### Nível da Masmorra e chefes sorteados (fase 8.1)
+
+Vale para o Caminho das Brasas e para a Trilha Ancestral (cada uma tem o seu nível).
+
+- **Nível da Masmorra de 1 a 10**, salvo na conta (`estado.masmorras`). Aparece na entrada: **"Caminho das Brasas · Nível 3"**.
+- **Cada vitória contra o chefe** (vencido ou capturado) sobe 1 nível.
+- Cada nível soma **+3 níveis** em todos os monstros de lá (acampamentos, soltos e chefe), até o Nv.100.
+- **A partir do nível 5**, metade dos líderes vem na **forma final** (se tiver nível para ela).
+- **O chefe é sorteado** cada vez que volta (no amanhecer depois de vencido), entre as formas finais do tipo da masmorra. Ele vem maior, de coroa, entra em **fúria** com menos da metade da vida e deixa o mesmo tesouro (cristais, 300 de ouro, Galho e Asa por sorte). **Não dá ovo.**
+
+  | Masmorra | Chefes | A partir do nível 5 | A partir do nível 9 |
+  |---|---|---|---|
+  | Caminho das Brasas | Magmalobo, Florinferno, Caldeirax | + Colossarapa | o **Ignárion** pode despertar (15%) |
+  | Trilha Ancestral | Florestral, Florinferno | + Mandacarão | o **Silvárion** pode despertar (15%) |
+
+- Quando o lendário vem, aparece o aviso **"O Ignárion despertou no Trono de Magma!"**.
+- O sorteio fica salvo: fechar e abrir o jogo não troca o chefe.
+- Nível do chefe: o mesmo de antes até o Nv.50 (1,4× a equipe + 22); depois, a equipe + 16. Os acampamentos seguem a mesma ideia (até o Nv.50 como antes; depois, a equipe + uma folga).
+- Tudo isso fica em `MASMORRA`, `dadosMasmorra`, `sortearChefe`, `niveisDaEtapa` e `nivelDoChefe` (`js/dados.js`), e em `spawnarChefe` e `chefeVencido` (`js/dungeon.js`).
+
 ### Chefe: Ignárion (lendário)
+
+- Desde a fase 8.1, ele só aparece **a partir do Nível 9 da masmorra**, por sorteio (15% cada vez que o chefe volta). Antes disso, o chefe é sorteado (veja acima).
 
 - Fica no **Trono de Magma**, no fim do caminho, aos pés de um vulcão gigante.
 - Tipo **Ígneo**, um elemento novo: um fogo mais forte, que é super efetivo contra Planta, Terra e até Fogo. Só a **Água** é forte contra ele.
@@ -357,6 +380,8 @@ Sai da borda do mapa pela Floresta, seguindo as lanternas de flor (a direção d
 - Arena dos grupos: **Trilha Ancestral** (favorece Planta). Perigo: **moitas de espinhos** que arranham quem pisa, mas curam monstros de Planta.
 
 ### Chefe: Silvárion (lendário)
+
+- Desde a fase 8.1, ele só aparece **a partir do Nível 9 da masmorra**, por sorteio (15%), como o Ignárion.
 
 - Fica no **Santuário da Árvore-Mãe**, no fim da trilha, aos pés de uma árvore gigantesca.
 - Tipo **Silvestre**, um elemento novo: uma planta mais forte, super efetiva contra Água, Terra e até Planta. Só **Fogo** (e o Ígneo) são fortes contra ele.
@@ -465,7 +490,9 @@ Todos os raros e lendários já têm formas novas: no Monstruário cada um tem a
 ## Vida e dano
 
 - A vida começa em **2,2×** o valor base da espécie e cresce **20% por nível**.
-- O dano cresce **15% por nível** de quem ataca, um pouco menos que a vida. Por isso as batalhas de nível alto duram um pouco mais.
+- O dano cresce **15% por nível** de quem ataca, um pouco menos que a vida.
+- **Depois do Nv.50, tudo cresce pela metade** por nível (vida +10%, ataque e defesa +6%, dano +7,5%). Assim um Nv.100 fica umas 4 vezes mais forte que um Nv.50, e não 13. Fica em `NIVEL_CORTE` e `CRESCE_DEPOIS_DO_CORTE` (`niveisDeCrescimento` no `dados.js`).
+- **Experiência:** para subir, cada nível pede `12 + 8 × nível`; do **Nv.50 para cima, o dobro** (`XP_DEPOIS_DO_CORTE`). A vitória dá `10 + 7 × nível do inimigo`, então vencer monstros muito mais fracos já rende pouco. Por isso as batalhas de nível alto duram um pouco mais.
 - Todo dano de golpe (o seu e o dos inimigos) passa por `DANO_GERAL` (0,7 = 30% menos). Num confronto neutro, são necessários uns **10 disparos** no começo e uns **17** no nível 30. Vantagem e desvantagem de elemento mudam bastante esse número.
 - Esses valores ficam em `dados.js`: `VIDA_BASE`, `VIDA_POR_NIVEL`, `DANO_POR_NIVEL` e `DANO_GERAL`.
 
@@ -820,7 +847,7 @@ Só a **conta GM** tem o painel. O código fica em `js/gm.js` e só é baixado q
 | Aba | O que faz |
 |---|---|
 | **Monstros** | Escolhe qualquer espécie (todas as 53, separadas por linha) e o nível (1 a 50). **Aparecer perto** (8 m na sua frente), **Lutar agora** (na arena escolhida ou na da região), **Grupo (5 + líder)** no mapa, **Lutar com grupo** e **Dar para mim** (vai para a equipe ou a reserva). Atalhos: selvagem, tipo duplo ou grupo aleatório, e **limpar o mapa** (os chefes e os acampamentos ficam). |
-| **Dungeons** | Para o Caminho das Brasas e a Trilha Ancestral: **ir para** a entrada, cada etapa ou o chefe; **lutar contra o acampamento** de cada etapa (na ordem 2 fracos → 2 médios → 1 forte → líder, no nível que a sua equipe enfrentaria); **lutar com o chefe** no nível escolhido; **chefe volta já** (sem esperar o amanhecer); **monstro da dungeon perto**. |
+| **Dungeons** | Para o Caminho das Brasas e a Trilha Ancestral: **ir para** a entrada, cada etapa ou o chefe; **lutar contra o acampamento** de cada etapa (na ordem 2 fracos → 2 médios → 1 forte → líder, no nível que a sua equipe enfrentaria); **Nível da Masmorra** (1, 3, 5, 9 ou 10); **lutar com o chefe de agora** no nível escolhido; **o chefe volta já** (sem esperar o amanhecer); **sortear outro chefe**; **chamar o lendário**; **monstro da dungeon perto**. |
 | **Equipe** | **Copiar jogo de outra conta** deste aparelho para o GM (para testar com a equipe de verdade; a conta original não muda). Escolhe o **monstro alvo** (equipe ou reserva) e mostra nível, vida e experiência. **Adicionar XP:** +50, +500, +1 nível ou **até o nível ___**. A XP sobe como no jogo, então ele **evolui** ao chegar no nível (a animação aparece quando o painel fecha). **Evoluir agora**, **Voltar uma forma** (fica no nível logo abaixo da evolução, para não evoluir de novo sozinho), **Curar**, **subir 1 nível sem evoluir**. Também **curar todos** e mudar os cristais (+10, 99 ou zerar). |
 | **Mundo** | **Arena do Reino:** lutar com qualquer treinador na hora (sem a ordem), **dominar a arena** (já entrega o ovo), **zerar a arena** (tira o ovo também), **+1000 de ouro**, **chocar o ovo agora**, **+6 Galhos Raros** e **casa nível 1, 2 ou 3**. **Hora:** amanhecer, meio-dia, anoitecer, meia-noite ou **parar o relógio**. **Teleporte:** castelo (a fonte), arena do Reino, Estrada Real, as 6 regiões (o lugar de cada uma vem da semente do mapa) e a casa. **Andar ×1, ×2 ou ×3.** **Invisível:** os monstros não vêm atrás de você, mas encostar neles ainda começa a batalha. **Mostrar FPS** (embaixo, no meio da tela), com os números do mapa (chunks, objetos, desenhos e triângulos por quadro, tempo para criar um chunk). **Mapa:** ver outra semente (digitada ou aleatória) e voltar à de todos: recarrega o jogo com outro mapa só neste aparelho, até fechar (pela URL `?semente=123`). |
 | **Testes** | **Invencível** (a vida não desce, nem com efeitos e perigos da arena), **recarga zero**, **captura garantida** (qualquer cristal segura qualquer monstro, até os chefes), **inimigos parados**, **dano ×10**. Na gaveta da batalha também: **encher minha vida** e **vencer agora** (derrota todos, até os que estão esperando nas ondas). |

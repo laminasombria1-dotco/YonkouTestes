@@ -20,7 +20,7 @@ import { alturaEm, bloqueadoEm } from './mapa/altura.js';
 import { Grade, ListaObstaculos } from './mapa/grade.js';
 import { Chunks } from './mapa/chunks.js';
 import { lerQualidade } from './mapa/config.js';
-import { ESPECIES, ELEMENTOS, APARICOES, PERIODO_DA_LINHA, DUPLAS, ORDEM_DUPLAS, INTERVALO_DUPLO, CRISTAIS, criarMonstro, statsDe, formaPorNivel, especieDaEscolha, nomeTipo } from './dados.js';
+import { ESPECIES, ELEMENTOS, APARICOES, PERIODO_DA_LINHA, DUPLAS, ORDEM_DUPLAS, INTERVALO_DUPLO, CRISTAIS, criarMonstro, statsDe, formaPorNivel, especieDaEscolha, nomeTipo, tetoSuave } from './dados.js';
 
 export { RAIO_MUNDO, alturaEm, SEMENTE };
 const NA_ZONA = { campo: 'no Campo', agua: 'no Lago', fogo: 'no Vulcão', planta: 'na Floresta', terra: 'no Deserto', raio: 'nos Picos Nevados' };
@@ -49,12 +49,15 @@ const DUPLA_MIN = 1.5, DUPLA_MAX = 3.5;   // espaço com o parceiro (alvo: ~2 m)
 const ESPACO_ENTRE_DUPLAS = 5;            // espaço mínimo até os monstros das outras duplas
 const RAIO_AREA_GRUPO = 11;               // até onde cada um se afasta do ponto do grupo
 const PERSEGUE_GRUPO = 10, PERSEGUE_ACAMPAMENTO = 7; // a que distância do monstro mais perto o grupo vem atrás de você
-// Níveis do grupo. Começo do jogo (equipe ~Nv.3): comuns ~Nv.5, líder ~Nv.12
+// Níveis do grupo. Começo do jogo (equipe ~Nv.3): comuns ~Nv.5, líder ~Nv.12.
+// Até o Nv.50 vale o teto de antes (48/50); depois acompanham a equipe, até o Nv.98/100.
 export function niveisDoGrupo(media) {
-  const comum = Math.round(media * 1.1 + 2);
-  const lider = Math.round(media * 1.4 + 8);
-  return { comum: Math.min(48, comum), lider: Math.min(50, lider) };
+  const comum = Math.round(tetoSuave(media * 1.1 + 2, 48, media, 3));
+  const lider = Math.round(tetoSuave(media * 1.4 + 8, 50, media, 5));
+  return { comum: Math.min(98, comum), lider: Math.min(100, lider) };
 }
+// Os selvagens soltos do mapa vão até o Nv.95 (e nunca na forma final)
+export const NIVEL_MAX_SELVAGEM = 95;
 // Cristais do chão: a cor mostra o tipo (sorteado de novo cada vez que reaparece)
 function sortearTipoCristal() {
   const r = Math.random();
@@ -348,7 +351,7 @@ export class Mundo {
     let n = Math.round(media * (0.55 + 0.65 * frac) + Math.random() * 2 - 1);
     if (perto) n = Math.min(n, Math.max(1, Math.round(media) - 1));
     if (pertoDoReino(x, z)) n = Math.min(n, 2 + Math.floor(Math.random() * 4)); // em volta do Reino: Nv.2 a 5
-    return Math.max(1, Math.min(45, n));
+    return Math.max(1, Math.min(NIVEL_MAX_SELVAGEM, n));
   }
 
   povoar() {
@@ -359,6 +362,7 @@ export class Mundo {
     for (let i = 0; i < MAX_SELVAGENS - 4; i++) this.spawnarSelvagem(false);
     for (let i = 0; i < gruposDesejados(this.mediaEquipe()); i++) this.spawnarGrupo();
     for (const d of this.dungeons || []) for (const a of d.acampamentos) a.grupo = null;
+    for (const d of this.dungeons || []) d.aoCarregar?.(); // o chefe de cada masmorra volta como estava salvo
     this.povoando = false;
   }
 
@@ -403,7 +407,9 @@ export class Mundo {
         if ((lider || forca?.[0] === 'forte') && !escolha.startsWith('L:')) escolha = 'L:' + ESPECIES[escolha].elemento;
         let nivel = lider ? nv.lider : Math.max(1, nv.comum + Math.round(Math.random() * 2 - 1));
         if (forca) nivel = forca[0] === 'forte' ? Math.round(nv.comum + (nv.lider - nv.comum) * 0.6) : Math.max(1, nv.comum + forca[2]);
-        const { especie, nivel: nivelFinal } = this.especieDe(escolha, nivel);
+        let { especie, nivel: nivelFinal } = this.especieDe(escolha, nivel);
+        // masmorra a partir do Nível 5: o líder pode vir na forma final (se tiver nível para ela)
+        if (lider && opcoes?.finalLider && escolha.startsWith('L:')) especie = formaPorNivel(escolha.slice(2), nivelFinal, true);
         const dados = criarMonstro(especie, nivelFinal);
         if (lider) dados.lider = true;
         if (opcoes?.escalonado) { dados.onda = lider ? 4 : forca[1]; dados.forca = lider ? 'lider' : forca[0]; }
@@ -691,7 +697,7 @@ export class Mundo {
   spawnarDuplo(x, z, zona) {
     const opcoes = ORDEM_DUPLAS.filter((k) => DUPLAS[k].zonas.includes(zona));
     const k = opcoes[Math.floor(Math.random() * opcoes.length)] || ORDEM_DUPLAS[0];
-    const nivel = Math.min(48, this.nivelSelvagem(x, z, false) + 2);
+    const nivel = Math.min(NIVEL_MAX_SELVAGEM + 2, this.nivelSelvagem(x, z, false) + 2);
     const especie = formaPorNivel(k, nivel);
     const esp = ESPECIES[especie];
     const dados = criarMonstro(especie, nivel);
@@ -995,7 +1001,7 @@ export class Mundo {
     } else if (maisPerto && est) {
       const esp = ESPECIES[maisPerto.dados.especie];
       const bolinhas = esp.elementos.map((el) => `<i style="background:${ELEMENTOS[el].cor}"></i>`).join('');
-      const marca = esp.chefe ? '<span class="duplo">Chefe · </span>' : esp.dupla ? '<span class="duplo">Tipo duplo · </span>' : '';
+      const marca = esp.chefe || maisPerto.dados.chefe ? '<span class="duplo">Chefe · </span>' : esp.dupla ? '<span class="duplo">Tipo duplo · </span>' : '';
       this.jogo.mostrarRotulo(`${bolinhas}${marca}${esp.nome} <b>Nv.${maisPerto.dados.nivel}</b>`,
         new THREE.Vector3(maisPerto.x, maisPerto.modelo.position.y + esp.altura + 0.3, maisPerto.z), this.camera);
     } else if (dLoja < 7) {

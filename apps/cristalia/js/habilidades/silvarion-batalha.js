@@ -71,7 +71,7 @@ export class HabilidadesSilvarion {
   // Só o Silvárion e as formas dele usam estas habilidades
   dele(c) { return c?.esp.linha === 'silvarion'; }
   naLuta(l) { return !!l && !l.morto && l.modelo.visible && (l === this.b.jog || this.b.inimigos.includes(l)); }
-  resistente(o) { return !!o.esp.chefe || (!!this.b.treinador?.campeao && o.lado === 'inimigo'); }
+  resistente(o) { return !!(o.esp.chefe || o.dados.chefe) || (!!this.b.treinador?.campeao && o.lado === 'inimigo'); }
 
   // ---------- folhinhas (partículas) ----------
   folha(pos, vel, tam, vida, mat = FOLHA) {

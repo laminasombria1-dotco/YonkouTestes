@@ -558,7 +558,7 @@ export class TrilhaAncestral extends DungeonAberta {
       const x = m.pos.x + Math.cos(a) * r, z = m.pos.z + Math.sin(a) * r;
       if (m.zona(x, z) !== 'planta' || !m.pontoLivre(x, z, 1) || this.t.perto(x, z)) continue;
       const escolha = m.sortearAparicao('planta');
-      const { especie, nivel } = m.especieDe(escolha, Math.min(45, m.nivelSelvagem(x, z, false) + 1 + Math.round(Math.random() * 2)));
+      const { especie, nivel } = m.especieDe(escolha, Math.min(95, m.nivelSelvagem(x, z, false) + 1 + Math.round(Math.random() * 2)));
       const dados = criarMonstro(especie, nivel);
       const modelo = criarModelo(especie);
       modelo.position.set(x, this.y(x, z), z);

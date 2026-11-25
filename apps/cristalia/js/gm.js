@@ -16,7 +16,7 @@
 // =============================================================
 import {
   ESPECIES, ELEMENTOS, ORDEM_ELEMENTOS, ORDEM_DUPLAS, RAROS, NOMES_ESTAGIO, ARENAS, DUNGEONS, CRISTAIS,
-  formasDaLinha, formaPorNivel, criarMonstro, statsDe, xpParaProximo, niveisDaEtapa, nivelDoChefe, nomeDupla, nomeTipo, verificarEvolucao,
+  formasDaLinha, formaPorNivel, criarMonstro, statsDe, xpParaProximo, niveisDaEtapa, nivelDoChefe, MASMORRA, sortearChefe, nomeDupla, nomeTipo, verificarEvolucao,
   NIVEL_MAXIMO, evoluirUmaVez, missaoDe, especieDaEscolha, ORDEM_LINHAS_RARAS,
 } from './dados.js';
 import { criarModelo, criarCoroa, criarAuraDupla } from './modelos.js';
@@ -257,27 +257,33 @@ export class PainelGM {
 
   abaDungeons() {
     const media = this.mundo.mediaEquipe();
-    const nvChefe = this.sel.nivelChefe || nivelDoChefe(media);
     return Object.entries(DUNGEONS).map(([id, cfg]) => {
+      const d = this.dungeon(id), nm = d.nivelMasmorra;
+      const nvChefe = this.sel.nivelChefe || nivelDoChefe(media, nm);
       const etapas = cfg.etapas.map((e, i) => {
-        const nv = niveisDaEtapa(media, i, id);
+        const nv = niveisDaEtapa(media, i, id, nm);
         return `<button class="gm-btn forte" type="button" data-gm="acampamento" data-dg="${id}" data-etapa="${i}">Etapa ${i + 1} · Nv.${nv.comum}/${nv.lider}</button>`;
       }).join('');
       const irEtapas = cfg.etapas.map((_, i) => `<button class="gm-btn" type="button" data-gm="irDungeon" data-dg="${id}" data-onde="${i}">Etapa ${i + 1}</button>`).join('');
-      const chefe = ESPECIES[cfg.chefe];
+      const chefe = ESPECIES[d.chefe?.dados.especie || d.idDoChefe()], lenda = ESPECIES[cfg.chefe];
+      const sv = d.salvo;
       return `<div class="gm-bloco">
-        <h3>${esc(cfg.nome)} (${esc(cfg.regiao)})</h3>
-        <div class="gm-linha"><small>Ir para:</small><button class="gm-btn" type="button" data-gm="irDungeon" data-dg="${id}" data-onde="entrada">Entrada</button>${irEtapas}<button class="gm-btn" type="button" data-gm="irDungeon" data-dg="${id}" data-onde="chefe">${esc(chefe.nome)}</button></div>
+        <h3>${esc(cfg.nome)} (${esc(cfg.regiao)}) · Nível ${nm}</h3>
+        <div class="gm-linha"><small>Nível da Masmorra (1 a ${MASMORRA.nivelMax}):</small>${[1, 3, 5, 9, 10].map((n) => `<button class="gm-btn${n === nm ? ' verde' : ''}" type="button" data-gm="nivelMasmorra" data-dg="${id}" data-n="${n}">${n}</button>`).join('')}<small>${sv ? sv.vitorias + ' vitórias' : ''}</small></div>
+        <div class="gm-linha"><small>Ir para:</small><button class="gm-btn" type="button" data-gm="irDungeon" data-dg="${id}" data-onde="entrada">Entrada</button>${irEtapas}<button class="gm-btn" type="button" data-gm="irDungeon" data-dg="${id}" data-onde="chefe">${esc(cfg.fim)}</button></div>
         <div class="gm-linha"><small>Lutar contra o acampamento:</small></div>
         <div class="gm-grade">${etapas}</div>
+        <div class="gm-linha"><small>Chefe agora: <b>${esc(chefe.nome)}</b>${d.chefe ? '' : ' (esperando o amanhecer)'}</small></div>
         <div class="gm-linha">
           <button class="gm-btn forte" type="button" data-gm="chefeAgora" data-dg="${id}">Lutar com ${esc(chefe.nome)} Nv.${nvChefe}</button>
-          <button class="gm-btn" type="button" data-gm="chefeVolta" data-dg="${id}">${esc(chefe.nome)} volta já</button>
+          <button class="gm-btn" type="button" data-gm="chefeVolta" data-dg="${id}">O chefe volta já</button>
+          <button class="gm-btn" type="button" data-gm="chefeSortear" data-dg="${id}">Sortear outro chefe</button>
+          <button class="gm-btn" type="button" data-gm="chefeLendario" data-dg="${id}">Chamar ${esc(lenda.nome)}</button>
           <button class="gm-btn" type="button" data-gm="soltoDungeon" data-dg="${id}">Monstro da dungeon perto</button>
         </div>
       </div>`;
-    }).join('') + `<div class="gm-bloco"><h3>Nível do chefe</h3><div class="gm-linha">${this.campoNivel('nivelChefe', nvChefe)}<small>(normal para a sua equipe: Nv.${nivelDoChefe(media)})</small></div>
-      <p class="gm-dica">Os níveis dos acampamentos acompanham a sua equipe (comuns/líder). A luta vem na ordem 2 fracos → 2 médios → 1 forte → líder, como no jogo.</p></div>`;
+    }).join('') + `<div class="gm-bloco"><h3>Nível do chefe</h3><div class="gm-linha">${this.campoNivel('nivelChefe', this.sel.nivelChefe || nivelDoChefe(media))}<small>(normal para a sua equipe, Nível 1: Nv.${nivelDoChefe(media)})</small></div>
+      <p class="gm-dica">Os níveis dos acampamentos acompanham a sua equipe e o Nível da Masmorra (+${MASMORRA.niveisPorNivel} por nível). A luta vem na ordem 2 fracos → 2 médios → 1 forte → líder, como no jogo. O chefe é sorteado cada vez que volta; o lendário só a partir do Nível ${MASMORRA.lendarioDesde} (${Math.round(MASMORRA.chanceLendario * 100)}%).</p></div>`;
   }
 
   todosMonstros() {
@@ -509,6 +515,9 @@ export class PainelGM {
       case 'acampamento': this.acampamento(d.dg, Number(d.etapa)); return;
       case 'chefeAgora': this.chefeAgora(d.dg); return;
       case 'chefeVolta': this.chefeVolta(d.dg); break;
+      case 'chefeSortear': this.trocarChefe(d.dg, false); break;
+      case 'chefeLendario': this.trocarChefe(d.dg, true); break;
+      case 'nivelMasmorra': this.nivelMasmorra(d.dg, Number(d.n)); break;
       case 'soltoDungeon': this.soltoDungeon(d.dg); break;
       case 'xp': this.darXp(Number(d.qtd)); break;
       case 'xpNivel': { const m = this.alvo(); this.darXp(xpParaProximo(m.nivel) - m.xp); break; }
@@ -712,7 +721,7 @@ export class PainelGM {
     if (!this.podeLutar()) return;
     const d = this.dungeon(id), m = this.mundo;
     const p = this.pontoNaFrente(30);
-    const g = m.spawnarGrupo({ x: p.x, z: p.z, zona: d.cfg.zonaSoltos, niveis: niveisDaEtapa(m.mediaEquipe(), etapa, id), lista: d.cfg.aparicoes, escalonado: true });
+    const g = m.spawnarGrupo({ x: p.x, z: p.z, zona: d.cfg.zonaSoltos, niveis: niveisDaEtapa(m.mediaEquipe(), etapa, id, d.nivelMasmorra), lista: d.cfg.aparicoes, escalonado: true, finalLider: d.liderFinal() });
     if (!g) return;
     g.gm = true;
     for (const mb of g.membros) mb.modelo.visible = false;
@@ -721,21 +730,47 @@ export class PainelGM {
     this.jogo.iniciarBatalha(g);
   }
 
+  // Luta com o chefe de agora da masmorra (o sorteado), no nível da masmorra
   chefeAgora(id) {
+    if (!this.podeLutar()) return;
     const d = this.dungeon(id);
-    const nv = this.sel.nivelChefe || nivelDoChefe(this.mundo.mediaEquipe());
-    const antes = this.sel.arena;
-    this.sel.arena = d.cfg.zonaChefe;
-    this.lutar(d.cfg.chefe, nv);
-    this.sel.arena = antes;
+    const especie = d.chefe?.dados.especie || d.idDoChefe();
+    const nv = this.sel.nivelChefe || nivelDoChefe(this.mundo.mediaEquipe(), d.nivelMasmorra);
+    const s = this.criarSelvagem(especie, nv, this.pontoNaFrente(30), { zona: d.cfg.zonaChefe });
+    s.chefe = true; s.fixo = true; s.dados.chefe = true; s.zona = d.cfg.zonaChefe;
+    s.modelo.visible = false; // só existe para a luta
+    this.temporarios.add(s);
+    this.fecharPainel();
+    this.jogo.iniciarBatalha(s);
   }
 
   chefeVolta(id) {
     const d = this.dungeon(id);
-    if (d.chefe) { this.jogo.aviso(`GM: ${ESPECIES[d.cfg.chefe].nome} já está no ${d.cfg.fim}.`); return; }
+    if (d.chefe) { this.jogo.aviso(`GM: ${d.nomeChefe} já está no ${d.cfg.fim}.`); return; }
     d.esperaAmanhecer = false;
+    if (d.salvo) d.salvo.espera = false;
     d.atualizarChefe();
-    this.jogo.aviso(`GM: ${ESPECIES[d.cfg.chefe].nome} voltou ao ${d.cfg.fim}.`);
+    this.jogo.aviso(`GM: ${d.nomeChefe} voltou ao ${d.cfg.fim}.`);
+    this.salvar();
+  }
+
+  // Troca o chefe de agora (sorteio novo, ou o lendário)
+  trocarChefe(id, lendario) {
+    const d = this.dungeon(id), sv = d.salvo;
+    if (!sv) return;
+    sv.chefe = lendario ? d.cfg.chefe : sortearChefe(id, Math.min(sv.nivel, MASMORRA.lendarioDesde - 1));
+    sv.espera = false;
+    d.aoCarregar();
+    this.jogo.aviso(`GM: o chefe do ${d.cfg.fim} agora é ${d.nomeChefe}.`);
+    this.salvar();
+  }
+
+  nivelMasmorra(id, n) {
+    const d = this.dungeon(id), sv = d.salvo;
+    if (!sv) return;
+    sv.nivel = Math.max(1, Math.min(MASMORRA.nivelMax, n));
+    this.jogo.aviso(`GM: ${d.cfg.nome} no Nível ${sv.nivel}.`);
+    this.salvar();
   }
 
   // Um dos monstros que aparecem soltos na dungeon, no nível da etapa 1, na sua frente
@@ -744,7 +779,7 @@ export class PainelGM {
     const total = lista.reduce((t, [, w]) => t + w, 0);
     let r = Math.random() * total, escolha = lista[0][0];
     for (const [e, w] of lista) { r -= w; if (r <= 0) { escolha = e; break; } }
-    const nv = niveisDaEtapa(this.mundo.mediaEquipe(), 0, id).comum;
+    const nv = niveisDaEtapa(this.mundo.mediaEquipe(), 0, id, d.nivelMasmorra).comum;
     const especie = especieDaEscolha(escolha, nv);
     this.aparecer(especie, nv);
   }
