@@ -22,6 +22,7 @@ import { GOLPES_AQUARAIA, GOLPES_POR_FORMA_AQUARAIA, MELHORIAS_AQUARAIA, TEXTOS_
 import { GOLPES_VULCARAPA, GOLPES_POR_FORMA_VULCARAPA, MELHORIAS_VULCARAPA, TEXTOS_VULCARAPA, NOVIDADES_VULCARAPA } from './habilidades/vulcarapa.js';
 import { GOLPES_ESPINHAL, GOLPES_POR_FORMA_ESPINHAL, MELHORIAS_ESPINHAL, TEXTOS_ESPINHAL, NOVIDADES_ESPINHAL } from './habilidades/espinhal.js';
 import { GOLPES_IGNARION, GOLPES_POR_FORMA_IGNARION, MELHORIAS_IGNARION, TEXTOS_IGNARION, NOVIDADES_IGNARION } from './habilidades/ignarion.js';
+import { GOLPES_SILVARION, GOLPES_POR_FORMA_SILVARION, MELHORIAS_SILVARION, TEXTOS_SILVARION, NOVIDADES_SILVARION } from './habilidades/silvarion.js';
 
 // Linhas com habilidades próprias: golpes por forma, melhorias e textos
 const HABILIDADES_DA_LINHA = {
@@ -44,6 +45,7 @@ const HABILIDADES_DA_LINHA = {
   espinhal: { golpes: GOLPES_POR_FORMA_ESPINHAL, melhorias: MELHORIAS_ESPINHAL, textos: TEXTOS_ESPINHAL, novidades: NOVIDADES_ESPINHAL },
   // lendários com formas novas (a chave também é a da linha em LINHAS_RARAS)
   ignarion: { golpes: GOLPES_POR_FORMA_IGNARION, melhorias: MELHORIAS_IGNARION, textos: TEXTOS_IGNARION, novidades: NOVIDADES_IGNARION },
+  silvarion: { golpes: GOLPES_POR_FORMA_SILVARION, melhorias: MELHORIAS_SILVARION, textos: TEXTOS_SILVARION, novidades: NOVIDADES_SILVARION },
 };
 
 // Ordem em que os elementos aparecem nas telas
@@ -199,6 +201,8 @@ export const GOLPES = {
   ...GOLPES_ESPINHAL,
   // golpes próprios do Ignárion e das formas dele (números em js/habilidades/ignarion.js)
   ...GOLPES_IGNARION,
+  // golpes próprios do Silvárion e das formas dele (números em js/habilidades/silvarion.js)
+  ...GOLPES_SILVARION,
   // golpes próprios da linha do Musguinho (números em js/habilidades/musguinho.js)
   ...GOLPES_MUSGUINHO,
   // golpes próprios da linha do Pedrisco (números em js/habilidades/pedrisco.js)
@@ -519,9 +523,9 @@ const MULT_RARO = [1, 1.7, 2.0, 2.35];
 const MULT_VEL_RARO = [1, 1.04, 1.08, 1.12];
 const TAMANHO_RARO = [1, 1.12, 1.24, 1.36];  // multiplica o tamanho da forma inicial
 const CAPTURA_RARO = [1, 0.7, 0.45, 0.25];   // multiplica a chance de captura da forma inicial
-export const ORDEM_LINHAS_RARAS = ['vulcarapa', 'aquaraia', 'espinhal', 'ignarion'];
+export const ORDEM_LINHAS_RARAS = ['vulcarapa', 'aquaraia', 'espinhal', 'ignarion', 'silvarion'];
 // =============================================================
-// LENDÁRIOS COM FORMAS NOVAS (fase 7: Ignárion; depois o Silvárion)
+// LENDÁRIOS COM FORMAS NOVAS (fase 7: Ignárion e Silvárion)
 // A forma de hoje é a inicial (Nv.1 a 64). As 3 evoluções (Nv.65, 75 e 90) são TODAS
 // com o botão: missão + itens + ouro. Mesma regra de atributos para todos os lendários.
 // A forma inicial continua sendo o chefe da masmorra (chefe, captura só com Cristal Supremo).
@@ -565,6 +569,14 @@ export const LINHAS_RARAS = {
     ['magmarion', 'Magmárion', 'Ficou de pé: o corpo virou placas de magma rachadas e os chifres cresceram.'],
     ['infernarion', 'Infernárion', 'O senhor do fogo ígneo. Asas enormes, um anel de espinhos nas costas e um coração de fogo no peito.'],
   ] },
+  silvarion: { elemento: 'silvestre', lendario: true, base: { hp: 100, atk: 17, def: 17, vel: 6.0 }, captura: 0.04, cristalMin: 2,
+    tamanhos: [1.5, 1.6, 1.7, 1.8], raios: [1.3, 1.6, 1.8, 1.9], alturas: [2.8, 4.4, 5.6, 6.8],
+    inicial: { chefe: true, onde: 'da Trilha Ancestral, no Santuário da Árvore-Mãe' }, formas: [
+    ['silvarion', 'Silvárion', 'Filhote de cervo da floresta, com dois brotinhos na cabeça. Guarda a Árvore-Mãe e acorda a cada amanhecer. Sua força silvestre vence até monstros de planta.'],
+    ['bosquarion', 'Bosquárion', 'Cervo jovem com uma manta de musgo e a galhada florida. Vaga-lumes o seguem.'],
+    ['raizarion', 'Raizárion', 'Colosso de casca: raízes saem dos cascos e a galhada virou galhos de árvore.'],
+    ['ancestrarion', 'Ancestrárion', 'O espírito da floresta. Uma árvore inteira, com flores e frutos acesos, cresce na sua galhada.'],
+  ] },
 };
 for (const [k, L] of Object.entries(LINHAS_RARAS)) {
   L.formas.forEach(([id, nome, descricao], e) => {
@@ -585,14 +597,7 @@ for (const [k, L] of Object.entries(LINHAS_RARAS)) {
   });
 }
 // O Ignárion (chefe do Trono de Magma, no fim do Caminho das Brasas) agora fica em LINHAS_RARAS (lendário).
-// SUPER RARO: o chefe do Santuário da Árvore-Mãe, no fim da Trilha Ancestral (Floresta)
-ESPECIES.silvarion = {
-  onde: 'da Trilha Ancestral, no Santuário da Árvore-Mãe',
-  nome: 'Silvárion', elemento: 'silvestre', elementos: ['silvestre'], linha: null, estagio: 3, raro: true, superRaro: true, chefe: true,
-  tamanho: 1.9, captura: 0.04, cristalMin: 2, raio: 1.7, altura: 3.8, efeitoDisparo: true,
-  descricao: 'Cervo ancestral com uma floresta inteira na galhada. Guarda a Árvore-Mãe e acorda a cada amanhecer. Sua força silvestre vence até monstros de planta.',
-  base: { hp: 100, atk: 17, def: 17, vel: 6.0 }, golpes: ['galhadaAncestral', 'sementeParasita', 'selvaViva'], evoluiPara: null, nivelEvolucao: null,
-};
+// O Silvárion (chefe do Santuário da Árvore-Mãe, no fim da Trilha Ancestral) agora fica em LINHAS_RARAS (lendário).
 export const RAROS = ['vulcarapa', 'aquaraia', 'espinhal', 'ignarion', 'silvarion'];
 for (const id of RAROS) Object.assign(ESPECIES[id], { elementos: ESPECIES[id].elementos || [ESPECIES[id].elemento], cristalMin: ESPECIES[id].cristalMin || 0 });
 

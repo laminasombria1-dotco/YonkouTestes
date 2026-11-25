@@ -849,7 +849,7 @@ function linhaTerraRaio(c, u, e) {
 
 const LINHAS_MODELO = { fogo: linhaFogo, agua: linhaAgua, planta: linhaPlanta, terra: linhaTerra, raio: linhaRaio, sol: linhaSol, lua: linhaLua, luz: linhaLuz, trevas: linhaTrevas,
   fogoPlanta: linhaFogoPlanta, aguaFogo: linhaAguaFogo, terraRaio: linhaTerraRaio,
-  aquaraia: linhaAquaraia, vulcarapa: linhaVulcarapa, espinhal: linhaEspinhal, ignarion: linhaIgnarion }; // raros e lendários com formas novas (a chave é a da linha em LINHAS_RARAS)
+  aquaraia: linhaAquaraia, vulcarapa: linhaVulcarapa, espinhal: linhaEspinhal, ignarion: linhaIgnarion, silvarion: linhaSilvarion }; // raros e lendários com formas novas (a chave é a da linha em LINHAS_RARAS)
 
 // =============================================================
 // LENDÁRIOS (os 3 raros com formas novas ficam em linhaVulcarapa, linhaAquaraia e linhaEspinhal)
@@ -1419,81 +1419,171 @@ function linhaIgnarion(c, u, e) {
   u.sombra.scale.set(1.4, 1.3, 1);
 }
 
-// ---------- SUPER RARO: Silvárion, o chefe do Santuário da Árvore-Mãe ----------
-// Cervo ancestral de casca e musgo, com uma galhada que é uma pequena floresta,
-// flores de jade brilhando, cipós pendurados e folhas girando em volta
-function silvarion(c, u) {
-  const casca = mat('#5a3a24'), cascaEsc = mat('#3e2818'), musgo = mat('#3f8f3a'), musgoEsc = mat('#2c6a2e');
-  const folha = mat('#4ea64a'), jade = brilho('#1fe0a0', 0.9), flor = brilho('#ffe14a', 0.8), rosa = brilho('#ff7eb6', 0.7);
-  const yT = 1.35;
-  // corpo de casca com uma manta de musgo nas costas
-  p(c, G.ico(0.75, 1), casca, [0, yT, 0], null, [0.95, 0.85, 1.5]);
-  p(c, G.ico(0.72, 1), musgo, [0, yT + 0.28, -0.05], null, [0.9, 0.5, 1.35]);
-  p(c, G.ico(0.5, 1), cascaEsc, [0, yT - 0.05, 0.85], null, [0.95, 1, 0.8]);
-  // veios de jade na casca
-  for (let i = 0; i < 6; i++) {
-    const a = (i / 6) * Math.PI * 2;
-    p(c, G.caixa(0.05, 0.5, 0.05), jade, [Math.cos(a) * 0.7, yT - 0.1 + Math.sin(a * 3) * 0.1, Math.sin(a) * 1.0], [0, a, 0.5]);
-  }
-  // mini árvores e flores crescendo nas costas
-  for (let i = 0; i < 4; i++) {
-    const z = 0.45 - i * 0.35, x = (i % 2 ? 1 : -1) * 0.22;
-    p(c, G.cil(0.03, 0.05, 0.3, 4), cascaEsc, [x, yT + 0.6, z]);
-    const copa = p(c, G.cone(0.16, 0.42, 5), i % 2 ? musgoEsc : folha, [x, yT + 0.92, z]);
-    u.pulsos.push({ obj: copa, base: 1, amp: 0.08, vel: 2 + i });
-  }
-  [[0.4, 0.3, rosa], [-0.38, -0.2, flor], [0.3, -0.6, flor], [-0.2, 0.55, rosa]].forEach(([x, z, m]) => p(c, G.ico(0.08, 0), m, [x, yT + 0.55, z]));
-  // pernas finas com cascos de pedra
-  for (const s of [-1, 1]) for (const z of [0.7, -0.75]) {
-    p(c, G.cil(0.1, 0.15, 0.9, 6), casca, [s * 0.42, 0.95, z]);
-    p(c, G.cil(0.08, 0.1, 0.75, 6), cascaEsc, [s * 0.42, 0.38, z + 0.05]);
-    p(c, G.cil(0.13, 0.15, 0.14, 6), mat('#8f9a86'), [s * 0.42, 0.07, z + 0.05]);
-    p(c, G.ico(0.13, 0), musgo, [s * 0.42, 1.3, z]); // musgo no joelho
-  }
-  // pescoço e cabeça de cervo
-  const zC = 1.4, yC = yT + 1.05;
-  p(c, G.cil(0.22, 0.34, 0.95, 6), casca, [0, yT + 0.55, 1.05], [0.65, 0, 0]);
-  p(c, G.ico(0.34, 1), casca, [0, yC, zC], null, [0.9, 0.9, 1.1]);
-  p(c, G.caixa(0.32, 0.26, 0.5), cascaEsc, [0, yC - 0.12, zC + 0.38]);
-  p(c, G.esf(1), mat('#1b1b30'), [0, yC - 0.06, zC + 0.64], null, 0.06);
-  p(c, G.ico(0.3, 0), musgo, [0, yC + 0.12, zC - 0.25], null, [1.3, 0.6, 1]); // juba de musgo
-  for (const s of [-1, 1]) {
-    // orelhas de folha
-    apontar(p(c, G.cone(0.1, 0.38, 4), folha, [s * 0.3, yC + 0.15, zC - 0.05]), V(s, 0.4, -0.3));
-    // galhada: um galho grosso que se divide em vários, com folhas e flores de jade
-    const g = new THREE.Group();
-    g.position.set(s * 0.17, yC + 0.25, zC - 0.08);
-    const ramos = [[V(s * 0.5, 1, -0.2), 0.8, 0.06], [V(s * 1, 0.7, 0.1), 0.6, 0.045], [V(s * 0.2, 1, 0.4), 0.55, 0.045], [V(s * 0.8, 1, -0.6), 0.6, 0.04]];
-    ramos.forEach(([dir, comp, r], k) => {
-      const o = p(g, G.cil(r * 0.6, r, comp, 5), cascaEsc, [0, 0, 0]);
-      apontar(o, dir);
-      const d = dir.clone().normalize();
-      const base = k === 0 ? V(0, 0, 0) : V(s * 0.1, 0.35, -0.05);
-      o.position.copy(base).addScaledVector(d, comp / 2);
-      const ponta = base.clone().addScaledVector(d, comp);
-      p(g, G.ico(0.16 + (k === 0 ? 0.06 : 0), 0), k % 2 ? musgoEsc : folha, [ponta.x, ponta.y, ponta.z]);
-      const fl = p(g, G.ico(0.07, 0), k % 2 ? flor : jade, [ponta.x, ponta.y + 0.14, ponta.z + 0.05]);
-      u.pulsos.push({ obj: fl, base: 1, amp: 0.3, vel: 4 + k });
-    });
-    c.add(g);
-    // cipós pendurados da galhada
-    for (let k = 0; k < 2; k++) p(c, G.caixa(0.025, 0.5 + k * 0.2, 0.025), mat('#3a6a2a'), [s * (0.45 + k * 0.25), yC + 0.35 - k * 0.1, zC - 0.15 - k * 0.1]);
-  }
-  // cauda de folhas
-  const cauda = new THREE.Group();
-  cauda.position.set(0, yT + 0.2, -1.05);
-  for (let i = 0; i < 3; i++) p(cauda, G.cone(0.12 - i * 0.02, 0.45, 4), i % 2 ? musgo : folha, [0, -i * 0.1, -0.15 - i * 0.18], [-1.2, 0, 0]);
-  c.add(cauda);
-  u.caudas.push(cauda);
-  // folhas e esporos de jade girando em volta
-  for (let i = 0; i < 8; i++) {
-    const o = p(c, G.octa(0.09), i % 2 ? jade : folha, [0, 0, 0], null, [1, 0.4, 1.8]);
-    u.orbitas.push({ obj: o, raio: 1.7, vel: 1.1, y: yT + 0.3 + (i % 4) * 0.35, fase: (i / 8) * Math.PI * 2 });
-  }
-  olhos(c, yC + 0.08, zC + 0.28, 0.15, 0.08, '#1fe0a0');
+// ---------- LENDÁRIO: Silvárion > Bosquárion > Raizárion > Ancestrárion ----------
+// Cervo da floresta: filhote com brotinhos > cervo jovem com galhada florida > colosso de casca
+// e raízes com uma copa nos chifres > cervo-espírito com uma árvore inteira acesa na galhada.
+const COR_SIL = { casca: '#6a4a2c', cascaEsc: '#3e2818', musgo: '#3f8f3a', folha: '#4ea64a', folhaEsc: '#2c6a2e', claro: '#c8a878', jade: '#1fe0a0', amarelo: '#ffe14a', rosa: '#ff7eb6', espirito: '#9fffd8', branco: '#fffaf0' };
+
+// galho (tubo) com uma bolota de folhas e, às vezes, uma flor acesa na ponta
+function galhoComFolhas(pai, u, base, pontos, raios, folha, tamFolha, flor) {
+  const pts = [base, ...pontos];
+  tubo(pai, mat(COR_SIL.cascaEsc), pts, raios);
+  const ponta = pts[pts.length - 1];
+  p(pai, G.ico(tamFolha, 0), folha, ponta);
+  if (flor) { const f = pa(pai, G.ico(tamFolha * 0.4, 0), flor, [ponta[0], ponta[1] + tamFolha * 0.8, ponta[2]]); u.pulsos.push({ obj: f, base: 1, amp: 0.3, vel: 3 + Math.random() * 2 }); }
 }
 
-const RAROS_MODELO = { silvarion };
+// pata de cervo: fina e comprida, com casco
+function pataCervo(c, x, z, alto, gr, casca, casco, joelhoMusgo) {
+  p(c, G.cil(gr * 0.75, gr, alto * 0.5, 6), casca, [x, alto * 0.72, z]);
+  p(c, G.cil(gr * 0.55, gr * 0.7, alto * 0.5, 6), casca, [x, alto * 0.25, z + 0.03]);
+  p(c, G.cil(gr * 0.8, gr * 0.9, alto * 0.1, 6), casco, [x, alto * 0.05, z + 0.04]);
+  if (joelhoMusgo) p(c, G.ico(gr * 1.1, 0), joelhoMusgo, [x, alto * 0.95, z]);
+}
+
+function linhaSilvarion(c, u, e) {
+  const casca = mat(COR_SIL.casca), escura = mat(COR_SIL.cascaEsc), musgo = mat(COR_SIL.musgo), folha = mat(COR_SIL.folha), folhaEsc = mat(COR_SIL.folhaEsc);
+  const claro = mat(COR_SIL.claro), casco = mat('#8f9a86');
+  if (e === 0) {
+    // ---- Silvárion: filhote de cervo com pintinhas de musgo e dois brotinhos na cabeça ----
+    p(c, G.ico(0.42, 1), casca, [0, 0.95, 0], null, [0.8, 0.75, 1.3]);
+    p(c, G.ico(0.38, 1), claro, [0, 0.86, 0.08], null, [0.65, 0.6, 1.1]);
+    for (const [x, z] of [[0.22, 0.15], [-0.2, -0.1], [0.12, -0.35], [-0.15, 0.32], [0.25, -0.15]]) p(c, G.ico(0.06, 0), musgo, [x, 1.22, z], null, [1, 0.4, 1]);
+    for (const s of [-1, 1]) for (const z of [0.32, -0.36]) pataCervo(c, s * 0.2, z, 0.75, 0.065, casca, casco, null);
+    tubo(c, casca, [[0, 1.08, 0.38], [0, 1.35, 0.55], [0, 1.55, 0.62]], [0.16, 0.13, 0.12]);
+    p(c, G.ico(0.24, 1), casca, [0, 1.68, 0.7], null, [0.9, 0.85, 1.05]);
+    p(c, G.ico(0.15, 1), claro, [0, 1.6, 0.92], null, [0.8, 0.65, 1.1]);
+    p(c, G.esf(1), mat('#1b1b30'), [0, 1.62, 1.06], null, 0.045);
+    for (const s of [-1, 1]) {
+      apontar(p(c, G.cone(0.08, 0.32, 4), folha, [s * 0.22, 1.82, 0.62]), V(s, 0.5, -0.3)); // orelhas de folha
+      galhoComFolhas(c, u, [s * 0.1, 1.85, 0.66], [[s * 0.18, 2.1, 0.6], [s * 0.28, 2.25, 0.55]], [0.035, 0.03, 0.022], folha, 0.1, COR_SIL.rosa);
+    }
+    const cauda = new THREE.Group(); cauda.position.set(0, 1.05, -0.5);
+    p(cauda, G.cone(0.09, 0.3, 4), folha, [0, 0.05, -0.1], [-1.1, 0, 0]);
+    c.add(cauda); u.caudas.push(cauda);
+    olhos(c, 1.72, 0.88, 0.12, 0.08, COR_SIL.jade);
+    u.sombra.scale.set(0.8, 1.2, 1);
+    return;
+  }
+  if (e === 1) {
+    // ---- Bosquárion: cervo jovem com manta de musgo e galhada florida; vaga-lumes em volta ----
+    p(c, G.ico(0.6, 1), casca, [0, 1.35, 0], null, [0.9, 0.82, 1.45]);
+    p(c, G.ico(0.58, 1), musgo, [0, 1.6, -0.05], null, [0.85, 0.45, 1.3]);
+    p(c, G.ico(0.45, 1), claro, [0, 1.25, 0.25], null, [0.75, 0.65, 0.95]);
+    for (const s of [-1, 1]) for (const z of [0.55, -0.6]) pataCervo(c, s * 0.34, z, 1.15, 0.1, casca, casco, musgo);
+    tubo(c, casca, [[0, 1.5, 0.7], [0, 1.95, 0.95], [0, 2.3, 1.05]], [0.26, 0.21, 0.19]);
+    p(c, G.ico(0.32, 1), casca, [0, 2.45, 1.15], null, [0.9, 0.85, 1.1]);
+    p(c, G.ico(0.2, 1), escura, [0, 2.36, 1.45], null, [0.85, 0.7, 1.1]);
+    p(c, G.esf(1), mat('#1b1b30'), [0, 2.36, 1.63], null, 0.055);
+    p(c, G.ico(0.26, 0), musgo, [0, 2.55, 0.95], null, [1.3, 0.6, 1.1]); // juba de musgo
+    for (const s of [-1, 1]) {
+      apontar(p(c, G.cone(0.1, 0.4, 4), folha, [s * 0.3, 2.6, 1.05]), V(s, 0.4, -0.3));
+      const b = [s * 0.14, 2.7, 1.08];
+      galhoComFolhas(c, u, b, [[s * 0.3, 3.05, 1.0], [s * 0.38, 3.45, 0.9]], [0.06, 0.05, 0.035], folha, 0.18, COR_SIL.amarelo);
+      galhoComFolhas(c, u, [s * 0.3, 3.05, 1.0], [[s * 0.75, 3.25, 1.05]], [0.045, 0.03], folhaEsc, 0.15, COR_SIL.rosa);
+      galhoComFolhas(c, u, [s * 0.36, 3.3, 0.92], [[s * 0.65, 3.6, 0.7]], [0.035, 0.025], folha, 0.14, COR_SIL.jade);
+    }
+    for (const [x, z, cor] of [[0.3, 0.3, COR_SIL.rosa], [-0.32, -0.2, COR_SIL.amarelo], [0.2, -0.6, COR_SIL.rosa]]) pa(c, G.ico(0.08, 0), cor, [x, 1.9, z]);
+    const cauda = new THREE.Group(); cauda.position.set(0, 1.5, -0.85);
+    for (let i = 0; i < 2; i++) p(cauda, G.cone(0.12 - i * 0.03, 0.42, 4), i ? musgo : folha, [0, -i * 0.1, -0.15 - i * 0.18], [-1.2, 0, 0]);
+    c.add(cauda); u.caudas.push(cauda);
+    for (let i = 0; i < 5; i++) u.orbitas.push({ obj: pa(c, G.ico(0.06, 0), COR_SIL.amarelo, [0, 0, 0]), raio: 1.5, vel: 1.3, y: 1.6 + (i % 3) * 0.45, fase: (i / 5) * Math.PI * 2 });
+    olhos(c, 2.5, 1.38, 0.15, 0.08, COR_SIL.jade);
+    u.sombra.scale.set(1.0, 1.5, 1);
+    return;
+  }
+  if (e === 2) {
+    // ---- Raizárion: colosso de casca com raízes nos cascos, veios de jade e uma copa nos chifres ----
+    p(c, G.ico(0.8, 1), escura, [0, 1.75, 0], null, [0.95, 0.85, 1.45]);
+    for (let i = 0; i < 9; i++) { // placas de casca por cima
+      const a = (i / 9) * Math.PI * 2;
+      p(c, G.dode(0.32), casca, [Math.cos(a) * 0.55, 1.95 + Math.sin(a * 2) * 0.12, Math.sin(a) * 0.9]);
+    }
+    p(c, G.ico(0.72, 1), musgo, [0, 2.2, -0.1], null, [0.85, 0.4, 1.3]);
+    for (let i = 0; i < 7; i++) { // veios de jade acesos
+      const a = (i / 7) * Math.PI * 2;
+      pa(c, G.caixa(0.05, 0.55, 0.05), COR_SIL.jade, [Math.cos(a) * 0.76, 1.7 + Math.sin(a * 3) * 0.12, Math.sin(a) * 1.12], [0, a, 0.45]);
+    }
+    for (const s of [-1, 1]) for (const z of [0.7, -0.75]) {
+      pataCervo(c, s * 0.48, z, 1.4, 0.17, casca, escura, musgo);
+      for (let k = 0; k < 4; k++) { const a = (k / 4) * Math.PI * 2 + 0.4; apontar(p(c, G.cone(0.07, 0.55, 4), escura, [s * 0.48 + Math.cos(a) * 0.22, 0.08, z + Math.sin(a) * 0.22]), V(Math.cos(a), -0.25, Math.sin(a))); } // raízes
+    }
+    tubo(c, escura, [[0, 2.0, 0.9], [0, 2.55, 1.2], [0, 2.95, 1.3]], [0.36, 0.3, 0.27]);
+    p(c, G.ico(0.4, 1), casca, [0, 3.1, 1.4], null, [0.9, 0.85, 1.1]);
+    p(c, G.ico(0.26, 1), escura, [0, 2.98, 1.78], null, [0.85, 0.7, 1.1]);
+    p(c, G.esf(1), mat('#1b1b30'), [0, 2.98, 2.0], null, 0.065);
+    p(c, G.ico(0.38, 0), musgo, [0, 3.25, 1.12], null, [1.4, 0.6, 1.2]);
+    for (const s of [-1, 1]) {
+      apontar(p(c, G.cone(0.12, 0.5, 4), folha, [s * 0.38, 3.28, 1.3]), V(s, 0.4, -0.3));
+      // galhada grossa como galhos de árvore, cheia de folhas
+      const b = [s * 0.18, 3.4, 1.32];
+      galhoComFolhas(c, u, b, [[s * 0.42, 3.85, 1.2], [s * 0.55, 4.35, 1.0]], [0.09, 0.075, 0.055], folha, 0.32, COR_SIL.amarelo);
+      galhoComFolhas(c, u, [s * 0.42, 3.85, 1.2], [[s * 1.0, 4.1, 1.25], [s * 1.35, 4.45, 1.1]], [0.065, 0.05, 0.035], folhaEsc, 0.28, COR_SIL.rosa);
+      galhoComFolhas(c, u, [s * 0.5, 4.2, 1.05], [[s * 0.95, 4.7, 0.75]], [0.05, 0.035], folha, 0.26, COR_SIL.jade);
+      galhoComFolhas(c, u, [s * 0.3, 3.7, 1.25], [[s * 0.25, 4.25, 1.55]], [0.045, 0.03], folhaEsc, 0.22, null);
+      for (let k = 0; k < 2; k++) p(c, G.caixa(0.03, 0.7 + k * 0.3, 0.03), mat('#3a6a2a'), [s * (0.8 + k * 0.35), 3.85 - k * 0.15, 1.15 - k * 0.1]); // cipós
+    }
+    const cauda = new THREE.Group(); cauda.position.set(0, 1.9, -1.15);
+    for (let i = 0; i < 3; i++) p(cauda, G.cone(0.15 - i * 0.03, 0.5, 4), i % 2 ? musgo : folha, [0, -i * 0.12, -0.18 - i * 0.2], [-1.2, 0, 0]);
+    c.add(cauda); u.caudas.push(cauda);
+    for (let i = 0; i < 6; i++) u.orbitas.push({ obj: p(c, G.octa(0.11), i % 2 ? folha : musgo, [0, 0, 0], null, [1, 0.4, 1.8]), raio: 2.0, vel: 0.9, y: 2.0 + (i % 3) * 0.5, fase: (i / 6) * Math.PI * 2 });
+    olhos(c, 3.15, 1.7, 0.17, 0.09, COR_SIL.jade);
+    u.sombra.scale.set(1.3, 1.6, 1);
+    return;
+  }
+  // ---- Ancestrárion: cervo-espírito colossal, com uma árvore inteira acesa na galhada e auréola de folhas ----
+  const espirito = COR_SIL.espirito;
+  p(c, G.ico(0.85, 1), escura, [0, 2.0, 0], null, [0.95, 0.85, 1.5]);
+  for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2; p(c, G.dode(0.34), casca, [Math.cos(a) * 0.6, 2.2 + Math.sin(a * 2) * 0.12, Math.sin(a) * 0.98]); }
+  for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2 + 0.3; pa(c, G.caixa(0.05, 0.6, 0.05), COR_SIL.jade, [Math.cos(a) * 0.82, 1.95 + Math.sin(a * 3) * 0.12, Math.sin(a) * 1.2], [0, a, 0.45]); }
+  // manta de musgo florida nas costas
+  p(c, G.ico(0.78, 1), musgo, [0, 2.45, -0.1], null, [0.85, 0.42, 1.35]);
+  for (let i = 0; i < 6; i++) { const f = pa(c, G.ico(0.1, 0), i % 2 ? COR_SIL.rosa : COR_SIL.amarelo, [(i % 2 ? 0.3 : -0.3), 2.75, 0.6 - i * 0.28]); }
+  // juba de espírito (verde clara acesa) e cascos acesos
+  for (let i = 0; i < 5; i++) pa(c, G.cone(0.14, 0.7, 4), espirito, [0, 2.9 - i * 0.12, 1.0 - i * 0.22], [-0.9, 0, (i % 2 ? 0.2 : -0.2)]);
+  for (const s of [-1, 1]) for (const z of [0.75, -0.8]) {
+    pataCervo(c, s * 0.5, z, 1.6, 0.18, casca, escura, musgo);
+    pa(c, G.cil(0.2, 0.22, 0.12, 6), espirito, [s * 0.5, 0.06, z + 0.04]);
+    for (let k = 0; k < 4; k++) { const a = (k / 4) * Math.PI * 2 + 0.4; apontar(p(c, G.cone(0.08, 0.65, 4), escura, [s * 0.5 + Math.cos(a) * 0.24, 0.08, z + Math.sin(a) * 0.24]), V(Math.cos(a), -0.25, Math.sin(a))); }
+  }
+  tubo(c, escura, [[0, 2.3, 0.95], [0, 2.9, 1.25], [0, 3.35, 1.35]], [0.4, 0.33, 0.3]);
+  p(c, G.ico(0.44, 1), casca, [0, 3.5, 1.45], null, [0.9, 0.85, 1.1]);
+  p(c, G.ico(0.28, 1), escura, [0, 3.38, 1.86], null, [0.85, 0.7, 1.1]);
+  p(c, G.esf(1), mat('#1b1b30'), [0, 3.38, 2.1], null, 0.07);
+  for (const s of [-1, 1]) apontar(p(c, G.cone(0.13, 0.55, 4), folha, [s * 0.42, 3.7, 1.35]), V(s, 0.4, -0.3));
+  // a galhada é uma árvore: dois troncos que sobem e se abrem numa copa grande com flores e frutos acesos
+  const arvore = new THREE.Group(); arvore.position.set(0, 3.8, 1.3);
+  for (const s of [-1, 1]) {
+    tubo(arvore, escura, [[s * 0.18, 0, 0], [s * 0.45, 0.5, -0.05], [s * 0.6, 1.05, -0.15], [s * 0.45, 1.6, -0.3]], [0.11, 0.095, 0.075, 0.06]);
+    tubo(arvore, escura, [[s * 0.45, 0.5, -0.05], [s * 1.05, 0.85, 0.0], [s * 1.45, 1.25, -0.1]], [0.08, 0.06, 0.045]);
+    tubo(arvore, escura, [[s * 0.6, 1.05, -0.15], [s * 1.0, 1.55, -0.25]], [0.06, 0.045]);
+  }
+  // copa: bolotas de folhas
+  for (const [x, y, z, r, esc] of [[0, 1.95, -0.35, 0.65, 0], [-0.8, 1.75, -0.3, 0.5, 1], [0.8, 1.75, -0.3, 0.5, 1], [-1.45, 1.35, -0.1, 0.42, 0], [1.45, 1.35, -0.1, 0.42, 0], [-0.45, 2.2, -0.2, 0.42, 1], [0.45, 2.2, -0.2, 0.42, 1], [0, 1.6, 0.1, 0.4, 0]]) p(arvore, G.ico(r, 1), esc ? folhaEsc : folha, [x, y, z]);
+  // flores e frutos acesos na copa
+  for (let i = 0; i < 12; i++) { const a = i * 2.39996, r = 0.35 + (i % 4) * 0.35; pa(arvore, G.ico(0.09, 0), [COR_SIL.rosa, COR_SIL.amarelo, COR_SIL.jade, COR_SIL.branco][i % 4], [Math.cos(a) * r * 1.3, 1.6 + Math.sin(a) * 0.45 + (i % 3) * 0.15, -0.1 + Math.sin(a) * 0.35]); }
+  c.add(arvore);
+  u.pulsos.push({ obj: arvore, base: 1, amp: 0.02, vel: 1.5 });
+  // auréola de folhas e cipós atrás da cabeça
+  const anel = new THREE.Group(); anel.position.set(0, 3.55, 0.75);
+  p(anel, G.toro(1.0, 0.06, Math.PI * 2, 5, 24), mat('#3a6a2a'), [0, 0, 0]);
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2;
+    if (i % 3 === 0) pa(anel, G.ico(0.09, 0), i % 2 ? COR_SIL.rosa : COR_SIL.amarelo, [Math.cos(a) * 1.0, Math.sin(a) * 1.0, 0.05]);
+    else apontar(p(anel, G.cone(0.08, 0.3, 4), folha, [Math.cos(a) * 1.08, Math.sin(a) * 1.08, 0]), V(Math.cos(a), Math.sin(a), 0));
+  }
+  c.add(anel);
+  u.giros.push({ obj: anel, eixo: 'z', vel: 0.3 });
+  const cauda = new THREE.Group(); cauda.position.set(0, 2.1, -1.25);
+  for (let i = 0; i < 3; i++) pa(cauda, G.cone(0.16 - i * 0.03, 0.55, 4), espirito, [0, -i * 0.12, -0.2 - i * 0.22], [-1.2, 0, 0]);
+  c.add(cauda); u.caudas.push(cauda);
+  // luzes de espírito girando em volta
+  for (let i = 0; i < 8; i++) u.orbitas.push({ obj: pa(c, G.ico(0.08, 0), i % 2 ? espirito : COR_SIL.jade, [0, 0, 0]), raio: 2.3, vel: 0.8, y: 1.8 + (i % 4) * 0.55, fase: (i / 8) * Math.PI * 2 });
+  olhos(c, 3.55, 1.76, 0.18, 0.1, espirito);
+  u.sombra.scale.set(1.4, 1.7, 1);
+}
+
+const RAROS_MODELO = {}; // todos os raros e lendários já têm formas novas (LINHAS_MODELO)
 
 // =============================================================
 // JUNTAR PEÇAS (deixa o jogo leve no celular)

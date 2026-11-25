@@ -27,6 +27,7 @@ import { HabilidadesAquaraia } from './habilidades/aquaraia-batalha.js';
 import { HabilidadesVulcarapa } from './habilidades/vulcarapa-batalha.js';
 import { HabilidadesEspinhal } from './habilidades/espinhal-batalha.js';
 import { HabilidadesIgnarion } from './habilidades/ignarion-batalha.js';
+import { HabilidadesSilvarion } from './habilidades/silvarion-batalha.js';
 import { CameraOrbita } from './camera.js';
 import { aplicarPocao, RECARGA_POCAO } from './bolsa.js';
 import { criarModelo, criarCristal, criarCoroa, animarModelo, piscar, descartar, tocarGolpe, pararGolpe } from './modelos.js';
@@ -140,6 +141,7 @@ export class Batalha {
     this.vulcarapa = new HabilidadesVulcarapa(this); // recuo, bombas de lava, Modo Vulcão e poças da Vulcarapa (raro)
     this.espinhal = new HabilidadesEspinhal(this); // rolamento, agulhas que cravam, ricochete e explosão de espinhos do Espinhal (raro)
     this.ignarion = new HabilidadesIgnarion(this); // Calor e Ignição, arremesso, cometas e fissuras do Ignárion (lendário)
+    this.silvarion = new HabilidadesSilvarion(this); // Seiva Vital, investida, Elo Vital e cervos-espírito do Silvárion (lendário)
     this.periodo = jogo.mundo.periodo;
 
     this.idx = idxInicial;
@@ -343,6 +345,7 @@ export class Batalha {
       if (A.combo?.dash || B.combo?.dash) continue; // combo da linha do Lunico: o dash atravessa o alvo
       if (A.dash?.rasante || B.dash?.rasante || A.dash?.mergulho || B.dash?.mergulho) continue; // Aquaraia voando: passa por cima
       if (A.dash?.rolar || B.dash?.rolar) continue; // Espinhal rolando: atravessa
+      if (A.dash?.investida || B.dash?.investida) continue; // Silvárion levando o inimigo na galhada
       const d = dist(A, B), min = A.raio + B.raio;
       if (d < min && d > 0.001) {
         const ex = (A.pos.x - B.pos.x) / d, ez = (A.pos.z - B.pos.z) / d, f = (min - d) / 2;
@@ -398,6 +401,7 @@ export class Batalha {
     this.vulcarapa.atualizar(dt);
     this.espinhal.atualizar(dt);
     this.ignarion.atualizar(dt);
+    this.silvarion.atualizar(dt);
     if (this.captura) this.atualizarCaptura(dt);
 
     if (this.trocaAuto > 0) {
@@ -613,7 +617,11 @@ export class Batalha {
 
   executar(c, p) {
     const gp = p.gp, dir = p.dir;
-    if (gp.arremesso) {
+    if (gp.investida) {
+      this.silvarion.iniciarInvestida(c, gp, dir, this.efeitoDoGolpe(c, gp)); // corre levando o inimigo na galhada
+    } else if (gp.selva !== undefined) {
+      this.silvarion.usarArea(c, gp, dir, this.efeitoDoGolpe(c, gp)); // Selva Viva e/ou cervos-espírito (gasta a Seiva)
+    } else if (gp.arremesso) {
       this.ignarion.morder(c, gp, dir, this.efeitoDoGolpe(c, gp)); // morde e arremessa para trás
     } else if (gp.cometas) {
       this.ignarion.atirarCometas(c, gp, dir, this.efeitoDoGolpe(c, gp)); // cometas que explodem
@@ -839,6 +847,7 @@ export class Batalha {
         c.dados.hp = Math.max(0, c.dados.hp - dano);
         this.jogo.numero(String(dano), c.pos.clone().setY(c.altura * 0.8), '#1fe0a0', 'pequeno');
         const f = c.fonteParasita;
+        if (f && !f.morto) this.silvarion.aoSugar(f); // Seiva Vital do Silvárion enche
         if (f && !f.morto && !f.tem('combustao') && f.dados.hp < f.stats.hpMax) {
           f.dados.hp = Math.min(f.stats.hpMax, f.dados.hp + dano);
           this.jogo.numero('+' + dano, f.pos.clone().setY(f.altura), '#5fe08a', 'pequeno');
@@ -882,6 +891,7 @@ export class Batalha {
     this.vulcarapa.parar(l);
     this.espinhal.parar(l);
     this.ignarion.parar(l);
+    this.silvarion.parar(l);
     l.veloz = null;
     l.breu = null;
     if (l.lado === 'inimigo') {
@@ -980,6 +990,7 @@ export class Batalha {
       if (ds.dashRaio) this.faisquinho.atualizarDash(c); // dash elétrico marca quem passar perto
       if (ds.rasante) this.aquaraia.atualizarRasante(c, ds, dt);   // Aquaraia: voo que atravessa
       if (ds.rolar) this.espinhal.atualizarRolamento(c, ds, dt);   // Espinhal: bola de espinhos (quica)
+      if (ds.investida) this.silvarion.atualizarInvestida(c, ds, dt); // Silvárion: leva o inimigo na galhada
       if (ds.mergulho) this.aquaraia.atualizarMergulho(c, ds, dt); // Aquaraia: sobe e cai
       if (ds.gp && !ds.acertou) {
         // o golpe de perto acerta o primeiro adversário que encostar
@@ -1134,6 +1145,7 @@ export class Batalha {
         const acertou = this.aplicarDano(p.dono, alvo, p.gp, p.dir, { fator: p.fator, efeito: p.bumerangue ? this.musguinho.efeitoDaFolha(p, alvo) : p.efeito, particulas: p.aquaBolha ? 3 : undefined });
         if (p.faisca && acertou) this.faisquinho.aoAcertarTiro(p, alvo); // marca e deixa o Choque pronto
         if (p.pedraIma && acertou) this.imanito.aoAcertar(p, alvo);     // pedra de corrente: raio em quem está perto
+        if (p.gp.elo && acertou) this.silvarion.aoAcertarSemente(p, alvo); // Silvárion: Elo Vital (cipó que suga vida)
         if (p.bumerangue) {
           // folha bumerangue: passa pelo alvo e segue (acerta cada um uma vez na ida e uma na volta)
           p.atingidos.add(alvo);
@@ -1251,7 +1263,7 @@ export class Batalha {
     est.pedras[tipo.id]--;
     const sucesso = garantida || Math.random() < chanceCaptura(this.ini.dados, this.tipoCristal);
     if (this.jog.prep) this.cancelarPreparo(this.jog);
-    for (const l of this.inimigos) { if (l.prep) this.cancelarPreparo(l); l.dash = null; l.rajada = null; this.brasito.parar(l); this.gotinho.parar(l, false); this.musguinho.parar(l); this.pedrisco.parar(l); this.faisquinho.parar(l, false); this.lunico.parar(l); this.lumino.parar(l); this.vaporito.parar(l); this.brotobrasa.parar(l); this.imanito.parar(l); this.aquaraia.parar(l); this.vulcarapa.parar(l); this.espinhal.parar(l); this.ignarion.parar(l); }
+    for (const l of this.inimigos) { if (l.prep) this.cancelarPreparo(l); l.dash = null; l.rajada = null; this.brasito.parar(l); this.gotinho.parar(l, false); this.musguinho.parar(l); this.pedrisco.parar(l); this.faisquinho.parar(l, false); this.lunico.parar(l); this.lumino.parar(l); this.vaporito.parar(l); this.brotobrasa.parar(l); this.imanito.parar(l); this.aquaraia.parar(l); this.vulcarapa.parar(l); this.espinhal.parar(l); this.ignarion.parar(l); this.silvarion.parar(l); }
     const cr = criarCristal(1.1, this.tipoCristal);
     this.cena.add(cr);
     this.captura = {
@@ -1389,6 +1401,7 @@ export class Batalha {
     this.vulcarapa.parar(velho);
     this.espinhal.parar(velho);
     this.ignarion.parar(velho);
+    this.silvarion.parar(velho);
     this.cena.remove(velho.modelo);
     descartar(velho.modelo);
     this.particulas(velho.pos, '#8ff4ff', 12, 1);
@@ -1474,8 +1487,9 @@ export class Batalha {
     const breu = l.breu ? `<span style="--cor:#b57be8">Trevas +${Math.round(l.breu.cfg.dano * 100)}% ${l.breu.t.toFixed(0)}s</span>` : '';
     const marcas = l.marcas ? `<span style="--cor:#f7e43a">Marcado ×${l.marcas.n} ${l.marcas.t.toFixed(0)}s</span>` : '';
     const espinhos = l.espinhos ? `<span style="--cor:#c9f08a">Espinhos ${l.espinhos.n} ${l.espinhos.t.toFixed(0)}s</span>` : '';
+    const seiva = this.silvarion.dele(l) ? `<span style="--cor:#1fe0a0">Seiva ${Math.round((l.seiva || 0) * 100)}%</span>` : '';
     const calor = l.ignicao ? `<span style="--cor:#ffb030">IGNIÇÃO ${l.ignicao.t.toFixed(0)}s</span>` : this.ignarion.dele(l) ? `<span style="--cor:#ff3d6a">Calor ${Math.round((l.calorIgneo || 0) * 100)}%</span>` : '';
-    return veloz + escudo + sol + breu + luar + redoma + casco + blindado + pedras + marcas + espinhos + calor + Object.entries(l.status).map(([k, v]) => `<span style="--cor:${EFEITOS[k].cor}">${EFEITOS[k].nome} ${v.toFixed(1)}s</span>`).join('');
+    return veloz + escudo + sol + breu + luar + redoma + casco + blindado + pedras + marcas + espinhos + calor + seiva + Object.entries(l.status).map(([k, v]) => `<span style="--cor:${EFEITOS[k].cor}">${EFEITOS[k].nome} ${v.toFixed(1)}s</span>`).join('');
   }
 
   // Placa em cima de cada inimigo: só o nome e uma barrinha de vida
@@ -1502,7 +1516,7 @@ export class Batalha {
       p.el.classList.toggle('lider', !!l.dados.lider);
       p.el.classList.toggle('furia', !!l.furia);
       // marcas da linha do Faisquinho: "⚡2" ao lado do nome; espinhos cravados do Espinhal: "Espinhos 3"
-      const txtMarca = [l.marcas ? '⚡' + l.marcas.n : '', l.espinhos ? 'Espinhos ' + l.espinhos.n : '', l.ignicao ? 'IGNIÇÃO' : l.calorIgneo > 0 ? 'Calor ' + Math.round(l.calorIgneo * 100) + '%' : ''].filter(Boolean).join(' ');
+      const txtMarca = [l.marcas ? '⚡' + l.marcas.n : '', l.espinhos ? 'Espinhos ' + l.espinhos.n : '', l.ignicao ? 'IGNIÇÃO' : l.calorIgneo > 0 ? 'Calor ' + Math.round(l.calorIgneo * 100) + '%' : '', l.seiva > 0 ? 'Seiva ' + Math.round(l.seiva * 100) + '%' : ''].filter(Boolean).join(' ');
       if (p.txtMarca !== txtMarca) { p.txtMarca = txtMarca; p.marca.textContent = txtMarca; }
       const pos = this.jogo.projetar(l.pos.clone().setY(l.altura + 0.6), this.camera);
       p.el.hidden = pos.atras;

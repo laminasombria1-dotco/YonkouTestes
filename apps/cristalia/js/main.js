@@ -426,7 +426,8 @@ class Jogo {
     $('#col-titulo').textContent = modo === 'inicial' ? 'Escolha seu primeiro parceiro' : 'Monstruário';
     $('#col-escolher').hidden = modo !== 'inicial';
     // no modo "ver" aparecem também os de tipo duplo, os raros com formas novas (uma aba cada) e os outros raros
-    const abas = [...ORDEM_ELEMENTOS, ...(modo === 'ver' ? [...ORDEM_DUPLAS, ...ORDEM_LINHAS_RARAS, 'raros'] : [])];
+    const semLinha = RAROS.filter((id) => !ESPECIES[id].linhaRara); // raros e lendários ainda sem formas novas
+    const abas = [...ORDEM_ELEMENTOS, ...(modo === 'ver' ? [...ORDEM_DUPLAS, ...ORDEM_LINHAS_RARAS, ...(semLinha.length ? ['raros'] : [])] : [])];
     $('#col-abas').innerHTML = abas.map((a) => {
       let cor, nome;
       if (a === 'raros') { cor = '#ffffff'; nome = 'Raros'; }
@@ -436,7 +437,7 @@ class Jogo {
       return `<button type="button" data-aba="${a}" style="--cor:${cor}"><i></i>${nome}</button>`;
     }).join('');
     this.mostrarTela('colecao');
-    const aba = modo === 'inicial' && !ORDEM_ELEMENTOS.includes(this.colecao.aba) ? 'fogo' : this.colecao.aba;
+    const aba = (modo === 'inicial' && !ORDEM_ELEMENTOS.includes(this.colecao.aba)) || !abas.includes(this.colecao.aba) ? 'fogo' : this.colecao.aba;
     this.selecionarAba(aba, 0);
   }
 

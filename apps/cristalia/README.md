@@ -356,13 +356,14 @@ Sai da borda do mapa pela Floresta, seguindo as lanternas de flor (a direção d
 - As árvores gigantes ficam transparentes quando estão entre a câmera e você.
 - Arena dos grupos: **Trilha Ancestral** (favorece Planta). Perigo: **moitas de espinhos** que arranham quem pisa, mas curam monstros de Planta.
 
-### Chefe: Silvárion (super raro)
+### Chefe: Silvárion (lendário)
 
 - Fica no **Santuário da Árvore-Mãe**, no fim da trilha, aos pés de uma árvore gigantesca.
 - Tipo **Silvestre**, um elemento novo: uma planta mais forte, super efetiva contra Água, Terra e até Planta. Só **Fogo** (e o Ígneo) são fortes contra ele.
 - Efeito do Silvestre: **Parasita**: uma semente suga 2,5% da vida a cada meio segundo, cura quem a plantou e deixa 30% mais lento. Os três golpes dele (Galhada Ancestral, Semente Parasita e Selva Viva) causam o efeito.
 - Arena própria: **Santuário da Árvore-Mãe** (favorece Silvestre). Perigo: **raízes saem do chão** onde aparece um círculo verde; machucam e prendem (Planta e Silvestre não sentem).
 - Nível: 1,4× o nível da equipe + 22 (Nv.26 com equipe Nv.3). Com menos da metade da vida, entra em **fúria**.
+- É um **filhote de cervo** (a forma inicial do lendário) e usa a **Seiva Vital**: a Parasita enche a barra e a Selva Viva gasta a Seiva para curar. A placa mostra "Seiva N%". Veja "Golpes do Silvárion".
 - Só é capturado com **Cristal Supremo**. Vencido ou capturado, deixa 3 Cristais Fortes e 2 Supremos e volta no próximo amanhecer.
 
 ## Floresta (região de Planta)
@@ -457,8 +458,9 @@ e Nv.90 (Nv.85, Nv.80+; 6/6/15.000). Atributos iguais para todos os lendários: 
 | Lendário | Forma inicial (Nv.1) | 1ª evolução (Nv.65) | 2ª evolução (Nv.75) | 3ª evolução (Nv.90) |
 |---|---|---|---|---|
 | Ígneo | Ignárion (dragãozinho de 4 patas) | Pirárion (pescoço longo, crista de fogo) | Magmárion (de pé, placas de magma) | Infernárion (asas enormes, anel de espinhos, coração de fogo) |
+| Silvestre | Silvárion (filhote de cervo com brotinhos) | Bosquárion (cervo jovem com galhada florida) | Raizárion (colosso de casca, raízes e copa nos chifres) | Ancestrárion (cervo-espírito com uma árvore acesa na galhada) |
 
-Ainda sem formas novas: Silvárion (Silvestre, Trilha Ancestral).
+Todos os raros e lendários já têm formas novas: no Monstruário cada um tem a sua aba (a aba "Raros" sumiu).
 
 ## Vida e dano
 
@@ -623,6 +625,22 @@ O Ignárion tem o **Calor Ígneo**: cada golpe que acerta enche 8% da barra (e c
 - Todos os golpes podem causar **Combustão** (já na forma inicial, como o chefe de sempre).
 - O chefe do Trono de Magma (forma inicial) usa tudo isso, inclusive o Calor.
 - Chefes e o Campeão são arremessados só pela metade da distância.
+- Mais detalhes em `js/habilidades/README.md`.
+
+## Golpes do Silvárion (lendário Silvestre)
+
+O Silvárion tem a **Seiva Vital**: cada vez que a Parasita ou o Elo Vital suga vida, a barra enche. O golpe de **área gasta toda a Seiva**: a cada 25%, cura 3% da vida (só na batalha) e solta **mais 1 cervo-espírito**. Os números ficam em `js/habilidades/silvarion.js`; como funcionam e aparecem, em `js/habilidades/silvarion-batalha.js`.
+
+| Forma | Perto | Disparo | Área |
+|---|---|---|---|
+| Silvárion (Nv.1) | **Galhada Ancestral** | **Semente Parasita**: 3 sementes | **Selva Viva**: 6 m, deixa lento (gasta a Seiva para curar) |
+| Bosquárion (Nv.65) | **Investida da Galhada**: corre 6 m levando o inimigo enganchado; onde para, **brota uma árvore** que enraíza 1 s (bateu numa pedra: +50%) | **Semente + Elo Vital**: a semente que acerta prende um **cipó** que suga vida por 3 s | **Manada Espiritual**: 3 cervos-espírito em leque |
+| Raizárion (Nv.75) | Investida de 7 m (enraíza 1,5 s) | 4 sementes; Elo em até 2 inimigos | 5 cervos |
+| Ancestrárion (Nv.90) | **Investida Ancestral**: 8 m e a árvore **explode em flores** | **Floração Parasita**: 5 sementes; os Elos sugam o dobro | **Despertar da Floresta**: 7 cervos + a Selva Viva em volta |
+
+- Todos os golpes podem causar **Parasita** (já na forma inicial).
+- O chefe do Santuário da Árvore-Mãe (forma inicial) usa tudo isso, inclusive a Seiva.
+- O cipó arrebenta se os dois ficarem a mais de 11 m. No treino a Seiva não cura.
 - Mais detalhes em `js/habilidades/README.md`.
 
 ## Golpes da linha do Musguinho (Planta)
@@ -855,7 +873,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/brasas.js` | Cenário do Caminho das Brasas (braseiros, forja, rio de lava, Trono de Magma, vulcão) |
 | `js/raizes.js` | Cenário da Trilha Ancestral e da Floresta (cogumelos, ruínas, lago, raízes, Árvore-Mãe, vaga-lumes, monstros extras) |
 | `js/arena.js` | Arenas: chão, obstáculos, clima animado e perigos de cada região (com chance), e o escurecer do Astro Negro |
-| `js/habilidades/` | **Habilidades próprias das linhas de monstros** (uma pasta só para isso). Veja o `README.md` de lá. Hoje: linha do Brasito (`brasito.js` com os números, `brasito-batalha.js` com o lança-chamas, o rabo de fogo e a velocidade), linha do Gotinho (`gotinho.js` e `gotinho-batalha.js`, com o jato, o hidrocanhão, as ondas, o maremoto e o escudo), linha do Musguinho (`musguinho.js` e `musguinho-batalha.js`, com a folha bumerangue, a vinha que puxa, as raízes, a moita e o bosque), linha do Pedrisco (`pedrisco.js` e `pedrisco-batalha.js`, com a pedra em arco que quica, o punho sísmico, o tremor e os pilares), linha do Faisquinho (`faisquinho.js` e `faisquinho-batalha.js`, com as marcas, o dash elétrico, o tiro que marca, o choque e as nuvens), linha do Solito (`solito.js` e `solito-batalha.js`, com o sol que dá bônus, o laser e o calor), linha do Lunico (`lunico.js` e `lunico-batalha.js`, com o combo de dashes, as fases da lua e o luar que cura), linha do Lumino (`lumino.js` e `lumino-batalha.js`, com o passo de luz, o estilhaço que se divide e a redoma que devolve os tiros), linha do Imanito, tipo duplo Terra + Raio (`imanito.js` e `imanito-batalha.js`, as pedras orbitais, o ímã e a repulsão), linha do Brotobrasa, tipo duplo Fogo + Planta (`brotobrasa.js` e `brotobrasa-batalha.js`, as flores de fogo que explodem), linha do Vaporito, tipo duplo Água + Fogo (`vaporito.js` e `vaporito-batalha.js`, o tanque: arrancada, bafo de vapor e casco), a Aquaraia, raro de Água (`aquaraia.js` e `aquaraia-batalha.js`, o rasante que atravessa, as bolhas guiadas, o mergulho, o rastro e o redemoinho), a Vulcarapa, raro de Fogo (`vulcarapa.js` e `vulcarapa-batalha.js`, a artilharia: o recuo, as bombas de lava em arco, o Modo Vulcão e as poças de lava), o Espinhal, raro de Planta (`espinhal.js` e `espinhal-batalha.js`, o rolamento que quica, as agulhas que cravam e a explosão de espinhos), o Ignárion, lendário Ígneo (`ignarion.js` e `ignarion-batalha.js`, o Calor e a Ignição, o arremesso, os cometas e as fissuras) e a linha do Breuzinho (`trevas.js` e `trevas-batalha.js`, com a mordida, a bola com olhos de alcance curto e a área que escurece e dá bônus de dano) |
+| `js/habilidades/` | **Habilidades próprias das linhas de monstros** (uma pasta só para isso). Veja o `README.md` de lá. Hoje: linha do Brasito (`brasito.js` com os números, `brasito-batalha.js` com o lança-chamas, o rabo de fogo e a velocidade), linha do Gotinho (`gotinho.js` e `gotinho-batalha.js`, com o jato, o hidrocanhão, as ondas, o maremoto e o escudo), linha do Musguinho (`musguinho.js` e `musguinho-batalha.js`, com a folha bumerangue, a vinha que puxa, as raízes, a moita e o bosque), linha do Pedrisco (`pedrisco.js` e `pedrisco-batalha.js`, com a pedra em arco que quica, o punho sísmico, o tremor e os pilares), linha do Faisquinho (`faisquinho.js` e `faisquinho-batalha.js`, com as marcas, o dash elétrico, o tiro que marca, o choque e as nuvens), linha do Solito (`solito.js` e `solito-batalha.js`, com o sol que dá bônus, o laser e o calor), linha do Lunico (`lunico.js` e `lunico-batalha.js`, com o combo de dashes, as fases da lua e o luar que cura), linha do Lumino (`lumino.js` e `lumino-batalha.js`, com o passo de luz, o estilhaço que se divide e a redoma que devolve os tiros), linha do Imanito, tipo duplo Terra + Raio (`imanito.js` e `imanito-batalha.js`, as pedras orbitais, o ímã e a repulsão), linha do Brotobrasa, tipo duplo Fogo + Planta (`brotobrasa.js` e `brotobrasa-batalha.js`, as flores de fogo que explodem), linha do Vaporito, tipo duplo Água + Fogo (`vaporito.js` e `vaporito-batalha.js`, o tanque: arrancada, bafo de vapor e casco), a Aquaraia, raro de Água (`aquaraia.js` e `aquaraia-batalha.js`, o rasante que atravessa, as bolhas guiadas, o mergulho, o rastro e o redemoinho), a Vulcarapa, raro de Fogo (`vulcarapa.js` e `vulcarapa-batalha.js`, a artilharia: o recuo, as bombas de lava em arco, o Modo Vulcão e as poças de lava), o Espinhal, raro de Planta (`espinhal.js` e `espinhal-batalha.js`, o rolamento que quica, as agulhas que cravam e a explosão de espinhos), o Ignárion, lendário Ígneo (`ignarion.js` e `ignarion-batalha.js`, o Calor e a Ignição, o arremesso, os cometas e as fissuras), o Silvárion, lendário Silvestre (`silvarion.js` e `silvarion-batalha.js`, a Seiva Vital, a investida, o Elo Vital e os cervos-espírito) e a linha do Breuzinho (`trevas.js` e `trevas-batalha.js`, com a mordida, a bola com olhos de alcance curto e a área que escurece e dá bônus de dano) |
 | `js/nuvem.js` | Contas e jogo salvo na nuvem (Firebase, direto pela internet, sem a biblioteca do Firebase): criar conta, entrar, entrar de novo com 1 toque, ler e gravar o jogo salvo, e a senha do GM |
 | `js/companheiro.js` | O monstro invocado: invocar e guardar, seguir o treinador, os botões e a troca de controle (o treinador fica parado e protegido) |
 | `js/treino.js` | O modo treino: os golpes do monstro invocado no mapa, "no ar", usando o mesmo motor da batalha (sem inimigos e sem dano) |

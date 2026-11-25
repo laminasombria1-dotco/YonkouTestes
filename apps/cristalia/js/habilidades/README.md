@@ -353,6 +353,28 @@ Ignárion (Nv.1) > Pirárion (Nv.65) > Magmárion (Nv.75) > Infernárion (Nv.90)
 - Arremesso mais longe: `mordidaArremesso` → `arremesso.distancia`.
 - Mais fissuras: `cataclismoFissuras` → `cataclismo.fissuras.n`.
 
+### Silvestre (lendário): Silvárion (`silvarion.js` e `silvarion-batalha.js`)
+Silvárion (Nv.1) > Bosquárion (Nv.65) > Raizárion (Nv.75) > Ancestrárion (Nv.90). As 3 evoluções são **com o botão**. A forma inicial (um filhote de cervo) continua sendo o **chefe** do Santuário da Árvore-Mãe e usa tudo isto.
+
+| Forma | Perto | Disparo | Área |
+|---|---|---|---|
+| Silvárion | Galhada Ancestral (de `../dados.js`, força 24) | Semente Parasita (de `../dados.js`) | **Selva Viva**: 6 m (força 34), lentidão 2 s, gasta a Seiva |
+| Bosquárion | **Investida da Galhada**: 6 m (15 m/s), força 22, Enraizado 1 s | **Semente + Elo Vital** (1 cipó, 3 s, até 11 m) | **Manada Espiritual**: 3 cervos (força 20), 9 m |
+| Raizárion | Investida: 7 m, força 25, Enraizado 1,5 s | 4 sementes, até **2 cipós** | 5 cervos, 10 m |
+| Ancestrárion | **Investida Ancestral**: 8 m, força 28 + flores (2,5 m, 60%) | **Floração Parasita**: 5 sementes, 2 cipós que sugam o dobro (12 m) | **Despertar da Floresta**: Selva Viva (6 m, força 30) + 7 cervos (80%), 11 m |
+
+- **Seiva (`SEIVA`):** fica em `c.seiva` (0 a 1). Enche `porSugada` a cada pedaço da Parasita (`atualizarStatus` em `../batalha.js` chama `aoSugar`) e `porElo` a cada pedaço do Elo. A área (`selva`/`manada`) gasta tudo: cada 25% = cura `curaPor25` e +1 cervo. No treino não cura (`semCura`). Aparece "Seiva N%" embaixo da vida e na placa do inimigo.
+- **Investida (`investida`):** usa o dash da batalha (`c.dash.investida`); leva o 1º inimigo enganchado na frente da galhada (atordoado) e, onde para, brota uma árvore (sobe do chão, some em 2 s) que aplica Enraizado. Chefes e o Campeão: só metade do caminho. Se o levado bater numa pedra ou na borda, para ali e leva `BATIDA_GALHADA`.
+- **Elo Vital (`elo`):** a semente é o tiro de sempre (`batalha.projeteis`); quando acerta, `aoAcertarSemente` prende um cipó (1 peça esticada entre os dois). A cada 0,5 s: dano (`fator`), cura (`cura` da vida dele) e Seiva. Arrebenta com a distância (`alcance`) ou no fim.
+- **Cervos-espírito (`manada`):** 1 peça cada (uma forma juntada uma vez só, `GEO_CERVO`), atravessam e acertam cada inimigo uma vez. No máximo 7 + 4 (Seiva cheia) por uso.
+- **IA:** usa os golpes como os de sempre (investida de perto, sementes de 2,5 a 12 m, área com você dentro do `raio`).
+- **Modelos** (`linhaSilvarion` em `../modelos.js`): peças acesas com o material único (`pa`). Ancestrárion: 24 peças.
+
+**Exemplos de mudança (em `silvarion.js`):**
+- Seiva que enche mais rápido: `SEIVA.porSugada` e `SEIVA.porElo`; mais cura: `SEIVA.curaPor25`.
+- Investida mais longa: `investidaGalhada` → `investida.distancia`; mais tempo enraizado: `investida.enraiza`.
+- Mais cervos: `manadaEspiritual` → `manada.n`.
+
 ## Modo treino (monstro invocado no mapa)
 
 Os golpes desta pasta também rodam no mapa, no modo treino (`../treino.js`), quando você controla o monstro invocado. O treino usa a mesma `Batalha`, mas sem inimigos e sem dano (`alvosDe` e `vivos` devolvem lista vazia, e `aplicarDano` não faz nada).

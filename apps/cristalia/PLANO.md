@@ -167,7 +167,7 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
         Agulhas quicam nas pedras e na borda) e Explosão de Espinhos (1, 2 ou 3 ondas). Todas as agulhas num
         InstancedMesh. **O Rei Julius usa o Mandacarão** já no Nv.50 (decisão do Lâmina). `js/habilidades/espinhal.js`
         e `espinhal-batalha.js`, modelo em `linhaEspinhal` (`js/modelos.js`).
-- [ ] **Fase 7 — Formas novas dos lendários:** 6 formas.
+- [x] **Fase 7 — Formas novas dos lendários:** 6 formas.
       *Regras aprovadas:* as 3 evoluções (Nv.65, 75 e 90) com botão (`EVOLUCOES_LENDARIAS`, missões nos Nv.60/70/85,
       contam inimigos Nv.50/60/80+, custos 2/4/6 Asas, 2/4/6 Corações e 4.000/8.000/15.000 de ouro); **mesma regra de
       atributos para todos os lendários**: base × 1 / 1,3 / 1,6 / 2,0 (`MULT_LENDARIO`). Ficam em `LINHAS_RARAS` com
@@ -176,6 +176,10 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
   - [x] **Ignárion** (Ígneo): Pirárion (Nv.65), Magmárion (Nv.75) e Infernárion (Nv.90). Calor Ígneo e Ignição,
         Mordida e Arremesso, Cometa Ígneo (gigante no fim) e Cataclismo com Fissuras Ígneas. `js/habilidades/ignarion.js`
         e `ignarion-batalha.js`, modelo em `linhaIgnarion` (`js/modelos.js`).
-  - [ ] **Silvárion** (Silvestre).
+  - [x] **Silvárion** (Silvestre): Bosquárion (Nv.65), Raizárion (Nv.75) e Ancestrárion (Nv.90); a forma inicial
+        virou um filhote de cervo (como o Ignárion, o lendário começa pequeno e cresce). Seiva Vital (a Parasita e o
+        Elo enchem; a área gasta, cura e solta mais cervos), Investida da Galhada (árvore que enraíza), Elo Vital
+        (cipó que suga vida) e Manada Espiritual (cervos-espírito). `js/habilidades/silvarion.js` e
+        `silvarion-batalha.js`, modelo em `linhaSilvarion` (`js/modelos.js`).
 - [ ] **Fase 8 — Conteúdo do Nv.50+:** masmorras que crescem, chefes de masmorra (monstros
       normais), biomas com vila e arena.
