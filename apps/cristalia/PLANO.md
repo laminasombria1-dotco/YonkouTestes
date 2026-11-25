@@ -203,7 +203,8 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
           (`ESTRADAS`); **anel tranquilo** de 45 m (aprovado); Arquipélago com água rasa (65% da velocidade), ilhas e canais
           fundos; Sol, Luz, Lua e Trevas como visitantes raros (~1 em 10); lugares das vilas e das masmorras novas guardados
           (`LUGARES` no `gerador.js`). O Caminho das Brasas e a Trilha Ancestral saem da borda do Vulcânico e da Floresta.
-    - [ ] **Passo 2 — Mapa na tela + viagem rápida** entre o Reino e as vilas visitadas.
+    - ~~Passo 2 — Mapa na tela + viagem rápida~~ **cancelado pelo Lâmina:** o jogo não vai ter mapa na tela nem viagem rápida.
+      (A descoberta das dungeons vira aviso + ícone flutuando em cima da entrada.)
     - [ ] **Passo 3 — Vilas e arenas** (uma por bioma, até na Água).
     - [ ] **Passo 4 — Masmorras novas** (2 por bioma; as novas são áreas separadas).
     - [ ] **Passo 5 — Dungeons** (a especificação do Lâmina, com o adaptador).
@@ -224,4 +225,5 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
   e a Trilha Ancestral continuam como corredores abertos.
 - **Dungeons** (especificação do Lâmina): adaptador sobre o nosso mapa, **brilho falso** no lugar da luz pontual,
   jogo salvo **na conta e na nuvem** (`estado.dungeons`), **reset em 2 horas** de tempo de jogo.
+- **Sem mapa na tela e sem viagem rápida** (decisão do Lâmina): o jogador anda por tudo.
 - **Níveis:** a regra vai ser revista mais para frente.
