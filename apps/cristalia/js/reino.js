@@ -174,7 +174,71 @@ function casacoLongo(g, cor, forro, comp) {
   peca(g, caixa(0.54, comp + 0.05, 0.08), cor, [0, 1.02 - comp / 2, -0.18], [-0.08, 0, 0]);
   peca(g, caixa(0.52, 0.2, 0.1), cor, [0, 1.1, -0.06], [-0.4, 0, 0]); // gola alta
 }
+// cabelo em rabo de cavalo (do alto da cabeça para trás e para baixo)
+function rabo(g, cor, anel, n = 5, longo = 1) {
+  peca(g, caixa(0.12, 0.12, 0.12), anel, [0, 1.52, -0.18]);
+  for (let i = 0; i < n; i++) peca(g, ico(0.12 - i * 0.012, 0), cor, [0, 1.5 - i * 0.13 * longo, -0.28 - i * 0.05], [0.3, 0, 0]);
+}
 const VISUAL = {
+  // ---------- os treinadores da Vila das Cinzas (pela arte do Lâmina) ----------
+  // Sandy (Luz): cabelo branco em rabo de cavalo, jaqueta branca e dourada, top azul, saia e botas brancas
+  sandy: { roupa: '#3d8fd0', manga: '#f4f2ee', calca: '#a8703e', bota: '#f4f2ee', botaAlta: true, cinto: '#3a6aa0', pele: '#a8703e', olho: '#ffc93a', olhoBrilha: true, luva: '#2a2a33',
+    extra(g) {
+      for (const s of [-1, 1]) { peca(g, caixa(0.14, 0.42, 0.06), '#f4f2ee', [s * 0.19, 0.86, 0.16]); peca(g, caixa(0.03, 0.42, 0.065), '#d8b040', [s * 0.11, 0.86, 0.165]); }
+      for (const s of [-1, 1]) brilho(g, new THREE.OctahedronGeometry(0.11), '#d8f0ff', [s * 0.32, 1.06, 0]);
+      peca(g, caixa(0.54, 0.24, 0.34), '#f4f2ee', [0, 0.42, 0]); // saia
+      peca(g, caixa(0.55, 0.04, 0.35), '#d8b040', [0, 0.31, 0]);
+      peca(g, ico(0.265, 1), '#e8e8f0', [0, 1.34, -0.04]);
+      rabo(g, '#e8e8f0', '#d8b040', 6, 1.1);
+      brilho(g, new THREE.OctahedronGeometry(0.1), '#fff2a0', [0.42, 0.72, 0.12]);
+    } },
+  // Brawn (Terra): bandana vermelha, barba, poncho cinza, camiseta mostarda, calça escura e botas marrons
+  brawn: { roupa: '#d8a040', manga: '#d8a040', calca: '#34343a', bota: '#8a4a2a', botaAlta: true, cinto: '#6a4a2a', pele: '#c98f62', olho: '#3a2a1e', luva: '#3a2a22',
+    extra(g) {
+      peca(g, caixa(0.6, 0.3, 0.38), '#8a8a90', [0, 0.92, 0], [0, 0, 0]); // poncho
+      peca(g, cone(0.36, 0.3, 4), '#8a8a90', [0, 0.65, 0.02], [Math.PI, Math.PI / 4, 0]);
+      peca(g, caixa(0.2, 0.08, 0.22), '#6a6a70', [-0.3, 1.08, 0]); // ombreira de pedra
+      peca(g, ico(0.26, 1), '#3a2a1e', [0, 1.35, -0.05]);
+      for (let i = 0; i < 4; i++) peca(g, cone(0.06, 0.16, 4), '#3a2a1e', [-0.12 + i * 0.08, 1.55, -0.02], [-0.3, 0, (i - 1.5) * 0.3]);
+      peca(g, caixa(0.53, 0.07, 0.53), '#c8402a', [0, 1.4, -0.02]); // bandana
+      peca(g, caixa(0.06, 0.2, 0.04), '#c8402a', [0.08, 1.33, -0.29], [0.4, 0, 0.3]);
+      peca(g, caixa(0.3, 0.12, 0.08), '#3a2a1e', [0, 1.13, 0.2]); // barba
+      for (let i = 0; i < 3; i++) peca(g, ico(0.07, 0), '#7a6a5a', [0.38 + i * 0.06, 0.9 + i * 0.16, 0.1]);
+      brilho(g, new THREE.OctahedronGeometry(0.07), '#ffb020', [0.45, 1.25, 0.1]);
+    } },
+  // Blaze (Raio): jaqueta preta e amarela, visor amarelo, fones, calça preta com faixas e botas de sola amarela
+  blaze: { roupa: '#1e1e24', manga: '#1e1e24', calca: '#1e1e24', bota: '#141418', botaAlta: true, cinto: '#3a3a40', pele: '#6a4630', olho: '#2a1a10', colete: '#2fc8d8',
+    extra(g) {
+      for (const s of [-1, 1]) { peca(g, caixa(0.05, 0.5, 0.31), '#ffd23f', [s * 0.25, 0.8, 0]); peca(g, caixa(0.14, 0.05, 0.16), '#ffd23f', [s * 0.35, 0.58, 0]); peca(g, caixa(0.21, 0.04, 0.27), '#ffd23f', [s * 0.12, 0.02, 0.03]); peca(g, caixa(0.19, 0.04, 0.21), '#9a9aa0', [s * 0.12, 0.3, 0]); }
+      peca(g, caixa(0.52, 0.18, 0.12), '#ffd23f', [0, 1.06, -0.1], [-0.3, 0, 0]); // gola
+      peca(g, ico(0.26, 1), '#141418', [0, 1.36, -0.04]);
+      for (let i = 0; i < 5; i++) peca(g, cone(0.07, 0.18, 4), '#141418', [-0.16 + i * 0.08, 1.56, 0], [-0.2, 0, (i - 2) * 0.25]);
+      brilho(g, caixa(0.42, 0.08, 0.06), '#ffe040', [0, 1.38, 0.2]); // visor
+      peca(g, new THREE.TorusGeometry(0.16, 0.035, 4, 10), '#5a5a64', [0, 1.06, 0.05], [Math.PI / 2, 0, 0]); // fones no pescoço
+      for (let i = 0; i < 3; i++) brilho(g, new THREE.OctahedronGeometry(0.06), i % 2 ? '#7ae8ff' : '#fff27a', [-0.42 - i * 0.05, 0.62 + i * 0.1, 0.12]);
+    } },
+  // Sotty (Água): cabelo azul curto, colete azul-marinho, camiseta branca, shorts, tênis vermelhos e mochila
+  sotty: { roupa: '#f4f4f4', manga: '#b88458', calca: '#b88458', bota: '#e8604a', cinto: '#3a3e48', pele: '#b88458', olho: '#7a3a10', colete: '#2a4a9a', luva: '#b88458',
+    extra(g) {
+      for (const s of [-1, 1]) peca(g, caixa(0.16, 0.5, 0.32), '#2a4a9a', [s * 0.18, 0.78, 0]);
+      peca(g, caixa(0.48, 0.2, 0.3), '#3a3e48', [0, 0.42, 0]); // shorts
+      peca(g, caixa(0.36, 0.44, 0.18), '#3a8ac0', [0, 0.82, -0.24]); // mochila
+      peca(g, ico(0.28, 1), '#2a9ab0', [0, 1.34, -0.04]);
+      for (const s of [-1, 1]) peca(g, caixa(0.1, 0.24, 0.3), '#2a9ab0', [s * 0.24, 1.22, -0.02]);
+      brilho(g, caixa(0.14, 0.08, 0.15), '#40e0ff', [0.36, 0.6, 0]); // pulseira
+      brilho(g, new THREE.TorusGeometry(0.3, 0.04, 4, 12), '#a8e8ff', [0.5, 0.75, 0.1], [0.3, 0.6, 0]);
+    } },
+  // Saphira (Fogo, a Campeã): trança vermelha longa, jaqueta vermelha e preta com chamas, gola de pelo, calça oliva
+  saphira: { roupa: '#1e1a1a', manga: '#c8302a', calca: '#6a6a3a', bota: '#1e1a1a', botaAlta: true, cinto: '#6a4a2a', pele: '#d8a070', olho: '#ff9a2a', olhoBrilha: true, luva: '#5a2a1a',
+    extra(g) {
+      for (const s of [-1, 1]) { peca(g, caixa(0.17, 0.4, 0.33), '#c8302a', [s * 0.18, 0.87, 0]); brilho(g, cone(0.05, 0.16, 4), '#ff8a2a', [s * 0.33, 0.85, 0.08]); peca(g, caixa(0.18, 0.12, 0.2), '#8a8a8a', [s * 0.12, 0.25, 0.1]); }
+      peca(g, caixa(0.56, 0.14, 0.36), '#f2ece0', [0, 1.08, 0]); // gola de pelo
+      peca(g, ico(0.26, 1), '#a02040', [0, 1.35, -0.05]);
+      rabo(g, '#a02040', '#d8b040', 8, 1.15);
+      brilho(g, new THREE.TorusGeometry(0.28, 0.06, 4, 12), '#ffa030', [0.52, 0.8, 0.1], [0.2, 0.8, 0]);
+      brilho(g, cone(0.06, 0.14, 4), '#ff5a1a', [0.2, 0.5, 0.17]); // chaveiro de chama
+    } },
+
   gill: { roupa: '#7a1f2e', manga: '#7a1f2e', calca: '#2a2020', bota: '#1e1a1a', cinto: '#5a3a22', pele: PELE, olho: '#a04010', luva: '#1e1a1a',
     extra(g) {
       for (let i = 0; i < 9; i++) { const a = (i / 9) * Math.PI * 2; peca(g, cone(0.09, 0.32, 4), i % 2 ? '#e0642a' : '#b83a1e', [Math.cos(a) * 0.15, 1.5, Math.sin(a) * 0.15 - 0.03], [Math.sin(a) * 0.6 - 0.2, 0, -Math.cos(a) * 0.6]); }
@@ -807,7 +871,8 @@ export function animarPlateia(p, festa, t) {
 // ---------- o coliseu da batalha (Arena do Reino) ----------
 // O mesmo coliseu do mapa, maior, em volta da areia da batalha (raio = RAIO_ARENA).
 // O treinador fica na plataforma dele, do lado de lá (-z), assistindo.
-export function coliseuDeBatalha(cena, raio, treinadorId) {
+// treinador: o id de um treinador do Reino, ou o próprio treinador (os das vilas)
+export function coliseuDeBatalha(cena, raio, treinador) {
   const g = new THREE.Group();
   const r0 = raio + 1, deg = 6, passo = 1.7, sub = 0.95, R = r0 + deg * passo, H = sub * deg, RP = R + 1;
   const BURACO = 0.2; // abertura atrás do treinador
@@ -829,8 +894,8 @@ export function coliseuDeBatalha(cena, raio, treinadorId) {
     peca(g, cil(0.25, 0.25, 12.4 - H, 5), '#f2ead8', [Math.sin(a) * (R - 3.7), H + (12.4 - H) / 2 - 0.4, Math.cos(a) * (R - 3.7)]);
   }
   // a plataforma do treinador, atrás do lado dele (-z)
-  const tr = TREINADORES.find((t) => t.id === treinadorId);
-  if (tr) {
+  const tr = typeof treinador === 'object' ? treinador : TREINADORES.find((t) => t.id === treinador);
+  if (tr && VISUAL[tr.id]) {
     const zt = -(raio + 2.4);
     peca(g, cil(1.9, 2.1, 2.2, 10), PEDRA, [0, 1.1, zt]);
     brilho(g, cil(1.95, 1.95, 0.14, 10), tr.cor, [0, 2.1, zt]);

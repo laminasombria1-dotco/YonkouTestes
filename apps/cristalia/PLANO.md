@@ -211,6 +211,8 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
           e **75 de ouro a cada 10 min** (até 300) pelo **saquinho** da tela (o do Reino também). Níveis: Nv.55/60/65/70 e o
           Campeão Nv.75. *Feito:* `js/vilas.js`, o saquinho, os títulos e as lutas (prontas para os treinadores).
       - [ ] **Os treinadores das vilas** (nomes e equipes): **o Lâmina vai fazer** (`TREINADORES_VILA` no `js/vilas.js`).
+        - [x] **Vila das Cinzas:** Sandy (Luz), Brawn (Terra), Blaze (Raio), Sotty (Água) e a Campeã Saphira (Fogo), com o visual pela arte do Lâmina.
+        - [ ] Vila da Neve, das Folhas, da Areia e das Marés.
     - [ ] **Passo 4 — Masmorras novas** (2 por bioma; as novas são áreas separadas).
     - [ ] **Passo 5 — Dungeons** (a especificação do Lâmina, com o adaptador).
     - [ ] **Passo 6 — Níveis** (o Lâmina vai rever a regra mais para frente).

@@ -1037,7 +1037,7 @@ export class Mundo {
       else {
         const nv = prog.dominada ? `Nv.${tr.revanche || 80}` : tr.niveis[0] === tr.niveis[1] ? `Nv.${tr.niveis[0]}` : `Nv.${tr.niveis[0]}–${tr.niveis[1]}`;
         const marca = prog.dominada ? ' · revanche' : tv.i < prog.vencidos ? ' · vencido ✓' : tv.i === prog.vencidos ? ' · sua vez!' : ' · depois';
-        this.jogo.mostrarRotulo(`<i style="background:${tr.cor || ELEMENTOS[tr.elemento].cor}"></i>${tr.campeao ? 'Campeão ' : ''}${tr.nome} · ${ELEMENTOS[tr.elemento].nome} <b>${nv}</b>${marca}`, new THREE.Vector3(tv.topo.x, tv.topo.y, tv.topo.z), this.camera);
+        this.jogo.mostrarRotulo(`<i style="background:${tr.cor || ELEMENTOS[tr.elemento].cor}"></i>${tr.campeao ? (tr.chamada || 'Campeão') + ' ' : ''}${tr.nome} · ${ELEMENTOS[tr.elemento].nome} <b>${nv}</b>${marca}`, new THREE.Vector3(tv.topo.x, tv.topo.y, tv.topo.z), this.camera);
       }
     } else if (tp) {
       // placa em cima do treinador: nome, elemento, níveis e se já foi vencido

@@ -179,11 +179,11 @@ export class Ovo {
   get dados() { return this.lista[0] || null; }
 
   // O Rei Julius entrega ovos (n = quantos)
-  receber(n = 1) {
+  // quem: quem entrega o ovo (o Rei Julius, ou o campeão de uma vila)
+  receber(n = 1, quem = 'Rei Julius') {
     for (let k = 0; k < n; k++) this.lista.push({ restante: TEMPO_OVO });
-    const arena = this.jogo.progressoArena();
-    delete arena.ovoPendente;
-    this.jogo.aviso(`Rei Julius: ${n > 1 ? `${n} Ovos Misteriosos` : 'um Ovo Misterioso'} para o Campeão! Está${n > 1 ? 'ão' : ''} na sua Bolsa.`);
+    if (quem === 'Rei Julius') delete this.jogo.progressoArena().ovoPendente;
+    this.jogo.aviso(`${quem}: ${n > 1 ? `${n} Ovos Misteriosos` : 'um Ovo Misterioso'} para o Campeão! Está${n > 1 ? 'ão' : ''} na sua Bolsa.`);
     this.jogo.aviso('Choca depois de 10 minutos de jogo. Pode nascer um tipo duplo, um raro ou até um lendário!');
   }
 

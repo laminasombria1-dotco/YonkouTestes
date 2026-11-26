@@ -67,7 +67,7 @@ export class Arena {
     this.criarPocas();
     this.criarClima();
     // Arena do Reino: o coliseu com a plateia e o treinador na plataforma dele
-    if (this.zona === 'reino') { this.coliseu = coliseuDeBatalha(this.cena, RAIO_ARENA, batalha.treinador?.id); this.festaT = 0; }
+    if (this.zona === 'reino') { this.coliseu = coliseuDeBatalha(this.cena, RAIO_ARENA, batalha.treinador); this.festaT = 0; }
   }
 
   // A plateia pula por alguns segundos (só na Arena do Reino)

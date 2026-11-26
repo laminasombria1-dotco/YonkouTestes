@@ -786,7 +786,7 @@ class Jogo {
     const tr = b.treinador, i = b.selvagem.indice, id = b.selvagem.vila, prog = this.progressoVila(id), lista = TREINADORES_VILA[id];
     if (tipo === 'vitoria') {
       const primeira = !prog.dominada && i === prog.vencidos;
-      this.aviso(`Você venceu ${tr.campeao ? 'o Campeão ' : ''}${tr.nome}${primeira ? '' : ' de novo'}!`);
+      this.aviso(`Você venceu ${tr.campeao ? (tr.chamada === 'Campeã' ? 'a Campeã ' : 'o Campeão ') : ''}${tr.nome}${primeira ? '' : ' de novo'}!`);
       this.ganharCristais({ comum: 0, forte: 0, supremo: 0, ...(primeira ? tr.premio || { forte: 1 } : { forte: 1 }) });
       const moedas = tr.moedas || 0;
       this.bolsa.ganharMoedas(primeira ? moedas : Math.round(moedas / 2));
@@ -810,7 +810,8 @@ class Jogo {
     this.aviso(`Você é o novo ${titulo}!`);
     this.aviso(`A ${NOMES_VILA[id]} vai guardar ${TESOURO_VILA.ouro} de ouro para você a cada ${TESOURO_VILA.cada / 60} minutos de jogo. Pegue no saquinho 💰 da tela.`);
     if (!this.estado.titulo) this.estado.titulo = titulo; // (o jogador troca o título na Bolsa)
-    this.ovo.receber(1);
+    const campeao = TREINADORES_VILA[id].find((t) => t.campeao);
+    this.ovo.receber(1, campeao ? campeao.nome : NOMES_VILA[id]);
     this.salvar();
   }
 

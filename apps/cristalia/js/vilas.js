@@ -16,7 +16,7 @@
 import * as THREE from 'three';
 import { VILAS, NIVEL_AGUA } from './mapa/gerador.js';
 import { alturaEm } from './mapa/altura.js';
-import { peca, brilho, duplo, caixa, cil, cone, prisma, assar, criarPlateia, animarPlateia } from './reino.js';
+import { peca, brilho, duplo, caixa, cil, cone, prisma, assar, criarPlateia, animarPlateia, desenharTreinador } from './reino.js';
 import { ELEMENTOS } from './dados.js';
 
 export const NOMES_VILA = { raio: 'Vila da Neve', planta: 'Vila das Folhas', terra: 'Vila da Areia', fogo: 'Vila das Cinzas', agua: 'Vila das Marés' };
@@ -40,7 +40,23 @@ export const PREMIO_VILA = { ouro: 1000 };
 // Níveis combinados (provisórios): treinadores Nv.55, 60, 65 e 70; o Campeão Nv.75 (forma final).
 // Enquanto a lista estiver vazia, as plataformas esperam o treinador ("em breve").
 // =============================================================
-export const TREINADORES_VILA = { raio: [], planta: [], terra: [], fogo: [], agua: [] };
+const cor = (el) => ELEMENTOS[el].cor;
+export const TREINADORES_VILA = {
+  raio: [], planta: [], terra: [], agua: [],
+  // Vila das Cinzas (Vulcânico): os treinadores do Lâmina. A Campeã é a Saphira (Fogo).
+  fogo: [
+    { id: 'sandy', nome: 'Sandy', elemento: 'luz', cor: cor('luz'), niveis: [55, 55],
+      equipe: [['L:luz', 55], ['L:sol', 55], ['L:luz', 55]], fala: 'Sandy: A luz mostra o caminho. Vamos ver o seu!', premio: { forte: 2 }, moedas: 250, revanche: 75 },
+    { id: 'brawn', nome: 'Brawn', elemento: 'terra', cor: cor('terra'), niveis: [60, 60],
+      equipe: [['L:terra', 60], ['L:terraRaio', 60], ['L:terra', 60]], fala: 'Brawn: Pedra não se quebra fácil. Pode vir!', premio: { forte: 2 }, moedas: 300, revanche: 80 },
+    { id: 'blaze', nome: 'Blaze', elemento: 'raio', cor: cor('raio'), niveis: [65, 65],
+      equipe: [['L:raio', 65], ['L:raio', 65], ['L:terraRaio', 65]], fala: 'Blaze: Fica esperto. Eu sou mais rápido que um raio!', premio: { forte: 3 }, moedas: 350, revanche: 85 },
+    { id: 'sotty', nome: 'Sotty', elemento: 'agua', cor: cor('agua'), niveis: [70, 70],
+      equipe: [['L:agua', 70], ['aquaraia', 70], ['L:agua', 70]], fala: 'Sotty: Até no meio do vulcão, a água apaga o fogo. Bora!', premio: { forte: 3 }, moedas: 400, revanche: 90 },
+    { id: 'saphira', nome: 'Saphira', elemento: 'fogo', cor: cor('fogo'), niveis: [75, 75], campeao: true, chamada: 'Campeã',
+      equipe: [['L:fogo', 75], ['vulcarapa', 75], ['L:fogo', 75], ['L:fogo', 75]], fala: 'Saphira: Esta vila é minha. Só tira de mim quem aguentar o fogo!', premio: { forte: 3, supremo: 2 }, moedas: 800, revanche: 100 },
+  ],
+};
 
 // Cores de cada vila (paredes, telhado, madeira, chão das ruas, cerca)
 const ESTILO = {
@@ -202,7 +218,12 @@ export class Vilas {
       peca(g, cil(1.25, 1.45, alt, 10), PEDRA, [x, alt / 2, z]);
       peca(g, cil(1.3, 1.3, 0.12, 10), campeao ? '#ffd23f' : E.madeira, [x, alt + 0.06, z]);
       peca(g, cil(0.05, 0.05, 2.4, 4), E.madeira, [x + 1, alt + 1.2, z - 0.6]);
-      duplo(g, caixa(0.05, 0.7, 0.9), campeao ? ELEMENTOS[vila.id].cor : '#9a9a9a', [x + 1, alt + 2.05, z - 0.15]);
+      const tr = TREINADORES_VILA[vila.id][i];
+      duplo(g, caixa(0.05, 0.7, 0.9), tr ? tr.cor : campeao ? ELEMENTOS[vila.id].cor : '#9a9a9a', [x + 1, alt + 2.05, z - 0.15]);
+      if (tr) { // o treinador em cima da plataforma, de frente para o túnel
+        brilho(g, cil(1.32, 1.32, 0.06, 10), tr.cor, [x, alt + 0.1, z]);
+        desenharTreinador(g, tr.id, [x, alt + 0.13, z], Math.atan2(-x, 7 - z));
+      }
       vila.obst(A.x + x, A.z + z, 1.5);
       // a frente da plataforma (virada para o túnel) é onde o jogador encosta para falar
       const d = Math.hypot(x, z - 7) || 1, fx = x + (-x / d) * 1.9, fz = z + ((7 - z) / d) * 1.9;
