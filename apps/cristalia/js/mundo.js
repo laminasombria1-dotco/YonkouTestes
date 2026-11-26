@@ -785,6 +785,7 @@ export class Mundo {
   camPadrao() {
     // dentro da arena do Reino: mais perto e mais de cima (senão a câmera fica atrás do telhado)
     if (this.reino?.dentroArena(this.pos.x, this.pos.z)) return { dist: 11, pitch: 0.72 };
+    if (this.vilas?.dentroArena(this.pos.x, this.pos.z)) return { dist: 10, pitch: 0.78 }; // arena das vilas (menor): mais perto e de cima
     return this.jogo.aspecto < 1 ? { dist: 26, pitch: 0.82 } : { dist: 19, pitch: 0.71 }; // um pouco mais longe do personagem
   }
 

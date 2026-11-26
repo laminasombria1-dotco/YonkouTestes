@@ -18,6 +18,7 @@ import { VILAS, NIVEL_AGUA } from './mapa/gerador.js';
 import { alturaEm } from './mapa/altura.js';
 import { peca, brilho, duplo, caixa, cil, cone, prisma, assar, criarPlateia, animarPlateia, desenharTreinador } from './reino.js';
 import { ELEMENTOS } from './dados.js';
+import { criarCoroa } from './modelos.js';
 
 export const NOMES_VILA = { raio: 'Vila da Neve', planta: 'Vila das Folhas', terra: 'Vila da Areia', fogo: 'Vila das Cinzas', agua: 'Vila das Marés' };
 export const ORDEM_VILAS = ['raio', 'planta', 'terra', 'fogo', 'agua'];
@@ -134,6 +135,7 @@ export class Vilas {
     const A = ARENA_VILA;
     vila.plateia = criarPlateia(vila.vivo, { x: A.x, z: A.z, r0: A.r0 + 0.5, deg: A.deg, passo: A.passo, subida: A.sub, buracos: [[0, A.porta + 0.08]], espaco: 0.95, semente: 31 + ORDEM_VILAS.indexOf(v.bioma) });
     vila.festaT = 0;
+    this.nomes(vila);
     vila.vivo.visible = false;
     return vila;
   }
@@ -253,7 +255,25 @@ export class Vilas {
       vila.obst(A.x + x, A.z + z, 1.5);
       // a frente da plataforma (virada para o túnel) é onde o jogador encosta para falar
       const d = Math.hypot(x, z - 7) || 1, fx = x + (-x / d) * 1.9, fz = z + ((7 - z) / d) * 1.9;
-      return { frente: vila.paraMundo(A.x + fx, A.z + fz), topo: { ...vila.paraMundo(A.x + x, A.z + z), y: vila.h + alt + 1.9 }, campeao, armado: true };
+      // (a placa com o nível fica acima do nome que está em cima da cabeça)
+      return { frente: vila.paraMundo(A.x + fx, A.z + fz), topo: { ...vila.paraMundo(A.x + x, A.z + z), y: vila.h + alt + (tr ? (campeao ? 2.85 : 2.55) : 1.9) }, campeao, armado: true };
+    });
+  }
+
+  // O nome de cada treinador em cima da cabeça (e uma coroa dourada no Campeão).
+  // Ficam no grupo "vivo" da vila: só aparecem quando você está perto.
+  nomes(vila) {
+    const A = ARENA_VILA;
+    TREINADORES_VILA[vila.id].forEach((tr, i) => {
+      const [x, z, alt] = PLATAFORMAS[i], base = alt + 0.13;
+      if (tr.campeao) {
+        const coroa = criarCoroa(1.15);
+        coroa.position.set(A.x + x, base + 1.68, A.z + z);
+        vila.vivo.add(coroa);
+      }
+      const placa = placaDeNome(tr.nome, tr.cor, !!tr.campeao);
+      placa.position.set(A.x + x, base + (tr.campeao ? 2.3 : 2.0), A.z + z);
+      vila.vivo.add(placa);
     });
   }
 
@@ -264,6 +284,13 @@ export class Vilas {
     return null;
   }
   vila(id) { return this.lista.find((v) => v.id === id); }
+  // O jogador está dentro da arena de uma vila (no túnel ou na areia)? A câmera chega mais perto lá dentro.
+  dentroArena(x, z) {
+    const v = this.vilaEm(x, z);
+    if (!v) return false;
+    const c = v.paraMundo(ARENA_VILA.x, ARENA_VILA.z);
+    return Math.hypot(x - c.x, z - c.z) < RP + 1;
+  }
   get lojas() { return this.lista.map((v) => v.loja); }
 
   // A plataforma mais perto (até 8 m) da vila onde o jogador está
@@ -295,6 +322,24 @@ export class Vilas {
       }
     }
   }
+}
+
+// Uma plaquinha com o nome (sempre virada para a câmera): fundo escuro, borda na cor do elemento.
+// O nome do Campeão fica dourado.
+function placaDeNome(nome, cor, campeao) {
+  const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
+  const c = cv.getContext('2d');
+  c.font = 'bold 34px system-ui, sans-serif';
+  const w = Math.min(244, c.measureText(nome).width + 40), x0 = (256 - w) / 2;
+  c.fillStyle = 'rgba(16, 20, 36, 0.82)'; c.strokeStyle = cor; c.lineWidth = 5;
+  c.beginPath(); if (c.roundRect) c.roundRect(x0, 8, w, 48, 24); else c.rect(x0, 8, w, 48); c.fill(); c.stroke();
+  c.fillStyle = campeao ? '#ffd23f' : '#ffffff'; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText(nome, 128, 33);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
+  sp.scale.set(2.3, 0.575, 1);
+  return sp;
 }
 
 // O ponto de saída da arena de uma vila (pelo túnel, de costas para a arena)
