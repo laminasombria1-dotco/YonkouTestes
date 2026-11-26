@@ -35,7 +35,7 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
 - **Equipe:** até 3 monstros. Com a equipe cheia, o capturado vai para a reserva.
 - **Reserva:** no painel Equipe, a aba **Reserva** mostra **todos** os monstros que você tem (os da equipe aparecem marcados). Perder uma batalha nunca apaga monstros: você acorda na casa ou no castelo (veja "Casa").
 - **Proteção:** o jogo guarda uma cópia de cada monstro que você já teve. Se algum sumir da equipe e da reserva por qualquer motivo, ele volta sozinho para a Reserva, com um aviso.
-- **Fonte de cura:** a fonte na praça do castelo, no **Reino**, cura todos os seus monstros. É a única fonte do jogo.
+- **Cura:** a fonte na praça do castelo, no **Reino**, cura todos os seus monstros. Fora do Reino, só a **fogueira do Acampamento do Gelo** cura (veja "Bioma do Gelo").
 - **Começo:** o jogo novo começa no Reino, na frente da fonte do castelo, com 3 Poções de Cura e 1 de Reviver. Saia por um dos **5 portões** do Reino (um para cada bioma) pela **Estrada Real** (veja "O Reino").
 - **Bolsa:** o botão do canto de baixo (tecla **B** no PC). Dentro dela ficam a bandeira, a casa, o jardim, as frutas, os itens raros, as poções, os cristais e os ovos. Veja "Bolsa, ouro e loja".
 - **Nível dos selvagens:** acompanha o nível da sua equipe e aumenta quanto mais longe do centro você vai, até o **Nv.95** (os grupos vão até o Nv.98 e os líderes até o Nv.100). Nas bordas aparecem as formas evoluídas, mas nunca a forma final. A exceção é **em volta da boca do Reino** (55 m): ali só aparecem monstros fracos (Nv.2 a 5, formas iniciais), sem grupos e sem tipo duplo.
@@ -394,7 +394,7 @@ O Reino fica **no meio do mapa** (mundo novo, `PLANO.md`): é o lugar seguro ond
 
 São **2 por bioma** (o Caminho das Brasas e a Trilha Ancestral contam como uma delas e continuam como corredores abertos), nos lugares que a semente guardou em `LUGARES` (`js/mapa/gerador.js`). **Masmorras são difíceis e demoradas; dungeons são fáceis** (passo 5). Prontas: **Gruta do Trovão** e **Torre da Nevasca** (Gelo), **Mina Abandonada** e **Tumba das Areias** (Deserto), **Pântano Sombrio** (Floresta), **Forja Antiga** (Vulcânico), **Templo Submerso** e **Gruta das Marés** (Arquipélago): as 8 completas.
 
-- **Entrada escondida:** no mapa só fica a porta (na Gruta: um monte de pedras de gelo com uma boca escura), **sem ícone**. A 22 m dela aparece **"Você descobriu a Gruta do Trovão!"** (fica salvo: `estado.masmorras.trovao.achada`). Encostou na boca, a tela escurece e o jogo monta **só a masmorra**.
+- **Entrada escondida:** no mapa só fica a porta, **sem ícone**. A **Gruta do Trovão é a exceção**: a entrada é a caverna de gelo da arte do Lâmina (paredão de rocha escura, vigas de mina, pingentes, brilho ciano lá dentro e uma lanterna), bem à vista. A 22 m dela aparece **"Você descobriu a Gruta do Trovão!"** (fica salvo: `estado.masmorras.trovao.achada`). Encostou na boca, a tela escurece e o jogo monta **só a masmorra**.
 - **Área separada:** cada masmorra fica **bem longe do mapa redondo** (x = 1800, 2700, ...). Lá dentro, `alturaEm`, a colisão e a região perguntam à forma da masmorra (`interiorEm` em `js/masmorras/forma.js`); o mapa de fora some sozinho (os chunks ficam longe e são apagados) e os monstros dele somem. Ao sair, **tudo da masmorra é apagado da memória** (só uma existe por vez).
 - **5 etapas + o chefe.** Cada etapa tem **1 grupo com líder** e até 4 monstros soltos. O **portão selado** (a parede de energia azul) da saída da etapa **só abre quando o líder é vencido**. Cada vez que você entra, os portões começam fechados de novo.
 - **Monstros:** só os tipos do bioma (na Gruta: linha Raio e Imanito); Sol, Luz, Lua e Trevas como visitantes raros (`aparicoes`).
@@ -572,7 +572,7 @@ Sai da borda do mapa pela Floresta, seguindo as lanternas de flor (a direção d
 | Região | Bioma | Quem aparece |
 |---|---|---|
 | Reino | No meio do mapa: castelo, vila, loja, arena e os 5 portões | Ninguém (é seguro). Logo depois dos portões, o anel tranquilo (monstros fracos) |
-| Picos Nevados | **Gelo**: montanhas, pinheiros nevados, rochas congeladas, lagos congelados e o cristal de gelo gigante | Raio (Faisquinho), com relâmpagos; Luz de dia, Trevas à noite |
+| Picos Nevados | **Gelo**: montanhas, pinheiros carregados de neve, rochas escuras com neve, rios e lagos congelados, o Acampamento do Gelo e o cristal de gelo gigante (veja "Bioma do Gelo") | Raio (Faisquinho), com relâmpagos; Luz de dia, Trevas à noite |
 | Floresta | Floresta: árvores, pinheiros, clareiras e morrinhos | Planta (Musguinho), Espinhal (raro); Luz de dia, Trevas à noite. Daqui sai a Trilha Ancestral |
 | Deserto | Deserto: dunas, cânions, cactos, arco de pedra e oásis | Terra (Pedrisco); Sol de dia, Lua à noite |
 | Vulcão | **Vulcânico**: chão vulcânico, vulcão com cratera, rios de lava | Fogo (Brasito), Vulcarapa (raro); Sol de dia, Trevas à noite. Daqui sai o Caminho das Brasas |
@@ -580,6 +580,22 @@ Sai da borda do mapa pela Floresta, seguindo as lanternas de flor (a direção d
 | Lago | Em volta dos lagos da Floresta e do oásis do Deserto | Água (Gotinho), Aquaraia (raro) |
 
 **Sol, Luz, Lua e Trevas** são **visitantes raros** (cerca de 1 em cada 10 monstros): Sol e Luz de dia, Lua e Trevas à noite. Cada bioma tem só os seus tipos (`APARICOES` no `dados.js`).
+
+## Bioma do Gelo (melhorias dos biomas: o guia do Lâmina)
+
+O Gelo segue o guia e as artes do Lâmina: **paleta glacial com acentos âmbar** (neve `#EDF4FA`, sombras `#8EA8C3`, gelo `#4A89AA`, rocha `#2B3644`, pinheiro `#233D3B`, âmbar `#F28C28` só nas luzes). O lugar já tinha o esquema do guia: a Estrada Real do Gelo termina entre os 2 lagos congelados, com as montanhas atrás.
+
+- **Peças comuns** (nos chunks, `js/mapa/chunks.js`): pinheiros carregados de neve (com muita ou pouca neve), árvores mortas congeladas, rochas escuras com 20%, 50% ou 80% de neve, cristais de gelo ciano, montes de neve, capim seco dourado e montinhos (os pequenos somem de longe). O chão: neve clara no plano, azul-ardósia nas ladeiras e rocha escura nos paredões.
+- **Rios e lagos congelados:** no Gelo a água vira gelo ciano (sem a água por cima) e dá para andar normal (sem a lentidão da água rasa).
+- **Trilha com lanternas:** do fim da Estrada Real até o acampamento, neve batida com lama nas bordas e postes tortos com lanternas âmbar.
+- **Acampamento do Gelo (lugar seguro que cura):** cabana de toras (telhado de neve, pingentes, chaminé com fumaça, janelas acesas, varanda e lenha), fogueira com bancos, barraca, trenó, caixotes e barris. **Nenhum selvagem nasce nem entra a menos de 12 m** e **a fogueira cura a equipe** (a 6 m dela). Não tem loja e você não acorda nele (acorda na bandeira ou no castelo).
+- **Lago congelado:** rachaduras, manchas escuras, o barco preso no gelo, um píer e bruma por cima.
+- **Floresta fechada e arco rúnico:** pinheiros mais juntos ao lado do acampamento, com um arco de pedra antigo de runas ciano na beira.
+- **Fonte termal:** água azul sem gelo, pedras sem neve e vapor subindo (só enfeite).
+- **Entrada da Gruta do Trovão:** a caverna de gelo da arte (deixou de ser escondida).
+- **Neve caindo** em volta do jogador (só no Gelo; desligada na qualidade Fraco) e a luz do chão puxando para o azul.
+- **Leve no celular:** as peças comuns usam as mesmas formas que o mapa já tinha (não somam desenhos); cada área única vira 1 ou 2 malhas (cor nos vértices) e só é desenhada de perto; as luzes são **brilho falso** (pontos com uma textura redonda, sem luz de verdade). Medido na qualidade Médio: de +5 a +10 desenhos por quadro (no lago, até menos); na Fraco, quase igual.
+- **Código:** os lugares em `js/biomas/lugares.js` (`GELO`, `naTrilhaGelo`: só matemática, presos à semente, sem mexer no relevo, nos rios, nas vilas nem nas masmorras); as peças em `js/biomas/gelo.js` (`BiomaGelo`); os refúgios (`refugios`, `refugioEm`) e a cura da fogueira no `js/mundo.js`; a entrada da Gruta em `js/masmorras/gruta-trovao.js`. GM: teleporte **Acampamento do Gelo**.
 
 ## Mapa procedural
 
@@ -590,7 +606,7 @@ O mapa é **gerado por uma semente** (seed): um número que decide tudo (onde fi
 - **Relevo:** morrinhos na Floresta, dunas e cânions no Deserto, cadeias de montanhas no Gelo (com neve no alto dos picos), um vulcão com cratera de lava no meio do Vulcânico e as ilhas do Arquipélago. Perto do Reino o chão fica suave (sem paredão de montanha nem mar fundo nos portões).
 - **Arquipélago:** a maior parte é **água rasa** (dá para andar, a **65% da velocidade**), com **ilhas** de areia e palmeiras e **canais fundos** cortados em pedaços (não dá para entrar neles, mas sempre tem caminho pela água rasa).
 - **Lugares guardados:** a semente já escolheu os lugares das **5 vilas** (passo 3) e das **8 masmorras novas** (passo 4; 2 por bioma, contando o Caminho das Brasas e a Trilha Ancestral). Ali não nasce árvore, rio nem lago, e no Arquipélago cada um ganha uma ilha. Ficam em `LUGARES` (`js/mapa/gerador.js`) e o GM tem um teleporte para cada um (aba Mundo).
-- **Água:** rios (rasos: dá para atravessar andando, mais devagar), lagos (o meio é fundo: não dá para entrar), lagos congelados na Neve (dá para andar em cima) e rios de lava (não dá para entrar).
+- **Água:** rios (rasos: dá para atravessar andando, mais devagar), lagos (o meio é fundo: não dá para entrar), rios e lagos congelados no Gelo (dá para andar em cima) e rios de lava (não dá para entrar).
 - **Pontos de interesse:** o vulcão com lava na cratera, o arco de pedra do Deserto, o oásis com palmeiras, o cristal de gelo gigante da Neve, os lugares fixos da Floresta, as entradas das duas dungeons e os 5 portões do Reino. Perto de alguns tem cristal escondido.
 - **Chunks:** o mapa é dividido em quadrados de **32 m**. Só os chunks perto de você existem na memória; os novos são criados aos poucos enquanto você anda (no máximo ~3 ms por quadro) e os que ficam longe são apagados.
 - **Leve no celular:**
@@ -1063,6 +1079,8 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/mapa/config.js` | Configurações do mapa procedural e os perfis de qualidade |
 | `js/mapa/gerador.js` | O gerador do mapa (só matemática): ruído com semente, biomas, altura do chão, rios, lagos, pontos de interesse, lugares da Floresta, direção das dungeons, os 5 caminhos do Reino e os lugares guardados (vilas e masmorras) e a Estrada Real |
 | `js/mapa/altura.js` | `alturaEm(x, z)`: a altura do chão igual aos triângulos desenhados (com as dungeons, a borda e as masmorras novas), e onde não dá para andar (lago fundo e lava) |
+| `js/biomas/lugares.js` | Onde ficam as peças únicas das melhorias dos biomas (Gelo: acampamento, trilha, lago, arco, fonte termal, floresta). Só matemática |
+| `js/biomas/gelo.js` | As peças únicas do Gelo (`BiomaGelo`), o brilho falso, a neve caindo e o pinheiro nevado |
 | `js/mapa/chunks.js` | Os chunks: cria o chão, a água, a lava e os objetos de cada pedaço do mapa, carrega e apaga conforme você anda, e o LOD |
 | `js/mapa/grade.js` | Grade de obstáculos: guarda as árvores, pedras e peças em quadradinhos de 8 m, para a colisão só olhar o que está perto |
 | `js/batalha.js` | Batalha em tempo real: movimento, golpes, efeitos, IA do inimigo e captura |

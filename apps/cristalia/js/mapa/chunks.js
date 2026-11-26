@@ -21,6 +21,8 @@ import {
 } from './gerador.js';
 import { alturaVertice, alturaEm, ESPACO } from './altura.js';
 import { TRACADOS, REINO, S_LAGO, foraDungeons } from '../dungeon.js';
+import { GELO, naTrilhaGelo } from '../biomas/lugares.js';
+import { PAL_GELO, pinheiroNevado } from '../biomas/gelo.js';
 
 const T = C.tamChunk, DIV = C.divisoes;
 
@@ -41,10 +43,13 @@ const MAT = {
   base: lambert({ color: '#ffffff' }), // a cor de cada objeto vem da "cor da instância"
   lava: lambert({ color: '#5a3328', emissive: '#ff5a1f', emissiveIntensity: 0.35 }),
   brilho: lambert({ color: '#fff07a', emissive: '#f7c81a', emissiveIntensity: 0.7 }),
-  gelo: lambert({ color: '#e6f8ff', emissive: '#6fd0ff', emissiveIntensity: 0.45 }),
+  gelo: lambert({ color: '#cdeefa', emissive: '#5ab8e8', emissiveIntensity: 0.35 }),
   lavaViva: lambert({ color: '#ff8a3a', emissive: '#ff5a1f', emissiveIntensity: 0.9 }),
 };
 const MAT_CHAO = lambert({ vertexColors: true });
+// o gelo do Gelo (lagos e rios congelados): o ciano do guia
+const GELO_LAGO = ['#4a89aa', '#5596b6', '#3f7d9e', '#6aaac8', '#4a89aa'];
+const GELO_RIO = ['#5596b6', '#6aaac8', '#4a89aa', '#8fc4dc'];
 const MAT_AGUA = lambert({ color: '#4fc3f7', transparent: true, opacity: 0.82 });
 const MAT_LAVA = lambert({ color: '#ff7a2a', emissive: '#ff4a10', emissiveIntensity: 0.85 });
 
@@ -307,7 +312,8 @@ export class Chunks {
     let r = rng(), id = 'campo';
     for (let i = 0; i < N_PESOS; i++) { r -= P[i]; if (r <= 0) { id = idDoPeso(i); break; } }
     if (Math.hypot(x, z) > RAIO_MUNDO - 4) return sorteio(rng, BORDA[id]);
-    if (geloEm(x, z)) return sorteio(rng, ['#bfe6f7', '#cfeefb', '#b4def2']);
+    if (geloEm(x, z)) return sorteio(rng, GELO_LAGO); // lago congelado: o gelo ciano do guia
+    if (id === 'raio') return this.corDoGelo(x, z, y, inc, rng);
     if (y < NIVEL_AGUA - 0.15) return id === 'fogo' ? '#3a1a12' : id === 'agua' ? (y < -1.3 ? '#2f7fa0' : '#5fc8c0') : '#4f9fb8'; // no Arquipélago: rasa clarinha, funda escura
     if (y < NIVEL_AGUA + 0.45) return id === 'fogo' ? sorteio(rng, ['#c8461a', '#8a2e14']) : id === 'raio' ? '#d8e8f2' : sorteio(rng, ['#e2cd90', '#ecd9a0']);
     if (y > 13 && id !== 'fogo' && inc > 0.55) return sorteio(rng, PALETA.raio); // neve no alto dos picos
@@ -316,6 +322,20 @@ export class Chunks {
       return sorteio(rng, ENCOSTA[id]);
     }
     return sorteio(rng, PALETA[id]);
+  }
+
+  // O chão do Gelo (a paleta do guia do Lâmina): neve clara no plano, azul-ardósia nas
+  // ladeiras, rocha escura nos paredões, rios congelados, a trilha batida e o acampamento
+  corDoGelo(x, z, y, inc, rng) {
+    if (y < NIVEL_AGUA + 0.1) return sorteio(rng, GELO_RIO);                 // rio congelado
+    const lt = naTrilhaGelo(x, z);
+    if (lt < 1.7) return sorteio(rng, ['#aab8c8', '#b3c0cf', '#a2b1c2']);   // neve batida
+    if (lt < 2.7) return rng() < 0.6 ? sorteio(rng, ['#7d746a', '#8a8076', '#6e665e']) : '#aab8c8'; // lama nas bordas
+    if (Math.hypot(x - GELO.acamp.x, z - GELO.acamp.z) < 10) return sorteio(rng, ['#cfdae5', '#c3cfdb', '#dbe4ee']);
+    if (inc < 0.45) return sorteio(rng, [PAL_GELO.rocha, PAL_GELO.rocha2, '#404c5a']);
+    if (inc < 0.62) return sorteio(rng, [PAL_GELO.sombra, '#9bb3cb']);
+    if (inc < 0.8) return sorteio(rng, ['#c9d8e6', '#bccfe0']);
+    return sorteio(rng, [PAL_GELO.neve, PAL_GELO.neve2, '#f2f7fc', '#e8f0f8']);
   }
 
   // ---------- água e lava ----------
@@ -330,7 +350,9 @@ export class Chunks {
       const mx = (i + passo / 2) * E, mz = (j + passo / 2) * E;
       if (foraDungeons(mx, mz) < 4) continue;                                // as dungeons têm a água delas
       if (Math.hypot(mx - LAGOA.x, mz - LAGOA.z) < LAGOA.r + 8) continue;      // o lago escondido tem a dele
-      (biomaEm(mx, mz) === 'fogo' ? lava : agua).push(i * E, j * E, ip * E, jp * E);
+      const bm = biomaEm(mx, mz);
+      if (bm === 'raio') continue;                                            // no Gelo os rios são congelados (o chão já é gelo)
+      (bm === 'fogo' ? lava : agua).push(i * E, j * E, ip * E, jp * E);
     }
     const malha = (lista, mat, y) => {
       if (!lista.length) return;
@@ -420,7 +442,7 @@ export class Chunks {
       if (r2 < C.densidade[id] * dq) this.objeto(id, x, z, r3, esc, k);
       else if ((id === 'campo' || id === 'planta') && r2 > 0.78) add('flor', 'base', x, alturaEm(x, z) + 0.12, z, 1, 1, 1, 0, 0, 0, sorteio(rng, COR.flor), true);
       else if (id === 'terra' && r2 > 0.93) this.arbusto(x, z, 0.6 + esc * 0.4, sorteio(rng, ['#a8743f', '#9a8a4a']), k);
-      else if (id === 'raio' && r2 > 0.95) this.pedra(x, z, 0.3 + esc * 0.3, sorteio(rng, COR.pedra.raio), k, true);
+      else if (id === 'raio' && r2 > 0.9) { if (esc < 0.6) this.capimSeco(x, z, k); else this.montinhoNeve(x, z, k); }
     }
     return { recs, obst };
   }
@@ -451,10 +473,12 @@ export class Chunks {
         else if (r3 < 0.85) this.pedra(x, z, esc < 0.25 ? 1.6 + esc * 4 : 0.6 + esc * 0.9, sorteio(rng, COR.pedra.terra), k);
         else this.arbusto(x, z, 0.6 + esc * 0.5, '#a8743f', k);
         return;
-      case 'raio':
-        if (r3 < 0.55) this.pinheiro(x, z, 0.8 + esc * 0.7, '#2f5a44', '#f4f8fc', k);
-        else if (r3 < 0.82) this.pedra(x, z, 0.6 + esc * 1.1, sorteio(rng, COR.pedra.raio), k);
-        else this.cristal(x, z, 0.6 + esc * 0.8, k);
+      case 'raio': // Gelo (o guia do Lâmina)
+        if (r3 < 0.55) this.pinheiroGelo(x, z, 0.75 + esc * 0.7, k);
+        else if (r3 < 0.64) this.arvoreCongelada(x, z, 0.8 + esc * 0.6, k);
+        else if (r3 < 0.86) this.rochaNevada(x, z, 0.6 + esc * 1.1, k);
+        else if (r3 < 0.94) this.cristal(x, z, 0.6 + esc * 0.8, k);
+        else this.add_monteNeve(x, z, esc, k);
         return;
       case 'fogo':
         if (r3 < 0.4) this.pedra(x, z, 0.6 + esc * 1.1, sorteio(rng, COR.pedra.fogo), k);
@@ -514,10 +538,59 @@ export class Chunks {
     add('tronco', 'base', x + Math.cos(ry) * 0.35 * e, y + 1.9 * e, z - Math.sin(ry) * 0.35 * e, 0.5 * e, 0.9 * e, 0.5 * e, 0, ry, 0.8, '#3a2a24');
     ob(x, z, 0.4 * e);
   }
+  // Cacho de cristais de gelo ciano (no Gelo: o guia trocou os cristais amarelos)
   cristal(x, z, e, { add, ob, rng }) {
     const y = this.pe(x, z, 0.3 * e);
-    add('cristal', 'brilho', x, y + 0.6 * e, z, e * 0.7, e * 2.2, e * 0.7, (rng() - 0.5) * 0.6, rng() * 6, (rng() - 0.5) * 0.6);
-    ob(x, z, 0.4 * e);
+    for (let i = 0; i < 5; i++) {
+      const a = rng() * 6.28, d = i ? 0.35 * e : 0, h = (i ? 1.1 + rng() * 0.7 : 2) * e, t = i ? 0.45 : 0.05;
+      add('cristal', 'gelo', x + Math.cos(a) * d, y + h * 0.45, z + Math.sin(a) * d, 0.5 * e, h, 0.5 * e, Math.cos(a) * t, rng() * 3, Math.sin(a) * t);
+    }
+    add('pedra', 'base', x, y + 0.04, z, 1 * e, 0.15, 0.9 * e, 0, 0, 0, PAL_GELO.neve);
+    ob(x, z, 0.5 * e);
+  }
+
+  // ---------- peças do Gelo (o guia do Lâmina) ----------
+  // Pinheiro carregado de neve (70% com muita neve, 30% com pouca)
+  pinheiroGelo(x, z, e, k) {
+    const y = this.pe(x, z, 0.3 * e), ry = k.rng() * 6.28, pesado = k.rng() < 0.7;
+    pinheiroNevado((g, _t, ...a) => k.add(g === 'pinho' ? 'cone' : g, 'base', ...a), x, y, z, e * 0.95, ry, pesado);
+    k.ob(x, z, 0.6 * e);
+  }
+  // Árvore morta congelada: galhos secos com neve por cima
+  arvoreCongelada(x, z, e, { add, ob, rng }) {
+    const y = this.pe(x, z, 0.3), ry = rng() * 6.28;
+    add('tronco', 'base', x, y + 1.3 * e, z, 1 * e, 2.1 * e, 1 * e, 0, ry, 0.05, '#6b5d52');
+    for (let i = 0; i < 3; i++) {
+      const a = ry + i * 2.1, cx = Math.cos(a), sz = -Math.sin(a);
+      add('tronco', 'base', x + cx * 0.45 * e, y + (2 + i * 0.35) * e, z + sz * 0.45 * e, 0.45 * e, 1 * e, 0.45 * e, 0, a, 0.9, '#7a6c60');
+      add('tronco', 'base', x + cx * 0.55 * e, y + (2.25 + i * 0.35) * e, z + sz * 0.55 * e, 0.42 * e, 0.6 * e, 0.3 * e, 0, a, 0.9, PAL_GELO.neve);
+    }
+    ob(x, z, 0.35 * e);
+  }
+  // Rocha escura com neve por cima: 20%, 50% ou 80% de neve
+  rochaNevada(x, z, e, { add, ob, rng }) {
+    const y = this.pe(x, z, 0.5 * e), nv = rng();
+    add('pedra', 'base', x, y + 0.25 * e, z, 1.2 * e, 0.85 * e, 1.1 * e, rng(), rng() * 6, rng() * 0.3, rng() < 0.5 ? PAL_GELO.rocha : PAL_GELO.rocha2);
+    const s = nv < 0.3 ? 0.55 : nv < 0.7 ? 0.85 : 1.05;
+    add('pedra', 'base', x, y + (0.55 + 0.1 * s) * e, z, 1.15 * s * e, 0.28 * e, 1.05 * s * e, 0, rng() * 6, 0, PAL_GELO.neve);
+    if (nv > 0.7) add('pedra', 'base', x + 0.5 * e, y + 0.05, z, 1.3 * e, 0.35 * e, 1 * e, 0, rng() * 6, 0, PAL_GELO.neve2);
+    ob(x, z, 0.75 * e);
+  }
+  // Monte de neve grande (deriva de neve: dá para passar por cima)
+  add_monteNeve(x, z, esc, { add, rng }) {
+    add('pedra', 'base', x, this.pe(x, z, 1) + 0.1, z, 2.4 + esc * 1.5, 0.6, 1.8 + esc, 0, rng() * 6, 0, PAL_GELO.neve2);
+  }
+  // Pequenos (somem de longe): capim seco dourado e montinho de neve
+  capimSeco(x, z, { add, rng }) {
+    const y = this.pe(x, z, 0.2);
+    for (let i = 0; i < 5; i++) {
+      const a = i * 1.26 + rng() * 0.4;
+      add('cone', 'base', x + Math.cos(a) * 0.12, y + 0.3, z + Math.sin(a) * 0.12, 0.06, 0.65 + rng() * 0.3, 0.06, Math.sin(a) * 0.35, 0, -Math.cos(a) * 0.35, rng() < 0.5 ? '#c9a24a' : '#b8913f', true);
+    }
+    add('pedra', 'base', x, y + 0.02, z, 0.45, 0.08, 0.4, 0, rng() * 6, 0, PAL_GELO.neve, true);
+  }
+  montinhoNeve(x, z, { add, rng }) {
+    add('pedra', 'base', x, this.pe(x, z, 0.6) + 0.05, z, 1.6 + rng(), 0.32, 1.2 + rng() * 0.6, 0, rng() * 6, 0, PAL_GELO.neve2, true);
   }
 
   // ---------- pontos de interesse ----------

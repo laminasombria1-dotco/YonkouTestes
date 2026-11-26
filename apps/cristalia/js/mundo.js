@@ -14,6 +14,7 @@ import { TRACADOS, REINO, tracadoPerto, prenderDungeons, dentroDungeonLivre, sem
 import { Vilas, saidaDaArena, TREINADORES_VILA } from './vilas.js';
 import { CaminhoDasBrasas } from './brasas.js';
 import { TrilhaAncestral, CRISTAL_ESCONDIDO } from './raizes.js';
+import { BiomaGelo } from './biomas/gelo.js';
 import { Reino, FONTE_REINO, NASCER_REINO, ARENA_REINO, CASA_REINO, nivelRevanche } from './reino.js';
 import { JardimMundo, passarFome } from './jardim.js';
 import { RAIO_MUNDO, NIVEL_AGUA, SEMENTE, LAGOA, RESERVAS, SEGREDOS, ESTRADA, RAIO_REINO, ANEL_TRANQUILO, aleatorio, biomaEm, lagoEm, geloEm, naEstradaReal } from './mapa/gerador.js';
@@ -122,6 +123,7 @@ export class Mundo {
     this.grade = new Grade();                                // todos os obstáculos, separados em quadradinhos
     this.obstaculos = new ListaObstaculos().ligar(this.grade); // os fixos (fonte, casa, dungeons)
     this.reservas = [];                                      // lugares sem árvore (cristais)
+    this.refugios = [];                                      // lugares seguros fora do Reino (o Acampamento do Gelo): nenhum selvagem entra
     this.criarAgua();
     this.criarFonte();
     this.dungeon = new CaminhoDasBrasas(this, alturaEm);
@@ -130,6 +132,7 @@ export class Mundo {
     this.reino = new Reino(this, alturaEm);
     this.vilas = new Vilas(this); // as 5 vilas (uma em cada bioma), com loja e arena
     this.masmorras = new Masmorras(this); // as masmorras novas: a entrada no mapa e a área separada
+    this.gelo = new BiomaGelo(this); // as peças únicas do Gelo (acampamento, trilha, lago, arco, fonte termal) e a neve caindo
     this.criarMontanhas();
     this.criarEstrelas();
 
@@ -224,12 +227,19 @@ export class Mundo {
     if (interiorEm(x, z)) return false; // as masmorras novas cuidam dos monstros delas
     if (TRACADOS.some((t) => t.reservado(x, z))) return false; // as dungeons e o Reino se decoram sozinhos
     if (naEstrada(x, z, folga)) return false; // a Estrada Real fica livre
+    if (this.refugioEm(x, z, folga)) return false; // nem nos refúgios (o Acampamento do Gelo)
     if (this.bandeiraPos && Math.hypot(x - this.bandeiraPos.x, z - this.bandeiraPos.z) < AREA_SEGURA_BANDEIRA + 4) return false;
     if (Math.hypot(x, z) > RAIO_MUNDO - 3) return false;
     if (alturaEm(x, z) < NIVEL_AGUA + 0.2) return false; // água, lava e leito de rio
     // lugares fixos da Floresta e pontos de interesse
     for (const r of RESERVAS) if (Math.hypot(x - r.x, z - r.z) < r.r + folga) return false;
     return !this.grade.cada(x, z, folga, (o) => Math.hypot(x - o.x, z - o.z) < o.r + folga);
+  }
+
+  // O refúgio em que o ponto está (folga = metros a mais em volta)
+  refugioEm(x, z, folga = 0) {
+    for (const r of this.refugios) if (Math.hypot(x - r.x, z - r.z) < r.r + folga) return r;
+    return null;
   }
 
   // Algum obstáculo bate num círculo? (usado pelo modo treino)
@@ -828,7 +838,8 @@ export class Mundo {
     const movendo = Math.hypot(v.x, v.z) > 0.05;
     if (movendo) {
       // na água rasa (rios e o Arquipélago) anda mais devagar
-      const naAgua = alturaEm(this.pos.x, this.pos.z) < NIVEL_AGUA - 0.1 && !geloEm(this.pos.x, this.pos.z);
+      // (no Gelo os rios são congelados: anda normal)
+      const naAgua = alturaEm(this.pos.x, this.pos.z) < NIVEL_AGUA - 0.1 && !geloEm(this.pos.x, this.pos.z) && biomaEm(this.pos.x, this.pos.z) !== 'raio';
       const vel = VEL_JOGADOR * (naAgua ? AGUA_RASA : 1) * (this.jogo.gm?.vel || 1); // GM: andar ×2 ou ×3
       this.pos.x += v.x * vel * dt;
       this.pos.z += v.z * vel * dt;
@@ -849,6 +860,7 @@ export class Mundo {
     // chunks: cria os novos em volta (aos poucos) e apaga os que ficaram longe
     this.chunks.atualizar(this.pos.x, this.pos.z);
     this.chunks.animar(t);
+    this.gelo.atualizar(dt, t);
 
     // Relâmpagos nos Picos Nevados (região de Raio)
     const zonaAtual = zonaEm(this.pos.x, this.pos.z);
@@ -861,8 +873,8 @@ export class Mundo {
       this.periodoAvisado = this.periodo;
       if (this.jogo.estado) this.jogo.aviso(this.periodo === 'noite' ? 'Anoiteceu. Monstros de Lua e Trevas saíram!' : 'Amanheceu. Monstros de Sol e Luz estão por aí!');
     }
-    const vilaAqui = this.vilas.vilaEm(this.pos.x, this.pos.z);
-    const nomeZona = this.masmorras.ativa ? this.masmorras.ativa.nomeAqui() : vilaAqui ? vilaAqui.nome : REINO.perto(this.pos.x, this.pos.z) ? 'Reino' : naEstrada(this.pos.x, this.pos.z) ? 'Estrada Real' : NOMES_ZONA[zonaAtual === 'agua' && biomaEm(this.pos.x, this.pos.z) === 'agua' ? 'arquipelago' : zonaAtual];
+    const vilaAqui = this.vilas.vilaEm(this.pos.x, this.pos.z), refugioAqui = this.refugioEm(this.pos.x, this.pos.z);
+    const nomeZona = this.masmorras.ativa ? this.masmorras.ativa.nomeAqui() : vilaAqui ? vilaAqui.nome : refugioAqui ? refugioAqui.nome : REINO.perto(this.pos.x, this.pos.z) ? 'Reino' : naEstrada(this.pos.x, this.pos.z) ? 'Estrada Real' : NOMES_ZONA[zonaAtual === 'agua' && biomaEm(this.pos.x, this.pos.z) === 'agua' ? 'arquipelago' : zonaAtual];
     if (this.zonaAvisada !== nomeZona) {
       this.zonaAvisada = nomeZona;
       if (this.jogo.estado) this.jogo.mostrarZona(nomeZona);
@@ -875,10 +887,15 @@ export class Mundo {
       this.jogo.curarEquipe();
       this.jogo.aviso('A fonte do castelo curou sua equipe!');
     }
+    // A fogueira do Acampamento do Gelo também cura
+    if (est && this.gelo.pertoDaFogueira(this.pos.x, this.pos.z) && this.jogo.precisaCura()) {
+      this.jogo.curarEquipe();
+      this.jogo.aviso('A fogueira do acampamento aqueceu e curou sua equipe!');
+    }
 
     // Bandeira: animação de fincar, o pano balançando e a área segura (ela não cura)
     // área segura: em volta da bandeira, na Estrada Real e no Reino
-    const naAreaSegura = this.distanciaBandeira() < AREA_SEGURA_BANDEIRA || naEstrada(this.pos.x, this.pos.z, -2) || REINO.perto(this.pos.x, this.pos.z) || !!this.vilas.vilaEm(this.pos.x, this.pos.z, 2);
+    const naAreaSegura = this.distanciaBandeira() < AREA_SEGURA_BANDEIRA || naEstrada(this.pos.x, this.pos.z, -2) || REINO.perto(this.pos.x, this.pos.z) || !!this.vilas.vilaEm(this.pos.x, this.pos.z, 2) || !!this.refugioEm(this.pos.x, this.pos.z, 2);
     if (this.bandeiraPos) {
       if (this.bandeiraAnim < 1) {
         this.bandeiraAnim = Math.min(1, this.bandeiraAnim + dt * 2.5);
@@ -1093,6 +1110,9 @@ export class Mundo {
     // nem nas vilas (dá meia-volta antes da cerca)
     const v = this.vilas?.vilaEm(s.x, s.z, 6 + m);
     if (v) { s.ang = Math.atan2(s.x - v.x, s.z - v.z); return true; }
+    // nem nos refúgios (o Acampamento do Gelo)
+    const rf = this.refugioEm(s.x, s.z, 6 + m);
+    if (rf) { s.ang = Math.atan2(s.x - rf.x, s.z - rf.z); return true; }
     if (!this.bandeiraPos) return false;
     const dx = s.x - this.bandeiraPos.x, dz = s.z - this.bandeiraPos.z;
     if (Math.hypot(dx, dz) > AREA_SEGURA_BANDEIRA + (s.grupo ? 3 : 0)) return false;

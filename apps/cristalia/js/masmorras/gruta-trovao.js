@@ -395,21 +395,52 @@ export const GRUTA_TROVAO = {
     }
   },
 
-  // A entrada no mapa: um monte de pedras de gelo com uma boca escura (escondida, sem ícone)
+  // A entrada no mapa (a arte do Lâmina: a caverna de gelo, que NÃO é mais escondida):
+  // um paredão de rocha escura com neve, pingentes de gelo pendurados, a boca reforçada
+  // por vigas de mina de madeira, o brilho ciano lá dentro, uma lanterna âmbar num poste
+  // e o chão de gelo rachado na frente. A porta (onde encostar) fica na frente da boca.
   entrada(b, { x, z, ang, y, obst }) {
     const fx = Math.sin(ang), fz = Math.cos(ang), sx = Math.cos(ang), sz = -Math.sin(ang);
     const P = (f, s) => ({ x: x + fx * f + sx * s, z: z + fz * f + sz * s });
-    const pedra = lambert('#7e90ab'), neve = lambert('#e6eef7'), escuro = lambert('#0b1220'), gelo = lambert('#bfefff', { emissive: '#6fd0ff', emissiveIntensity: 0.4 });
+    const rocha = lambert('#2b3644'), rocha2 = rocha, neve = lambert('#edf4fa'), escuro = lambert('#0b1220');
+    const gelo = lambert('#cdeefa', { emissive: '#5ab8e8', emissiveIntensity: 0.5 }), dentro = lambert('#2f8fb0', { emissive: '#2fb8e0', emissiveIntensity: 0.6 }), dentro2 = gelo;
+    const mad = lambert('#5a4030'), mad2 = mad, luz = lambert('#ffd08a', { emissive: '#f28c28', emissiveIntensity: 1 }), chao = lambert('#4a89aa'), racha = neve;
     const base = y(x, z);
-    const pedras = [[-2.5, 0, 5, 5.5], [-1, -3.4, 3.6, 4], [-1, 3.4, 3.6, 4.2], [-4.5, -2, 3.4, 3.5], [-4.5, 2.2, 3.2, 3.2], [0.6, -2.4, 2.2, 3.2], [0.6, 2.4, 2.2, 3.4]];
-    for (const [f, s, e, h] of pedras) { const p = P(f, s); b.add(GEO.dode, pedra, p.x, base + h * 0.45, p.z, e, h, e * 0.95, 0.3, f + s, 0.1); }
-    for (const [f, s, e] of [[-2.5, 0, 3.6], [-1, -3.4, 2.4], [-1, 3.4, 2.4]]) { const p = P(f, s + 0.2); b.add(GEO.dode, neve, p.x, base + 5.2 + e * 0.2, p.z, e, 1.2, e); }
-    const boca = P(1.3, 0);
-    b.add(GEO.caixa, escuro, boca.x, base + 1.6, boca.z, 2.8, 3.2, 0.6, 0, ang, 0);
-    for (let i = -3; i <= 3; i++) { const p = P(1.7, i * 0.42), comp = 0.5 + ((i * 7 + 9) % 5) * 0.18; b.add(GEO.cone4, gelo, p.x, base + 3.25 - comp / 2, p.z, 0.22, comp, 0.22, Math.PI, 0, 0); }
-    for (const s of [-1.9, 1.9]) { const p = P(1.9, s); b.add(GEO.ico, gelo, p.x, base + 0.35, p.z, 0.35, 0.6, 0.35); }
-    const c = P(-2.2, 0);
-    obst(c.x, c.z, 4.3);
+    // o paredão (pedras grandes atrás e dos lados da boca) com neve por cima
+    const pedras = [[-3, 0, 6.5, 7.5], [-1.2, -4.2, 4.6, 5.6], [-1.2, 4.2, 4.6, 5.8], [-5.5, -3, 4.4, 5], [-5.5, 3.2, 4.2, 4.6], [0.4, -3, 2.6, 3.8], [0.4, 3, 2.6, 4], [-2, 0, 4.8, 6.8]];
+    pedras.forEach(([f, s, e, h], i) => { const p = P(f, s); b.add(GEO.dode, i % 2 ? rocha2 : rocha, p.x, base + h * 0.42, p.z, e, h, e * 0.95, 0, f + s, 0.1); });
+    for (const [f, s, e, h] of [[-3, 0, 4.6, 7.3], [-1.2, -4.2, 3, 5.4], [-1.2, 4.2, 3, 5.6], [-5.5, -3, 2.8, 4.8], [-5.5, 3.2, 2.6, 4.4]]) { const p = P(f, s + 0.2); b.add(GEO.dode, neve, p.x, base + h, p.z, e, 1.3, e); }
+    // a boca: escura, com o brilho ciano do gelo lá no fundo
+    const boca = P(1.0, 0), fundo = P(1.27, 0.1);
+    b.add(GEO.caixa, escuro, boca.x, base + 1.7, boca.z, 3.2, 3.4, 0.5, 0, ang, 0);
+    b.add(GEO.ico, dentro, fundo.x, base + 1.05, fundo.z, 1.3, 1.7, 0.04, 0, ang, 0.3);    // o túnel brilhando lá no fundo
+    { const f2 = P(1.29, 0.15); b.add(GEO.ico, dentro2, f2.x, base + 0.95, f2.z, 0.55, 0.8, 0.03, 0, ang, 0.6); }
+    // a 2ª viga de mina, mais para dentro e menor (dá a ideia de túnel)
+    for (const s of [-1.0, 1.0]) { const p = P(1.3, s); b.add(GEO.caixa, mad, p.x, base + 1.25, p.z, 0.2, 2.5, 0.12, 0, ang, 0); }
+    { const p = P(1.3, 0); b.add(GEO.caixa, mad, p.x, base + 2.5, p.z, 2.2, 0.2, 0.12, 0, ang, 0); }
+    for (const s of [-1.3, 1.25]) { const p = P(1.45, s); b.add(GEO.cone4, gelo, p.x, base + 0.45, p.z, 0.35, 0.9, 0.35, 0, ang, 0); }
+    // as vigas de mina (dois postes, a viga de cima e os reforços em diagonal)
+    for (const s of [-1.75, 1.75]) {
+      const p = P(1.6, s); b.add(GEO.caixa, mad, p.x, base + 1.8, p.z, 0.32, 3.6, 0.32, 0, ang, 0);
+      const d = P(1.65, s * 0.7); b.add(GEO.caixa, mad2, d.x, base + 3.05, d.z, 0.18, 1.1, 0.18, 0, ang, s > 0 ? -0.75 : 0.75);
+    }
+    { const p = P(1.6, 0); b.add(GEO.caixa, mad2, p.x, base + 3.6, p.z, 4.2, 0.36, 0.4, 0, ang, 0); b.add(GEO.caixa, neve, p.x, base + 3.86, p.z, 4.0, 0.18, 0.42, 0, ang, 0); }
+    // pingentes de gelo pendurados na rocha em cima da boca e na viga
+    for (let i = -5; i <= 5; i++) { const p = P(1.85, i * 0.42), comp = 0.5 + ((i * 7 + 11) % 6) * 0.22; b.add(GEO.cone4, gelo, p.x, base + 3.45 - comp / 2, p.z, 0.2, comp, 0.2, Math.PI, 0, 0); }
+    for (let i = -4; i <= 4; i++) { const p = P(1.2, i * 0.75), comp = 0.9 + ((i * 5 + 13) % 5) * 0.35; b.add(GEO.cone4, gelo, p.x, base + 5.3 - comp / 2, p.z, 0.32, comp, 0.32, Math.PI, 0, 0); }
+    // a lanterna âmbar num poste (do lado direito da boca)
+    { const p = P(2.6, 2.6); b.add(GEO.caixa, mad, p.x, base + 1.5, p.z, 0.22, 3, 0.22, 0, ang, 0); b.add(GEO.caixa, neve, p.x, base + 3.06, p.z, 0.3, 0.14, 0.3, 0, ang, 0);
+      const br = P(2.6, 2.1); b.add(GEO.caixa, mad, br.x, base + 2.85, br.z, 1.0, 0.14, 0.14, 0, ang, 0);
+      const l = P(2.6, 1.75); b.add(GEO.caixa, luz, l.x, base + 2.45, l.z, 0.32, 0.45, 0.32, 0, ang, 0); b.add(GEO.cone4, escuro, l.x, base + 2.78, l.z, 0.42, 0.22, 0.42, 0, ang + 0.785, 0); }
+    // o chão de gelo rachado na frente da boca
+    { const c = P(3.4, 0); b.add(GEO.disco, chao, c.x, base + 0.05, c.z, 3.4, 1, 2.6, 0, ang, 0);
+      for (const [f, s, a, l] of [[3.0, -0.8, 0.5, 1.8], [3.8, 0.6, -0.7, 1.5], [3.4, 1.6, 0.2, 1.2], [4.2, -1.4, 1.1, 1.3], [2.6, 0.4, -0.2, 1.1]]) { const p = P(f, s); b.add(GEO.caixa, racha, p.x, base + 0.07, p.z, l, 0.02, 0.06, 0, ang + a, 0); } }
+    // montes de neve encostados
+    for (const [f, s, e] of [[1.2, -3.2, 1.6], [1.4, 3.4, 1.4], [2.2, -2.4, 1]]) { const p = P(f, s); b.add(GEO.ico, neve, p.x, base + 0.25 * e, p.z, 2 * e, 0.7 * e, 1.5 * e); }
+    const c = P(-2.4, 0);
+    obst(c.x, c.z, 4.6);
+    for (const s of [-1, 1]) { const p = P(0.2, s * 3.4); obst(p.x, p.z, 1.6); }
+    { const p = P(2.6, 2.6); obst(p.x, p.z, 0.3); }
   },
 };
 const c3n = new THREE.Color();

@@ -27,6 +27,8 @@ import { ARENA_REINO, TREINADORES } from './reino.js';
 import { SEMENTES, ORDEM_SEMENTES, JARDIM, garantirJardim } from './jardim.js';
 import { ESTRADA, ESTRADAS, RAIO_REINO, LUGARES as LUGARES_MAPA } from './mapa/gerador.js';
 import { ORDEM_VILAS, NOMES_VILA } from './vilas.js';
+import { GELO } from './biomas/lugares.js';
+import { NOME_ACAMP } from './biomas/gelo.js';
 import { SEMENTE, SEMENTE_PADRAO, centroDe, LAGOS, POIS } from './mapa/gerador.js';
 
 const MAX_NIVEL = NIVEL_MAXIMO; // nível máximo do jogo (100)
@@ -49,6 +51,7 @@ const LUGARES = [
   ['arquipelago', 'Arquipélago', ...(({ x, z }) => [x, z])(LUGARES_MAPA.find((l) => l.bioma === 'agua' && l.tipo === 'vila') || centroDe('agua'))],
   ['fogo', 'Vulcão', ...perto(centroDe('fogo'), 16)], ['terra', 'Deserto', ...(arco ? [arco.x + Math.cos(arco.ang + 1.57) * 7, arco.z + Math.sin(arco.ang + 1.57) * 7] : perto(centroDe('terra')))],
   ['raio', 'Neve', ...perto(centroDe('raio'))],
+  ['acampGelo', NOME_ACAMP, GELO.acamp.x + 1, GELO.acamp.z + 10],
   // os lugares guardados para as vilas (passo 3) e as masmorras novas (passo 4)
   ...LUGARES_MAPA.map((l, i) => [`lugar${i}`, l.tipo === 'vila' ? NOMES_VILA[l.bioma] : `Masmorra · ${NOME_BIOMA[l.bioma]}`, ...(l.tipo === 'vila' ? [l.x - Math.cos(l.ang) * 26, l.z - Math.sin(l.ang) * 26] : [l.x, l.z])]),
 ];

@@ -241,10 +241,18 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
           Vulcânico ~55-75, Arquipélago ~50-65.
           *Proposta feita (com maquetes); esperando as decisões do Lâmina:*
       - [ ] **0 — Juntar os objetos de cada chunk** numa malha só (medido: Floresta 149 → 100 desenhos, Gelo 89 → 61).
-      - [ ] **Gelo** — o Lâmina mandou um guia (paleta, esquema do lugar, peças) e artes de referência. Maquete feita no
-            lugar onde a Estrada Real termina entre os 2 lagos congelados: trilha com lanternas, acampamento (cabana, fogueira,
-            barraca), lago com barco preso e píer, arco rúnico, fonte termal, rios congelados. Esperando a aprovação.
-      - [ ] **Floresta**
+            *Ainda não aprovado;* o Gelo não precisou (as peças comuns novas usam as formas que o mapa já tinha).
+      - [x] **Gelo** — pelo guia e pelas artes do Lâmina. *Decisões:* fica como a maquete; o **acampamento vira lugar
+            seguro e cura** (nenhum selvagem a 12 m; a fogueira cura a 6 m; sem loja, ninguém acorda lá); a **entrada da
+            Gruta do Trovão vira a caverna de gelo da arte** (deixa de ser escondida); **rios congelados** no Gelo todo
+            (anda normal). *Feito:* `js/biomas/lugares.js` (lugares presos à semente, sem mexer no mapa) e
+            `js/biomas/gelo.js` (acampamento, trilha com lanternas, lago com barco e píer, arco rúnico, fonte termal,
+            floresta fechada, neve caindo, brilho falso); peças comuns e chão do Gelo no `chunks.js`; refúgios no `mundo.js`.
+            Medido (Médio, sem monstros na tela): trilha 66 → 71, acampamento 68 → 72, lago 82 → 79, gruta 92 → 97,
+            vale 87 → 86, picos 78 → 88 desenhos; na Fraco, quase igual. Triângulos: até 68 mil.
+      - [ ] **Floresta** — o Lâmina mandou o guia "Mata de Véu-Âmbar" e as artes (carvalhos prateados com cortinas de
+            âmbar, freixo oco, salgueiro, samambaias, musgo, cogumelos ciano, fungo dourado, pântano das lanternas azuis,
+            pontes de raiz, ruína circular). Próximo: a maquete.
       - [ ] **Deserto**
       - [ ] **Vulcânico**
       - [ ] **Arquipélago**
