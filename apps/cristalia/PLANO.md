@@ -232,6 +232,20 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
             de hoje; com os lendários Silvárion e Ignárion no Nível 9+). `pantano-sombrio.js` e `forja-antiga.js`.
       - [x] **4.4 — Arquipélago:** Templo Submerso (recife, conchas gigantes, tridente) e Gruta das Marés (navio naufragado,
             piratas, polvo gigante). `templo-submerso.js` e `gruta-mares.js`.
+    - [ ] **Passo 4.5 — Melhorias dos biomas** (o mapa de fora: Gelo, Floresta, Deserto, Vulcânico e Arquipélago).
+          Cada bioma mais bonito e com cara própria, com peças específicas (os mesmos truques de peso das masmorras).
+          **Um bioma por vez**, medindo os desenhos por quadro antes e depois (qualidade Médio, celular de referência).
+          Sem trocar a semente nem a `versaoMapa` (o jogo salvo continua onde está). Nada em cima das vilas, das entradas
+          das masmorras, da Estrada Real nem dos corredores de hoje.
+          *Medido antes (Médio, um ponto no meio de cada bioma):* Gelo ~90-100 desenhos, Floresta ~150-170, Deserto ~55-65,
+          Vulcânico ~55-75, Arquipélago ~50-65.
+          *Proposta feita (com maquetes); esperando as decisões do Lâmina:*
+      - [ ] **0 — Juntar os objetos de cada chunk** numa malha só (medido: Floresta 149 → 100 desenhos, Gelo 89 → 61).
+      - [ ] **Gelo**
+      - [ ] **Floresta**
+      - [ ] **Deserto**
+      - [ ] **Vulcânico**
+      - [ ] **Arquipélago**
     - [ ] **Passo 5 — Dungeons** (a especificação do Lâmina, com o adaptador).
     - [ ] **Passo 6 — Níveis** (o Lâmina vai rever a regra mais para frente).
   - [ ] **8.4 — Regiões** com outros reinos (futuro).
