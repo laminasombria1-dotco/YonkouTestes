@@ -284,6 +284,66 @@ const VISUAL = {
       peca(g, caixa(0.1, 0.09, 0.07), '#141414', [0, 1.16, 0.21]); // cavanhaque
       for (let i = 0; i < 3; i++) brilho(g, new THREE.OctahedronGeometry(0.07), '#ffb020', [Math.cos(i * 2.1) * 0.5, 0.8 + i * 0.15, Math.sin(i * 2.1) * 0.3]);
     } },
+  // ---------- os treinadores da Vila das Marés (pela arte do Lâmina) ----------
+  // Karah (Fogo): cachos pretos com contas douradas, top vermelho, capa laranja, braceletes de ouro e anéis de fogo
+  karah: { roupa: '#a82a2a', manga: '#7a4a30', calca: '#8a5a38', bota: '#5a3a24', botaAlta: true, cinto: '#8a8a90', pele: '#7a4a30', olho: '#ffb030', olhoBrilha: true, luva: '#7a4a30',
+    extra(g) {
+      peca(g, caixa(0.5, 0.2, 0.31), '#7a4a30', [0, 0.62, 0]); // a barriga de fora
+      peca(g, caixa(0.52, 0.66, 0.06), '#e0602a', [0, 0.78, -0.2], [-0.12, 0, 0]); // capa
+      peca(g, caixa(0.2, 0.4, 0.05), '#a82a2a', [0, 0.32, 0.16]); // a faixa da frente
+      for (const s of [-1, 1]) peca(g, caixa(0.15, 0.1, 0.16), '#d8b040', [s * 0.35, 0.6, 0]);
+      peca(g, ico(0.27, 1), '#141414', [0, 1.36, -0.05]);
+      for (let i = 0; i < 7; i++) peca(g, ico(0.09, 0), '#141414', [-0.2 + (i % 4) * 0.13, 1.12 - Math.floor(i / 4) * 0.12, -0.2 - (i % 2) * 0.04]);
+      brilho(g, ico(0.04), '#d8b040', [0.12, 1.5, 0.1]);
+      for (const s of [-1, 1]) brilho(g, new THREE.TorusGeometry(0.24, 0.05, 4, 12), '#ff9a2a', [s * 0.5, 0.75, 0.08], [0.2, s * 0.8, 0]);
+    } },
+  // Angelica (Fogo): cabelo loiro preso com grampos vermelhos, casaco branco com vermelho e dourado, leque e uma espiral de fogo
+  angelica: { roupa: '#3a1a22', manga: '#efe6d2', calca: '#efe6d2', bota: '#4a2030', botaAlta: true, cinto: '#5a2a2a', pele: '#f2d8c8', olho: '#5a9a3a', luva: '#3a1a22',
+    extra(g) {
+      casacoLongo(g, '#efe6d2', '#b82a3a', 0.95);
+      for (const s of [-1, 1]) peca(g, caixa(0.16, 0.06, 0.2), '#d8b040', [s * 0.3, 1.05, 0]); // dragonas
+      peca(g, caixa(0.36, 0.42, 0.05), '#a82838', [0, 0.36, 0.17]); // saia vermelha
+      peca(g, ico(0.265, 1), '#f0e0a8', [0, 1.35, -0.04]);
+      peca(g, ico(0.14, 1), '#f0e0a8', [0, 1.58, -0.08]); // o coque
+      for (const s of [-1, 1]) peca(g, caixa(0.03, 0.18, 0.03), '#c82a3a', [s * 0.06, 1.66, -0.08], [0, 0, s * 0.4]);
+      peca(g, caixa(0.46, 0.6, 0.1), '#f0e0a8', [0, 1.06, -0.2]); // o cabelo comprido atrás
+      peca(g, new THREE.CircleGeometry(0.28, 7, 0, Math.PI), '#e8dcc0', [-0.2, 0.92, 0.22], [0, 0, 0], 'duplo'); // o leque
+      brilho(g, new THREE.TorusGeometry(0.22, 0.05, 4, 10, Math.PI * 1.5), '#ffd070', [0.5, 0.95, 0.1], [0.3, 0.7, 0]);
+    } },
+  // Lanny (Raio): cabelo branco com mechas roxas, jaqueta branca e roxa, blusa e meias listradas, saia roxa e fones
+  lanny: { roupa: '#f2eef6', manga: '#8a3ad0', calca: '#8a3ad0', bota: '#f2eef6', botaAlta: true, cinto: '#f2eef6', pele: '#f0d0c0', olho: '#a050e0', luva: '#f2eef6',
+    extra(g) {
+      for (let i = 0; i < 3; i++) peca(g, caixa(0.505, 0.06, 0.305), '#8a3ad0', [0, 0.62 + i * 0.13, 0]); // listras da blusa
+      for (const s of [-1, 1]) { peca(g, caixa(0.15, 0.5, 0.33), '#f2eef6', [s * 0.18, 0.82, 0]); for (let i = 0; i < 3; i++) peca(g, caixa(0.19, 0.05, 0.21), '#f2eef6', [s * 0.12, 0.2 + i * 0.1, 0]); }
+      peca(g, caixa(0.56, 0.2, 0.36), '#7a2ac0', [0, 0.44, 0]); // saia
+      peca(g, ico(0.265, 1), '#f4f4f8', [0, 1.36, -0.04]);
+      peca(g, caixa(0.18, 0.26, 0.08), '#8a3ad0', [-0.12, 1.32, 0.2], [0, 0, 0.3]); // franja roxa
+      peca(g, new THREE.TorusGeometry(0.16, 0.035, 4, 10), '#f2eef6', [0, 1.06, 0.05], [Math.PI / 2, 0, 0]); // fones
+      for (let i = 0; i < 3; i++) brilho(g, new THREE.OctahedronGeometry(0.06), '#d080ff', [0.42 + i * 0.05, 0.75 + i * 0.12, 0.12]);
+    } },
+  // Ilia (Trevas): cabelo preto e vinho, capa com capuz e estrelas roxas, roupa preta, braceletes, frascos e adagas
+  ilia: { roupa: '#24202a', manga: '#e8c8b8', calca: '#18161c', bota: '#1e1a22', botaAlta: true, cinto: '#5a3a2a', pele: '#e8c8b8', olho: '#c8b0f0', luva: '#5a3a2a',
+    extra(g) {
+      peca(g, caixa(0.62, 0.95, 0.06), '#1e1a24', [0, 0.62, -0.2], [-0.1, 0, 0]); // a capa
+      for (let i = 0; i < 4; i++) brilho(g, ico(0.025), '#c080ff', [-0.2 + i * 0.13, 0.4 + (i % 2) * 0.3, -0.24]); // estrelas da capa
+      peca(g, caixa(0.5, 0.24, 0.16), '#1e1a24', [0, 1.12, -0.16]); // o capuz caído
+      for (let i = 0; i < 3; i++) brilho(g, cil(0.035, 0.035, 0.1, 5), '#b050ff', [-0.15 + i * 0.12, 0.52, 0.17]);
+      peca(g, ico(0.27, 1), '#2a1418', [0, 1.36, -0.04]);
+      for (let i = 0; i < 4; i++) peca(g, cone(0.08, 0.3, 4), i % 2 ? '#7a1a2a' : '#2a1418', [-0.2 + i * 0.13, 1.18, -0.1], [Math.PI, 0, (i - 1.5) * 0.3]);
+      for (const s of [-1, 1]) peca(g, caixa(0.04, 0.24, 0.04), '#c8c8d0', [s * 0.38, 0.38, 0.06], [0.3, 0, 0]); // adagas
+    } },
+  // Serena (Água, a Campeã): tranças azuis com conchas, blusa azul e branca, leggings azul-marinho, faixa turquesa e botas brancas
+  serena: { roupa: '#5aa8e0', manga: '#a06a44', calca: '#1e2a5a', bota: '#f2f2f2', botaAlta: true, cinto: '#2ac0c0', pele: '#a06a44', olho: '#40b0ff', olhoBrilha: true, luva: '#a06a44',
+    extra(g) {
+      peca(g, caixa(0.06, 0.56, 0.31), '#f2f2f2', [0.08, 0.77, 0], [0, 0, 0.5]); // faixa branca na blusa
+      peca(g, caixa(0.5, 0.3, 0.32), '#5aa8e0', [0, 0.42, 0]); // a túnica
+      peca(g, caixa(0.18, 0.14, 0.08), '#7a4a2a', [-0.2, 0.46, 0.17]); // o livrinho
+      peca(g, ico(0.27, 1), '#1a2a6a', [0, 1.36, -0.04]);
+      for (let i = 0; i < 6; i++) peca(g, cil(0.045, 0.035, 0.5, 4), '#1a2a6a', [-0.2 + i * 0.08, 1.02, -0.2], [0.2, 0, (i - 2.5) * 0.08]);
+      for (let i = 0; i < 3; i++) peca(g, ico(0.04), '#f8f0e0', [-0.15 + i * 0.15, 1.22, -0.22]); // conchas
+      brilho(g, new THREE.TorusGeometry(0.3, 0.04, 4, 12), '#a8e8ff', [0.5, 0.85, 0.1], [0.3, 0.6, 0]);
+      brilho(g, new THREE.TorusGeometry(0.26, 0.04, 4, 12), '#a8e8ff', [-0.45, 0.6, 0.1], [0.5, -0.6, 0]);
+    } },
   // Saphira (Fogo, a Campeã): trança vermelha longa, jaqueta vermelha e preta com chamas, gola de pelo, calça oliva
   saphira: { roupa: '#1e1a1a', manga: '#c8302a', calca: '#6a6a3a', bota: '#1e1a1a', botaAlta: true, cinto: '#6a4a2a', pele: '#d8a070', olho: '#ff9a2a', olhoBrilha: true, luva: '#5a2a1a',
     extra(g) {

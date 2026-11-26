@@ -42,7 +42,20 @@ export const PREMIO_VILA = { ouro: 1000 };
 // =============================================================
 const cor = (el) => ELEMENTOS[el].cor;
 export const TREINADORES_VILA = {
-  raio: [], planta: [], agua: [],
+  raio: [], planta: [],
+  // Vila das Marés (Arquipélago): os treinadores do Lâmina. A Campeã é a Serena (Água).
+  agua: [
+    { id: 'karah', nome: 'Karah', elemento: 'fogo', cor: cor('fogo'), niveis: [55, 55],
+      equipe: [['L:fogo', 55], ['L:fogoPlanta', 55], ['L:fogo', 55]], fala: 'Karah: Nem o mar apaga o meu fogo. Vem!', premio: { forte: 2 }, moedas: 250, revanche: 75 },
+    { id: 'angelica', nome: 'Angelica', elemento: 'fogo', cor: cor('fogo'), niveis: [60, 60],
+      equipe: [['L:fogo', 60], ['vulcarapa', 60], ['L:fogo', 60]], fala: 'Angelica: Uma luta elegante, por favor. E quente.', premio: { forte: 2 }, moedas: 300, revanche: 80 },
+    { id: 'lanny', nome: 'Lanny', elemento: 'raio', cor: cor('raio'), niveis: [65, 65],
+      equipe: [['L:raio', 65], ['L:terraRaio', 65], ['L:raio', 65]], fala: 'Lanny: Raio na água? Você já perdeu.', premio: { forte: 3 }, moedas: 350, revanche: 85 },
+    { id: 'ilia', nome: 'Ilia', elemento: 'trevas', cor: cor('trevas'), niveis: [70, 70],
+      equipe: [['L:trevas', 70], ['L:lua', 70], ['L:trevas', 70]], fala: 'Ilia: As estrelas me contaram como esta luta termina.', premio: { forte: 3 }, moedas: 400, revanche: 90 },
+    { id: 'serena', nome: 'Serena', elemento: 'agua', cor: cor('agua'), niveis: [75, 75], campeao: true, chamada: 'Campeã',
+      equipe: [['L:agua', 75], ['aquaraia', 75], ['L:aguaFogo', 75], ['L:agua', 75]], fala: 'Serena: Estas marés me obedecem. Vamos ver se obedecem você!', premio: { forte: 3, supremo: 2 }, moedas: 800, revanche: 100 },
+  ],
   // Vila da Areia (Deserto): os treinadores do Lâmina. O Campeão é o Pedro (Terra).
   terra: [
     { id: 'nicky', nome: 'Nicky', elemento: 'trevas', cor: cor('trevas'), niveis: [55, 55],
