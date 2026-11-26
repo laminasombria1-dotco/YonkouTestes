@@ -228,6 +228,62 @@ const VISUAL = {
       brilho(g, caixa(0.14, 0.08, 0.15), '#40e0ff', [0.36, 0.6, 0]); // pulseira
       brilho(g, new THREE.TorusGeometry(0.3, 0.04, 4, 12), '#a8e8ff', [0.5, 0.75, 0.1], [0.3, 0.6, 0]);
     } },
+  // ---------- os treinadores da Vila da Areia (pela arte do Lâmina) ----------
+  // Nicky (Trevas): casaco longo preto e roxo, cabelo preto com mechas roxas, olhos roxos e uma esfera de trevas
+  nicky: { roupa: '#1c1822', manga: '#24202c', calca: '#18161e', bota: '#141218', botaAlta: true, cinto: '#5a2a8a', pele: '#e8c8b0', olho: '#b060ff', olhoBrilha: true, luva: '#141218',
+    extra(g) {
+      casacoLongo(g, '#24202c', '#8a3ad0', 0.95);
+      peca(g, ico(0.27, 1), '#141218', [0, 1.36, -0.04]);
+      for (let i = 0; i < 4; i++) peca(g, cone(0.07, 0.24, 4), i === 1 ? '#7a3ab8' : '#141218', [-0.14 + i * 0.09, 1.44, 0.14], [0.9, 0, (i - 1.5) * 0.25]); // franja
+      brilho(g, new THREE.OctahedronGeometry(0.05), '#d0d0e0', [0, 0.52, 0.17]); // meia-lua no cinto
+      brilho(g, ico(0.13, 1), '#a040ff', [0.42, 0.95, 0.1]);
+    } },
+  // Rony (Fogo): cabelo vermelho espetado, jaqueta vermelha, laranja e preta, calça preta e tênis vermelhos, punhos em chamas
+  rony: { roupa: '#1e1a1e', manga: '#c8302a', calca: '#1e1a1e', bota: '#c8302a', cinto: '#3a3a3a', pele: '#b07850', olho: '#ff9a2a', luva: '#d8c8b0',
+    extra(g) {
+      for (const s of [-1, 1]) { peca(g, caixa(0.17, 0.52, 0.33), '#c8302a', [s * 0.18, 0.8, 0]); peca(g, caixa(0.04, 0.5, 0.335), '#ff8a2a', [s * 0.1, 0.8, 0]); peca(g, caixa(0.21, 0.05, 0.27), '#141414', [s * 0.12, 0.03, 0.03]); }
+      peca(g, caixa(0.52, 0.16, 0.12), '#ff8a2a', [0, 1.06, -0.1], [-0.3, 0, 0]); // gola
+      peca(g, ico(0.25, 1), '#8a1a2a', [0, 1.36, -0.05]);
+      for (let i = 0; i < 6; i++) peca(g, cone(0.07, 0.26, 4), i % 2 ? '#c83a2a' : '#8a1a2a', [-0.15 + i * 0.06, 1.56, -0.02 - (i % 2) * 0.06], [-0.3, 0, (i - 2.5) * 0.2]);
+      for (const s of [-1, 1]) brilho(g, cone(0.1, 0.26, 4), '#ff8a2a', [s * 0.38, 0.52, 0.05]);
+    } },
+  // Jean (Água): cabelo castanho com pontas azuis, jaqueta branca e azul-piscina, bermuda cinza, tênis azuis e mochila
+  jean: { roupa: '#a8e0e8', manga: '#2ab8c8', calca: '#b07a50', bota: '#2a8ac8', cinto: '#2a3a6a', pele: '#b07a50', olho: '#2a6ac8', luva: '#b07a50',
+    extra(g) {
+      for (const s of [-1, 1]) { peca(g, caixa(0.16, 0.54, 0.33), '#f2f2f2', [s * 0.18, 0.79, 0]); peca(g, caixa(0.04, 0.54, 0.335), '#2a3a6a', [s * 0.1, 0.79, 0]); }
+      peca(g, caixa(0.46, 0.28, 0.3), '#5a5a62', [0, 0.38, 0]); // bermuda
+      peca(g, caixa(0.34, 0.4, 0.16), '#2ab8c8', [0, 0.84, -0.24]); // mochila
+      peca(g, ico(0.27, 1), '#8a5a30', [0, 1.36, -0.04]);
+      for (let i = 0; i < 5; i++) peca(g, cone(0.07, 0.2, 4), i % 2 ? '#2ab8c8' : '#8a5a30', [-0.16 + i * 0.08, 1.5, -0.12], [-0.6, 0, (i - 2) * 0.35]);
+      brilho(g, new THREE.OctahedronGeometry(0.04), '#40e0ff', [0, 1.0, 0.17]); // colar
+      brilho(g, new THREE.TorusGeometry(0.28, 0.04, 4, 12), '#a8e8ff', [0.5, 0.78, 0.1], [0.3, 0.6, 0]);
+    } },
+  // Nando (Planta): bandana verde com folhas, colete verde com bolsos, camisa creme, calça cáqui, botas verdes e bolsa de poções
+  nando: { roupa: '#ece2c8', manga: '#ece2c8', calca: '#9a8460', bota: '#4a7a3a', botaAlta: true, cinto: '#5a3a24', pele: '#6a4430', olho: '#2a7a3a', luva: '#6a4a2a', colete: '#c8b48a',
+    extra(g) {
+      for (const s of [-1, 1]) peca(g, caixa(0.16, 0.5, 0.33), '#4a8a3a', [s * 0.18, 0.79, 0]);
+      peca(g, caixa(0.06, 0.62, 0.34), '#6a4a2a', [0.02, 0.8, 0], [0, 0, -0.6]); // alça da bolsa
+      peca(g, caixa(0.26, 0.2, 0.12), '#7a5a34', [0.24, 0.48, 0.1]);
+      brilho(g, cil(0.04, 0.04, 0.12, 5), '#40e070', [0.2, 0.62, 0.15]);
+      peca(g, ico(0.26, 1), '#4a2a1a', [0, 1.36, -0.04]);
+      for (let i = 0; i < 5; i++) peca(g, cil(0.035, 0.035, 0.2, 4), '#4a2a1a', [-0.14 + i * 0.07, 1.5, -0.08], [0.3, 0, (i - 2) * 0.3]);
+      peca(g, caixa(0.53, 0.08, 0.53), '#6a9a3a', [0, 1.42, -0.02]); // bandana
+      for (const s of [-1, 1]) peca(g, cone(0.05, 0.16, 3), '#5ac04a', [s * 0.18, 1.5, 0.2], [0.4, 0, s * 0.5]);
+      brilho(g, cone(0.06, 0.16, 3), '#90ff70', [-0.4, 0.95, 0.12]); // o brotinho na mão
+    } },
+  // Pedro (Terra, o Campeão): moicano preto, cavanhaque, regata cinza, ombreira de pedra, calça oliva, joelheiras e botas de armadura
+  pedro: { roupa: '#6a6a70', manga: '#b07a50', calca: '#5a5a3a', bota: '#8a8a90', botaAlta: true, cinto: '#6a4a2a', pele: '#b07a50', olho: '#2a2018', luva: '#7a4a2a',
+    extra(g) {
+      peca(g, caixa(0.3, 0.22, 0.4), '#7a7a80', [-0.3, 1.08, 0], [0, 0, 0.3]); // ombreira de pedra
+      peca(g, caixa(0.2, 0.12, 0.3), '#b0603a', [-0.36, 0.98, 0]);
+      peca(g, caixa(0.2, 0.36, 0.05), '#6a6a70', [0, 0.35, 0.17]); // a faixa da frente
+      brilho(g, cil(0.07, 0.07, 0.04, 6), '#d8b040', [0, 0.53, 0.17]);
+      for (const s of [-1, 1]) peca(g, caixa(0.2, 0.12, 0.08), '#7a7a80', [s * 0.12, 0.28, 0.12]);
+      peca(g, ico(0.25, 1), '#b07a50', [0, 1.35, -0.03]);
+      peca(g, caixa(0.1, 0.12, 0.42), '#141414', [0, 1.55, -0.04]); // moicano
+      peca(g, caixa(0.1, 0.09, 0.07), '#141414', [0, 1.16, 0.21]); // cavanhaque
+      for (let i = 0; i < 3; i++) brilho(g, new THREE.OctahedronGeometry(0.07), '#ffb020', [Math.cos(i * 2.1) * 0.5, 0.8 + i * 0.15, Math.sin(i * 2.1) * 0.3]);
+    } },
   // Saphira (Fogo, a Campeã): trança vermelha longa, jaqueta vermelha e preta com chamas, gola de pelo, calça oliva
   saphira: { roupa: '#1e1a1a', manga: '#c8302a', calca: '#6a6a3a', bota: '#1e1a1a', botaAlta: true, cinto: '#6a4a2a', pele: '#d8a070', olho: '#ff9a2a', olhoBrilha: true, luva: '#5a2a1a',
     extra(g) {

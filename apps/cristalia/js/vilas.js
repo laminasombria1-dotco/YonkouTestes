@@ -42,7 +42,20 @@ export const PREMIO_VILA = { ouro: 1000 };
 // =============================================================
 const cor = (el) => ELEMENTOS[el].cor;
 export const TREINADORES_VILA = {
-  raio: [], planta: [], terra: [], agua: [],
+  raio: [], planta: [], agua: [],
+  // Vila da Areia (Deserto): os treinadores do Lâmina. O Campeão é o Pedro (Terra).
+  terra: [
+    { id: 'nicky', nome: 'Nicky', elemento: 'trevas', cor: cor('trevas'), niveis: [55, 55],
+      equipe: [['L:trevas', 55], ['L:lua', 55], ['L:trevas', 55]], fala: 'Nicky: A noite chegou mais cedo pra você.', premio: { forte: 2 }, moedas: 250, revanche: 75 },
+    { id: 'rony', nome: 'Rony', elemento: 'fogo', cor: cor('fogo'), niveis: [60, 60],
+      equipe: [['L:fogo', 60], ['L:fogoPlanta', 60], ['L:fogo', 60]], fala: 'Rony: Tá quente aqui no deserto? Vai ficar mais!', premio: { forte: 2 }, moedas: 300, revanche: 80 },
+    { id: 'jean', nome: 'Jean', elemento: 'agua', cor: cor('agua'), niveis: [65, 65],
+      equipe: [['L:agua', 65], ['L:aguaFogo', 65], ['L:agua', 65]], fala: 'Jean: No deserto, a água vale ouro. Vamos ver quanto você vale!', premio: { forte: 3 }, moedas: 350, revanche: 85 },
+    { id: 'nando', nome: 'Nando', elemento: 'planta', cor: cor('planta'), niveis: [70, 70],
+      equipe: [['L:planta', 70], ['espinhal', 70], ['L:planta', 70]], fala: 'Nando: Até na areia a planta cresce. Prepare-se!', premio: { forte: 3 }, moedas: 400, revanche: 90 },
+    { id: 'pedro', nome: 'Pedro', elemento: 'terra', cor: cor('terra'), niveis: [75, 75], campeao: true,
+      equipe: [['L:terra', 75], ['L:terraRaio', 75], ['L:terra', 75], ['L:terra', 75]], fala: 'Pedro: Esta areia é minha. Pra tomar o meu lugar, vai ter que me derrubar!', premio: { forte: 3, supremo: 2 }, moedas: 800, revanche: 100 },
+  ],
   // Vila das Cinzas (Vulcânico): os treinadores do Lâmina. A Campeã é a Saphira (Fogo).
   fogo: [
     { id: 'sandy', nome: 'Sandy', elemento: 'luz', cor: cor('luz'), niveis: [55, 55],

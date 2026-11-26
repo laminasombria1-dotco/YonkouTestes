@@ -212,7 +212,8 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
           Campeão Nv.75. *Feito:* `js/vilas.js`, o saquinho, os títulos e as lutas (prontas para os treinadores).
       - [ ] **Os treinadores das vilas** (nomes e equipes): **o Lâmina vai fazer** (`TREINADORES_VILA` no `js/vilas.js`).
         - [x] **Vila das Cinzas:** Sandy (Luz), Brawn (Terra), Blaze (Raio), Sotty (Água) e a Campeã Saphira (Fogo), com o visual pela arte do Lâmina.
-        - [ ] Vila da Neve, das Folhas, da Areia e das Marés.
+        - [x] **Vila da Areia:** Nicky (Trevas), Rony (Fogo), Jean (Água), Nando (Planta) e o Campeão Pedro (Terra), com o visual pela arte do Lâmina.
+        - [ ] Vila da Neve, das Folhas e das Marés.
     - [ ] **Passo 4 — Masmorras novas** (2 por bioma; as novas são áreas separadas).
     - [ ] **Passo 5 — Dungeons** (a especificação do Lâmina, com o adaptador).
     - [ ] **Passo 6 — Níveis** (o Lâmina vai rever a regra mais para frente).

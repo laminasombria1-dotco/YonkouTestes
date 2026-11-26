@@ -206,6 +206,17 @@ Mundo novo, passo 3 (`PLANO.md`). Cada bioma tem uma vila de **30 m de raio**, n
   | 5 | **Saphira** (Campeã) | Fogo | Fogo, Vulcarapa, Fogo, Fogo · Nv.75 (forma final) | Nv.100 |
 
   Prêmios da 1ª vitória: Sandy e Brawn 2 Cristais Fortes (250 e 300 de ouro), Blaze e Sotty 3 Fortes (350 e 400), Saphira 3 Fortes + 2 Supremos (800); nas revanches, 1 Forte e metade do ouro.
+- **Vila da Areia** (também do Lâmina, com o visual pela arte dele):
+
+  | Ordem | Treinador | Elemento | Monstros (1ª vez) | Revanche |
+  |---|---|---|---|---|
+  | 1 | Nicky | Trevas | Trevas, Lua, Trevas · Nv.55 | Nv.75 |
+  | 2 | Rony | Fogo | Fogo, Fogo + Planta, Fogo · Nv.60 | Nv.80 |
+  | 3 | Jean | Água | Água, Água + Fogo, Água · Nv.65 | Nv.85 |
+  | 4 | Nando | Planta | Planta, Espinhal, Planta · Nv.70 | Nv.90 |
+  | 5 | **Pedro** (Campeão) | Terra (pedra) | Terra, Terra + Raio, Terra, Terra · Nv.75 (forma final) | Nv.100 |
+
+  Prêmios iguais aos da Vila das Cinzas (pela ordem).
 - - **Vencer o Campeão da vila** (1ª vez): você vira o novo campeão. Ganha o **título** ("Campeão da Vila da Areia"), **1.000 de ouro**, **1 ovo** e a vila passa a guardar **75 de ouro a cada 10 minutos de jogo** (até 300). Perder na arena: vocês acordam na fonte do castelo, curados.
 - **O saquinho 💰** (embaixo do relógio): junta o ouro de Campeão do **Reino e de todas as vilas**. Mostra quanto já tem e quanto falta para o próximo; quando algum cofre enche (e para de juntar), ele **brilha dourado** com "Resgatar!". Toque nele em qualquer lugar para pegar tudo. (A fonte do castelo não entrega mais o ouro.)
 - **Títulos:** cada arena conquistada dá um título. Na **Bolsa**, seção Títulos, você escolhe qual usar; ele aparece na tela inicial, com o jogo salvo.
