@@ -174,6 +174,25 @@ function casacoLongo(g, cor, forro, comp) {
   peca(g, caixa(0.54, comp + 0.05, 0.08), cor, [0, 1.02 - comp / 2, -0.18], [-0.08, 0, 0]);
   peca(g, caixa(0.52, 0.2, 0.1), cor, [0, 1.1, -0.06], [-0.4, 0, 0]); // gola alta
 }
+// Poses dos braços: [cotovelo, mão] do braço direito (o esquerdo é o espelho, x trocado de sinal)
+const POSES = {
+  baixo: [[0.36, 0.78, 0], [0.38, 0.55, 0.02]],
+  cintura: [[0.5, 0.8, -0.04], [0.27, 0.6, 0.08]],       // mão na cintura
+  estendido: [[0.52, 0.95, 0.06], [0.68, 0.86, 0.16]],   // braço para o lado, mão aberta
+  alto: [[0.46, 1.18, 0.02], [0.52, 1.42, 0.08]],        // braço para cima
+  frente: [[0.38, 0.84, 0.16], [0.32, 0.86, 0.4]],       // punho para a frente
+};
+// Onde fica a mão numa pose (lado 1 = direito, -1 = esquerdo); dy sobe um pouco (para o efeito ficar em cima da mão)
+const M = (pose, lado = 1, dy = 0.08) => { const h = POSES[pose][1]; return [lado * h[0], h[1] + dy, h[2]]; };
+// Um "osso" (caixa comprida) de um ponto a outro: braços com cotovelo
+const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _cima = new THREE.Vector3(0, 1, 0), _qo = new THREE.Quaternion(), _eo = new THREE.Euler();
+function osso(g, a, b, grossura, cor) {
+  _a.set(...a); _b.set(...b).sub(_a);
+  const len = _b.length();
+  _qo.setFromUnitVectors(_cima, _b.clone().normalize());
+  _eo.setFromQuaternion(_qo);
+  peca(g, caixa(grossura, len + grossura * 0.4, grossura), cor, [_a.x + _b.x / 2, _a.y + _b.y / 2, _a.z + _b.z / 2], [_eo.x, _eo.y, _eo.z]);
+}
 // cabelo em rabo de cavalo (do alto da cabeça para trás e para baixo)
 function rabo(g, cor, anel, n = 5, longo = 1) {
   peca(g, caixa(0.12, 0.12, 0.12), anel, [0, 1.52, -0.18]);
@@ -182,7 +201,7 @@ function rabo(g, cor, anel, n = 5, longo = 1) {
 const VISUAL = {
   // ---------- os treinadores da Vila das Cinzas (pela arte do Lâmina) ----------
   // Sandy (Luz): cabelo branco em rabo de cavalo, jaqueta branca e dourada, top azul, saia e botas brancas
-  sandy: { roupa: '#3d8fd0', manga: '#f4f2ee', calca: '#a8703e', bota: '#f4f2ee', botaAlta: true, cinto: '#3a6aa0', pele: '#a8703e', olho: '#ffc93a', olhoBrilha: true, luva: '#2a2a33',
+  sandy: { pose: ['estendido', 'cintura'], sob: '#c8c8d0', roupa: '#3d8fd0', manga: '#f4f2ee', calca: '#a8703e', bota: '#f4f2ee', botaAlta: true, cinto: '#3a6aa0', pele: '#a8703e', olho: '#ffc93a', olhoBrilha: true, luva: '#2a2a33',
     extra(g) {
       for (const s of [-1, 1]) { peca(g, caixa(0.14, 0.42, 0.06), '#f4f2ee', [s * 0.19, 0.86, 0.16]); peca(g, caixa(0.03, 0.42, 0.065), '#d8b040', [s * 0.11, 0.86, 0.165]); }
       for (const s of [-1, 1]) brilho(g, new THREE.OctahedronGeometry(0.11), '#d8f0ff', [s * 0.32, 1.06, 0]);
@@ -190,10 +209,10 @@ const VISUAL = {
       peca(g, caixa(0.55, 0.04, 0.35), '#d8b040', [0, 0.31, 0]);
       peca(g, ico(0.265, 1), '#e8e8f0', [0, 1.34, -0.04]);
       rabo(g, '#e8e8f0', '#d8b040', 6, 1.1);
-      brilho(g, new THREE.OctahedronGeometry(0.1), '#fff2a0', [0.42, 0.72, 0.12]);
+      brilho(g, new THREE.OctahedronGeometry(0.1), '#fff2a0', M('estendido', 1, 0.12));
     } },
   // Brawn (Terra): bandana vermelha, barba, poncho cinza, camiseta mostarda, calça escura e botas marrons
-  brawn: { roupa: '#d8a040', manga: '#d8a040', calca: '#34343a', bota: '#8a4a2a', botaAlta: true, cinto: '#6a4a2a', pele: '#c98f62', olho: '#3a2a1e', luva: '#3a2a22',
+  brawn: { pose: ['estendido', 'baixo'], roupa: '#d8a040', manga: '#d8a040', calca: '#34343a', bota: '#8a4a2a', botaAlta: true, cinto: '#6a4a2a', pele: '#c98f62', olho: '#3a2a1e', luva: '#3a2a22',
     extra(g) {
       peca(g, caixa(0.6, 0.3, 0.38), '#8a8a90', [0, 0.92, 0], [0, 0, 0]); // poncho
       peca(g, cone(0.36, 0.3, 4), '#8a8a90', [0, 0.65, 0.02], [Math.PI, Math.PI / 4, 0]);
@@ -203,11 +222,10 @@ const VISUAL = {
       peca(g, caixa(0.53, 0.07, 0.53), '#c8402a', [0, 1.4, -0.02]); // bandana
       peca(g, caixa(0.06, 0.2, 0.04), '#c8402a', [0.08, 1.33, -0.29], [0.4, 0, 0.3]);
       peca(g, caixa(0.3, 0.12, 0.08), '#3a2a1e', [0, 1.13, 0.2]); // barba
-      for (let i = 0; i < 3; i++) peca(g, ico(0.07, 0), '#7a6a5a', [0.38 + i * 0.06, 0.9 + i * 0.16, 0.1]);
-      brilho(g, new THREE.OctahedronGeometry(0.07), '#ffb020', [0.45, 1.25, 0.1]);
+      { const [x, y, z] = M('estendido'); for (let i = 0; i < 3; i++) peca(g, ico(0.07, 0), '#7a6a5a', [x - 0.1 + i * 0.1, y + 0.08 + (i % 2) * 0.12, z]); brilho(g, new THREE.OctahedronGeometry(0.07), '#ffb020', [x, y + 0.32, z]); }
     } },
   // Blaze (Raio): jaqueta preta e amarela, visor amarelo, fones, calça preta com faixas e botas de sola amarela
-  blaze: { roupa: '#1e1e24', manga: '#1e1e24', calca: '#1e1e24', bota: '#141418', botaAlta: true, cinto: '#3a3a40', pele: '#6a4630', olho: '#2a1a10', colete: '#2fc8d8',
+  blaze: { pose: ['estendido', 'frente'], roupa: '#1e1e24', manga: '#1e1e24', calca: '#1e1e24', bota: '#141418', botaAlta: true, cinto: '#3a3a40', pele: '#6a4630', olho: '#2a1a10', colete: '#2fc8d8',
     extra(g) {
       for (const s of [-1, 1]) { peca(g, caixa(0.05, 0.5, 0.31), '#ffd23f', [s * 0.25, 0.8, 0]); peca(g, caixa(0.14, 0.05, 0.16), '#ffd23f', [s * 0.35, 0.58, 0]); peca(g, caixa(0.21, 0.04, 0.27), '#ffd23f', [s * 0.12, 0.02, 0.03]); peca(g, caixa(0.19, 0.04, 0.21), '#9a9aa0', [s * 0.12, 0.3, 0]); }
       peca(g, caixa(0.52, 0.18, 0.12), '#ffd23f', [0, 1.06, -0.1], [-0.3, 0, 0]); // gola
@@ -215,40 +233,40 @@ const VISUAL = {
       for (let i = 0; i < 5; i++) peca(g, cone(0.07, 0.18, 4), '#141418', [-0.16 + i * 0.08, 1.56, 0], [-0.2, 0, (i - 2) * 0.25]);
       brilho(g, caixa(0.42, 0.08, 0.06), '#ffe040', [0, 1.38, 0.2]); // visor
       peca(g, new THREE.TorusGeometry(0.16, 0.035, 4, 10), '#5a5a64', [0, 1.06, 0.05], [Math.PI / 2, 0, 0]); // fones no pescoço
-      for (let i = 0; i < 3; i++) brilho(g, new THREE.OctahedronGeometry(0.06), i % 2 ? '#7ae8ff' : '#fff27a', [-0.42 - i * 0.05, 0.62 + i * 0.1, 0.12]);
+      { const [x, y, z] = M('frente', -1); for (let i = 0; i < 4; i++) brilho(g, new THREE.OctahedronGeometry(0.06), i % 2 ? '#7ae8ff' : '#fff27a', [x + Math.cos(i * 1.6) * 0.14, y + Math.sin(i * 1.6) * 0.14, z]); }
     } },
   // Sotty (Água): cabelo azul curto, colete azul-marinho, camiseta branca, shorts, tênis vermelhos e mochila
-  sotty: { roupa: '#f4f4f4', manga: '#b88458', calca: '#b88458', bota: '#e8604a', cinto: '#3a3e48', pele: '#b88458', olho: '#7a3a10', colete: '#2a4a9a', luva: '#b88458',
+  sotty: { pose: ['estendido', 'estendido'], roupa: '#f4f4f4', manga: '#b88458', calca: '#b88458', bota: '#e8604a', cinto: '#3a3e48', pele: '#b88458', olho: '#7a3a10', colete: '#2a4a9a', luva: '#b88458',
     extra(g) {
       for (const s of [-1, 1]) peca(g, caixa(0.16, 0.5, 0.32), '#2a4a9a', [s * 0.18, 0.78, 0]);
       peca(g, caixa(0.48, 0.2, 0.3), '#3a3e48', [0, 0.42, 0]); // shorts
       peca(g, caixa(0.36, 0.44, 0.18), '#3a8ac0', [0, 0.82, -0.24]); // mochila
       peca(g, ico(0.28, 1), '#2a9ab0', [0, 1.34, -0.04]);
       for (const s of [-1, 1]) peca(g, caixa(0.1, 0.24, 0.3), '#2a9ab0', [s * 0.24, 1.22, -0.02]);
-      brilho(g, caixa(0.14, 0.08, 0.15), '#40e0ff', [0.36, 0.6, 0]); // pulseira
-      brilho(g, new THREE.TorusGeometry(0.3, 0.04, 4, 12), '#a8e8ff', [0.5, 0.75, 0.1], [0.3, 0.6, 0]);
+      brilho(g, caixa(0.1, 0.1, 0.1), '#40e0ff', M('estendido', 1, -0.02)); // pulseira
+      brilho(g, new THREE.TorusGeometry(0.3, 0.04, 4, 12), '#a8e8ff', M('estendido', 1, 0.05), [0.3, 0.6, 0]);
     } },
   // ---------- os treinadores da Vila da Areia (pela arte do Lâmina) ----------
   // Nicky (Trevas): casaco longo preto e roxo, cabelo preto com mechas roxas, olhos roxos e uma esfera de trevas
-  nicky: { roupa: '#1c1822', manga: '#24202c', calca: '#18161e', bota: '#141218', botaAlta: true, cinto: '#5a2a8a', pele: '#e8c8b0', olho: '#b060ff', olhoBrilha: true, luva: '#141218',
+  nicky: { pose: ['estendido', 'cintura'], roupa: '#1c1822', manga: '#24202c', calca: '#18161e', bota: '#141218', botaAlta: true, cinto: '#5a2a8a', pele: '#e8c8b0', olho: '#b060ff', olhoBrilha: true, luva: '#141218',
     extra(g) {
       casacoLongo(g, '#24202c', '#8a3ad0', 0.95);
       peca(g, ico(0.27, 1), '#141218', [0, 1.36, -0.04]);
       for (let i = 0; i < 4; i++) peca(g, cone(0.07, 0.24, 4), i === 1 ? '#7a3ab8' : '#141218', [-0.14 + i * 0.09, 1.44, 0.14], [0.9, 0, (i - 1.5) * 0.25]); // franja
       brilho(g, new THREE.OctahedronGeometry(0.05), '#d0d0e0', [0, 0.52, 0.17]); // meia-lua no cinto
-      brilho(g, ico(0.13, 1), '#a040ff', [0.42, 0.95, 0.1]);
+      brilho(g, ico(0.13, 1), '#a040ff', M('estendido', 1, 0.18));
     } },
   // Rony (Fogo): cabelo vermelho espetado, jaqueta vermelha, laranja e preta, calça preta e tênis vermelhos, punhos em chamas
-  rony: { roupa: '#1e1a1e', manga: '#c8302a', calca: '#1e1a1e', bota: '#c8302a', cinto: '#3a3a3a', pele: '#b07850', olho: '#ff9a2a', luva: '#d8c8b0',
+  rony: { pose: ['frente', 'frente'], roupa: '#1e1a1e', manga: '#c8302a', calca: '#1e1a1e', bota: '#c8302a', cinto: '#3a3a3a', pele: '#b07850', olho: '#ff9a2a', luva: '#d8c8b0',
     extra(g) {
       for (const s of [-1, 1]) { peca(g, caixa(0.17, 0.52, 0.33), '#c8302a', [s * 0.18, 0.8, 0]); peca(g, caixa(0.04, 0.5, 0.335), '#ff8a2a', [s * 0.1, 0.8, 0]); peca(g, caixa(0.21, 0.05, 0.27), '#141414', [s * 0.12, 0.03, 0.03]); }
       peca(g, caixa(0.52, 0.16, 0.12), '#ff8a2a', [0, 1.06, -0.1], [-0.3, 0, 0]); // gola
       peca(g, ico(0.25, 1), '#8a1a2a', [0, 1.36, -0.05]);
       for (let i = 0; i < 6; i++) peca(g, cone(0.07, 0.26, 4), i % 2 ? '#c83a2a' : '#8a1a2a', [-0.15 + i * 0.06, 1.56, -0.02 - (i % 2) * 0.06], [-0.3, 0, (i - 2.5) * 0.2]);
-      for (const s of [-1, 1]) brilho(g, cone(0.1, 0.26, 4), '#ff8a2a', [s * 0.38, 0.52, 0.05]);
+      for (const s of [-1, 1]) brilho(g, cone(0.11, 0.3, 4), '#ff8a2a', M('frente', s, 0.12));
     } },
   // Jean (Água): cabelo castanho com pontas azuis, jaqueta branca e azul-piscina, bermuda cinza, tênis azuis e mochila
-  jean: { roupa: '#a8e0e8', manga: '#2ab8c8', calca: '#b07a50', bota: '#2a8ac8', cinto: '#2a3a6a', pele: '#b07a50', olho: '#2a6ac8', luva: '#b07a50',
+  jean: { pose: ['estendido', 'baixo'], roupa: '#a8e0e8', manga: '#2ab8c8', calca: '#b07a50', bota: '#2a8ac8', cinto: '#2a3a6a', pele: '#b07a50', olho: '#2a6ac8', luva: '#b07a50',
     extra(g) {
       for (const s of [-1, 1]) { peca(g, caixa(0.16, 0.54, 0.33), '#f2f2f2', [s * 0.18, 0.79, 0]); peca(g, caixa(0.04, 0.54, 0.335), '#2a3a6a', [s * 0.1, 0.79, 0]); }
       peca(g, caixa(0.46, 0.28, 0.3), '#5a5a62', [0, 0.38, 0]); // bermuda
@@ -256,10 +274,10 @@ const VISUAL = {
       peca(g, ico(0.27, 1), '#8a5a30', [0, 1.36, -0.04]);
       for (let i = 0; i < 5; i++) peca(g, cone(0.07, 0.2, 4), i % 2 ? '#2ab8c8' : '#8a5a30', [-0.16 + i * 0.08, 1.5, -0.12], [-0.6, 0, (i - 2) * 0.35]);
       brilho(g, new THREE.OctahedronGeometry(0.04), '#40e0ff', [0, 1.0, 0.17]); // colar
-      brilho(g, new THREE.TorusGeometry(0.28, 0.04, 4, 12), '#a8e8ff', [0.5, 0.78, 0.1], [0.3, 0.6, 0]);
+      brilho(g, new THREE.TorusGeometry(0.28, 0.04, 4, 12), '#a8e8ff', M('estendido', 1, 0.05), [0.3, 0.6, 0]);
     } },
   // Nando (Planta): bandana verde com folhas, colete verde com bolsos, camisa creme, calça cáqui, botas verdes e bolsa de poções
-  nando: { roupa: '#ece2c8', manga: '#ece2c8', calca: '#9a8460', bota: '#4a7a3a', botaAlta: true, cinto: '#5a3a24', pele: '#6a4430', olho: '#2a7a3a', luva: '#6a4a2a', colete: '#c8b48a',
+  nando: { pose: ['estendido', 'frente'], roupa: '#ece2c8', manga: '#ece2c8', calca: '#9a8460', bota: '#4a7a3a', botaAlta: true, cinto: '#5a3a24', pele: '#6a4430', olho: '#2a7a3a', luva: '#6a4a2a', colete: '#c8b48a',
     extra(g) {
       for (const s of [-1, 1]) peca(g, caixa(0.16, 0.5, 0.33), '#4a8a3a', [s * 0.18, 0.79, 0]);
       peca(g, caixa(0.06, 0.62, 0.34), '#6a4a2a', [0.02, 0.8, 0], [0, 0, -0.6]); // alça da bolsa
@@ -269,10 +287,10 @@ const VISUAL = {
       for (let i = 0; i < 5; i++) peca(g, cil(0.035, 0.035, 0.2, 4), '#4a2a1a', [-0.14 + i * 0.07, 1.5, -0.08], [0.3, 0, (i - 2) * 0.3]);
       peca(g, caixa(0.53, 0.08, 0.53), '#6a9a3a', [0, 1.42, -0.02]); // bandana
       for (const s of [-1, 1]) peca(g, cone(0.05, 0.16, 3), '#5ac04a', [s * 0.18, 1.5, 0.2], [0.4, 0, s * 0.5]);
-      brilho(g, cone(0.06, 0.16, 3), '#90ff70', [-0.4, 0.95, 0.12]); // o brotinho na mão
+      brilho(g, cone(0.06, 0.18, 3), '#90ff70', M('frente', -1, 0.12)); // o brotinho na mão
     } },
   // Pedro (Terra, o Campeão): moicano preto, cavanhaque, regata cinza, ombreira de pedra, calça oliva, joelheiras e botas de armadura
-  pedro: { roupa: '#6a6a70', manga: '#b07a50', calca: '#5a5a3a', bota: '#8a8a90', botaAlta: true, cinto: '#6a4a2a', pele: '#b07a50', olho: '#2a2018', luva: '#7a4a2a',
+  pedro: { pose: ['frente', 'frente'], roupa: '#6a6a70', manga: '#b07a50', calca: '#5a5a3a', bota: '#8a8a90', botaAlta: true, cinto: '#6a4a2a', pele: '#b07a50', olho: '#2a2018', luva: '#7a4a2a',
     extra(g) {
       peca(g, caixa(0.3, 0.22, 0.4), '#7a7a80', [-0.3, 1.08, 0], [0, 0, 0.3]); // ombreira de pedra
       peca(g, caixa(0.2, 0.12, 0.3), '#b0603a', [-0.36, 0.98, 0]);
@@ -286,7 +304,7 @@ const VISUAL = {
     } },
   // ---------- os treinadores da Vila das Marés (pela arte do Lâmina) ----------
   // Karah (Fogo): cachos pretos com contas douradas, top vermelho, capa laranja, braceletes de ouro e anéis de fogo
-  karah: { roupa: '#a82a2a', manga: '#7a4a30', calca: '#8a5a38', bota: '#5a3a24', botaAlta: true, cinto: '#8a8a90', pele: '#7a4a30', olho: '#ffb030', olhoBrilha: true, luva: '#7a4a30',
+  karah: { pose: ['alto', 'estendido'], roupa: '#a82a2a', manga: '#7a4a30', calca: '#8a5a38', bota: '#5a3a24', botaAlta: true, cinto: '#8a8a90', pele: '#7a4a30', olho: '#ffb030', olhoBrilha: true, luva: '#7a4a30',
     extra(g) {
       peca(g, caixa(0.5, 0.2, 0.31), '#7a4a30', [0, 0.62, 0]); // a barriga de fora
       peca(g, caixa(0.52, 0.66, 0.06), '#e0602a', [0, 0.78, -0.2], [-0.12, 0, 0]); // capa
@@ -295,10 +313,11 @@ const VISUAL = {
       peca(g, ico(0.27, 1), '#141414', [0, 1.36, -0.05]);
       for (let i = 0; i < 7; i++) peca(g, ico(0.09, 0), '#141414', [-0.2 + (i % 4) * 0.13, 1.12 - Math.floor(i / 4) * 0.12, -0.2 - (i % 2) * 0.04]);
       brilho(g, ico(0.04), '#d8b040', [0.12, 1.5, 0.1]);
-      for (const s of [-1, 1]) brilho(g, new THREE.TorusGeometry(0.24, 0.05, 4, 12), '#ff9a2a', [s * 0.5, 0.75, 0.08], [0.2, s * 0.8, 0]);
+      brilho(g, new THREE.TorusGeometry(0.24, 0.05, 4, 12), '#ff9a2a', M('alto', 1, 0.1), [0.2, 0.8, 0]);
+      brilho(g, new THREE.TorusGeometry(0.24, 0.05, 4, 12), '#ff9a2a', M('estendido', -1, 0.05), [0.2, -0.8, 0]);
     } },
   // Angelica (Fogo): cabelo loiro preso com grampos vermelhos, casaco branco com vermelho e dourado, leque e uma espiral de fogo
-  angelica: { roupa: '#3a1a22', manga: '#efe6d2', calca: '#efe6d2', bota: '#4a2030', botaAlta: true, cinto: '#5a2a2a', pele: '#f2d8c8', olho: '#5a9a3a', luva: '#3a1a22',
+  angelica: { pose: ['estendido', 'frente'], roupa: '#3a1a22', manga: '#efe6d2', calca: '#efe6d2', bota: '#4a2030', botaAlta: true, cinto: '#5a2a2a', pele: '#f2d8c8', olho: '#5a9a3a', luva: '#3a1a22',
     extra(g) {
       casacoLongo(g, '#efe6d2', '#b82a3a', 0.95);
       for (const s of [-1, 1]) peca(g, caixa(0.16, 0.06, 0.2), '#d8b040', [s * 0.3, 1.05, 0]); // dragonas
@@ -307,11 +326,11 @@ const VISUAL = {
       peca(g, ico(0.14, 1), '#f0e0a8', [0, 1.58, -0.08]); // o coque
       for (const s of [-1, 1]) peca(g, caixa(0.03, 0.18, 0.03), '#c82a3a', [s * 0.06, 1.66, -0.08], [0, 0, s * 0.4]);
       peca(g, caixa(0.46, 0.6, 0.1), '#f0e0a8', [0, 1.06, -0.2]); // o cabelo comprido atrás
-      peca(g, new THREE.CircleGeometry(0.28, 7, 0, Math.PI), '#e8dcc0', [-0.2, 0.92, 0.22], [0, 0, 0], 'duplo'); // o leque
-      brilho(g, new THREE.TorusGeometry(0.22, 0.05, 4, 10, Math.PI * 1.5), '#ffd070', [0.5, 0.95, 0.1], [0.3, 0.7, 0]);
+      peca(g, new THREE.CircleGeometry(0.28, 7, 0, Math.PI), '#e8dcc0', M('frente', -1, 0.12), [0, 0, 0], 'duplo'); // o leque
+      brilho(g, new THREE.TorusGeometry(0.22, 0.05, 4, 10, Math.PI * 1.5), '#ffd070', M('estendido', 1, 0.16), [0.3, 0.7, 0]);
     } },
   // Lanny (Raio): cabelo branco com mechas roxas, jaqueta branca e roxa, blusa e meias listradas, saia roxa e fones
-  lanny: { roupa: '#f2eef6', manga: '#8a3ad0', calca: '#8a3ad0', bota: '#f2eef6', botaAlta: true, cinto: '#f2eef6', pele: '#f0d0c0', olho: '#a050e0', luva: '#f2eef6',
+  lanny: { pose: ['alto', 'cintura'], sob: '#c8c8d0', roupa: '#f2eef6', manga: '#8a3ad0', calca: '#8a3ad0', bota: '#f2eef6', botaAlta: true, cinto: '#f2eef6', pele: '#f0d0c0', olho: '#a050e0', luva: '#f2eef6',
     extra(g) {
       for (let i = 0; i < 3; i++) peca(g, caixa(0.505, 0.06, 0.305), '#8a3ad0', [0, 0.62 + i * 0.13, 0]); // listras da blusa
       for (const s of [-1, 1]) { peca(g, caixa(0.15, 0.5, 0.33), '#f2eef6', [s * 0.18, 0.82, 0]); for (let i = 0; i < 3; i++) peca(g, caixa(0.19, 0.05, 0.21), '#f2eef6', [s * 0.12, 0.2 + i * 0.1, 0]); }
@@ -319,10 +338,10 @@ const VISUAL = {
       peca(g, ico(0.265, 1), '#f4f4f8', [0, 1.36, -0.04]);
       peca(g, caixa(0.18, 0.26, 0.08), '#8a3ad0', [-0.12, 1.32, 0.2], [0, 0, 0.3]); // franja roxa
       peca(g, new THREE.TorusGeometry(0.16, 0.035, 4, 10), '#f2eef6', [0, 1.06, 0.05], [Math.PI / 2, 0, 0]); // fones
-      for (let i = 0; i < 3; i++) brilho(g, new THREE.OctahedronGeometry(0.06), '#d080ff', [0.42 + i * 0.05, 0.75 + i * 0.12, 0.12]);
+      { const [x, y, z] = M('alto'); for (let i = 0; i < 4; i++) brilho(g, new THREE.OctahedronGeometry(0.06), '#d080ff', [x + (i % 2 ? 0.08 : -0.06), y + 0.06 + i * 0.12, z]); }
     } },
   // Ilia (Trevas): cabelo preto e vinho, capa com capuz e estrelas roxas, roupa preta, braceletes, frascos e adagas
-  ilia: { roupa: '#24202a', manga: '#e8c8b8', calca: '#18161c', bota: '#1e1a22', botaAlta: true, cinto: '#5a3a2a', pele: '#e8c8b8', olho: '#c8b0f0', luva: '#5a3a2a',
+  ilia: { pose: ['estendido', 'baixo'], roupa: '#24202a', manga: '#e8c8b8', calca: '#18161c', bota: '#1e1a22', botaAlta: true, cinto: '#5a3a2a', pele: '#e8c8b8', olho: '#c8b0f0', luva: '#5a3a2a',
     extra(g) {
       peca(g, caixa(0.62, 0.95, 0.06), '#1e1a24', [0, 0.62, -0.2], [-0.1, 0, 0]); // a capa
       for (let i = 0; i < 4; i++) brilho(g, ico(0.025), '#c080ff', [-0.2 + i * 0.13, 0.4 + (i % 2) * 0.3, -0.24]); // estrelas da capa
@@ -330,10 +349,11 @@ const VISUAL = {
       for (let i = 0; i < 3; i++) brilho(g, cil(0.035, 0.035, 0.1, 5), '#b050ff', [-0.15 + i * 0.12, 0.52, 0.17]);
       peca(g, ico(0.27, 1), '#2a1418', [0, 1.36, -0.04]);
       for (let i = 0; i < 4; i++) peca(g, cone(0.08, 0.3, 4), i % 2 ? '#7a1a2a' : '#2a1418', [-0.2 + i * 0.13, 1.18, -0.1], [Math.PI, 0, (i - 1.5) * 0.3]);
-      for (const s of [-1, 1]) peca(g, caixa(0.04, 0.24, 0.04), '#c8c8d0', [s * 0.38, 0.38, 0.06], [0.3, 0, 0]); // adagas
+      peca(g, caixa(0.04, 0.28, 0.04), '#c8c8d0', M('estendido', 1, 0.08), [0, 0, -1.2]); peca(g, caixa(0.04, 0.24, 0.04), '#c8c8d0', M('baixo', -1, -0.1), [0.3, 0, 0]); // adagas
+      for (let i = 0; i < 3; i++) brilho(g, new THREE.OctahedronGeometry(0.05), '#b050ff', [0.82 + i * 0.1, 0.96 - i * 0.05, 0.2]);
     } },
   // Serena (Água, a Campeã): tranças azuis com conchas, blusa azul e branca, leggings azul-marinho, faixa turquesa e botas brancas
-  serena: { roupa: '#5aa8e0', manga: '#a06a44', calca: '#1e2a5a', bota: '#f2f2f2', botaAlta: true, cinto: '#2ac0c0', pele: '#a06a44', olho: '#40b0ff', olhoBrilha: true, luva: '#a06a44',
+  serena: { pose: ['estendido', 'estendido'], roupa: '#5aa8e0', manga: '#a06a44', calca: '#1e2a5a', bota: '#f2f2f2', botaAlta: true, cinto: '#2ac0c0', pele: '#a06a44', olho: '#40b0ff', olhoBrilha: true, luva: '#a06a44',
     extra(g) {
       peca(g, caixa(0.06, 0.56, 0.31), '#f2f2f2', [0.08, 0.77, 0], [0, 0, 0.5]); // faixa branca na blusa
       peca(g, caixa(0.5, 0.3, 0.32), '#5aa8e0', [0, 0.42, 0]); // a túnica
@@ -341,17 +361,17 @@ const VISUAL = {
       peca(g, ico(0.27, 1), '#1a2a6a', [0, 1.36, -0.04]);
       for (let i = 0; i < 6; i++) peca(g, cil(0.045, 0.035, 0.5, 4), '#1a2a6a', [-0.2 + i * 0.08, 1.02, -0.2], [0.2, 0, (i - 2.5) * 0.08]);
       for (let i = 0; i < 3; i++) peca(g, ico(0.04), '#f8f0e0', [-0.15 + i * 0.15, 1.22, -0.22]); // conchas
-      brilho(g, new THREE.TorusGeometry(0.3, 0.04, 4, 12), '#a8e8ff', [0.5, 0.85, 0.1], [0.3, 0.6, 0]);
-      brilho(g, new THREE.TorusGeometry(0.26, 0.04, 4, 12), '#a8e8ff', [-0.45, 0.6, 0.1], [0.5, -0.6, 0]);
+      brilho(g, new THREE.TorusGeometry(0.3, 0.04, 4, 12), '#a8e8ff', M('estendido', 1, 0.08), [0.3, 0.6, 0]);
+      brilho(g, new THREE.TorusGeometry(0.26, 0.04, 4, 12), '#a8e8ff', M('estendido', -1, 0.04), [0.5, -0.6, 0]);
     } },
   // Saphira (Fogo, a Campeã): trança vermelha longa, jaqueta vermelha e preta com chamas, gola de pelo, calça oliva
-  saphira: { roupa: '#1e1a1a', manga: '#c8302a', calca: '#6a6a3a', bota: '#1e1a1a', botaAlta: true, cinto: '#6a4a2a', pele: '#d8a070', olho: '#ff9a2a', olhoBrilha: true, luva: '#5a2a1a',
+  saphira: { pose: ['estendido', 'baixo'], roupa: '#1e1a1a', manga: '#c8302a', calca: '#6a6a3a', bota: '#1e1a1a', botaAlta: true, cinto: '#6a4a2a', pele: '#d8a070', olho: '#ff9a2a', olhoBrilha: true, luva: '#5a2a1a',
     extra(g) {
       for (const s of [-1, 1]) { peca(g, caixa(0.17, 0.4, 0.33), '#c8302a', [s * 0.18, 0.87, 0]); brilho(g, cone(0.05, 0.16, 4), '#ff8a2a', [s * 0.33, 0.85, 0.08]); peca(g, caixa(0.18, 0.12, 0.2), '#8a8a8a', [s * 0.12, 0.25, 0.1]); }
       peca(g, caixa(0.56, 0.14, 0.36), '#f2ece0', [0, 1.08, 0]); // gola de pelo
       peca(g, ico(0.26, 1), '#a02040', [0, 1.35, -0.05]);
       rabo(g, '#a02040', '#d8b040', 8, 1.15);
-      brilho(g, new THREE.TorusGeometry(0.28, 0.06, 4, 12), '#ffa030', [0.52, 0.8, 0.1], [0.2, 0.8, 0]);
+      brilho(g, new THREE.TorusGeometry(0.28, 0.06, 4, 12), '#ffa030', M('estendido', 1, 0.1), [0.2, 0.8, 0]);
       brilho(g, cone(0.06, 0.14, 4), '#ff5a1a', [0.2, 0.5, 0.17]); // chaveiro de chama
     } },
 
@@ -400,22 +420,49 @@ const VISUAL = {
       brilho(g, ico(0.13), '#7ae08a', [0.4, 0.5, 0.08]);
     } },
 };
+// O boneco do treinador (estilo de desenho: cabeça grande, rosto, braços com cotovelo e uma pose).
+// O que é de cada um (cabelo, casaco, efeitos) fica no "extra" do VISUAL.
 export function desenharTreinador(pai, id, pos, rotY) {
   const c = VISUAL[id], g = new THREE.Group();
   g.position.set(pos[0], pos[1], pos[2]); g.rotation.y = rotY; pai.add(g);
+  const [poseDir, poseEsq] = c.pose || ['baixo', 'baixo'];
   for (const s of [-1, 1]) {
-    peca(g, caixa(0.18, 0.48, 0.2), c.calca, [s * 0.12, 0.26, 0]);
-    peca(g, caixa(0.2, 0.14, 0.26), c.bota, [s * 0.12, 0.07, 0.03]);
-    if (c.botaAlta) peca(g, caixa(0.2, 0.3, 0.22), c.bota, [s * 0.12, 0.17, 0]);
-    peca(g, caixa(0.13, 0.46, 0.15), c.manga, [s * 0.33, 0.78, 0], [0, 0, s * 0.12]);
-    peca(g, caixa(0.12, 0.1, 0.13), c.luva || c.pele, [s * 0.36, 0.52, 0]);
+    // pernas: coxa, joelho, canela e bota com bico
+    peca(g, caixa(0.19, 0.25, 0.21), c.calca, [s * 0.12, 0.38, 0]);
+    peca(g, caixa(0.17, 0.24, 0.19), c.botaAlta ? c.bota : c.calca, [s * 0.12, 0.17, 0]);
+    peca(g, caixa(0.2, 0.1, 0.3), c.bota, [s * 0.12, 0.05, 0.04]);
+    peca(g, caixa(0.18, 0.06, 0.08), c.bota, [s * 0.12, 0.04, 0.2]);
+    // braço: ombro, braço, antebraço (na pose) e a mão
+    const [cot, mao] = POSES[s > 0 ? poseDir : poseEsq].map(([x, y, z]) => [s * x, y, z]);
+    const ombro = [s * 0.29, 1.0, 0];
+    peca(g, ico(0.11, 0), c.manga, ombro);
+    osso(g, ombro, cot, 0.13, c.manga);
+    osso(g, cot, mao, 0.115, c.mangaCurta ? c.pele : c.manga);
+    peca(g, ico(0.075, 0), c.luva || c.pele, mao);
   }
+  // corpo: tronco, quadril, cinto e pescoço
   peca(g, caixa(0.5, 0.56, 0.3), c.roupa, [0, 0.77, 0]);
+  peca(g, caixa(0.44, 0.12, 0.27), c.calca, [0, 0.5, 0]);
   if (c.colete) peca(g, caixa(0.26, 0.5, 0.05), c.colete, [0, 0.76, 0.16]);
   peca(g, caixa(0.5, 0.06, 0.31), c.cinto, [0, 0.52, 0]);
+  peca(g, cil(0.075, 0.085, 0.12, 6), c.pele, [0, 1.08, 0]);
+  // cabeça e rosto: olhos (branco, cor e brilho), sobrancelhas e boca
   peca(g, ico(0.25, 1), c.pele, [0, 1.28, 0]);
-  for (const s of [-1, 1]) peca(g, caixa(0.06, 0.08, 0.04), c.olho, [s * 0.09, 1.3, 0.22], [0, 0, 0], c.olhoBrilha ? 'brilho' : 'normal');
+  for (const s of [-1, 1]) {
+    peca(g, caixa(0.085, 0.09, 0.02), '#fbfbf8', [s * 0.085, 1.29, 0.235]);
+    peca(g, caixa(0.05, 0.075, 0.02), c.olho, [s * 0.08, 1.285, 0.245], [0, 0, 0], c.olhoBrilha ? 'brilho' : 'normal');
+    peca(g, caixa(0.018, 0.018, 0.01), '#ffffff', [s * 0.07, 1.305, 0.256], [0, 0, 0], 'brilho');
+    peca(g, caixa(0.1, 0.022, 0.02), c.sob || '#2a1a14', [s * 0.088, 1.36, 0.235], [0, 0, s * -0.12]);
+  }
+  peca(g, caixa(0.07, 0.018, 0.02), '#8a3a3a', [0, 1.19, 0.238]);
   c.extra(g);
+  // estilo de desenho: a cabeça (e o cabelo, o chapéu, a coroa...) fica maior
+  const CAB = 1.18, K = 1.2;
+  for (const m of g.children) {
+    if (m.position.y <= 1.14 || Math.abs(m.position.x) > 0.36) continue; // (a mão levantada e os efeitos dela ficam onde estão)
+    m.position.set(m.position.x * K, CAB + (m.position.y - CAB) * K, m.position.z * K);
+    m.scale.multiplyScalar(K);
+  }
   return g;
 }
 

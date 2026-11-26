@@ -228,7 +228,8 @@ Mundo novo, passo 3 (`PLANO.md`). Cada bioma tem uma vila de **30 m de raio**, n
   | 5 | **Serena** (Campeã) | Água | Água, Aquaraia, Água + Fogo, Água · Nv.75 (forma final) | Nv.100 |
 
   Prêmios iguais aos da Vila das Cinzas (pela ordem).
-- - **Vencer o Campeão da vila** (1ª vez): você vira o novo campeão. Ganha o **título** ("Campeão da Vila da Areia"), **1.000 de ouro**, **1 ovo** e a vila passa a guardar **75 de ouro a cada 10 minutos de jogo** (até 300). Perder na arena: vocês acordam na fonte do castelo, curados.
+- - **Os bonecos dos treinadores** (os 5 do Reino e os das vilas) são feitos de peças por código, num estilo de desenho: cabeça maior, rosto com olhos, sobrancelhas e boca, braços com cotovelo e mãos, pernas com joelho, botas com bico e **uma pose para cada um** (pela arte do Lâmina: braço estendido, mão na cintura, braço para o alto ou punho para a frente), com o efeito (fogo, raio, água...) saindo da mão. Fica em `desenharTreinador`, `POSES` e `VISUAL` (`js/reino.js`); todas as peças viram poucas malhas.
+- **Vencer o Campeão da vila** (1ª vez): você vira o novo campeão. Ganha o **título** ("Campeão da Vila da Areia"), **1.000 de ouro**, **1 ovo** e a vila passa a guardar **75 de ouro a cada 10 minutos de jogo** (até 300). Perder na arena: vocês acordam na fonte do castelo, curados.
 - **O saquinho 💰** (embaixo do relógio): junta o ouro de Campeão do **Reino e de todas as vilas**. Mostra quanto já tem e quanto falta para o próximo; quando algum cofre enche (e para de juntar), ele **brilha dourado** com "Resgatar!". Toque nele em qualquer lugar para pegar tudo. (A fonte do castelo não entrega mais o ouro.)
 - **Títulos:** cada arena conquistada dá um título. Na **Bolsa**, seção Títulos, você escolhe qual usar; ele aparece na tela inicial, com o jogo salvo.
 - **Fica salvo** em `estado.vilas` (`vencidos`, `dominada` e `cofre` de cada vila) e `estado.titulo`.
