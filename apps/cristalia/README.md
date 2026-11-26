@@ -573,7 +573,7 @@ Sai da borda do mapa pela Floresta, seguindo as lanternas de flor (a direção d
 |---|---|---|
 | Reino | No meio do mapa: castelo, vila, loja, arena e os 5 portões | Ninguém (é seguro). Logo depois dos portões, o anel tranquilo (monstros fracos) |
 | Picos Nevados | **Gelo**: montanhas, pinheiros carregados de neve, rochas escuras com neve, rios e lagos congelados, o Acampamento do Gelo e o cristal de gelo gigante (veja "Bioma do Gelo") | Raio (Faisquinho), com relâmpagos; Luz de dia, Trevas à noite |
-| Floresta | Floresta: árvores, pinheiros, clareiras e morrinhos | Planta (Musguinho), Espinhal (raro); Luz de dia, Trevas à noite. Daqui sai a Trilha Ancestral |
+| Floresta | **Mata de Véu-Âmbar**: Carvalhos-Véu com cortinas de âmbar, freixos, salgueiros, samambaias, cogumelos ciano, a Catedral das Cortinas, as Pontes de Raiz e o Pântano das Lanternas Azuis (veja "Bioma da Floresta") | Planta (Musguinho), Espinhal (raro); Luz de dia, Trevas à noite. Daqui sai a Trilha Ancestral |
 | Deserto | Deserto: dunas, cânions, cactos, arco de pedra e oásis | Terra (Pedrisco); Sol de dia, Lua à noite |
 | Vulcão | **Vulcânico**: chão vulcânico, vulcão com cratera, rios de lava | Fogo (Brasito), Vulcarapa (raro); Sol de dia, Trevas à noite. Daqui sai o Caminho das Brasas |
 | Arquipélago | **Água**: quase todo água rasa (dá para andar, mais devagar), ilhas com palmeiras e canais fundos | Água (Gotinho), Aquaraia (raro); Luz de dia, Lua à noite |
@@ -597,6 +597,20 @@ O Gelo segue o guia e as artes do Lâmina: **paleta glacial com acentos âmbar**
 - **Leve no celular:** as peças comuns usam as mesmas formas que o mapa já tinha (não somam desenhos); cada área única vira 1 ou 2 malhas (cor nos vértices) e só é desenhada de perto; as luzes são **brilho falso** (pontos com uma textura redonda, sem luz de verdade). Medido na qualidade Médio: de +5 a +10 desenhos por quadro (no lago, até menos); na Fraco, quase igual.
 - **Código:** os lugares em `js/biomas/lugares.js` (`GELO`, `naTrilhaGelo`: só matemática, presos à semente, sem mexer no relevo, nos rios, nas vilas nem nas masmorras); as peças em `js/biomas/gelo.js` (`BiomaGelo`); os refúgios (`refugios`, `refugioEm`) e a cura da fogueira no `js/mundo.js`; a entrada da Gruta em `js/masmorras/gruta-trovao.js`. GM: teleporte **Acampamento do Gelo**.
 
+## Bioma da Floresta: Mata de Véu-Âmbar (o guia do Lâmina)
+
+Paleta do guia: âmbar `#D99B26`, musgo profundo `#1E3F35`, prata `#7A8489`, azul-petróleo `#2B4652` e ciano `#45C4B0`.
+
+- **Peças comuns** (nos chunks): **Carvalho-Véu** (casca prateada, raízes em contraforte, copa verde-musgo e cortinas de âmbar um pouco transparentes pingando dos galhos), **Freixo-Oco** (claro e esguio, com a fenda escura), **Salgueiro-Tanino** (perto da água, com fios de musgo), samambaias, pedras de ardósia com musgo, **Lanternas-do-Brejo** (cogumelos ciano que brilham mais à noite), **Fungos-Tambor** (bolas douradas) e troncos caídos. Chão de musgo com ardósia nas ladeiras e lama nas margens; rios e lagos com **água escura de tanino**.
+- **Catedral das Cortinas:** clareira com 7 Carvalhos-Véu colossais em roda, o **Observatório Submerso** (ruína circular de ardósia com raízes), blocos de âmbar com silhuetas, raios de sol (faixas de luz falsas, de dia) e névoa.
+- **Pontes de Raiz:** raízes vivas atravessando um rio, com Carvalhos-Véu nas margens.
+- **Pântano das Lanternas Azuis:** o maior lago da Floresta, com ilhotas de musgo, raízes em arco, troncos caídos, salgueiros e muitos cogumelos ciano (bonito à noite). O nome aparece na tela.
+- **No centro da Floresta** (onde sai a Trilha Ancestral): as 5 árvores gigantes viraram Carvalhos-Véu colossais e os cogumelos gigantes vermelhos e roxos viraram Lanternas-do-Brejo e Fungos-Tambor. A Trilha Ancestral (dungeon) não mudou.
+- **Árvores especiais** (as colossais e os salgueiros do pântano) ficam transparentes quando tampam a câmera.
+- **Clima:** névoa verde-azulada e sol dourado (o crepúsculo de mel e esmeralda do guia), misturando aos poucos na borda do bioma (`js/biomas/clima.js`).
+- **Leve no celular:** a Floresta ficou **mais leve que antes** (de 15 a 35 desenhos a menos por quadro), graças à etapa 0 (os objetos de cada chunk juntados numa malha só) e às partes pequenas que somem de longe.
+- **Código:** `js/biomas/floresta.js` (as peças e `BiomaFloresta`), os lugares em `FLORESTA` (`js/biomas/lugares.js`), as peças nos chunks (`pecaFloresta` e `corDaFloresta` no `js/mapa/chunks.js`) e o centro no `js/raizes.js`.
+
 ## Mapa procedural
 
 O mapa é **gerado por uma semente** (seed): um número que decide tudo (onde fica cada bioma, o relevo, os rios, os lagos, as árvores). A mesma semente sempre dá o mesmo mapa. **Todos os jogadores usam a mesma semente**: o mundo é um só para todos. O código fica em `js/mapa/`.
@@ -610,7 +624,7 @@ O mapa é **gerado por uma semente** (seed): um número que decide tudo (onde fi
 - **Pontos de interesse:** o vulcão com lava na cratera, o arco de pedra do Deserto, o oásis com palmeiras, o cristal de gelo gigante da Neve, os lugares fixos da Floresta, as entradas das duas dungeons e os 5 portões do Reino. Perto de alguns tem cristal escondido.
 - **Chunks:** o mapa é dividido em quadrados de **32 m**. Só os chunks perto de você existem na memória; os novos são criados aos poucos enquanto você anda (no máximo ~3 ms por quadro) e os que ficam longe são apagados.
 - **Leve no celular:**
-  - cada tipo de objeto (árvore, pedra, cacto...) é desenhado **num lote só por chunk** (InstancedMesh);
+  - todos os objetos de um chunk (árvores, pedras, cactos...) são **juntados numa malha só por material** (a cor de cada peça vai nos vértices): poucos desenhos por quadro;
   - o que está fora da tela não é desenhado;
   - os chunks longe têm o chão mais simples e não têm os objetos pequenos (LOD);
   - os cristais longe não são desenhados;
@@ -1080,6 +1094,9 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/mapa/gerador.js` | O gerador do mapa (só matemática): ruído com semente, biomas, altura do chão, rios, lagos, pontos de interesse, lugares da Floresta, direção das dungeons, os 5 caminhos do Reino e os lugares guardados (vilas e masmorras) e a Estrada Real |
 | `js/mapa/altura.js` | `alturaEm(x, z)`: a altura do chão igual aos triângulos desenhados (com as dungeons, a borda e as masmorras novas), e onde não dá para andar (lago fundo e lava) |
 | `js/biomas/lugares.js` | Onde ficam as peças únicas das melhorias dos biomas (Gelo: acampamento, trilha, lago, arco, fonte termal, floresta). Só matemática |
+| `js/biomas/comum.js` | As formas e ferramentas das melhorias dos biomas: o `Forno` (junta peças numa malha só), o brilho falso e as peças que ficam transparentes na frente da câmera |
+| `js/biomas/floresta.js` | A Floresta (Mata de Véu-Âmbar): as peças e a Catedral das Cortinas, as Pontes de Raiz e o Pântano das Lanternas Azuis |
+| `js/biomas/clima.js` | A cor do céu, da névoa e da luz de cada bioma |
 | `js/biomas/gelo.js` | As peças únicas do Gelo (`BiomaGelo`), o brilho falso, a neve caindo e o pinheiro nevado |
 | `js/mapa/chunks.js` | Os chunks: cria o chão, a água, a lava e os objetos de cada pedaço do mapa, carrega e apaga conforme você anda, e o LOD |
 | `js/mapa/grade.js` | Grade de obstáculos: guarda as árvores, pedras e peças em quadradinhos de 8 m, para a colisão só olhar o que está perto |

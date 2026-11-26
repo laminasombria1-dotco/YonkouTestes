@@ -1,0 +1,155 @@
+// =============================================================
+// PEÇAS E FERRAMENTAS COMUNS DAS MELHORIAS DOS BIOMAS
+//  - UNI: as formas básicas (tamanho 1), reaproveitadas por todos os biomas
+//    (e pelos chunks: mapa/chunks.js usa as mesmas formas).
+//  - Forno: junta muitas peças numa malha só por material (cor nos vértices):
+//    poucos desenhos por quadro, como o Bloco das masmorras.
+//  - Brilho falso: pontos com uma textura redonda e macia (sem luz de verdade).
+// Os tipos de material (a letra usada nas peças):
+//   n = normal · b = brilho total (janela, lanterna) · a = âmbar (meio transparente)
+//   c = ciano que brilha (cogumelos) · o = ouro · l = lápis-lazúli · t = turquesa · f = fogo
+// =============================================================
+import * as THREE from 'three';
+
+export const UNI = {
+  caixa: new THREE.BoxGeometry(1, 1, 1),
+  cil: new THREE.CylinderGeometry(0.5, 0.5, 1, 8),
+  cilF: new THREE.CylinderGeometry(0.32, 0.5, 1, 7),       // tronco que afina para cima
+  cil6: new THREE.CylinderGeometry(0.5, 0.5, 1, 6),
+  cone: new THREE.ConeGeometry(0.5, 1, 6),
+  cone4: new THREE.ConeGeometry(0.5, 1, 4),
+  pir: new THREE.ConeGeometry(0.5, 1, 4).rotateY(Math.PI / 4), // pirâmide (lados alinhados)
+  ico: new THREE.IcosahedronGeometry(0.5, 0),
+  esf: new THREE.IcosahedronGeometry(0.5, 1),
+  dode: new THREE.DodecahedronGeometry(0.5, 0),
+  meia: new THREE.SphereGeometry(0.5, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2), // chapéu de cogumelo
+  arco: new THREE.TorusGeometry(1, 0.13, 5, 12, Math.PI),                    // raiz em arco, costela
+  prisma: new THREE.CylinderGeometry(1, 1, 1, 3),
+  pinho: new THREE.ConeGeometry(1, 1, 6),
+  tronco: new THREE.CylinderGeometry(0.2, 0.28, 1, 5),
+  capitel: new THREE.CylinderGeometry(0.95, 0.45, 1, 10),                    // capitel de papiro (abre para cima)
+  torre: new THREE.CylinderGeometry(0.62, 0.88, 1, 4).rotateY(Math.PI / 4),  // torre que afina (pilone do templo)
+  obel: new THREE.CylinderGeometry(0.34, 0.5, 1, 4).rotateY(Math.PI / 4),    // obelisco
+};
+
+const lambert = (o) => new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, ...o });
+export const MAT_FORNO = {
+  n: lambert({}),
+  b: new THREE.MeshBasicMaterial({ vertexColors: true }),
+  // (a cor de base vem do material; as peças desses tipos usam cor branca nos vértices)
+  a: lambert({ color: '#e8a838', emissive: '#d99b26', emissiveIntensity: 0.55, transparent: true, opacity: 0.78 }),
+  c: lambert({ color: '#9ff0e0', emissive: '#45c4b0', emissiveIntensity: 0.8 }),
+  o: lambert({ color: '#f2c040', emissive: '#f2a922', emissiveIntensity: 0.55 }),
+  l: lambert({ color: '#2f6fa8', emissive: '#215e8c', emissiveIntensity: 0.45 }),
+  t: lambert({ color: '#5fd8c8', emissive: '#3ab5a8', emissiveIntensity: 0.8 }),
+  f: lambert({ color: '#ffb040', emissive: '#ff6a10', emissiveIntensity: 1 }),
+};
+for (const m of Object.values(MAT_FORNO)) m.userData.fixo = true;
+
+const SEM_INDICE = new Map();
+export const semIndice = (g) => { if (!SEM_INDICE.has(g)) SEM_INDICE.set(g, g.index ? g.toNonIndexed() : g); return SEM_INDICE.get(g); };
+
+// Junta peças numa malha só por material. As rotações usam a ordem YXZ: a peça
+// inclina (rx, rz) e depois gira em volta do eixo de pé (ry).
+export class Forno {
+  constructor() { this.l = {}; }
+  add(g, tipo, x, y, z, sx, sy, sz, rx = 0, ry = 0, rz = 0, cor = '#ffffff') { (this.l[tipo] ||= []).push([g, x, y, z, sx, sy, sz, rx, ry, rz, cor]); }
+  get vazio() { return !Object.keys(this.l).length; }
+  // clonar = true: cada material é copiado (para a peça poder ficar transparente sozinha)
+  montar(pai, clonar = false) {
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(0, 0, 0, 'YXZ'), v = new THREE.Vector3(), s = new THREE.Vector3(), c = new THREE.Color(), p = new THREE.Vector3();
+    const malhas = [], mats = [];
+    for (const [tipo, lista] of Object.entries(this.l)) {
+      let total = 0;
+      for (const it of lista) total += semIndice(UNI[it[0]]).attributes.position.count;
+      const pos = new Float32Array(total * 3), cor = new Float32Array(total * 3);
+      let o = 0;
+      for (const [g, x, y, z, sx, sy, sz, rx, ry, rz, hex] of lista) {
+        m4.compose(v.set(x, y, z), q.setFromEuler(e.set(rx, ry, rz, 'YXZ')), s.set(sx, sy, sz));
+        const a = semIndice(UNI[g]).attributes.position;
+        c.set(hex);
+        for (let k = 0; k < a.count; k++, o++) {
+          p.fromBufferAttribute(a, k).applyMatrix4(m4);
+          pos[o * 3] = p.x; pos[o * 3 + 1] = p.y; pos[o * 3 + 2] = p.z;
+          cor[o * 3] = c.r; cor[o * 3 + 1] = c.g; cor[o * 3 + 2] = c.b;
+        }
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      geo.setAttribute('color', new THREE.BufferAttribute(cor, 3));
+      geo.computeVertexNormals();
+      geo.computeBoundingSphere();
+      let mat = MAT_FORNO[tipo];
+      if (clonar) { mat = mat.clone(); mat.transparent = true; mat.userData.op0 = mat.opacity; mats.push(mat); }
+      const malha = new THREE.Mesh(geo, mat);
+      malha.matrixAutoUpdate = false;
+      pai.add(malha);
+      malhas.push(malha);
+    }
+    return { malhas, mats };
+  }
+}
+
+// Uma peça grande que fica transparente quando tampa a câmera (árvores gigantes).
+// Devolve { grupo, mats, op, x, z, alcance } no formato do desbotar() do dungeon.js.
+export function pecaDesbotavel(cena, fn, x, z, alcance) {
+  const f = new Forno(); fn(f.add.bind(f));
+  const grupo = new THREE.Group();
+  const { mats } = f.montar(grupo, true);
+  cena.add(grupo);
+  return { grupo, mats, op: 1, x, z, alcance };
+}
+// Fica transparente aos poucos (alvo 1 = normal; ~0.2 = quase invisível). Respeita o âmbar (já meio transparente).
+export function desbotarPeca(b, alvo, dt) {
+  if (Math.abs(alvo - b.op) < 0.01) return;
+  b.op += (alvo - b.op) * Math.min(1, dt * 6);
+  for (const m of b.mats) { m.opacity = m.userData.op0 * b.op; m.depthWrite = b.op > 0.9 && m.userData.op0 >= 1; }
+}
+// A peça está entre a câmera e o jogador? (a câmera fica atrás e acima, olhando para ele)
+export function tampaCamera(b, camera, px, pz) {
+  const cx = camera.position.x, cz = camera.position.z, dx = px - cx, dz = pz - cz, L = Math.hypot(dx, dz) || 1;
+  const t = ((b.x - cx) * dx + (b.z - cz) * dz) / (L * L);
+  if (t < -0.2 || t > 1.15) return false;
+  const lado = Math.abs((b.x - cx) * dz - (b.z - cz) * dx) / L;
+  return lado < b.alcance;
+}
+
+// Textura redonda e macia do brilho falso (feita uma vez)
+let TEX = null;
+export function texturaBrilho() {
+  if (TEX) return TEX;
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = 64;
+  const g = cv.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.35, 'rgba(255,255,255,0.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+  TEX = new THREE.CanvasTexture(cv);
+  return TEX;
+}
+// Pontos com a textura redonda. cores = lista de cores (uma por ponto) ou null (todos com a cor do material).
+export function pontos(lista, cor, tam, opacidade, aditivo, cores = null) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(lista, 3));
+  if (cores) g.setAttribute('color', new THREE.Float32BufferAttribute(cores, 3));
+  const m = new THREE.PointsMaterial({ color: cor, size: tam, map: texturaBrilho(), transparent: true, opacity: opacidade, depthWrite: false, vertexColors: !!cores, blending: aditivo ? THREE.AdditiveBlending : THREE.NormalBlending });
+  m.userData.fixo = true;
+  return new THREE.Points(g, m);
+}
+// Junta listas de pontos de cores diferentes (num desenho só)
+export function juntar(...grupos) {
+  const pos = [], cor = [], c = new THREE.Color();
+  for (const [lista, hex] of grupos) { c.set(hex); for (let i = 0; i < lista.length; i += 3) { pos.push(lista[i], lista[i + 1], lista[i + 2]); cor.push(c.r, c.g, c.b); } }
+  return [pos, cor];
+}
+// Poças de luz no chão (planos com a textura redonda, InstancedMesh: 1 desenho). lista = [[x, y, z, tamanho], ...]
+export function pocasDeLuz(lista, cor, opacidade) {
+  const geo = new THREE.PlaneGeometry(1, 1); geo.rotateX(-Math.PI / 2);
+  const mat = new THREE.MeshBasicMaterial({ color: cor, map: texturaBrilho(), transparent: true, opacity: opacidade, depthWrite: false, blending: THREE.AdditiveBlending });
+  mat.userData.fixo = true;
+  const im = new THREE.InstancedMesh(geo, mat, Math.max(1, lista.length)), m4 = new THREE.Matrix4(), q = new THREE.Quaternion();
+  lista.forEach(([x, y, z, s], i) => im.setMatrixAt(i, m4.compose(new THREE.Vector3(x, y + 0.06, z), q, new THREE.Vector3(s, 1, s))));
+  im.count = lista.length;
+  return im;
+}
+// Um "rng" simples e com semente (sempre o mesmo resultado)
+export function rngDe(semente) { let s = Math.max(1, Math.floor(semente) % 2147483647); return () => ((s = (s * 16807) % 2147483647) / 2147483647); }

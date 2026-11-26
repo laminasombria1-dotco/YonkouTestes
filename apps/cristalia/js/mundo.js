@@ -15,6 +15,8 @@ import { Vilas, saidaDaArena, TREINADORES_VILA } from './vilas.js';
 import { CaminhoDasBrasas } from './brasas.js';
 import { TrilhaAncestral, CRISTAL_ESCONDIDO } from './raizes.js';
 import { BiomaGelo } from './biomas/gelo.js';
+import { BiomaFloresta } from './biomas/floresta.js';
+import { ClimaBiomas } from './biomas/clima.js';
 import { Reino, FONTE_REINO, NASCER_REINO, ARENA_REINO, CASA_REINO, nivelRevanche } from './reino.js';
 import { JardimMundo, passarFome } from './jardim.js';
 import { RAIO_MUNDO, NIVEL_AGUA, SEMENTE, LAGOA, RESERVAS, SEGREDOS, ESTRADA, RAIO_REINO, ANEL_TRANQUILO, aleatorio, biomaEm, lagoEm, geloEm, naEstradaReal } from './mapa/gerador.js';
@@ -123,6 +125,7 @@ export class Mundo {
     this.grade = new Grade();                                // todos os obstáculos, separados em quadradinhos
     this.obstaculos = new ListaObstaculos().ligar(this.grade); // os fixos (fonte, casa, dungeons)
     this.reservas = [];                                      // lugares sem árvore (cristais)
+    this.nomesLugares = [];                                  // lugares com nome próprio na tela (Pântano das Lanternas Azuis...)
     this.refugios = [];                                      // lugares seguros fora do Reino (o Acampamento do Gelo): nenhum selvagem entra
     this.criarAgua();
     this.criarFonte();
@@ -133,6 +136,8 @@ export class Mundo {
     this.vilas = new Vilas(this); // as 5 vilas (uma em cada bioma), com loja e arena
     this.masmorras = new Masmorras(this); // as masmorras novas: a entrada no mapa e a área separada
     this.gelo = new BiomaGelo(this); // as peças únicas do Gelo (acampamento, trilha, lago, arco, fonte termal) e a neve caindo
+    this.floresta2 = new BiomaFloresta(this); // as peças únicas da Floresta (Catedral das Cortinas, Pontes de Raiz, Pântano das Lanternas Azuis)
+    this.clima = new ClimaBiomas(this); // a cor do céu e da luz de cada bioma
     this.criarMontanhas();
     this.criarEstrelas();
 
@@ -234,6 +239,12 @@ export class Mundo {
     // lugares fixos da Floresta e pontos de interesse
     for (const r of RESERVAS) if (Math.hypot(x - r.x, z - r.z) < r.r + folga) return false;
     return !this.grade.cada(x, z, folga, (o) => Math.hypot(x - o.x, z - o.z) < o.r + folga);
+  }
+
+  // O lugar com nome próprio em que o ponto está (ou null)
+  lugarNomeado(x, z) {
+    for (const l of this.nomesLugares) if (Math.hypot(x - l.x, z - l.z) < l.r) return l.nome;
+    return null;
   }
 
   // O refúgio em que o ponto está (folga = metros a mais em volta)
@@ -353,6 +364,7 @@ export class Mundo {
     this.estrelas.material.opacity = f;
     this.cena.fog.near = this.nevoa * 0.55; // a névoa só começa depois da metade da visão (as dungeons fecham a névoa por cima disso)
     this.cena.fog.far = this.nevoa;
+    this.clima?.aplicar(); // as cores de cada bioma (biomas/clima.js)
   }
 
   // ---------- monstros selvagens ----------
@@ -861,6 +873,7 @@ export class Mundo {
     this.chunks.atualizar(this.pos.x, this.pos.z);
     this.chunks.animar(t);
     this.gelo.atualizar(dt, t);
+    this.floresta2.atualizar(dt, t);
 
     // Relâmpagos nos Picos Nevados (região de Raio)
     const zonaAtual = zonaEm(this.pos.x, this.pos.z);
@@ -874,7 +887,7 @@ export class Mundo {
       if (this.jogo.estado) this.jogo.aviso(this.periodo === 'noite' ? 'Anoiteceu. Monstros de Lua e Trevas saíram!' : 'Amanheceu. Monstros de Sol e Luz estão por aí!');
     }
     const vilaAqui = this.vilas.vilaEm(this.pos.x, this.pos.z), refugioAqui = this.refugioEm(this.pos.x, this.pos.z);
-    const nomeZona = this.masmorras.ativa ? this.masmorras.ativa.nomeAqui() : vilaAqui ? vilaAqui.nome : refugioAqui ? refugioAqui.nome : REINO.perto(this.pos.x, this.pos.z) ? 'Reino' : naEstrada(this.pos.x, this.pos.z) ? 'Estrada Real' : NOMES_ZONA[zonaAtual === 'agua' && biomaEm(this.pos.x, this.pos.z) === 'agua' ? 'arquipelago' : zonaAtual];
+    const nomeZona = this.masmorras.ativa ? this.masmorras.ativa.nomeAqui() : vilaAqui ? vilaAqui.nome : refugioAqui ? refugioAqui.nome : (this.lugarNomeado(this.pos.x, this.pos.z) || (REINO.perto(this.pos.x, this.pos.z) ? 'Reino' : naEstrada(this.pos.x, this.pos.z) ? 'Estrada Real' : NOMES_ZONA[zonaAtual === 'agua' && biomaEm(this.pos.x, this.pos.z) === 'agua' ? 'arquipelago' : zonaAtual]));
     if (this.zonaAvisada !== nomeZona) {
       this.zonaAvisada = nomeZona;
       if (this.jogo.estado) this.jogo.mostrarZona(nomeZona);

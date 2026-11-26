@@ -20,6 +20,7 @@ import * as THREE from 'three';
 import { pesosEm } from '../mapa/gerador.js';
 import { alturaEm } from '../mapa/altura.js';
 import { GELO, meioTrilha } from './lugares.js';
+import { Forno, pontos, juntar, pocasDeLuz } from './comum.js';
 
 // A paleta do guia
 export const PAL_GELO = {
@@ -30,57 +31,6 @@ const P = PAL_GELO;
 export const NOME_ACAMP = 'Acampamento do Gelo';
 const RAIO_SEGURO = 12;   // nenhum selvagem a menos disso do acampamento
 const RAIO_CURA = 6;      // perto da fogueira: cura a equipe
-const COR_CHAO_PADRAO = new THREE.Color('#5d7a3e'), COR_CHAO_GELO = new THREE.Color('#8ea8c3');
-
-// ---------- forno: junta peças numa malha só por tipo (cor nos vértices) ----------
-const UNI = {
-  caixa: new THREE.BoxGeometry(1, 1, 1), cil: new THREE.CylinderGeometry(0.5, 0.5, 1, 8), cone: new THREE.ConeGeometry(0.5, 1, 6),
-  cone4: new THREE.ConeGeometry(0.5, 1, 4), ico: new THREE.IcosahedronGeometry(0.5, 0), dode: new THREE.DodecahedronGeometry(0.5, 0),
-  prisma: new THREE.CylinderGeometry(1, 1, 1, 3), pinho: new THREE.ConeGeometry(1, 1, 6), tronco: new THREE.CylinderGeometry(0.2, 0.28, 1, 5),
-};
-const SEM_INDICE = new Map();
-const semIndice = (g) => { if (!SEM_INDICE.has(g)) SEM_INDICE.set(g, g.index ? g.toNonIndexed() : g); return SEM_INDICE.get(g); };
-const MAT = {
-  n: new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }),
-  b: new THREE.MeshBasicMaterial({ vertexColors: true }), // brilho: janelas, lanternas, fogo, runas
-};
-MAT.n.userData.fixo = MAT.b.userData.fixo = true;
-
-class Forno {
-  constructor() { this.l = { n: [], b: [] }; }
-  add(g, tipo, x, y, z, sx, sy, sz, rx = 0, ry = 0, rz = 0, cor = '#ffffff') { this.l[tipo].push([g, x, y, z, sx, sy, sz, rx, ry, rz, cor]); }
-  montar(pai) {
-    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(0, 0, 0, 'YXZ'), v = new THREE.Vector3(), s = new THREE.Vector3(), c = new THREE.Color(), p = new THREE.Vector3();
-    const malhas = [];
-    for (const [tipo, lista] of Object.entries(this.l)) {
-      if (!lista.length) continue;
-      let total = 0;
-      for (const it of lista) total += semIndice(UNI[it[0]]).attributes.position.count;
-      const pos = new Float32Array(total * 3), cor = new Float32Array(total * 3);
-      let o = 0;
-      for (const [g, x, y, z, sx, sy, sz, rx, ry, rz, hex] of lista) {
-        m4.compose(v.set(x, y, z), q.setFromEuler(e.set(rx, ry, rz, 'YXZ')), s.set(sx, sy, sz));
-        const a = semIndice(UNI[g]).attributes.position;
-        c.set(hex);
-        for (let k = 0; k < a.count; k++, o++) {
-          p.fromBufferAttribute(a, k).applyMatrix4(m4);
-          pos[o * 3] = p.x; pos[o * 3 + 1] = p.y; pos[o * 3 + 2] = p.z;
-          cor[o * 3] = c.r; cor[o * 3 + 1] = c.g; cor[o * 3 + 2] = c.b;
-        }
-      }
-      const geo = new THREE.BufferGeometry();
-      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-      geo.setAttribute('color', new THREE.BufferAttribute(cor, 3));
-      geo.computeVertexNormals();
-      geo.computeBoundingSphere();
-      const malha = new THREE.Mesh(geo, MAT[tipo]);
-      malha.matrixAutoUpdate = false;
-      pai.add(malha);
-      malhas.push(malha);
-    }
-    return malhas;
-  }
-}
 
 // Pinheiro carregado de neve (4 andares verdes, cada um com uma camada de neve por cima).
 // add(geo, tipo, ...) no formato do Forno. pesado = muita neve.
@@ -91,34 +41,6 @@ export function pinheiroNevado(add, x, y, z, e, ry, pesado) {
     const k = pesado ? 0.84 : 0.6;
     add('pinho', 'n', x, y + (Y + H * (pesado ? 0.16 : 0.25)) * e, z, R * k * e, H * (pesado ? 0.72 : 0.55) * e, R * k * e, 0, ry + i * 0.5 + 0.26, 0, i % 2 ? P.neve : P.neve2);
   });
-}
-
-// Textura redonda e macia do brilho falso (feita uma vez)
-let TEX = null;
-function texturaBrilho() {
-  if (TEX) return TEX;
-  const cv = document.createElement('canvas');
-  cv.width = cv.height = 64;
-  const g = cv.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
-  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.35, 'rgba(255,255,255,0.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
-  g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
-  TEX = new THREE.CanvasTexture(cv);
-  return TEX;
-}
-// Pontos com a textura redonda. cores = lista de cores (uma por ponto) ou null (todos com a cor do material).
-function pontos(lista, cor, tam, opacidade, aditivo, cores = null) {
-  const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.Float32BufferAttribute(lista, 3));
-  if (cores) g.setAttribute('color', new THREE.Float32BufferAttribute(cores, 3));
-  const m = new THREE.PointsMaterial({ color: cor, size: tam, map: texturaBrilho(), transparent: true, opacity: opacidade, depthWrite: false, vertexColors: !!cores, blending: aditivo ? THREE.AdditiveBlending : THREE.NormalBlending });
-  m.userData.fixo = true;
-  return new THREE.Points(g, m);
-}
-// Junta listas de pontos de cores diferentes (num desenho só)
-function juntar(...grupos) {
-  const pos = [], cor = [], c = new THREE.Color();
-  for (const [lista, hex] of grupos) { c.set(hex); for (let i = 0; i < lista.length; i += 3) { pos.push(lista[i], lista[i + 1], lista[i + 2]); cor.push(c.r, c.g, c.b); } }
-  return [pos, cor];
 }
 
 export class BiomaGelo {
@@ -322,14 +244,7 @@ export class BiomaGelo {
     const g = this.grupo;
     // as luzes âmbar (lanternas, janelas, fogueira) e as runas ciano: um desenho só
     { const [pos, cor] = juntar([this.brilhos, '#ffb050'], [this.brilhosCiano, '#3fd8ff']); this.ptBrilho = pontos(pos, '#ffffff', 3, 0.5, true, cor); g.add(this.ptBrilho); }
-    { // poças de luz no chão (InstancedMesh: 1 desenho)
-      const geo = new THREE.PlaneGeometry(1, 1); geo.rotateX(-Math.PI / 2);
-      this.matPoca = new THREE.MeshBasicMaterial({ color: '#ff9a3a', map: texturaBrilho(), transparent: true, opacity: 0.25, depthWrite: false, blending: THREE.AdditiveBlending });
-      this.matPoca.userData.fixo = true;
-      const im = new THREE.InstancedMesh(geo, this.matPoca, this.pocas.length), m4 = new THREE.Matrix4(), q = new THREE.Quaternion();
-      this.pocas.forEach(([x, z, s], i) => im.setMatrixAt(i, m4.compose(new THREE.Vector3(x, alturaEm(x, z) + 0.06, z), q, new THREE.Vector3(s, 1, s))));
-      g.add(im);
-    }
+    { const im = pocasDeLuz(this.pocas.map(([x, z, t]) => [x, alturaEm(x, z), z, t]), '#ff9a3a', 0.25); this.matPoca = im.material; g.add(im); } // poças de luz no chão (1 desenho)
     // bruma do lago, vapor da fonte e fumaça da chaminé: um desenho só (sobem juntos, devagar)
     { const f = [], c = this.chamine, r = this.rng; for (let k = 0; k < 40; k++) { const h = r() * 6; f.push(c.x + (r() - 0.5) * (0.4 + h * 0.3) + h * 0.3, c.y + h, c.z + (r() - 0.5) * (0.4 + h * 0.3)); }
       const [pos, cor] = juntar([this.nevoa, '#c8d8e6'], [this.vapor, '#ffffff'], [f, '#b8bcc4']); this.ptFumaca = pontos(pos, '#ffffff', 3, 0.35, false, cor); g.add(this.ptFumaca); }
@@ -371,8 +286,7 @@ export class BiomaGelo {
       a.needsUpdate = true;
       nv.position.set(px, alturaEm(px, pz) - 2, pz);
     }
-    // a luz do chão puxa para o azul no Gelo (o rebote da neve: sombras azuladas)
-    m.hemi.groundColor.lerpColors(COR_CHAO_PADRAO, COR_CHAO_GELO, pg);
+    // (a luz do chão azulada do Gelo fica no biomas/clima.js)
   }
 
   // A fogueira cura? (o mundo chama a cada quadro)

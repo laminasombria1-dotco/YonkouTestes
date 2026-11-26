@@ -15,6 +15,8 @@ import * as THREE from 'three';
 import { DungeonAberta, RAIZES, S_LAGO, LARG_LAGO, GEO, Bloco, desbotar, lambert } from './dungeon.js';
 import { LAGOA, PONTOS_FLORESTA, CENTRO_FLORESTA } from './mapa/gerador.js';
 import { criarModelo } from './modelos.js';
+import { carvalhoVeu } from './biomas/floresta.js';
+import { pecaDesbotavel, desbotarPeca, rngDe } from './biomas/comum.js';
 import { PERIODO_DA_LINHA, criarMonstro, statsDe, niveisDaEtapa } from './dados.js';
 
 const brilha = (cor, k = 0.8) => lambert(cor, { emissive: cor, emissiveIntensity: k });
@@ -34,6 +36,7 @@ const MAT = {
   cogRoxo: lambert('#8a5ad8'),
   pinta: lambert('#fff6e0'),
   cogBrilho: brilha('#5affd8', 0.7),
+  ouro: brilha('#f2c040', 0.55), // Fungo-Tambor (a Floresta do mapa: o guia do Lâmina)
   florAmarela: brilha('#ffe14a', 0.8),
   florRosa: brilha('#ff7eb6', 0.7),
   florAzul: brilha('#7ac8ff', 0.7),
@@ -178,6 +181,24 @@ export class TrilhaAncestral extends DungeonAberta {
       L.add(GEO.ico, MAT.pinta, x + Math.cos(a) * r, y + h - 0.1 + Math.sqrt(1 - (r / rC) ** 2) * rC * 0.55, z + Math.sin(a) * r, 0.35 * esc, 0.12, 0.35 * esc);
     }
     if (colide) this.obst(x, z, 0.6 * esc);
+  }
+  // Lanterna-do-Brejo grande (só na Floresta do mapa): pé claro e chapéu ciano que brilha
+  cogumeloLanterna(L, x, z, esc) {
+    const rng = this.rng, y = this.y(x, z), h = (1.4 + rng() * 0.9) * esc, rC = (0.8 + rng() * 0.4) * esc;
+    L.add(GEO.cil, MAT.cogPe, x, y + h / 2, z, 0.5 * esc, h, 0.5 * esc, (rng() - 0.5) * 0.12, 0, (rng() - 0.5) * 0.12);
+    L.add(GEO.chapeu, MAT.cogBrilho, x, y + h - 0.1, z, rC, rC * 0.6, rC, 0, rng() * 6, 0);
+    for (let k = 0; k < 3; k++) { const a = rng() * 6.28, d = (0.8 + rng() * 0.6) * esc, hp = (0.4 + rng() * 0.4) * esc; // filhotes em volta
+      L.add(GEO.cilFino, MAT.cogPe, x + Math.cos(a) * d, y + hp / 2, z + Math.sin(a) * d, 0.12, hp, 0.12);
+      L.add(GEO.chapeu, MAT.cogBrilho, x + Math.cos(a) * d, y + hp, z + Math.sin(a) * d, 0.35 * esc, 0.22 * esc, 0.35 * esc); }
+    this.obst(x, z, 0.5 * esc);
+  }
+  // Fungo-Tambor (só na Floresta do mapa): bolas douradas
+  fungoTambor(L, x, z, esc) {
+    const rng = this.rng, y = this.y(x, z);
+    for (let k = 0; k < 6; k++) { const a = rng() * 6.28, d = k ? (0.5 + rng() * 0.5) * esc : 0, s = (k ? 0.45 + rng() * 0.3 : 0.9) * esc;
+      L.add(GEO.cilFino, MAT.casca, x + Math.cos(a) * d, y + s * 0.4, z + Math.sin(a) * d, 0.1, s * 0.8, 0.1);
+      L.add(GEO.ico, MAT.ouro, x + Math.cos(a) * d, y + s * 0.95, z + Math.sin(a) * d, s, s, s); }
+    this.obst(x, z, 0.6 * esc);
   }
   cogumelinhos(L, x, z, n = 3) {
     const rng = this.rng;
@@ -470,7 +491,14 @@ export class TrilhaAncestral extends DungeonAberta {
       }
       return null;
     };
-    for (const [x, z, e] of GIGANTES) this.arvoreGigante(x, z, e);
+    // as árvores gigantes viraram Carvalhos-Véu colossais (o guia do Lâmina: cortinas de âmbar)
+    const rv = rngDe(5151);
+    for (const [x, z, e] of GIGANTES) {
+      const b = pecaDesbotavel(this.cena, (add) => carvalhoVeu(add, rv, x, this.y(x, z), z, 1.7 * e), x, z, 7 * e);
+      b.novo = true;
+      this.gigantes.push(b);
+      this.obst(x, z, 1.9 * e);
+    }
     // ruína com arco e colunas
     {
       const { x, z } = RUINA, y = this.y(x, z);
@@ -514,7 +542,8 @@ export class TrilhaAncestral extends DungeonAberta {
       this.lanterna(x + r + 2.8, z + 1.6, 1.3);
     }
     // espalhados: cogumelos gigantes, troncos caídos, pedras com musgo, colunas, flores e moitas
-    for (let i = 0; i < 14; i++) { const p = sortearPonto(2.4); if (p) this.cogumeloGigante(L, p.x, p.z, 0.6 + rng() * 0.5); }
+    // no lugar dos cogumelos gigantes vermelhos e roxos: Lanternas-do-Brejo grandes (ciano) e Fungos-Tambor (dourados)
+    for (let i = 0; i < 14; i++) { const p = sortearPonto(2.4); if (p) (i % 3 === 2 ? this.fungoTambor : this.cogumeloLanterna).call(this, L, p.x, p.z, 0.6 + rng() * 0.5); }
     for (let i = 0; i < 6; i++) { const p = sortearPonto(3); if (p) this.troncoCaido(L, p.x, p.z, 0.85); }
     for (let i = 0; i < 9; i++) { const p = sortearPonto(1.6); if (p) this.pedraMusgo(L, p.x, p.z, 0.6 + rng() * 0.7); }
     for (let i = 0; i < 5; i++) { const p = sortearPonto(1.6); if (p) this.coluna(L, p.x, p.z, 1.4 + rng() * 2, i % 2 === 1); }
@@ -605,7 +634,7 @@ export class TrilhaAncestral extends DungeonAberta {
     for (const g of this.gigantes) {
       const dx = g.x - m.pos.x, dz = g.z - m.pos.z;
       const tampa = dz > -2 && dz < 16 && Math.abs(dx) < g.alcance && Math.hypot(dx, dz) < 18;
-      desbotar(g, tampa ? 0.22 : 1, dt);
+      (g.novo ? desbotarPeca : desbotar)(g, tampa ? 0.22 : 1, dt);
     }
     MAT.jade.emissiveIntensity = 0.75 + Math.sin(t * 2) * 0.25;
     MAT.lanterna.emissiveIntensity = 0.6 + m.fatorNoite * 0.5;

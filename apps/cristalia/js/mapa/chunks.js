@@ -23,6 +23,8 @@ import { alturaVertice, alturaEm, ESPACO } from './altura.js';
 import { TRACADOS, REINO, S_LAGO, foraDungeons } from '../dungeon.js';
 import { GELO, naTrilhaGelo } from '../biomas/lugares.js';
 import { PAL_GELO, pinheiroNevado } from '../biomas/gelo.js';
+import { semIndice, UNI } from '../biomas/comum.js';
+import * as FL from '../biomas/floresta.js';
 
 const T = C.tamChunk, DIV = C.divisoes;
 
@@ -38,6 +40,8 @@ const GEO = {
   caixa: new THREE.BoxGeometry(1, 1, 1),
   disco: new THREE.CylinderGeometry(1, 1, 0.4, 12),
 };
+// as formas das melhorias dos biomas (biomas/comum.js), com o prefixo u_ (para não confundir com as de cima)
+for (const [k, g] of Object.entries(UNI)) GEO['u_' + k] = g;
 const lambert = (o) => new THREE.MeshLambertMaterial({ flatShading: true, ...o });
 const MAT = {
   base: lambert({ color: '#ffffff' }), // a cor de cada objeto vem da "cor da instância"
@@ -45,12 +49,23 @@ const MAT = {
   brilho: lambert({ color: '#fff07a', emissive: '#f7c81a', emissiveIntensity: 0.7 }),
   gelo: lambert({ color: '#cdeefa', emissive: '#5ab8e8', emissiveIntensity: 0.35 }),
   lavaViva: lambert({ color: '#ff8a3a', emissive: '#ff5a1f', emissiveIntensity: 0.9 }),
+  // Floresta (o guia do Lâmina): a seiva de âmbar, os cogumelos ciano e o fungo dourado
+  ambar: lambert({ color: '#e8a838', emissive: '#d99b26', emissiveIntensity: 0.55, transparent: true, opacity: 0.78 }),
+  ciano: lambert({ color: '#9ff0e0', emissive: '#45c4b0', emissiveIntensity: 0.8 }),
+  ouro: lambert({ color: '#f2c040', emissive: '#f2a922', emissiveIntensity: 0.55 }),
 };
+// tipo das peças do Forno (biomas/) -> material dos chunks
+const TIPO_MAT = { n: 'base', a: 'ambar', c: 'ciano', o: 'ouro' };
+// Etapa 0 (melhorias dos biomas): os objetos de cada chunk são JUNTADOS numa malha só por
+// material (a cor de cada peça vai nos vértices). Mesmo visual, bem menos desenhos por quadro.
+// Por isso cada material tem uma cópia com "cor nos vértices" (a peça sem cor fica branca = a cor do material).
+const MAT_J = Object.fromEntries(Object.entries(MAT).map(([k, m]) => { const c = m.clone(); c.vertexColors = true; return [k, c]; }));
 const MAT_CHAO = lambert({ vertexColors: true });
 // o gelo do Gelo (lagos e rios congelados): o ciano do guia
 const GELO_LAGO = ['#4a89aa', '#5596b6', '#3f7d9e', '#6aaac8', '#4a89aa'];
 const GELO_RIO = ['#5596b6', '#6aaac8', '#4a89aa', '#8fc4dc'];
 const MAT_AGUA = lambert({ color: '#4fc3f7', transparent: true, opacity: 0.82 });
+const MAT_AGUA_FLORESTA = lambert({ color: '#2b4652', transparent: true, opacity: 0.9, emissive: '#0a1a1e', emissiveIntensity: 0.3 }); // água escura de tanino
 const MAT_LAVA = lambert({ color: '#ff7a2a', emissive: '#ff4a10', emissiveIntensity: 0.85 });
 
 // ---------- cores ----------
@@ -211,8 +226,7 @@ export class Chunks {
   limpar(ch) {
     for (const m of ch.malhas) {
       this.grupo.remove(m);
-      if (m.isInstancedMesh) m.dispose(); // as peças são de todos: não apaga a geometria
-      else m.geometry.dispose();
+      m.geometry.dispose(); // (cada chunk tem a sua malha: os objetos foram juntados)
     }
     if (ch.liquidos) this.liquidos = this.liquidos.filter((m) => !ch.liquidos.includes(m));
     ch.malhas = [];
@@ -314,6 +328,7 @@ export class Chunks {
     if (Math.hypot(x, z) > RAIO_MUNDO - 4) return sorteio(rng, BORDA[id]);
     if (geloEm(x, z)) return sorteio(rng, GELO_LAGO); // lago congelado: o gelo ciano do guia
     if (id === 'raio') return this.corDoGelo(x, z, y, inc, rng);
+    if (id === 'planta') return this.corDaFloresta(y, inc, rng);
     if (y < NIVEL_AGUA - 0.15) return id === 'fogo' ? '#3a1a12' : id === 'agua' ? (y < -1.3 ? '#2f7fa0' : '#5fc8c0') : '#4f9fb8'; // no Arquipélago: rasa clarinha, funda escura
     if (y < NIVEL_AGUA + 0.45) return id === 'fogo' ? sorteio(rng, ['#c8461a', '#8a2e14']) : id === 'raio' ? '#d8e8f2' : sorteio(rng, ['#e2cd90', '#ecd9a0']);
     if (y > 13 && id !== 'fogo' && inc > 0.55) return sorteio(rng, PALETA.raio); // neve no alto dos picos
@@ -338,11 +353,21 @@ export class Chunks {
     return sorteio(rng, [PAL_GELO.neve, PAL_GELO.neve2, '#f2f7fc', '#e8f0f8']);
   }
 
+  // O chão da Floresta (a paleta do guia): musgo profundo, folhas caídas, ardósia nas
+  // ladeiras, lama nas margens e o fundo escuro de tanino dos rios
+  corDaFloresta(y, inc, rng) {
+    if (y < NIVEL_AGUA - 0.15) return sorteio(rng, ['#2b4652', '#24404a', '#30505a']);
+    if (y < NIVEL_AGUA + 0.4) return sorteio(rng, ['#3a3a2a', '#2f3a2c', '#45402c']);
+    if (inc < 0.6) return sorteio(rng, ['#7a8489', '#6a7479', '#5f696e']);
+    if (inc < 0.8) return sorteio(rng, ['#2a4a3a', '#33503c', '#3a4a32']);
+    return rng() < 0.05 ? sorteio(rng, ['#4a4a2a', '#55502e']) : sorteio(rng, ['#2c5a40', '#335f45', '#26503a', '#2f5a3c', '#3a6a44']);
+  }
+
   // ---------- água e lava ----------
   criarLiquidos(ch) {
     const passo = ch.lod ? DIV / C.divisoesLonge : 1, n = DIV / passo;
     const i0 = ch.cx * DIV, j0 = ch.cz * DIV, E = ESPACO;
-    const agua = [], lava = [];
+    const agua = [], lava = [], aguaF = [];
     for (let a = 0; a < n; a++) for (let b = 0; b < n; b++) {
       const i = i0 + a * passo, j = j0 + b * passo, ip = i + passo, jp = j + passo;
       const hmin = Math.min(alturaVertice(i, j), alturaVertice(ip, j), alturaVertice(i, jp), alturaVertice(ip, jp));
@@ -352,7 +377,7 @@ export class Chunks {
       if (Math.hypot(mx - LAGOA.x, mz - LAGOA.z) < LAGOA.r + 8) continue;      // o lago escondido tem a dele
       const bm = biomaEm(mx, mz);
       if (bm === 'raio') continue;                                            // no Gelo os rios são congelados (o chão já é gelo)
-      (bm === 'fogo' ? lava : agua).push(i * E, j * E, ip * E, jp * E);
+      (bm === 'fogo' ? lava : bm === 'planta' ? aguaF : agua).push(i * E, j * E, ip * E, jp * E);
     }
     const malha = (lista, mat, y) => {
       if (!lista.length) return;
@@ -374,6 +399,7 @@ export class Chunks {
       this.liquidos.push(m);
     };
     malha(agua, MAT_AGUA, NIVEL_AGUA);
+    malha(aguaF, MAT_AGUA_FLORESTA, NIVEL_AGUA);
     malha(lava, MAT_LAVA, NIVEL_AGUA + 0.04);
   }
 
@@ -381,29 +407,44 @@ export class Chunks {
   animar(t) {
     for (const m of this.liquidos) m.position.y = m.userData.y0 + Math.sin(t * 1.3) * 0.05;
     MAT_LAVA.emissiveIntensity = 0.75 + Math.sin(t * 2.2) * 0.15;
-    MAT.lavaViva.emissiveIntensity = 0.8 + Math.sin(t * 2.6) * 0.2;
+    MAT_J.lavaViva.emissiveIntensity = 0.8 + Math.sin(t * 2.6) * 0.2;
+    MAT_J.ciano.emissiveIntensity = 0.5 + 0.6 * (this.m.fatorNoite || 0); // os cogumelos da Floresta brilham mais à noite
   }
 
   // ---------- objetos ----------
+  // Junta todas as peças do chunk numa malha só por material (etapa 0). Peça com r.o: gira na ordem YXZ.
   criarObjetos(ch) {
     const grupos = new Map();
     for (const r of ch.dados.recs) {
       if (r.p && ch.lod > 0) continue; // longe: sem objetos pequenos
-      const k = r.t + '|' + r.m;
-      if (!grupos.has(k)) grupos.set(k, []);
-      grupos.get(k).push(r);
+      if (!grupos.has(r.m)) grupos.set(r.m, []);
+      grupos.get(r.m).push(r);
     }
-    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), s = new THREE.Vector3();
-    for (const lista of grupos.values()) {
-      const { t, m } = lista[0];
-      const im = new THREE.InstancedMesh(GEO[t], MAT[m], lista.length);
-      lista.forEach((r, i) => {
-        im.setMatrixAt(i, m4.compose(v.set(r.x, r.y, r.z), q.setFromEuler(e.set(r.rx, r.ry, r.rz)), s.set(r.sx, r.sy, r.sz)));
-        if (m === 'base') im.setColorAt(i, c3.set(r.cor || '#ffffff'));
-      });
-      im.computeBoundingSphere();
-      this.adicionar(ch, im);
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), s = new THREE.Vector3(), p = new THREE.Vector3();
+    for (const [m, lista] of grupos) {
+      let total = 0;
+      for (const r of lista) total += semIndice(GEO[r.t]).attributes.position.count;
+      const pos = new Float32Array(total * 3), cor = new Float32Array(total * 3);
+      let o = 0;
+      for (const r of lista) {
+        e.set(r.rx, r.ry, r.rz, r.o ? 'YXZ' : 'XYZ');
+        m4.compose(v.set(r.x, r.y, r.z), q.setFromEuler(e), s.set(r.sx, r.sy, r.sz));
+        c3.set(r.cor || '#ffffff');
+        const a = semIndice(GEO[r.t]).attributes.position;
+        for (let k = 0; k < a.count; k++, o++) {
+          p.fromBufferAttribute(a, k).applyMatrix4(m4);
+          pos[o * 3] = p.x; pos[o * 3 + 1] = p.y; pos[o * 3 + 2] = p.z;
+          cor[o * 3] = c3.r; cor[o * 3 + 1] = c3.g; cor[o * 3 + 2] = c3.b;
+        }
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      g.setAttribute('color', new THREE.BufferAttribute(cor, 3));
+      g.computeVertexNormals();
+      g.computeBoundingSphere();
+      this.adicionar(ch, new THREE.Mesh(g, MAT_J[m]));
     }
+    ch.nObjetos = ch.dados.recs.length;
   }
 
   // Um ponto do chunk pode ganhar um objeto?
@@ -429,7 +470,7 @@ export class Chunks {
     const recs = [], obst = [];
     const add = (t, m, x, y, z, sx, sy, sz, rx = 0, ry = 0, rz = 0, cor = null, p = false) => recs.push({ t, m, x, y, z, sx, sy, sz, rx, ry, rz, cor, p });
     const ob = (x, z, r) => obst.push({ x, z, r });
-    const k = { add, ob, rng };
+    const k = { add, ob, rng, recs };
     for (const p of POIS) if (Math.floor(p.x / T) === cx && Math.floor(p.z / T) === cz) this.pontoDeInteresse(p, k);
     const G = 8, cel = T / G, dq = this.q.densidade;
     for (let a = 0; a < G; a++) for (let b = 0; b < G; b++) {
@@ -440,7 +481,8 @@ export class Chunks {
       let r = r1, id = 'campo';
       for (let i = 0; i < N_PESOS; i++) { r -= P[i]; if (r <= 0) { id = idDoPeso(i); break; } }
       if (r2 < C.densidade[id] * dq) this.objeto(id, x, z, r3, esc, k);
-      else if ((id === 'campo' || id === 'planta') && r2 > 0.78) add('flor', 'base', x, alturaEm(x, z) + 0.12, z, 1, 1, 1, 0, 0, 0, sorteio(rng, COR.flor), true);
+      else if (id === 'planta' && r2 > 0.85) this.pecaFloresta(FL.samambaia, x, z, 0.6 + esc * 0.4, k, 0, 0.3, true);
+      else if (id === 'campo' && r2 > 0.78) add('flor', 'base', x, alturaEm(x, z) + 0.12, z, 1, 1, 1, 0, 0, 0, sorteio(rng, COR.flor), true);
       else if (id === 'terra' && r2 > 0.93) this.arbusto(x, z, 0.6 + esc * 0.4, sorteio(rng, ['#a8743f', '#9a8a4a']), k);
       else if (id === 'raio' && r2 > 0.9) { if (esc < 0.6) this.capimSeco(x, z, k); else this.montinhoNeve(x, z, k); }
     }
@@ -460,12 +502,18 @@ export class Chunks {
         else if (r3 < 0.75) this.pedra(x, z, 0.5 + esc * 0.9, sorteio(rng, COR.pedra.campo), k);
         else this.arbusto(x, z, 0.8 + esc * 0.5, '#6fcf5a', k);
         return;
-      case 'planta':
-        if (r3 < 0.72) this.arvore(x, z, 0.9 + esc * 0.7, sorteio(rng, COR.copa.planta), k);
-        else if (r3 < 0.84) this.pinheiro(x, z, 0.8 + esc * 0.6, '#2f6a3a', '#3a7a44', k);
-        else if (r3 < 0.93) this.pedra(x, z, 0.5 + esc * 0.8, sorteio(rng, COR.pedra.planta), k);
-        else this.arbusto(x, z, 0.8 + esc * 0.6, '#3f8f3a', k);
+      case 'planta': { // Floresta: "Mata de Véu-Âmbar" (o guia do Lâmina; as peças ficam em biomas/floresta.js)
+        const perto = lagoEm(x, z, 10);
+        if (r3 < 0.3) this.pecaFloresta(FL.carvalhoVeu, x, z, 0.4 + esc * 0.15, k, 1.1, 0.5);
+        else if (r3 < 0.5) this.pecaFloresta(perto ? FL.salgueiro : FL.freixoOco, x, z, perto ? 0.8 + esc * 0.4 : 0.6 + esc * 0.25, k, perto ? 0.7 : 0.45, 0.4);
+        else if (r3 < 0.62) this.pecaFloresta(FL.salgueiro, x, z, 0.8 + esc * 0.3, k, 0.7, 0.4);
+        else if (r3 < 0.8) { this.pecaFloresta(FL.samambaia, x, z, 0.8 + esc * 0.5, k, 0, 0.3, true); if (esc < 0.5) this.pecaFloresta(FL.samambaia, x + 1.2, z + 0.6, 0.7, k, 0, 0.3, true); }
+        else if (r3 < 0.88) this.pecaFloresta(FL.pedraMusgo, x, z, 0.7 + esc * 0.6, k, 1, 0.6);
+        else if (r3 < 0.94) this.pecaFloresta(FL.cogumelos, x, z, 0.8 + esc * 0.5, k, 0, 0.3, true);
+        else if (r3 < 0.97) this.pecaFloresta(FL.fungoTambor, x, z, 0.8 + esc * 0.4, k, 0, 0.3, true);
+        else { this.pecaFloresta(FL.troncoCaido, x, z, 0.8, k, 0, 0.3); k.ob(x, z, 1.2); }
         return;
+      }
       case 'terra':
         if (lagoEm(x, z, 9, 'agua')?.oasis) {
           if (r3 < 0.7) this.palmeira(x, z, 0.85 + esc * 0.4, k); else this.arbusto(x, z, 0.8, '#5cb553', k);
@@ -490,6 +538,14 @@ export class Chunks {
         else if (r3 < 0.85) this.pedra(x, z, 0.5 + esc * 0.9, sorteio(rng, COR.pedra.agua), k);
         else this.arbusto(x, z, 0.7 + esc * 0.5, '#5cb553', k);
     }
+  }
+
+  // Uma peça do Forno (biomas/) dentro do chunk: ob = raio do obstáculo (× tamanho), pe = raio para achar o chão,
+  // pequena = some de longe (LOD)
+  pecaFloresta(fn, x, z, e, k, ob, pe, pequena = false) {
+    const y = this.pe(x, z, pe * e);
+    fn((g, tipo, ...a) => { k.add('u_' + g, TIPO_MAT[tipo], ...a.slice(0, 9), a[9] || null, pequena || !!a[10]); k.recs[k.recs.length - 1].o = 1; }, k.rng, x, y, z, e);
+    if (ob) k.ob(x, z, ob * e);
   }
 
   arvore(x, z, e, cor, { add, ob, rng }) {
@@ -638,10 +694,9 @@ export class Chunks {
   // ---------- números (para o GM e os testes) ----------
   info() {
     let malhas = 0, instancias = 0, tri = 0;
-    for (const ch of this.mapa.values()) for (const m of ch.malhas) {
-      malhas++;
-      const g = m.geometry, nt = (g.index ? g.index.count : g.attributes.position.count) / 3;
-      if (m.isInstancedMesh) { instancias += m.count; tri += nt * m.count; } else tri += nt;
+    for (const ch of this.mapa.values()) {
+      instancias += ch.nObjetos || 0;
+      for (const m of ch.malhas) { malhas++; const g = m.geometry; tri += (g.index ? g.index.count : g.attributes.position.count) / 3; }
     }
     return { chunks: this.mapa.size, fila: this.fila.length, malhas, instancias, triangulos: Math.round(tri), obstaculos: this.m.grade.total,
       msMedio: this.stats.gerados ? +(this.stats.msTotal / this.stats.gerados).toFixed(2) : 0, msMax: +this.stats.msMax.toFixed(2),

@@ -5,7 +5,8 @@
 // o mesmo lugar para todos os jogadores, e NADA aqui muda o relevo,
 // os rios, os lagos, as vilas nem as entradas das masmorras.
 // =============================================================
-import { ESTRADAS, LAGOS, LUGARES, POIS, RESERVAS, NIVEL_AGUA, SEMENTE, aleatorio, biomaEm, lagoEm } from '../mapa/gerador.js';
+import { ESTRADAS, LAGOS, LUGARES, POIS, RESERVAS, NIVEL_AGUA, SEMENTE, aleatorio, biomaEm, lagoEm, naEstradaReal, PONTOS_FLORESTA, LAGOA, CENTRO_FLORESTA } from '../mapa/gerador.js';
+import { TRACADOS } from '../dungeon.js';
 import { alturaEm } from '../mapa/altura.js';
 
 // ---------- GELO (o guia do Lâmina) ----------
@@ -91,3 +92,48 @@ const PINHEIROS = (() => {
 })();
 
 export const GELO = { estrada: E, dir: D, lat: LAT, ponto, local, acamp: ACAMP, trilha: TRILHA, lago: LAGO, arco: ARCO, fonte: FONTE, pinheiros: PINHEIROS };
+
+// ---------- FLORESTA: "Mata de Véu-Âmbar" (o guia do Lâmina) ----------
+// A Catedral das Cortinas (com o Observatório Submerso no meio): a clareira mais plana e livre;
+// as Pontes de Raiz: um rio estreito (6 a 10 m) longe do centro; o Pântano das Lanternas Azuis: o maior lago.
+function livreFloresta(x, z, folga) {
+  if (biomaEm(x, z) !== 'planta' || alturaEm(x, z) < NIVEL_AGUA + 0.35) return false;
+  if (TRACADOS.some((t) => t.reservado(x, z))) return false;
+  { const e = naEstradaReal(x, z); if (e.dentro && e.lat < 8) return false; }
+  if (lagoEm(x, z, folga)) return false;
+  for (const r of [...RESERVAS, ...POIS, ...LUGARES]) if (Math.hypot(x - r.x, z - r.z) < (r.r || 5) + folga) return false;
+  return true;
+}
+const CATEDRAL = (() => {
+  let melhor = null, mv = Infinity;
+  for (let x = 180; x <= 300; x += 4) for (let z = -140; z <= -10; z += 4) {
+    if (biomaEm(x, z) !== 'planta' || lagoEm(x, z, 14)) continue;
+    if ([...PONTOS_FLORESTA.clareiras, PONTOS_FLORESTA.ruina, LAGOA, ...LUGARES].some((o) => Math.hypot(o.x - x, o.z - z) < (o.r || 6) + 16)) continue;
+    if (![[0, 0], [8, 0], [-8, 0], [0, 8], [0, -8]].every(([a, b]) => livreFloresta(x + a, z + b, 1))) continue;
+    const v = desnivel(x, z, 10) + Math.hypot(x - CENTRO_FLORESTA.x, z - CENTRO_FLORESTA.z) * 0.01;
+    if (v < mv) { mv = v; melhor = { x, z }; }
+  }
+  return melhor && { ...melhor, r: 19 };
+})();
+const PONTE = (() => {
+  let melhor = null, mw = Infinity;
+  for (let x = 120; x <= 340; x += 3) for (let z = -240; z <= 60; z += 3) {
+    if (biomaEm(x, z) !== 'planta' || lagoEm(x, z, 8) || alturaEm(x, z) > NIVEL_AGUA - 0.4) continue;
+    if (Math.hypot(x - CENTRO_FLORESTA.x, z - CENTRO_FLORESTA.z) < 50 || TRACADOS.some((t) => t.reservado(x, z))) continue;
+    if (CATEDRAL && Math.hypot(x - CATEDRAL.x, z - CATEDRAL.z) < 35) continue;
+    for (let k = 0; k < 8; k++) {
+      const a = (k * Math.PI) / 8, c = Math.cos(a), s = Math.sin(a);
+      let d1 = 0, d2 = 0;
+      while (d1 < 12 && alturaEm(x + c * d1, z + s * d1) < NIVEL_AGUA + 0.4) d1 += 0.5;
+      while (d2 < 12 && alturaEm(x - c * d2, z - s * d2) < NIVEL_AGUA + 0.4) d2 += 0.5;
+      const w = d1 + d2;
+      if (d1 >= 12 || d2 >= 12 || w <= 6 || w >= 10) continue;
+      if (!livreFloresta(x + c * (d1 + 3), z + s * (d1 + 3), 1) || !livreFloresta(x - c * (d2 + 3), z - s * (d2 + 3), 1)) continue;
+      if (Math.abs(w - 7.5) < Math.abs(mw - 7.5)) { mw = w; melhor = { ax: x + c * (d1 + 0.5), az: z + s * (d1 + 0.5), bx: x - c * (d2 + 0.5), bz: z - s * (d2 + 0.5), w: w + 1 }; }
+    }
+  }
+  if (!melhor) return null;
+  return { ...melhor, x: (melhor.ax + melhor.bx) / 2, z: (melhor.az + melhor.bz) / 2, ang: Math.atan2(melhor.bz - melhor.az, melhor.bx - melhor.ax) };
+})();
+const PANTANO = LAGOS.filter((L) => L.bioma === 'planta' && !L.escondido).sort((a, b) => b.r - a.r)[0] || null;
+export const FLORESTA = { catedral: CATEDRAL, ponte: PONTE, pantano: PANTANO, livre: livreFloresta };

@@ -240,8 +240,10 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
           *Medido antes (Médio, um ponto no meio de cada bioma):* Gelo ~90-100 desenhos, Floresta ~150-170, Deserto ~55-65,
           Vulcânico ~55-75, Arquipélago ~50-65.
           *Proposta feita (com maquetes); esperando as decisões do Lâmina:*
-      - [ ] **0 — Juntar os objetos de cada chunk** numa malha só (medido: Floresta 149 → 100 desenhos, Gelo 89 → 61).
-            *Ainda não aprovado;* o Gelo não precisou (as peças comuns novas usam as formas que o mapa já tinha).
+      - [x] **0 — Juntar os objetos de cada chunk** numa malha só por material (cor nos vértices). *Decisão:* só se não
+            mudar o visual. *Feito:* fotos de antes e depois comparadas pixel a pixel (iguais; só 0,05% dos pixels mudam,
+            nas bordas). Medido (Médio): Gelo 94 → 67, Floresta 145 → 106, Deserto 55 → 44, Vulcânico 76 → 68 desenhos.
+            Criar cada chunk ficou ~0,5 ms mais lento (média ~1,7 ms). `criarObjetos` no `chunks.js`.
       - [x] **Gelo** — pelo guia e pelas artes do Lâmina. *Decisões:* fica como a maquete; o **acampamento vira lugar
             seguro e cura** (nenhum selvagem a 12 m; a fogueira cura a 6 m; sem loja, ninguém acorda lá); a **entrada da
             Gruta do Trovão vira a caverna de gelo da arte** (deixa de ser escondida); **rios congelados** no Gelo todo
@@ -250,12 +252,15 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
             floresta fechada, neve caindo, brilho falso); peças comuns e chão do Gelo no `chunks.js`; refúgios no `mundo.js`.
             Medido (Médio, sem monstros na tela): trilha 66 → 71, acampamento 68 → 72, lago 82 → 79, gruta 92 → 97,
             vale 87 → 86, picos 78 → 88 desenhos; na Fraco, quase igual. Triângulos: até 68 mil.
-      - [ ] **Floresta** — o Lâmina mandou o guia "Mata de Véu-Âmbar" e as artes (carvalhos prateados com cortinas de
-            âmbar, freixo oco, salgueiro, samambaias, musgo, cogumelos ciano, fungo dourado, pântano das lanternas azuis,
-            pontes de raiz, ruína circular). *Maquete feita* (Catedral das Cortinas com o Observatório numa clareira plana,
-            Pontes de Raiz num rio, Pântano das Lanternas Azuis no lago grande, água de tanino, névoa verde-azulada).
-            Esperando as decisões: etapa 0 junto (recomendado), gigantes e cogumelos do mapa trocados, árvores especiais
-            que somem perto da câmera.
+      - [x] **Floresta** — "Mata de Véu-Âmbar", pelo guia e pelas artes do Lâmina. *Decisões:* fica como a maquete; as
+            gigantes de hoje viram Carvalhos-Véu e os cogumelos gigantes vermelhos e roxos do mapa viram Lanternas-do-Brejo
+            (ciano) e Fungos-Tambor (dourados), só no mapa de fora (a Trilha Ancestral fica igual); árvores especiais ficam
+            transparentes quando tampam a câmera; perigos só enfeite; o lago grande se chama "Pântano das Lanternas Azuis".
+            *Feito:* `js/biomas/floresta.js` (as peças e a Catedral das Cortinas com o Observatório, as Pontes de Raiz e o
+            Pântano), `js/biomas/comum.js` (Forno, brilho falso, peças que desbotam), `js/biomas/clima.js` (névoa
+            verde-azulada e sol dourado), chão, água de tanino e peças nos chunks, gigantes e cogumelos no `raizes.js`.
+            Medido (Médio, sem monstros): mata 159 → 140, gigante 185 → 152, pântano 96 → 80, ponte 87 → 68, borda
+            101 → 67, Catedral 108 → 102 desenhos. Triângulos: até ~95 mil (antes ~50 mil).
       - [ ] **Deserto** — o Lâmina mandou o guia "Areias de Djeser-Ra" (Antigo Egito) e as artes. *Maquete feita:*
             Desfiladeiro dos Pilares Partidos no fim da Estrada Real, Estrada Cerimonial (colunas de papiro e braseiros),
             Templo Solar, Avenida das Esfinges com obeliscos de basalto, Planalto das Pirâmides (Grande Pirâmide com topo de
