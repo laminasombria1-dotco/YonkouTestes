@@ -243,9 +243,10 @@ export const GEO = {
 // nem é desenhado (cada quadrado tem a sua "bolha" de visibilidade).
 const TAM_QUADRADO = 40;
 export class Lote {
-  constructor() { this.itens = new Map(); }
+  // tam: tamanho dos quadrados (as masmorras novas usam quadrados maiores: menos desenhos)
+  constructor(tam = TAM_QUADRADO) { this.itens = new Map(); this.tam = tam; }
   add(geo, mat, x, y, z, sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0) {
-    const k = geo.uuid + '|' + mat.uuid + '|' + Math.floor(x / TAM_QUADRADO) + ',' + Math.floor(z / TAM_QUADRADO);
+    const k = geo.uuid + '|' + mat.uuid + '|' + Math.floor(x / this.tam) + ',' + Math.floor(z / this.tam);
     if (!this.itens.has(k)) this.itens.set(k, { geo, mat, lista: [] });
     this.itens.get(k).lista.push([x, y, z, sx, sy, sz, rx, ry, rz]);
   }

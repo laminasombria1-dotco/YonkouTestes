@@ -159,7 +159,7 @@ class Jogo {
     } else {
       this.mostrarLogin();
     }
-    window.claude?.hot?.snapshot?.(() => (this.estado ? { estado: this.estado, conta: this.conta && { id: this.conta.id, nome: this.conta.nome, tipo: this.conta.tipo }, pos: { x: this.mundo.pos.x, z: this.mundo.pos.z }, hora: this.mundo.hora } : {}));
+    window.claude?.hot?.snapshot?.(() => (this.estado ? { estado: this.estado, conta: this.conta && { id: this.conta.id, nome: this.conta.nome, tipo: this.conta.tipo }, pos: this.mundo.masmorras.posSalvar() || { x: this.mundo.pos.x, z: this.mundo.pos.z }, hora: this.mundo.hora } : {}));
     // App minimizado ou fechado: salva e manda para a nuvem na hora
     document.addEventListener('visibilitychange', () => { if (document.hidden) { this.salvar(); this.enviarNuvem(true, true); } });
     window.addEventListener('pagehide', () => { this.salvar(); this.enviarNuvem(true, true); });
@@ -583,7 +583,7 @@ class Jogo {
       this.aviso('Bandeira guardada na mochila. Sem ela, você acorda na fonte do castelo.');
     } else {
       const lugar = m.acharLugarBandeira();
-      const dg = !lugar && m.dungeons?.find((d) => d.t.semCasa(m.pos.x, m.pos.z));
+      const dg = !lugar && (m.masmorras.ativa || m.dungeons?.find((d) => d.t.semCasa(m.pos.x, m.pos.z)));
       if (dg) {
         this.aviso(dg.cfg.semCasa);
         return;
@@ -914,7 +914,7 @@ class Jogo {
     this.ganharCristais(ganho);
     // Ouro: cada selvagem vencido dá 5 a 10; num grupo, 4 por comum e 10 pelo líder; o chefe dá 300
     if (!b.treinador && ativo.hp > 0) {
-      let moedas = b.chefe && vencidos.length ? MOEDAS.chefe : 0;
+      let moedas = b.chefe && vencidos.length ? (b.selvagem.masmorra?.ouroChefe ?? MOEDAS.chefe) : 0; // masmorras novas: 300 + 50 por nível
       if (!b.chefe) for (const d of b.derrotados) moedas += b.grupo ? (d.lider ? MOEDAS.liderGrupo : MOEDAS.comumGrupo) : MOEDAS.selvagem[0] + Math.floor(Math.random() * (MOEDAS.selvagem[1] - MOEDAS.selvagem[0] + 1));
       this.bolsa.ganharMoedas(moedas);
       // Galho Raro e Asa do Anjo: por sorte, só do chefe da masmorra (os acampamentos e o mapa não dão)
@@ -922,7 +922,7 @@ class Jogo {
     }
     for (const novo of b.capturados) {
       novo.hp = Math.max(1, novo.hp);
-      delete novo.lider; delete novo.onda; delete novo.forca; delete novo.chefe;
+      delete novo.lider; delete novo.onda; delete novo.forca; delete novo.chefe; delete novo.fatorCaptura;
       if (!this.estado.capturados.includes(novo.especie)) this.estado.capturados.push(novo.especie);
       if (this.estado.equipe.length < MAX_EQUIPE) {
         this.estado.equipe.push(novo);
@@ -1157,7 +1157,7 @@ class Jogo {
     if (!this.estado || !this.conta) return;
     const voltaram = protegerColecao(this.estado);
     if (voltaram.length) { this.aviso(`Recuperados para a reserva: ${voltaram.join(', ')}.`); this.atualizarHudMundo?.(); }
-    gravarTexto(this.chaveSave(), JSON.stringify({ v: 3, temporada: TEMPORADA, t: Date.now(), estado: this.estado, pos: { x: this.mundo.pos.x, z: this.mundo.pos.z }, hora: this.mundo.hora, semente: SEMENTE, mapa: VERSAO_MAPA }));
+    gravarTexto(this.chaveSave(), JSON.stringify({ v: 3, temporada: TEMPORADA, t: Date.now(), estado: this.estado, pos: this.mundo.masmorras.posSalvar() || { x: this.mundo.pos.x, z: this.mundo.pos.z }, hora: this.mundo.hora, semente: SEMENTE, mapa: VERSAO_MAPA }));
     if (this.conta.nuvem) this.nuvemPendente = true;
   }
 

@@ -8,12 +8,15 @@
 import { CONFIG_MAPA } from './config.js';
 import { alturaBase, biomaEm, RAIO_MUNDO, NIVEL_AGUA, FUNDO_BLOQUEIO } from './gerador.js';
 import { alturaDungeons, foraDungeons } from '../dungeon.js';
+import { interiorEm } from '../masmorras/forma.js';
 
 export const ESPACO = CONFIG_MAPA.tamChunk / CONFIG_MAPA.divisoes; // metros entre os pontos da grade
 const cache = new Map();
 
 // Altura "contínua": gerador + dungeons + a borda do mapa que sobe
 function alturaContinua(x, z) {
+  const f = interiorEm(x, z); // dentro de uma masmorra nova (área separada): quem manda é ela
+  if (f) return f.altura(x, z);
   let h = alturaDungeons(x, z, alturaBase(x, z));
   const fora = Math.min(Math.hypot(x, z) - (RAIO_MUNDO - 6), foraDungeons(x, z));
   if (fora > 0) h += Math.min(18, fora * 0.9);
@@ -45,11 +48,18 @@ export function alturaEm(x, z) {
 
 // Não dá para andar aqui? (lago fundo ou lava; rios rasos dá para atravessar)
 export function bloqueadoEm(x, z) {
+  if (interiorEm(x, z)) return false; // as masmorras novas cuidam disso sozinhas
   const h = alturaEm(x, z);
   if (h >= NIVEL_AGUA + 0.05) return false;
   if (foraDungeons(x, z) < 6) return false; // dentro das dungeons quem manda é a dungeon
   if (h < FUNDO_BLOQUEIO) return true;
   return biomaEm(x, z) === 'fogo'; // lava, mesmo rasa
+}
+
+// Esquece as alturas guardadas de uma área (a masmorra nova muda quando entra e sai)
+export function esquecerAlturas(x0, z0, x1, z1) {
+  const i0 = Math.floor(x0 / ESPACO) - 1, i1 = Math.ceil(x1 / ESPACO) + 1, j0 = Math.floor(z0 / ESPACO) - 1, j1 = Math.ceil(z1 / ESPACO) + 1;
+  for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) cache.delete((i + 32768) * 65536 + (j + 32768));
 }
 
 // Quantos pontos já foram calculados (para testes)

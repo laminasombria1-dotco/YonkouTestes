@@ -18,6 +18,7 @@ import {
   ESPECIES, ELEMENTOS, ORDEM_ELEMENTOS, ORDEM_DUPLAS, RAROS, NOMES_ESTAGIO, ARENAS, DUNGEONS, CRISTAIS,
   formasDaLinha, formaPorNivel, criarMonstro, statsDe, xpParaProximo, niveisDaEtapa, nivelDoChefe, MASMORRA, sortearChefe, nomeDupla, nomeTipo, verificarEvolucao,
   NIVEL_MAXIMO, evoluirUmaVez, missaoDe, especieDaEscolha, ORDEM_LINHAS_RARAS,
+  MASMORRAS_NOVAS, dadosMasmorra, niveisMasmorraNova, nivelChefeMasmorraNova,
 } from './dados.js';
 import { criarModelo, criarCoroa, criarAuraDupla } from './modelos.js';
 import { zonaEm, NOMES_ZONA, NASCER, ANG_NASCER } from './mundo.js';
@@ -262,9 +263,31 @@ export class PainelGM {
       </div>`;
   }
 
+  // As masmorras novas (áreas separadas): entrar em qualquer etapa, abrir os portões, nível e chefe
+  abaMasmorrasNovas() {
+    const media = this.mundo.mediaEquipe(), G = this.mundo.masmorras;
+    return G.entradas.map(({ id, cfg }) => {
+      const sv = dadosMasmorra(this.estado, id), nm = sv.nivel, dentro = G.ativa?.id === id;
+      const chefe = ESPECIES[(dentro && G.ativa.chefe?.dados.especie) || sv.chefe || MASMORRA.chefes[id][0][0]];
+      const etapas = cfg.etapas.map((e, i) => { const nv = niveisMasmorraNova(media, i, id, nm); return `<button class="gm-btn" type="button" data-gm="mmEntrar" data-dg="${id}" data-onde="${i}">Etapa ${i + 1} · Nv.${nv.comum}/${nv.lider}</button>`; }).join('');
+      return `<div class="gm-bloco">
+        <h3>${esc(cfg.nome)} (masmorra nova, ${esc(cfg.regiao)}) · Nível ${nm}${dentro ? ' · você está aqui' : ''}</h3>
+        <div class="gm-linha"><small>Nível da Masmorra:</small>${[1, 3, 5, 9, 10].map((n) => `<button class="gm-btn${n === nm ? ' verde' : ''}" type="button" data-gm="mmNivel" data-dg="${id}" data-n="${n}">${n}</button>`).join('')}<small>${sv.vitorias} vitórias${sv.achada ? ' · descoberta' : ' · ainda não descoberta'}</small></div>
+        <div class="gm-linha"><small>Entrar:</small><button class="gm-btn verde" type="button" data-gm="mmEntrar" data-dg="${id}" data-onde="inicio">Começo</button><button class="gm-btn" type="button" data-gm="mmEntrar" data-dg="${id}" data-onde="chefe">${esc(cfg.fim)}</button><button class="gm-btn" type="button" data-gm="mmPorta" data-dg="${id}">A porta no mapa</button></div>
+        <div class="gm-grade">${etapas}</div>
+        <div class="gm-linha"><small>Chefe: <b>${esc(chefe.nome)}</b> Nv.${nivelChefeMasmorraNova(media, id, nm)}${sv.espera ? ' (esperando o amanhecer)' : ''}</small></div>
+        <div class="gm-linha">
+          <button class="gm-btn" type="button" data-gm="mmPortoes" ${dentro ? '' : 'disabled'}>Abrir todos os portões</button>
+          <button class="gm-btn" type="button" data-gm="mmChefeVolta" data-dg="${id}">O chefe volta já</button>
+          <button class="gm-btn" type="button" data-gm="mmSortear" data-dg="${id}">Sortear outro chefe</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
   abaDungeons() {
     const media = this.mundo.mediaEquipe();
-    return Object.entries(DUNGEONS).map(([id, cfg]) => {
+    return this.abaMasmorrasNovas() + Object.entries(DUNGEONS).map(([id, cfg]) => {
       const d = this.dungeon(id), nm = d.nivelMasmorra;
       const nvChefe = this.sel.nivelChefe || nivelDoChefe(media, nm);
       const etapas = cfg.etapas.map((e, i) => {
@@ -530,6 +553,18 @@ export class PainelGM {
       case 'chefeSortear': this.trocarChefe(d.dg, false); break;
       case 'chefeLendario': this.trocarChefe(d.dg, true); break;
       case 'nivelMasmorra': this.nivelMasmorra(d.dg, Number(d.n)); break;
+      case 'mmEntrar': this.fecharPainel(); this.mundo.masmorras.entrar(d.dg, /^\d$/.test(d.onde) ? Number(d.onde) : d.onde); this.jogo.aviso(`GM: ${MASMORRAS_NOVAS[d.dg].nome}.`); return;
+      case 'mmPorta': { const e = this.mundo.masmorras.entrada(d.dg); this.mundo.masmorras.resetar(); this.teleportar(e.fora.x + Math.sin(e.ang) * 4, e.fora.z + Math.cos(e.ang) * 4, e.ang + Math.PI); this.fecharPainel(); return; }
+      case 'mmPortoes': { const a = this.mundo.masmorras.ativa; if (a) a.portoes.forEach((_, i) => a.abrirPortao(i, false)); this.jogo.aviso('GM: portões abertos.'); break; }
+      case 'mmNivel': { const sv = dadosMasmorra(this.estado, d.dg); sv.nivel = Math.max(1, Math.min(MASMORRA.nivelMax, Number(d.n))); this.jogo.aviso(`GM: ${MASMORRAS_NOVAS[d.dg].nome} no Nível ${sv.nivel}.`); this.salvar(); break; }
+      case 'mmChefeVolta': case 'mmSortear': {
+        const sv = dadosMasmorra(this.estado, d.dg), a = this.mundo.masmorras.ativa;
+        sv.espera = false;
+        if (acao === 'mmSortear') sv.chefe = sortearChefe(d.dg, Math.min(sv.nivel, MASMORRA.lendarioDesde - 1));
+        if (a?.id === d.dg) { if (a.chefe) this.mundo.removerSelvagem(a.chefe); a.chefe = null; a.esperaAmanhecer = false; a.spawnarChefe(); }
+        this.jogo.aviso(`GM: o chefe do ${MASMORRAS_NOVAS[d.dg].fim} é ${ESPECIES[sv.chefe || a?.chefe?.dados.especie || MASMORRA.chefes[d.dg][0][0]].nome}.`);
+        this.salvar(); break;
+      }
       case 'soltoDungeon': this.soltoDungeon(d.dg); break;
       case 'xp': this.darXp(Number(d.qtd)); break;
       case 'xpNivel': { const m = this.alvo(); this.darXp(xpParaProximo(m.nivel) - m.xp); break; }

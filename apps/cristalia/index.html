@@ -285,6 +285,8 @@
   #zona-nome { position: absolute; top: 18%; left: 50%; transform: translateX(-50%); font-family: var(--f-titulo); font-weight: 600; font-size: 1.5rem;
     white-space: nowrap; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6); opacity: 0; pointer-events: none; }
   #zona-nome.mostrar { animation: zona 2.6s ease-out forwards; }
+  /* tela preta rápida ao entrar e sair das masmorras novas */
+  #cortina { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 40; }
   @keyframes zona { 0% { opacity: 0; transform: translate(-50%, 8px); } 15%, 70% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; } }
 
   #rotulo { position: absolute; left: 0; top: 0; padding: 3px 9px; border-radius: 8px; background: var(--painel); font-size: 0.78rem; font-weight: 700; white-space: nowrap; pointer-events: none; }
@@ -676,6 +678,7 @@
       </div>
     </div>
     <div id="zona-nome"></div>
+    <div id="cortina"></div>
   </div>
 
   <div id="hud-batalha" class="hud" hidden>

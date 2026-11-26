@@ -774,8 +774,54 @@ export const MASMORRA = {
   chefes: {
     brasas: [['magmalobo', 1], ['florinferno', 1], ['caldeirax', 1], ['colossarapa', 5]],
     raizes: [['florestral', 1], ['florinferno', 1], ['mandacarao', 5]],
+    // masmorras novas (passo 4). Sem lendário do tipo: o chefe fica só entre as formas finais
+    // (o Lâmina vai criar os lendários de Gelo, Deserto e Arquipélago mais para frente)
+    trovao: [['tempestor', 1], ['titanvolt', 1]],
   },
 };
+
+// =============================================================
+// MASMORRAS NOVAS (mundo novo, passo 4): ÁREAS SEPARADAS
+// Você encosta na porta escondida no bioma, a tela escurece e o jogo carrega só ela.
+// São difíceis e demoradas: 5 etapas, cada uma com um portão selado que só abre
+// quando você vence o LÍDER do grupo daquela etapa. No fim, o chefe (forma final).
+//  lugar   = qual masmorra do bioma em LUGARES (gerador.js): 1 = a primeira, 2 = a segunda
+//  piso    = níveis mínimos no Nível da Masmorra 1 (nunca ficam mais fáceis que isso);
+//            depois somam +3 por Nível da Masmorra, como as de hoje (até o Nv.98/100)
+//  extra   = níveis a mais em cada etapa
+//  captura = o chefe só com o Cristal Supremo e com metade da chance de uma forma final (20%)
+//  ouro    = o chefe dá 300 + 50 por Nível da Masmorra (e não dá ovo)
+//  chefe   = o lendário do tipo (null = ainda não tem: fica só o sorteio das formas finais)
+// =============================================================
+export const MASMORRAS_NOVAS = {
+  trovao: {
+    nome: 'Gruta do Trovão', bioma: 'raio', lugar: 1, regiao: 'Picos Nevados', chefe: null, fim: 'Trono da Tempestade',
+    zonaSoltos: 'raio', zonaChefe: 'raio',
+    semCasa: 'O vento da Gruta do Trovão arranca a bandeira. Finque do lado de fora.',
+    piso: { comum: 55, lider: 62, chefe: 72 },
+    etapas: [
+      { nome: 'Etapa 1 · Vale da Nevasca',      extra: 0 },
+      { nome: 'Etapa 2 · Lago Congelado',       extra: 2 },
+      { nome: 'Etapa 3 · Galeria de Cristal',   extra: 4 },
+      { nome: 'Etapa 4 · Salão dos Raios',      extra: 6 },
+      { nome: 'Etapa 5 · Escadaria Trovejante', extra: 8 },
+    ],
+    // Só Raio (e o Imanito, Terra + Raio); Sol, Luz, Lua e Trevas como visitantes raros
+    aparicoes: [['L:raio', 9], ['L:terraRaio', 3], ['L:sol', 0.5], ['L:luz', 0.5], ['L:lua', 0.5], ['L:trevas', 0.5]],
+  },
+};
+export const MASMORRA_NOVA = { captura: 0.5, ouroBase: 300, ouroPorNivel: 50 };
+// Níveis das etapas de uma masmorra nova (com o piso)
+export function niveisMasmorraNova(media, etapa, id, nivelMasmorra = 1) {
+  const c = MASMORRAS_NOVAS[id], e = c.etapas[etapa].extra, extra = MASMORRA.niveisPorNivel * (nivelMasmorra - 1);
+  const comum = Math.max(tetoSuave(media * 1.1 + 2 + e, 48, media, 3 + e), c.piso.comum + e);
+  const lider = Math.max(tetoSuave(media * 1.4 + 8 + e, 50, media, 5 + e), c.piso.lider + e);
+  return { comum: Math.min(98, Math.round(comum + extra)), lider: Math.min(100, Math.round(lider + extra)) };
+}
+export function nivelChefeMasmorraNova(media, id, nivelMasmorra = 1) {
+  const c = MASMORRAS_NOVAS[id];
+  return Math.min(100, Math.round(Math.max(tetoSuave(media * 1.4 + 22, 50, media, 16), c.piso.chefe) + MASMORRA.niveisPorNivel * (nivelMasmorra - 1)));
+}
 // Os dados da masmorra no jogo salvo (cria se não tiver: saves antigos começam no nível 1)
 export function dadosMasmorra(estado, id) {
   estado.masmorras ||= {};
@@ -783,7 +829,8 @@ export function dadosMasmorra(estado, id) {
 }
 // Sorteia o chefe da masmorra para o nível dela (o lendário só a partir do nível 9)
 export function sortearChefe(id, nivel, sorte = Math.random) {
-  if (nivel >= MASMORRA.lendarioDesde && sorte() < MASMORRA.chanceLendario) return DUNGEONS[id].chefe;
+  const lenda = (DUNGEONS[id] || MASMORRAS_NOVAS[id])?.chefe; // as masmorras novas sem lendário pulam isso
+  if (lenda && nivel >= MASMORRA.lendarioDesde && sorte() < MASMORRA.chanceLendario) return lenda;
   const lista = MASMORRA.chefes[id].filter(([, desde]) => nivel >= desde);
   return lista[Math.floor(sorte() * lista.length)][0];
 }
@@ -936,7 +983,8 @@ export function chanceCaptura(monstro, tipoCristal = 0) {
   const esp = ESPECIES[monstro.especie];
   if (tipoCristal < cristalMinimo(monstro)) return 0;
   const fracVida = monstro.hp / statsDe(monstro.especie, monstro.nivel).hpMax;
-  const dificil = ehFormaFinal(esp) ? CAPTURA_FORMA_FINAL : 1;
+  // fatorCaptura: o chefe das masmorras novas tem metade da chance (MASMORRA_NOVA.captura)
+  const dificil = (ehFormaFinal(esp) ? CAPTURA_FORMA_FINAL : 1) * (monstro.fatorCaptura || 1);
   const c = esp.captura * dificil * CRISTAIS[tipoCristal].poder * (1.7 - 1.5 * fracVida);
   return Math.min(0.95, Math.max(dificil < 1 ? 0.02 : 0.05, c));
 }

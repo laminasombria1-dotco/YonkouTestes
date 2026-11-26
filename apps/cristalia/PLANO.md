@@ -217,6 +217,18 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
         - [x] **Vila da Neve:** Clayton (Água), Siberius (Planta), Hela (Raio), Tila (Fogo) e o Campeão Joker (Raio), com o tema do baralho, pela arte do Lâmina.
         - [x] **Vila das Folhas:** Richard (Fogo), Sally (Planta), Pâmela (Água), Lais (Planta) e a Campeã Rox (Planta), com o visual pela arte do Lâmina.
     - [ ] **Passo 4 — Masmorras novas** (2 por bioma; as novas são áreas separadas).
+          *Decisões do Lâmina:* nomes aprovados (Gruta do Trovão, Torre da Nevasca, Pântano Sombrio, Mina Abandonada,
+          Tumba das Areias, Forja Antiga, Templo Submerso, Gruta das Marés); **sem Chefe Ancião**: onde não tem lendário
+          (Gelo, Deserto, Arquipélago) o chefe fica só entre as formas finais até o Lâmina criar os lendários; **portão
+          selado** (vencer o líder da etapa para passar); pisos Nv.55/62/72 (1ª do bioma) e Nv.62/70/80 (2ª); captura do chefe
+          só com o Supremo e com metade da chance (20%); ouro 300 + 50 por Nível da Masmorra; sem ovo. **Maiores, mais
+          bonitas, mais difíceis e demoradas**, com campos abertos e peças próprias de cada região (ex.: no Deserto,
+          pirâmides e esfinges com cabeça de gato, da época dos faraós).
+      - [x] **4.1 — O motor + a Gruta do Trovão** (Gelo): entrada escondida, área separada, 5 etapas com portões selados,
+            chefe, saídas, salvar e GM. `js/masmorras/` e `MASMORRAS_NOVAS` (`js/dados.js`).
+      - [ ] **4.2 — Gelo e Deserto:** Torre da Nevasca, Mina Abandonada e Tumba das Areias (pirâmides e esfinges).
+      - [ ] **4.3 — Floresta e Vulcânico:** Pântano Sombrio e Forja Antiga.
+      - [ ] **4.4 — Arquipélago:** Templo Submerso e Gruta das Marés.
     - [ ] **Passo 5 — Dungeons** (a especificação do Lâmina, com o adaptador).
     - [ ] **Passo 6 — Níveis** (o Lâmina vai rever a regra mais para frente).
   - [ ] **8.4 — Regiões** com outros reinos (futuro).

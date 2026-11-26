@@ -20,6 +20,8 @@ import { RAIO_MUNDO, NIVEL_AGUA, SEMENTE, LAGOA, RESERVAS, SEGREDOS, ESTRADA, RA
 import { alturaEm, bloqueadoEm } from './mapa/altura.js';
 import { Grade, ListaObstaculos } from './mapa/grade.js';
 import { Chunks } from './mapa/chunks.js';
+import { interiorEm } from './masmorras/forma.js';
+import { Masmorras } from './masmorras/masmorra.js';
 import { lerQualidade } from './mapa/config.js';
 import { ESPECIES, ELEMENTOS, APARICOES, PERIODO_DA_LINHA, DUPLAS, ORDEM_DUPLAS, INTERVALO_DUPLO, CRISTAIS, criarMonstro, statsDe, formaPorNivel, especieDaEscolha, nomeTipo, tetoSuave } from './dados.js';
 
@@ -88,6 +90,8 @@ export const NASCER = REINO.paraMundo(NASCER_REINO.x, NASCER_REINO.z);
 export const ANG_NASCER = Math.atan2(FONTE.x - NASCER.x, FONTE.z - NASCER.z); // de frente para a fonte e o castelo
 
 export function zonaEm(x, z) {
+  const f = interiorEm(x, z); // dentro de uma masmorra nova
+  if (f) return f.zona;
   const t = tracadoPerto(x, z); // dentro (ou na boca) de uma dungeon aberta
   if (t) return t.zona;
   const L = lagoEm(x, z, 12, 'agua');
@@ -125,6 +129,7 @@ export class Mundo {
     this.dungeons = [this.dungeon, this.floresta];
     this.reino = new Reino(this, alturaEm);
     this.vilas = new Vilas(this); // as 5 vilas (uma em cada bioma), com loja e arena
+    this.masmorras = new Masmorras(this); // as masmorras novas: a entrada no mapa e a área separada
     this.criarMontanhas();
     this.criarEstrelas();
 
@@ -216,6 +221,7 @@ export class Mundo {
 
   pontoLivre(x, z, folga) {
     if (Math.hypot(x, z) < 13) return false;
+    if (interiorEm(x, z)) return false; // as masmorras novas cuidam dos monstros delas
     if (TRACADOS.some((t) => t.reservado(x, z))) return false; // as dungeons e o Reino se decoram sozinhos
     if (naEstrada(x, z, folga)) return false; // a Estrada Real fica livre
     if (this.bandeiraPos && Math.hypot(x - this.bandeiraPos.x, z - this.bandeiraPos.z) < AREA_SEGURA_BANDEIRA + 4) return false;
@@ -358,6 +364,7 @@ export class Mundo {
 
   povoar() {
     this.povoando = true;
+    this.masmorras?.resetar(); // nenhuma masmorra nova aberta
     for (const s of [...this.selvagens]) this.removerSelvagem(s);
     for (const g of [...this.grupos]) this.removerGrupo(g);
     for (let i = 0; i < 3; i++) this.spawnarSelvagem(true);
@@ -562,6 +569,7 @@ export class Mundo {
 
   // ---------- bandeira do Reino (onde você renasce) ----------
   podeFincarBandeira(x, z) {
+    if (interiorEm(x, z)) return false; // nem dentro das masmorras novas
     if (Math.hypot(x, z) > RAIO_MUNDO - 8) return false;
     if (semCasaDungeons(x, z)) return false; // dentro ou na boca das masmorras não
     if (this.vilas?.vilaEm(x, z, 4)) return false; // nem dentro das vilas
@@ -760,6 +768,13 @@ export class Mundo {
       const d = Math.hypot(dx, dz), min = o.r + raio;
       if (d < min && d > 0.0001) { p.x = o.x + (dx / d) * min; p.z = o.z + (dz / d) * min; }
     });
+    // dentro de uma masmorra nova: os limites são os dela (salas, corredores, buracos)
+    const f = interiorEm(p.x, p.z);
+    if (f) {
+      f.empurrar(p, raio);
+      if (!f.livre(p.x, p.z, raio)) { const q = f.prender(p, raio); p.x = q.x; p.z = q.z; }
+      return;
+    }
     for (const t of TRACADOS) t.empurrar?.(p, raio); // água do Lago Escondido (dentro da dungeon)
     if (bloqueadoEm(p.x, p.z)) this.sairDoLiquido(p); // lago fundo e lava (rio raso dá para atravessar)
     // limites: o mapa redondo ou o corredor de uma dungeon (vale o mais perto)
@@ -837,7 +852,7 @@ export class Mundo {
 
     // Relâmpagos nos Picos Nevados (região de Raio)
     const zonaAtual = zonaEm(this.pos.x, this.pos.z);
-    if (zonaAtual === 'raio') {
+    if (zonaAtual === 'raio' && !this.masmorras.ativa) { // (a masmorra cuida dos relâmpagos dela)
       this.proxRelampago -= dt;
       if (this.proxRelampago <= 0) { this.relampago = 0.15; this.proxRelampago = 2.5 + Math.random() * 4; }
     }
@@ -847,7 +862,7 @@ export class Mundo {
       if (this.jogo.estado) this.jogo.aviso(this.periodo === 'noite' ? 'Anoiteceu. Monstros de Lua e Trevas saíram!' : 'Amanheceu. Monstros de Sol e Luz estão por aí!');
     }
     const vilaAqui = this.vilas.vilaEm(this.pos.x, this.pos.z);
-    const nomeZona = vilaAqui ? vilaAqui.nome : REINO.perto(this.pos.x, this.pos.z) ? 'Reino' : naEstrada(this.pos.x, this.pos.z) ? 'Estrada Real' : NOMES_ZONA[zonaAtual === 'agua' && biomaEm(this.pos.x, this.pos.z) === 'agua' ? 'arquipelago' : zonaAtual];
+    const nomeZona = this.masmorras.ativa ? this.masmorras.ativa.nomeAqui() : vilaAqui ? vilaAqui.nome : REINO.perto(this.pos.x, this.pos.z) ? 'Reino' : naEstrada(this.pos.x, this.pos.z) ? 'Estrada Real' : NOMES_ZONA[zonaAtual === 'agua' && biomaEm(this.pos.x, this.pos.z) === 'agua' ? 'arquipelago' : zonaAtual];
     if (this.zonaAvisada !== nomeZona) {
       this.zonaAvisada = nomeZona;
       if (this.jogo.estado) this.jogo.mostrarZona(nomeZona);
@@ -933,6 +948,9 @@ export class Mundo {
 
     // Dungeons abertas: acampamentos, monstros soltos, chefe e clima
     for (const d of this.dungeons) d.atualizar(dt, t);
+    // Masmorras novas: a entrada no mapa ou, lá dentro, as etapas, os portões e o chefe
+    this.masmorras.atualizar(dt, t, pausado);
+    if (this.jogo.batalha) return;
 
     // Grupos: andam juntos em formação; aparecem mais conforme sua equipe fica forte
     this.timerGrupo -= dt;
