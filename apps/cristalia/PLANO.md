@@ -270,7 +270,12 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
             min de deserto entre uma e outra, 90 s cada); o hipogeu em `masmorras/tumba-areias.js`; chão, água turquesa do
             oásis e peças comuns nos chunks; a luz quente no `biomas/clima.js`. Medido (Médio, sem monstros): estrada 58 → 53,
             templo 61 → 51, avenida 55 → 48, pirâmide 67 → 50, oásis 80 → 65, tumba 61 → 61, dunas 47 → 36 desenhos.
-      - [ ] **Vulcânico**
+      - [ ] **Vulcânico** — o Lâmina mandou o guia "Caldeira de Ignis-Vael" (fogo, lava e ácidos flamejantes) e as artes.
+            *Maquete feita:* Fenda das Colunas Partidas, Trilha de Basalto, a Forja Primordial sobre uma fenda de lava (ponte
+            de ferro, pilares com correntes e engrenagens, bigorna colossal, anel e cascata de lava), rio de lava, o Monte Vael
+            (o vulcão de hoje com veios de lava e pluma), a Bacia do Vitriol (ácido verde com chamas ciano), a entrada das
+            Cavernas de Tubos de Lava, os Campos de Cinzas e o Cemitério de Cinza-Branca. Esperando as decisões: mudar o chão
+            (trilha, fenda, rio), ácido bloqueia, a caverna (enfeite ou Forja Antiga), Chuva de Cinzas rara.
       - [ ] **Arquipélago**
     - [ ] **Passo 5 — Dungeons** (a especificação do Lâmina, com o adaptador).
     - [ ] **Passo 6 — Níveis** (o Lâmina vai rever a regra mais para frente).
