@@ -241,7 +241,9 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
           Vulcânico ~55-75, Arquipélago ~50-65.
           *Proposta feita (com maquetes); esperando as decisões do Lâmina:*
       - [ ] **0 — Juntar os objetos de cada chunk** numa malha só (medido: Floresta 149 → 100 desenhos, Gelo 89 → 61).
-      - [ ] **Gelo**
+      - [ ] **Gelo** — o Lâmina mandou um guia (paleta, esquema do lugar, peças) e artes de referência. Maquete feita no
+            lugar onde a Estrada Real termina entre os 2 lagos congelados: trilha com lanternas, acampamento (cabana, fogueira,
+            barraca), lago com barco preso e píer, arco rúnico, fonte termal, rios congelados. Esperando a aprovação.
       - [ ] **Floresta**
       - [ ] **Deserto**
       - [ ] **Vulcânico**
