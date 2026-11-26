@@ -216,7 +216,7 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
         - [x] **Vila das Marés:** Karah (Fogo), Angelica (Fogo), Lanny (Raio), Ilia (Trevas) e a Campeã Serena (Água), com o visual pela arte do Lâmina.
         - [x] **Vila da Neve:** Clayton (Água), Siberius (Planta), Hela (Raio), Tila (Fogo) e o Campeão Joker (Raio), com o tema do baralho, pela arte do Lâmina.
         - [x] **Vila das Folhas:** Richard (Fogo), Sally (Planta), Pâmela (Água), Lais (Planta) e a Campeã Rox (Planta), com o visual pela arte do Lâmina.
-    - [ ] **Passo 4 — Masmorras novas** (2 por bioma; as novas são áreas separadas).
+    - [x] **Passo 4 — Masmorras novas** (2 por bioma; as novas são áreas separadas). As 8 prontas.
           *Decisões do Lâmina:* nomes aprovados (Gruta do Trovão, Torre da Nevasca, Pântano Sombrio, Mina Abandonada,
           Tumba das Areias, Forja Antiga, Templo Submerso, Gruta das Marés); **sem Chefe Ancião**: onde não tem lendário
           (Gelo, Deserto, Arquipélago) o chefe fica só entre as formas finais até o Lâmina criar os lendários; **portão
@@ -230,7 +230,8 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
             esfinges com cabeça de gato, deuses gato). `torre-nevasca.js`, `mina-abandonada.js`, `tumba-areias.js` e `pecas.js`.
       - [x] **4.3 — Floresta e Vulcânico:** Pântano Sombrio e Forja Antiga (piso da 2ª do bioma, porque a outra é o corredor
             de hoje; com os lendários Silvárion e Ignárion no Nível 9+). `pantano-sombrio.js` e `forja-antiga.js`.
-      - [ ] **4.4 — Arquipélago:** Templo Submerso e Gruta das Marés.
+      - [x] **4.4 — Arquipélago:** Templo Submerso (recife, conchas gigantes, tridente) e Gruta das Marés (navio naufragado,
+            piratas, polvo gigante). `templo-submerso.js` e `gruta-mares.js`.
     - [ ] **Passo 5 — Dungeons** (a especificação do Lâmina, com o adaptador).
     - [ ] **Passo 6 — Níveis** (o Lâmina vai rever a regra mais para frente).
   - [ ] **8.4 — Regiões** com outros reinos (futuro).

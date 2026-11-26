@@ -782,6 +782,8 @@ export const MASMORRA = {
     tumba: [['montanhar', 1], ['titanvolt', 1]],
     pantano: [['florestral', 1], ['florinferno', 1], ['mandacarao', 5]],
     forja: [['magmalobo', 1], ['caldeirax', 1], ['florinferno', 1], ['colossarapa', 5]],
+    templo: [['tsunamar', 1], ['leviaraia', 1], ['caldeirax', 1]],
+    mares: [['tsunamar', 1], ['leviaraia', 1], ['caldeirax', 1]],
   },
 };
 
@@ -895,6 +897,37 @@ export const MASMORRAS_NOVAS = {
     ],
     // Fogo, a Vulcarapa, o Vaporito (Água + Fogo) e o Brotobrasa (Fogo + Planta)
     aparicoes: [['L:fogo', 9], ['vulcarapa', 2], ['L:aguaFogo', 1.5], ['L:fogoPlanta', 1], ['L:sol', 0.5], ['L:luz', 0.5], ['L:lua', 0.5], ['L:trevas', 0.5]],
+  },
+  templo: {
+    fem: false, fimFem: false, // feminino? (para os textos: na/no, da/do)
+    nome: 'Templo Submerso', bioma: 'agua', lugar: 1, regiao: 'Arquipélago', chefe: null, fim: 'Santuário do Tridente',
+    zonaSoltos: 'agua', zonaChefe: 'agua',
+    semCasa: 'A maré do Templo leva a bandeira embora. Finque do lado de fora.',
+    piso: { comum: 55, lider: 62, chefe: 72 },
+    etapas: [
+      { nome: 'Etapa 1 · Praia dos Corais',   extra: 0 },
+      { nome: 'Etapa 2 · Recife Raso',        extra: 2 },
+      { nome: 'Etapa 3 · Átrio Afundado',     extra: 4 },
+      { nome: 'Etapa 4 · Salão das Conchas',  extra: 6 },
+      { nome: 'Etapa 5 · Jardim de Algas',    extra: 8 },
+    ],
+    // Só Água, a Aquaraia e o Vaporito (Água + Fogo); Sol, Luz, Lua e Trevas como visitantes raros
+    aparicoes: [['L:agua', 9], ['aquaraia', 2], ['L:aguaFogo', 1.5], ['L:sol', 0.5], ['L:luz', 0.5], ['L:lua', 0.5], ['L:trevas', 0.5]],
+  },
+  mares: {
+    fem: true, fimFem: false, // feminino? (para os textos: na/no, da/do)
+    nome: 'Gruta das Marés', bioma: 'agua', lugar: 2, regiao: 'Arquipélago', chefe: null, fim: 'Trono das Marés',
+    zonaSoltos: 'agua', zonaChefe: 'agua',
+    semCasa: 'As ondas da Gruta derrubam a bandeira. Finque do lado de fora.',
+    piso: { comum: 62, lider: 70, chefe: 80 }, // a 2ª do bioma: mais difícil
+    etapas: [
+      { nome: 'Etapa 1 · Enseada dos Naufrágios',     extra: 0 },
+      { nome: 'Etapa 2 · Piscinas de Maré',           extra: 2 },
+      { nome: 'Etapa 3 · Gruta de Cristal Marinho',   extra: 4 },
+      { nome: 'Etapa 4 · Esconderijo Pirata',         extra: 6 },
+      { nome: 'Etapa 5 · Caverna do Polvo',           extra: 8 },
+    ],
+    aparicoes: [['L:agua', 9], ['aquaraia', 2], ['L:aguaFogo', 1.5], ['L:sol', 0.5], ['L:luz', 0.5], ['L:lua', 0.5], ['L:trevas', 0.5]],
   },
 };
 // Artigo e preposição certos para o nome (fem = feminino): com('em', true) = 'na', com('de', false) = 'do'

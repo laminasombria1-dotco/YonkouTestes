@@ -392,7 +392,7 @@ O Reino fica **no meio do mapa** (mundo novo, `PLANO.md`): é o lugar seguro ond
 
 ## Masmorras novas (áreas separadas, mundo novo passo 4)
 
-São **2 por bioma** (o Caminho das Brasas e a Trilha Ancestral contam como uma delas e continuam como corredores abertos), nos lugares que a semente guardou em `LUGARES` (`js/mapa/gerador.js`). **Masmorras são difíceis e demoradas; dungeons são fáceis** (passo 5). Prontas: **Gruta do Trovão** e **Torre da Nevasca** (Gelo), **Mina Abandonada** e **Tumba das Areias** (Deserto), **Pântano Sombrio** (Floresta) e **Forja Antiga** (Vulcânico). Faltam as 2 do Arquipélago.
+São **2 por bioma** (o Caminho das Brasas e a Trilha Ancestral contam como uma delas e continuam como corredores abertos), nos lugares que a semente guardou em `LUGARES` (`js/mapa/gerador.js`). **Masmorras são difíceis e demoradas; dungeons são fáceis** (passo 5). Prontas: **Gruta do Trovão** e **Torre da Nevasca** (Gelo), **Mina Abandonada** e **Tumba das Areias** (Deserto), **Pântano Sombrio** (Floresta), **Forja Antiga** (Vulcânico), **Templo Submerso** e **Gruta das Marés** (Arquipélago): as 8 completas.
 
 - **Entrada escondida:** no mapa só fica a porta (na Gruta: um monte de pedras de gelo com uma boca escura), **sem ícone**. A 22 m dela aparece **"Você descobriu a Gruta do Trovão!"** (fica salvo: `estado.masmorras.trovao.achada`). Encostou na boca, a tela escurece e o jogo monta **só a masmorra**.
 - **Área separada:** cada masmorra fica **bem longe do mapa redondo** (x = 1800, 2700, ...). Lá dentro, `alturaEm`, a colisão e a região perguntam à forma da masmorra (`interiorEm` em `js/masmorras/forma.js`); o mapa de fora some sozinho (os chunks ficam longe e são apagados) e os monstros dele somem. Ao sair, **tudo da masmorra é apagado da memória** (só uma existe por vez).
@@ -457,8 +457,24 @@ A outra do Vulcânico é o Caminho das Brasas (sem piso), então esta usa o piso
 5. **Fundição:** 5 degraus que sobem, caldeirões despejando lava e engrenagens gigantes girando nas paredes.
 - **Coração da Forja:** a grande fornalha com o fogo mexendo, a bigorna-altar, cascatas de lava e o chefe (Magmalobo, Caldeirax, Florinferno, Colossarapa no Nível 5+ ou o Ignárion). A lava pulsa (1 material só).
 
+### Templo Submerso (Arquipélago, a 1ª do bioma)
+1. **Praia dos Corais:** palmeiras, corais coloridos, conchas, estrelas-do-mar, poças de maré e o mastro de um barco enterrado.
+2. **Recife Raso:** a água cobre os pés (um plano de água transparente), corais grandes e algas.
+3. **Átrio Afundado:** colunas quebradas (uma caída), a estátua do deus do mar com o tridente e canais de água.
+4. **Salão das Conchas:** conchas gigantes abertas com pérolas que brilham, o chão em mosaico de círculos e raios de luz entrando. Depois, a **Ponte do Abismo Azul**.
+5. **Jardim de Algas:** algas altas e 9 águas-vivas flutuando (1 desenho só).
+- **Santuário do Tridente:** o tridente gigante dourado, o altar da pérola, cascatas nas paredes e o chefe (Tsunamar, Leviaraia ou Caldeirax).
+
+### Gruta das Marés (Arquipélago, a 2ª do bioma: comuns Nv.62, líder Nv.70, chefe Nv.80)
+1. **Enseada dos Naufrágios:** o navio quebrado (com as costelas de madeira), a âncora, barris e caixas.
+2. **Piscinas de Maré:** paredões de pedra com espuma na base, poças com anêmonas que brilham e um arco de pedra.
+3. **Gruta de Cristal Marinho:** cristais azuis e verde-água.
+4. **Esconderijo Pirata:** plataformas de madeira, baús de tesouro abertos, canhões, ouro e a bandeira preta com a caveira. Depois, a **Ponte de Cordas** sobre o mar escuro.
+5. **Caverna do Polvo:** tentáculos gigantes saindo das poças, mexendo devagar (todos os pedaços num desenho só).
+- **Trono das Marés:** a concha gigante com a pérola, pedras altas no mar, lampiões, relâmpagos e o chefe (Tsunamar, Leviaraia ou Caldeirax).
+
 - **Textos:** cada masmorra guarda se o nome é feminino (`fem`, `fimFem` em `MASMORRAS_NOVAS`), para os avisos saírem certos ("no Pântano", "na Câmara do Faraó"; função `com` no `dados.js`).
-- **Código:** `js/masmorras/forma.js` (a forma: salas, corredores, abismos, buracos; só matemática; as salas são `aberta`, `canion` ou `gruta`), `js/masmorras/masmorra.js` (a base: entrar e sair, chão, portões, grupos, soltos, chefe, clima e as entradas no mapa), `js/masmorras/pecas.js` (peças que todas usam: pinheiro, cristais, porta de luz, braseiro, árvore morta, plano de água ou lava, espalhar nos morros) e um arquivo por masmorra com o desenho dela: `gruta-trovao.js`, `torre-nevasca.js`, `mina-abandonada.js`, `tumba-areias.js`, `pantano-sombrio.js` e `forja-antiga.js`. Os números ficam em `MASMORRAS_NOVAS` e `MASMORRA_NOVA` (`js/dados.js`). GM, aba **Dungeons**: entrar no começo, em cada etapa ou no trono, ir para a porta no mapa, abrir os portões, o Nível da Masmorra, o chefe volta já e sortear outro chefe.
+- **Código:** `js/masmorras/forma.js` (a forma: salas, corredores, abismos, buracos; só matemática; as salas são `aberta`, `canion` ou `gruta`), `js/masmorras/masmorra.js` (a base: entrar e sair, chão, portões, grupos, soltos, chefe, clima e as entradas no mapa), `js/masmorras/pecas.js` (peças que todas usam: pinheiro, cristais, porta de luz, braseiro, árvore morta, plano de água ou lava, espalhar nos morros) e um arquivo por masmorra com o desenho dela: `gruta-trovao.js`, `torre-nevasca.js`, `mina-abandonada.js`, `tumba-areias.js`, `pantano-sombrio.js`, `forja-antiga.js`, `templo-submerso.js` e `gruta-mares.js`. Os números ficam em `MASMORRAS_NOVAS` e `MASMORRA_NOVA` (`js/dados.js`). GM, aba **Dungeons**: entrar no começo, em cada etapa ou no trono, ir para a porta no mapa, abrir os portões, o Nível da Masmorra, o chefe volta já e sortear outro chefe.
 
 ## Caminho das Brasas (dungeon aberta da região de fogo)
 
@@ -1051,7 +1067,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/mapa/grade.js` | Grade de obstáculos: guarda as árvores, pedras e peças em quadradinhos de 8 m, para a colisão só olhar o que está perto |
 | `js/batalha.js` | Batalha em tempo real: movimento, golpes, efeitos, IA do inimigo e captura |
 | `js/dungeon.js` | Base das dungeons abertas: a forma do corredor (`Tracado`) e a do Reino (`REINO`), portões transparentes, acampamentos, monstros soltos, chefe e clima. Também o `Lote` e o `Bloco`, que juntam peças para ficar leve no celular |
-| `js/masmorras/` | As **masmorras novas** (áreas separadas): `forma.js` (a forma, só matemática), `masmorra.js` (a base e as entradas no mapa), `pecas.js` (peças repetidas) e um arquivo por masmorra com o desenho dela (`gruta-trovao.js`, `torre-nevasca.js`, `mina-abandonada.js`, `tumba-areias.js`, `pantano-sombrio.js`, `forja-antiga.js`) |
+| `js/masmorras/` | As **masmorras novas** (áreas separadas): `forma.js` (a forma, só matemática), `masmorra.js` (a base e as entradas no mapa), `pecas.js` (peças repetidas) e um arquivo por masmorra com o desenho dela (`gruta-trovao.js`, `torre-nevasca.js`, `mina-abandonada.js`, `tumba-areias.js`, `pantano-sombrio.js`, `forja-antiga.js`, `templo-submerso.js`, `gruta-mares.js`) |
 | `js/brasas.js` | Cenário do Caminho das Brasas (braseiros, forja, rio de lava, Trono de Magma, vulcão) |
 | `js/raizes.js` | Cenário da Trilha Ancestral e da Floresta (cogumelos, ruínas, lago, raízes, Árvore-Mãe, vaga-lumes, monstros extras) |
 | `js/arena.js` | Arenas: chão, obstáculos, clima animado e perigos de cada região (com chance), e o escurecer do Astro Negro |

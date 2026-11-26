@@ -28,9 +28,11 @@ import { MINA_ABANDONADA } from './mina-abandonada.js';
 import { TUMBA_AREIAS } from './tumba-areias.js';
 import { PANTANO_SOMBRIO } from './pantano-sombrio.js';
 import { FORJA_ANTIGA } from './forja-antiga.js';
+import { TEMPLO_SUBMERSO } from './templo-submerso.js';
+import { GRUTA_MARES } from './gruta-mares.js';
 
 // Os desenhos de cada masmorra (as que ainda não existem não aparecem no mapa)
-const PLANOS = { trovao: GRUTA_TROVAO, torre: TORRE_NEVASCA, mina: MINA_ABANDONADA, tumba: TUMBA_AREIAS, pantano: PANTANO_SOMBRIO, forja: FORJA_ANTIGA };
+const PLANOS = { trovao: GRUTA_TROVAO, torre: TORRE_NEVASCA, mina: MINA_ABANDONADA, tumba: TUMBA_AREIAS, pantano: PANTANO_SOMBRIO, forja: FORJA_ANTIGA, templo: TEMPLO_SUBMERSO, mares: GRUTA_MARES };
 
 const MAX_SOLTOS = 4;           // monstros soltos ao mesmo tempo (na sala onde você está)
 const ESCALA_CHEFE = 1.5;       // o chefe (forma final) fica maior que os outros
