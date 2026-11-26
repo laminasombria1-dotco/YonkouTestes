@@ -7,7 +7,8 @@
 //
 // A forma é feita de:
 //  - salas: elipses (rx, rz) com a altura do chão (número ou função) e o tipo
-//    'aberta' (céu aberto: morros em volta) ou 'gruta' (paredes altas de pedra);
+//    'aberta' (céu aberto: morros em volta), 'canion' (céu aberto, paredões de pedra)
+//    ou 'gruta' (paredes altas de pedra, sem céu);
 //  - corredores: ligam o centro de uma sala ao de outra (meia largura "larg");
 //  - abismos: cápsulas em volta de uma ponte, onde o chão cai (não dá para andar);
 //  - buracos: círculos de água funda (no Lago Congelado), que empurram para fora.
@@ -108,7 +109,7 @@ export class FormaMasmorra {
     }
     if (d <= 0) {
       // chão quase plano; nas salas abertas, uma ondulação leve
-      return h + (tipo === 'aberta' ? 0.22 * Math.sin(x * 0.31) * Math.cos(z * 0.27) : 0.06 * Math.sin(x * 0.9 + z * 0.7));
+      return h + (tipo !== 'gruta' ? 0.22 * Math.sin(x * 0.31) * Math.cos(z * 0.27) : 0.06 * Math.sin(x * 0.9 + z * 0.7));
     }
     // abismo em volta das pontes: o chão despenca
     for (const a of this.abismos) {
@@ -117,6 +118,7 @@ export class FormaMasmorra {
     // paredes: morros nas áreas abertas, rocha alta nas grutas
     const ruido = (Math.sin(x * 0.21 + z * 0.13) * Math.sin(z * 0.17 - x * 0.07) + 0.5 * Math.sin(x * 0.53 - z * 0.41)) * Math.min(1, d / 4);
     if (tipo === 'aberta') return h + Math.min(14, d * 0.5 + d * d * 0.012) + ruido * 1.6;
+    if (tipo === 'canion') return h + Math.min(16, d * 1.7) + ruido * 1.4; // paredões de pedra, céu aberto
     return h + Math.min(17, d * 2.1) + ruido * 1.2;
   }
 

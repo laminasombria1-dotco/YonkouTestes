@@ -777,6 +777,9 @@ export const MASMORRA = {
     // masmorras novas (passo 4). Sem lendário do tipo: o chefe fica só entre as formas finais
     // (o Lâmina vai criar os lendários de Gelo, Deserto e Arquipélago mais para frente)
     trovao: [['tempestor', 1], ['titanvolt', 1]],
+    torre: [['tempestor', 1], ['titanvolt', 1]],
+    mina: [['montanhar', 1], ['titanvolt', 1]],
+    tumba: [['montanhar', 1], ['titanvolt', 1]],
   },
 };
 
@@ -808,6 +811,50 @@ export const MASMORRAS_NOVAS = {
     ],
     // Só Raio (e o Imanito, Terra + Raio); Sol, Luz, Lua e Trevas como visitantes raros
     aparicoes: [['L:raio', 9], ['L:terraRaio', 3], ['L:sol', 0.5], ['L:luz', 0.5], ['L:lua', 0.5], ['L:trevas', 0.5]],
+  },
+  torre: {
+    nome: 'Torre da Nevasca', bioma: 'raio', lugar: 2, regiao: 'Picos Nevados', chefe: null, fim: 'Sino da Nevasca',
+    zonaSoltos: 'raio', zonaChefe: 'raio',
+    semCasa: 'A nevasca da Torre não deixa fincar a bandeira. Finque do lado de fora.',
+    piso: { comum: 62, lider: 70, chefe: 80 }, // a 2ª do bioma: mais difícil
+    etapas: [
+      { nome: 'Etapa 1 · Trilha do Penhasco',      extra: 0 },
+      { nome: 'Etapa 2 · Acampamento Abandonado',  extra: 2 },
+      { nome: 'Etapa 3 · Pátio da Torre',          extra: 4 },
+      { nome: 'Etapa 4 · Salão do Gelo Eterno',    extra: 6 },
+      { nome: 'Etapa 5 · Cume Gelado',             extra: 8 },
+    ],
+    aparicoes: [['L:raio', 9], ['L:terraRaio', 3], ['L:sol', 0.5], ['L:luz', 0.5], ['L:lua', 0.5], ['L:trevas', 0.5]],
+  },
+  mina: {
+    nome: 'Mina Abandonada', bioma: 'terra', lugar: 1, regiao: 'Deserto', chefe: null, fim: 'Coração da Terra',
+    zonaSoltos: 'terra', zonaChefe: 'terra',
+    semCasa: 'O chão da mina treme demais para fincar a bandeira. Finque do lado de fora.',
+    piso: { comum: 55, lider: 62, chefe: 72 },
+    etapas: [
+      { nome: 'Etapa 1 · Cânion Vermelho',   extra: 0 },
+      { nome: 'Etapa 2 · Pátio da Mina',     extra: 2 },
+      { nome: 'Etapa 3 · Túneis de Madeira', extra: 4 },
+      { nome: 'Etapa 4 · Caverna de Minério', extra: 6 },
+      { nome: 'Etapa 5 · Poço Profundo',     extra: 8 },
+    ],
+    // Só Terra (e o Imanito, Terra + Raio: os ímãs da mina)
+    aparicoes: [['L:terra', 9], ['L:terraRaio', 3], ['L:sol', 0.5], ['L:luz', 0.5], ['L:lua', 0.5], ['L:trevas', 0.5]],
+  },
+  tumba: {
+    nome: 'Tumba das Areias', bioma: 'terra', lugar: 2, regiao: 'Deserto', chefe: null, fim: 'Câmara do Faraó',
+    zonaSoltos: 'terra', zonaChefe: 'terra',
+    semCasa: 'A areia da Tumba engole a bandeira. Finque do lado de fora.',
+    piso: { comum: 62, lider: 70, chefe: 80 }, // a 2ª do bioma: mais difícil
+    etapas: [
+      { nome: 'Etapa 1 · Dunas dos Faraós',         extra: 0 },
+      { nome: 'Etapa 2 · Avenida das Esfinges',     extra: 2 },
+      { nome: 'Etapa 3 · Templo do Sol',            extra: 4 },
+      { nome: 'Etapa 4 · Câmara dos Sarcófagos',    extra: 6 },
+      { nome: 'Etapa 5 · Galeria dos Deuses Gato',  extra: 8 },
+    ],
+    // Terra; na tumba, Sol e Trevas aparecem um pouco mais (os deuses do sol e da escuridão)
+    aparicoes: [['L:terra', 10], ['L:terraRaio', 2], ['L:sol', 0.8], ['L:luz', 0.4], ['L:lua', 0.4], ['L:trevas', 0.8]],
   },
 };
 export const MASMORRA_NOVA = { captura: 0.5, ouroBase: 300, ouroPorNivel: 50 };

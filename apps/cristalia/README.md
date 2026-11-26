@@ -392,7 +392,7 @@ O Reino fica **no meio do mapa** (mundo novo, `PLANO.md`): é o lugar seguro ond
 
 ## Masmorras novas (áreas separadas, mundo novo passo 4)
 
-São **2 por bioma** (o Caminho das Brasas e a Trilha Ancestral contam como uma delas e continuam como corredores abertos), nos lugares que a semente guardou em `LUGARES` (`js/mapa/gerador.js`). **Masmorras são difíceis e demoradas; dungeons são fáceis** (passo 5). Pronta: **Gruta do Trovão** (Gelo). As outras 7 vêm nas próximas etapas.
+São **2 por bioma** (o Caminho das Brasas e a Trilha Ancestral contam como uma delas e continuam como corredores abertos), nos lugares que a semente guardou em `LUGARES` (`js/mapa/gerador.js`). **Masmorras são difíceis e demoradas; dungeons são fáceis** (passo 5). Prontas: **Gruta do Trovão** e **Torre da Nevasca** (Gelo), **Mina Abandonada** e **Tumba das Areias** (Deserto). Faltam as da Floresta, do Vulcânico e do Arquipélago.
 
 - **Entrada escondida:** no mapa só fica a porta (na Gruta: um monte de pedras de gelo com uma boca escura), **sem ícone**. A 22 m dela aparece **"Você descobriu a Gruta do Trovão!"** (fica salvo: `estado.masmorras.trovao.achada`). Encostou na boca, a tela escurece e o jogo monta **só a masmorra**.
 - **Área separada:** cada masmorra fica **bem longe do mapa redondo** (x = 1800, 2700, ...). Lá dentro, `alturaEm`, a colisão e a região perguntam à forma da masmorra (`interiorEm` em `js/masmorras/forma.js`); o mapa de fora some sozinho (os chunks ficam longe e são apagados) e os monstros dele somem. Ao sair, **tudo da masmorra é apagado da memória** (só uma existe por vez).
@@ -412,7 +412,34 @@ São **2 por bioma** (o Caminho das Brasas e a Trilha Ancestral contam como uma 
 5. **Escadaria Trovejante:** 6 degraus gigantes, braseiros de fogo azul e duas estátuas de pássaros do trovão.
 - **Trono da Tempestade:** céu aberto com relâmpagos, pilares de cristal, o círculo de runas, o trono de gelo, nuvens girando e o chefe.
 
-- **Código:** `js/masmorras/forma.js` (a forma: salas, corredores, abismos, buracos; só matemática), `js/masmorras/masmorra.js` (a base: entrar e sair, chão, portões, grupos, soltos, chefe, clima e as entradas no mapa) e `js/masmorras/gruta-trovao.js` (o desenho da Gruta). Os números ficam em `MASMORRAS_NOVAS` e `MASMORRA_NOVA` (`js/dados.js`). GM, aba **Dungeons**: entrar no começo, em cada etapa ou no trono, ir para a porta no mapa, abrir os portões, o Nível da Masmorra, o chefe volta já e sortear outro chefe.
+### Torre da Nevasca (Gelo, a 2ª do bioma: comuns Nv.62, líder Nv.70, chefe Nv.80)
+Uma subida no meio da nevasca (o vento leva a neve de lado):
+1. **Trilha do Penhasco:** a rampa que sobe 8 m, com cerca de madeira e bandeirinhas coloridas.
+2. **Acampamento Abandonado:** barracas cobertas de neve, fogueira apagada (ainda com brasas), caixas, um trenó e uma bandeira rasgada.
+3. **Pátio da Torre:** muralha com torrinhas, 5 cavaleiros de gelo e a fonte congelada.
+4. **Salão do Gelo Eterno:** dentro da torre (de fora ela é um tubo de pedra com telhado), pilares de cristal, o tapete e o lustre que gira. Depois, a **Ponte das Correntes** sobre o abismo.
+5. **Cume Gelado:** espinhos de gelo gigantes, árvores mortas e montes de neve.
+- **Sino da Nevasca:** o sino gigante balançando no arco, braseiros azuis e o chefe (Tempestor ou Titanvolt).
+
+### Mina Abandonada (Deserto, a 1ª do bioma)
+Do sol do cânion até o fundo da terra:
+1. **Cânion Vermelho:** paredões listrados (a cor muda com a altura), mesas de pedra, cactos e a caveira gigante de um bicho antigo.
+2. **Pátio da Mina:** barracos, a caixa d'água, o trilho até a boca da mina, vagonetes e barris.
+3. **Túneis de Madeira:** vigas baixas (a câmera passa por cima), lampiões e o trilho. Depois, a **Ponte dos Trilhos** sobre cavaletes, em cima de um buraco escuro.
+4. **Caverna de Minério:** cristais âmbar, dourados e azuis, pedras de ímã (do Imanito) e a perfuradora quebrada.
+5. **Poço Profundo:** 5 degraus descendo 11 m, com corrimão, escadinhas e o guincho com o balde.
+- **Coração da Terra:** o geodo gigante de cristais atrás do chefe (Montanhar ou Titanvolt).
+
+### Tumba das Areias (Deserto, a 2ª do bioma: comuns Nv.62, líder Nv.70, chefe Nv.80)
+A época dos faraós (ideia do Lâmina): pirâmides e esfinges com cabeça de gato.
+1. **Dunas dos Faraós:** 2 pirâmides em degraus na beira do caminho e 3 gigantes atrás das dunas (aparecem melhor girando a câmera para o horizonte), o oásis com palmeiras e obeliscos tortos.
+2. **Avenida das Esfinges:** 12 esfinges deitadas com cabeça de gato, o pano azul e dourado dos faraós e olhos verdes que brilham.
+3. **Templo do Sol:** o portal gigante com o disco do sol, colunas pintadas, o altar dourado e obeliscos. As paredes das salas da tumba têm faixas vermelha, azul e dourada.
+4. **Câmara dos Sarcófagos:** 6 sarcófagos, vasos, tochas e tesouro. Depois, o **Poço de Areia** (ponte de pedra sobre espinhos).
+5. **Galeria dos Deuses Gato:** 6 gatos gigantes sentados (pretos e dourados), tesouro e o escaravelho.
+- **Câmara do Faraó:** o sarcófago gigante em pé, 2 gatos guardiões, colunas, ouro e a luz do sol que cai do teto (transparente, sem luz de verdade) em cima do chefe (Montanhar ou Titanvolt).
+
+- **Código:** `js/masmorras/forma.js` (a forma: salas, corredores, abismos, buracos; só matemática; as salas são `aberta`, `canion` ou `gruta`), `js/masmorras/masmorra.js` (a base: entrar e sair, chão, portões, grupos, soltos, chefe, clima e as entradas no mapa), `js/masmorras/pecas.js` (peças que todas usam: pinheiro, cristais, porta de luz, braseiro, espalhar nos morros) e um arquivo por masmorra com o desenho dela: `gruta-trovao.js`, `torre-nevasca.js`, `mina-abandonada.js` e `tumba-areias.js`. Os números ficam em `MASMORRAS_NOVAS` e `MASMORRA_NOVA` (`js/dados.js`). GM, aba **Dungeons**: entrar no começo, em cada etapa ou no trono, ir para a porta no mapa, abrir os portões, o Nível da Masmorra, o chefe volta já e sortear outro chefe.
 
 ## Caminho das Brasas (dungeon aberta da região de fogo)
 
@@ -954,7 +981,7 @@ Só a **conta GM** tem o painel. O código fica em `js/gm.js` e só é baixado q
 | Aba | O que faz |
 |---|---|
 | **Monstros** | Escolhe qualquer espécie (todas as 53, separadas por linha) e o nível (1 a 50). **Aparecer perto** (8 m na sua frente), **Lutar agora** (na arena escolhida ou na da região), **Grupo (5 + líder)** no mapa, **Lutar com grupo** e **Dar para mim** (vai para a equipe ou a reserva). Atalhos: selvagem, tipo duplo ou grupo aleatório, e **limpar o mapa** (os chefes e os acampamentos ficam). |
-| **Dungeons** | Para as **masmorras novas** (Gruta do Trovão): entrar no começo, em cada etapa ou no trono, ir para a porta no mapa, **abrir todos os portões**, Nível da Masmorra, o chefe volta já e sortear outro chefe. Para o Caminho das Brasas e a Trilha Ancestral: **ir para** a entrada, cada etapa ou o chefe; **lutar contra o acampamento** de cada etapa (na ordem 2 fracos → 2 médios → 1 forte → líder, no nível que a sua equipe enfrentaria); **Nível da Masmorra** (1, 3, 5, 9 ou 10); **lutar com o chefe de agora** no nível escolhido; **o chefe volta já** (sem esperar o amanhecer); **sortear outro chefe**; **chamar o lendário**; **monstro da dungeon perto**. |
+| **Dungeons** | Para as **masmorras novas** (uma caixa para cada): entrar no começo, em cada etapa ou no trono, ir para a porta no mapa, **abrir todos os portões**, Nível da Masmorra, o chefe volta já e sortear outro chefe. Para o Caminho das Brasas e a Trilha Ancestral: **ir para** a entrada, cada etapa ou o chefe; **lutar contra o acampamento** de cada etapa (na ordem 2 fracos → 2 médios → 1 forte → líder, no nível que a sua equipe enfrentaria); **Nível da Masmorra** (1, 3, 5, 9 ou 10); **lutar com o chefe de agora** no nível escolhido; **o chefe volta já** (sem esperar o amanhecer); **sortear outro chefe**; **chamar o lendário**; **monstro da dungeon perto**. |
 | **Equipe** | **Copiar jogo de outra conta** deste aparelho para o GM (para testar com a equipe de verdade; a conta original não muda). Escolhe o **monstro alvo** (equipe ou reserva) e mostra nível, vida e experiência. **Adicionar XP:** +50, +500, +1 nível ou **até o nível ___**. A XP sobe como no jogo, então ele **evolui** ao chegar no nível (a animação aparece quando o painel fecha). **Evoluir agora**, **Voltar uma forma** (fica no nível logo abaixo da evolução, para não evoluir de novo sozinho), **Curar**, **subir 1 nível sem evoluir**. Também **curar todos** e mudar os cristais (+10, 99 ou zerar). |
 | **Mundo** | **Arena do Reino:** lutar com qualquer treinador na hora (sem a ordem), **dominar a arena** (já entrega o ovo), **zerar a arena** (tira o ovo também), **+1000 de ouro**, **chocar o ovo agora**, **+6 Galhos Raros** e **casa nível 1, 2 ou 3**. **Hora:** amanhecer, meio-dia, anoitecer, meia-noite ou **parar o relógio**. **Teleporte:** castelo (a fonte), arena do Reino, Estrada Real, as 6 regiões (o lugar de cada uma vem da semente do mapa) e a casa. **Andar ×1, ×2 ou ×3.** **Invisível:** os monstros não vêm atrás de você, mas encostar neles ainda começa a batalha. **Mostrar FPS** (embaixo, no meio da tela), com os números do mapa (chunks, objetos, desenhos e triângulos por quadro, tempo para criar um chunk). **Mapa:** ver outra semente (digitada ou aleatória) e voltar à de todos: recarrega o jogo com outro mapa só neste aparelho, até fechar (pela URL `?semente=123`). |
 | **Testes** | **Invencível** (a vida não desce, nem com efeitos e perigos da arena), **recarga zero**, **captura garantida** (qualquer cristal segura qualquer monstro, até os chefes), **inimigos parados**, **dano ×10**. Na gaveta da batalha também: **encher minha vida** e **vencer agora** (derrota todos, até os que estão esperando nas ondas). |
@@ -1005,7 +1032,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/mapa/grade.js` | Grade de obstáculos: guarda as árvores, pedras e peças em quadradinhos de 8 m, para a colisão só olhar o que está perto |
 | `js/batalha.js` | Batalha em tempo real: movimento, golpes, efeitos, IA do inimigo e captura |
 | `js/dungeon.js` | Base das dungeons abertas: a forma do corredor (`Tracado`) e a do Reino (`REINO`), portões transparentes, acampamentos, monstros soltos, chefe e clima. Também o `Lote` e o `Bloco`, que juntam peças para ficar leve no celular |
-| `js/masmorras/` | As **masmorras novas** (áreas separadas): `forma.js` (a forma, só matemática), `masmorra.js` (a base e as entradas no mapa) e um arquivo por masmorra com o desenho dela (hoje `gruta-trovao.js`) |
+| `js/masmorras/` | As **masmorras novas** (áreas separadas): `forma.js` (a forma, só matemática), `masmorra.js` (a base e as entradas no mapa), `pecas.js` (peças repetidas) e um arquivo por masmorra com o desenho dela (`gruta-trovao.js`, `torre-nevasca.js`, `mina-abandonada.js`, `tumba-areias.js`) |
 | `js/brasas.js` | Cenário do Caminho das Brasas (braseiros, forja, rio de lava, Trono de Magma, vulcão) |
 | `js/raizes.js` | Cenário da Trilha Ancestral e da Floresta (cogumelos, ruínas, lago, raízes, Árvore-Mãe, vaga-lumes, monstros extras) |
 | `js/arena.js` | Arenas: chão, obstáculos, clima animado e perigos de cada região (com chance), e o escurecer do Astro Negro |

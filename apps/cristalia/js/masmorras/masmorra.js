@@ -23,9 +23,12 @@ import {
 } from '../dados.js';
 import { FormaMasmorra, INTERIOR } from './forma.js';
 import { GRUTA_TROVAO } from './gruta-trovao.js';
+import { TORRE_NEVASCA } from './torre-nevasca.js';
+import { MINA_ABANDONADA } from './mina-abandonada.js';
+import { TUMBA_AREIAS } from './tumba-areias.js';
 
 // Os desenhos de cada masmorra (as que ainda não existem não aparecem no mapa)
-const PLANOS = { trovao: GRUTA_TROVAO };
+const PLANOS = { trovao: GRUTA_TROVAO, torre: TORRE_NEVASCA, mina: MINA_ABANDONADA, tumba: TUMBA_AREIAS };
 
 const MAX_SOLTOS = 4;           // monstros soltos ao mesmo tempo (na sala onde você está)
 const ESCALA_CHEFE = 1.5;       // o chefe (forma final) fica maior que os outros
@@ -359,10 +362,12 @@ export class MasmorraNova {
   moverParticulas(dt, tema) {
     const m = this.m, p = this.particulas.geometry.attributes.position, a = p.array, t = this.tempo;
     this.particulas.position.set(m.pos.x, m.pos.y, m.pos.z);
-    const neve = tema.part === 'neve', sobe = tema.part === 'faisca';
+    const neve = tema.part === 'neve', sobe = tema.part === 'faisca', nevasca = tema.part === 'nevasca', poeira = tema.part === 'poeira';
     for (let i = 0; i < p.count; i++) {
       const k = i * 3;
-      if (neve) { a[k + 1] -= dt * 2.2; a[k] += dt * 1.6; a[k + 2] += Math.sin(t + i) * dt * 0.5; }
+      if (nevasca) { a[k + 1] -= dt * 3; a[k] += dt * 9; a[k + 2] += Math.sin(t * 2 + i) * dt * 1.5; }   // vento forte
+      else if (poeira) { a[k] += dt * 3.5; a[k + 1] += Math.sin(t + i) * dt * 0.6; }                    // areia no vento
+      else if (neve) { a[k + 1] -= dt * 2.2; a[k] += dt * 1.6; a[k + 2] += Math.sin(t + i) * dt * 0.5; }
       else if (sobe) { a[k + 1] += dt * (0.8 + (i % 5) * 0.3); a[k] += Math.sin(t * 3 + i) * dt * 0.8; }
       else { a[k + 1] += Math.sin(t * 0.8 + i) * dt * 0.4; a[k] += Math.cos(t * 0.6 + i) * dt * 0.3; }
       if (a[k + 1] > 16) a[k + 1] -= 16; else if (a[k + 1] < 0) a[k + 1] += 16;
@@ -379,11 +384,12 @@ export class MasmorraNova {
     const m = this.m, sala = this.forma.salas[this.forma.salaPerto(m.pos.x, m.pos.z)], tema = this.plano.temas[sala.tema];
     const k = 1 - Math.exp(-2.2 * dt), C = this.clima;
     c4.set(tema.ceu);
-    if (sala.tipo === 'aberta') c4.lerp(c3.set('#1b2550'), m.fatorNoite * 0.55); // céu aberto: escurece à noite
+    const aberto = sala.ceuAberto ?? sala.tipo !== 'gruta'; // céu aberto: escurece à noite
+    if (aberto) c4.lerp(c3.set('#1b2550'), m.fatorNoite * 0.55);
     C.ceu.lerp(c4, k);
     C.hemi.lerp(c4.set(tema.hemi), k);
-    C.int += (tema.luz * (sala.tipo === 'aberta' ? 1 - m.fatorNoite * 0.4 : 1) - C.int) * k;
-    C.sol += (tema.sol * (sala.tipo === 'aberta' ? 1 - m.fatorNoite * 0.5 : 1) - C.sol) * k;
+    C.int += (tema.luz * (aberto ? 1 - m.fatorNoite * 0.4 : 1) - C.int) * k;
+    C.sol += (tema.sol * (aberto ? 1 - m.fatorNoite * 0.5 : 1) - C.sol) * k;
     C.perto += (tema.nevoa[0] - C.perto) * k;
     C.longe += (tema.nevoa[1] - C.longe) * k;
     m.cena.background.copy(C.ceu);
@@ -399,7 +405,7 @@ export class MasmorraNova {
     if (tema.relampagos) { this.proxFlash = (this.proxFlash ?? 3) - dt; if (this.proxFlash <= 0) { this.flash = 0.15; this.proxFlash = 2 + Math.random() * 4; } }
     const pm = this.particulas.material;
     pm.color.set(tema.corPart || '#ffffff');
-    pm.size = tema.part === 'neve' ? 0.3 : 0.2;
+    pm.size = tema.part === 'neve' || tema.part === 'nevasca' ? 0.3 : tema.part === 'poeira' ? 0.16 : 0.2;
     this.particulas.visible = tema.part !== 'nenhuma';
     if (this.particulas.visible) this.moverParticulas(dt, tema);
   }

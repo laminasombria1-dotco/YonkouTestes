@@ -226,7 +226,8 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
           pirâmides e esfinges com cabeça de gato, da época dos faraós).
       - [x] **4.1 — O motor + a Gruta do Trovão** (Gelo): entrada escondida, área separada, 5 etapas com portões selados,
             chefe, saídas, salvar e GM. `js/masmorras/` e `MASMORRAS_NOVAS` (`js/dados.js`).
-      - [ ] **4.2 — Gelo e Deserto:** Torre da Nevasca, Mina Abandonada e Tumba das Areias (pirâmides e esfinges).
+      - [x] **4.2 — Gelo e Deserto:** Torre da Nevasca, Mina Abandonada e Tumba das Areias (pirâmides em degraus e gigantes,
+            esfinges com cabeça de gato, deuses gato). `torre-nevasca.js`, `mina-abandonada.js`, `tumba-areias.js` e `pecas.js`.
       - [ ] **4.3 — Floresta e Vulcânico:** Pântano Sombrio e Forja Antiga.
       - [ ] **4.4 — Arquipélago:** Templo Submerso e Gruta das Marés.
     - [ ] **Passo 5 — Dungeons** (a especificação do Lâmina, com o adaptador).
