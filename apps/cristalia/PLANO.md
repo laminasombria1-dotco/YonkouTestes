@@ -282,7 +282,11 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
             `masmorra.js`) e a caverna em `masmorras/forja-antiga.js`; chão, ácido e peças comuns nos chunks; o céu ferrugem
             e a luz de baixo no `clima.js` (que agora mistura as cores como a gente vê). Medido (Médio, sem monstros):
             trilha 66 → 71, Forja 63 → 75, ácido 49 → 60, caverna 71 → 93, cinzas 61 → 68, vulcão 88 → 109, borda 61 → 76.
-      - [ ] **Arquipélago**
+      - [ ] **Arquipélago** — o Lâmina mandou o guia "Arquipélago das Marés de Safira" e as artes. *Maquete feita* (sem
+            mudar o chão): água turquesa e canais safira, ilhas com praia marfim e mata, a Enseada dos Bangalôs (píer com
+            lanternas, barco, rede), naufrágio e atol, ilha vulcânica com cachoeira, arco de pedra, farol e torre de vigia
+            com manguezal, gruta marinha na entrada da Gruta das Marés, veleiros. Esperando as decisões: a gruta, coqueiros
+            transparentes, plâncton à noite, veleiros andando, chuva com arco-íris rara.
     - [ ] **Passo 5 — Dungeons** (a especificação do Lâmina, com o adaptador).
     - [ ] **Passo 6 — Níveis** (o Lâmina vai rever a regra mais para frente).
   - [ ] **8.4 — Regiões** com outros reinos (futuro).
