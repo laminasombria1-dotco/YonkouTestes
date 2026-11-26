@@ -8,6 +8,7 @@ O mapa de fora (Gelo, Floresta, Deserto, Vulcânico e Arquipélago) ganhando pe�
 | `comum.js` | As formas básicas (`UNI`), o `Forno` (junta peças numa malha só, cor nos vértices; tipos n, b, a, c, o, l, t, f), o brilho falso, as poças de luz e as peças que desbotam na frente da câmera. |
 | `clima.js` | A cor do céu, da névoa e da luz de cada bioma (mistura pelo peso do bioma). |
 | `floresta.js` | A Floresta: Carvalho-Véu, Freixo-Oco, Salgueiro, samambaia, cogumelos, Fungo-Tambor e a Catedral, a Ponte e o Pântano. |
+| `deserto.js` | O Deserto: o caminho (Desfiladeiro, Estrada Cerimonial, Templo Solar, Avenida das Esfinges, Planalto das Pirâmides), o oásis, a caravana, a areia voando, a Khamsin e as peças comuns (acácia, tufo, arenito, fragmento, ânfora). O chão do caminho é aplainado no `gerador.js` (`alvoDeserto`). |
 | `gelo.js` | O Gelo: acampamento (refúgio que cura), trilha com lanternas, lago congelado com barco e píer, arco rúnico, fonte termal, floresta fechada, neve caindo. |
 
 As **peças comuns** de cada bioma (árvores, pedras, plantas) saem nos chunks (`js/mapa/chunks.js`, função `objeto`), e a cor do chão em `corDoChao` (o Gelo tem a `corDoGelo`).

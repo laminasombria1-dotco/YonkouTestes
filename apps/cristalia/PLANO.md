@@ -261,11 +261,15 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
             verde-azulada e sol dourado), chão, água de tanino e peças nos chunks, gigantes e cogumelos no `raizes.js`.
             Medido (Médio, sem monstros): mata 159 → 140, gigante 185 → 152, pântano 96 → 80, ponte 87 → 68, borda
             101 → 67, Catedral 108 → 102 desenhos. Triângulos: até ~95 mil (antes ~50 mil).
-      - [ ] **Deserto** — o Lâmina mandou o guia "Areias de Djeser-Ra" (Antigo Egito) e as artes. *Maquete feita:*
-            Desfiladeiro dos Pilares Partidos no fim da Estrada Real, Estrada Cerimonial (colunas de papiro e braseiros),
-            Templo Solar, Avenida das Esfinges com obeliscos de basalto, Planalto das Pirâmides (Grande Pirâmide com topo de
-            ouro), Oásis do Lótus Azul, caravana soterrada, hipogeu na entrada da Tumba das Areias, acácias no lugar dos
-            cactos e luz quente. Esperando as decisões: aplainar o chão só no caminho, hipogeu, tirar os cactos, Khamsin.
+      - [x] **Deserto** — "Areias de Djeser-Ra" (Antigo Egito), pelo guia e pelas artes do Lâmina. *Decisões:* fica como a
+            maquete; o chão é aplainado **só no caminho**; a entrada da Tumba das Areias vira o hipogeu (não é mais escondida);
+            sem cactos (acácias e tufos secos no lugar); tempestade de Khamsin **rara** (só visual).
+            *Feito:* o caminho aplainado no `gerador.js` (`CAMINHO_DESERTO`, `alvoDeserto`; nada guardado cai nele);
+            `js/biomas/deserto.js` (Desfiladeiro dos Pilares Partidos, Estrada Cerimonial, Templo Solar, Avenida das
+            Esfinges, Planalto das Pirâmides, Oásis do Lótus Azul, caravana soterrada, areia voando e a Khamsin: de 5 a 12
+            min de deserto entre uma e outra, 90 s cada); o hipogeu em `masmorras/tumba-areias.js`; chão, água turquesa do
+            oásis e peças comuns nos chunks; a luz quente no `biomas/clima.js`. Medido (Médio, sem monstros): estrada 58 → 53,
+            templo 61 → 51, avenida 55 → 48, pirâmide 67 → 50, oásis 80 → 65, tumba 61 → 61, dunas 47 → 36 desenhos.
       - [ ] **Vulcânico**
       - [ ] **Arquipélago**
     - [ ] **Passo 5 — Dungeons** (a especificação do Lâmina, com o adaptador).

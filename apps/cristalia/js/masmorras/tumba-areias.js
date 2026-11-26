@@ -302,28 +302,54 @@ export const TUMBA_AREIAS = {
     }
   },
 
-  // A entrada no mapa: uma porta de tumba meio enterrada na areia, com 2 gatinhos de pedra (sem ícone)
+  // A entrada no mapa (a arte do Lâmina: o hipogeu do Vale das Tumbas, que NÃO é mais escondido):
+  // o portal escavado no penhasco de arenito em camadas, o disco solar alado em azul e ouro,
+  // hieróglifos azuis nos batentes, 2 colossos de faraó, a escada, braseiros, ânforas e a luz do
+  // teto lá dentro. A porta (onde encostar) fica na frente da boca.
   entrada(b, { x, z, ang, y, obst }) {
     const fx = Math.sin(ang), fz = Math.cos(ang), sx = Math.cos(ang), sz = -Math.sin(ang);
     const P = (f, s) => ({ x: x + fx * f + sx * s, z: z + fz * f + sz * s });
-    const aren = lambert('#d9b77a'), aren2 = lambert('#c9a46a'), areia = lambert('#ecd096'), escuro = lambert('#0d0805'), azul = lambert('#2f5fa0'), ouro = lambert('#ffd23f', { emissive: '#e0b03a', emissiveIntensity: 0.5 }), preto = lambert('#26262e');
+    const aren1 = lambert('#9e5a38'), aren2 = lambert('#b8714a'), calc = lambert('#d9c09a'), estatua = lambert('#d9c08a'), coroa = lambert('#e8e0d0'), escuro = lambert('#0d0805');
+    const azul = lambert('#2f6fa8', { emissive: '#215e8c', emissiveIntensity: 0.45 }), ouro = lambert('#f2c040', { emissive: '#f2a922', emissiveIntensity: 0.55 }), sol = lambert('#c0502a');
+    const fogo = lambert('#ffb040', { emissive: '#ff6a10', emissiveIntensity: 1 }), bronze = lambert('#8a7a3a'), barro = lambert('#a8603a'), areia = lambert('#e8c170');
     const base = y(x, z);
-    b.add(GEO.cone4, aren2, P(-3.4, 0).x, base + 3.4, P(-3.4, 0).z, 11, 7.5, 11, 0, ang + Math.PI / 4, 0); // a pontinha de uma pirâmide enterrada
-    for (const [f, s, e] of [[-1.5, -4.2, 4], [-1.5, 4.2, 4], [-5, -4, 4.5], [-5, 4, 4.5]]) { const p = P(f, s); b.add(GEO.dode, areia, p.x, base + 0.6, p.z, e, 2, e); }
-    for (const s of [-1.7, 1.7]) { const p = P(0.7, s); b.add(GEO.caixa, aren, p.x, base + 2.1, p.z, 1, 4.2, 1.1, 0, ang, s * 0.04); }
-    const v = P(0.7, 0); b.add(GEO.caixa, aren, v.x, base + 4.4, v.z, 4.6, 0.9, 1.3, 0, ang, 0); b.add(GEO.caixa, azul, v.x, base + 4.4, v.z, 4.65, 0.3, 1.35, 0, ang, 0);
-    b.add(GEO.cil, ouro, v.x + fx * 0.7, base + 4.4, v.z + fz * 0.7, 0.5, 0.12, 0.5, Math.PI / 2, ang, 0);
-    const d = P(0.3, 0); b.add(GEO.caixa, escuro, d.x, base + 1.8, d.z, 2.5, 3.6, 0.4, 0, ang, 0);
-    for (let i = 0; i < 3; i++) { const p = P(1.3 + i * 0.7, 0); b.add(GEO.caixa, aren2, p.x, base + 0.1 - i * 0.1, p.z, 3, 0.25, 0.7, 0, ang, 0); }
-    for (const s of [-3, 3]) { // gatinhos de pedra guardando a porta
-      const p = P(2.2, s);
-      b.add(GEO.caixa, aren2, p.x, base + 0.3, p.z, 1, 0.6, 1, 0, ang, 0);
-      b.add(GEO.ico, preto, p.x, base + 1.1, p.z, 0.45, 0.8, 0.5);
-      b.add(GEO.ico, preto, p.x + fx * 0.1, base + 1.75, p.z + fz * 0.1, 0.32, 0.3, 0.32);
-      for (const l of [-0.15, 0.15]) b.add(GEO.cone4, preto, p.x + sx * l, base + 2.1, p.z + sz * l, 0.12, 0.28, 0.1, 0, ang, 0);
-      b.add(GEO.cil, ouro, p.x, base + 1.5, p.z, 0.45, 0.1, 0.45);
+    // o penhasco de arenito em camadas (com a abertura da porta)
+    for (let i = -6; i <= 6; i++) for (let k = 0; k < 7; k++) {
+      if (Math.abs(i) < 2 && k < 3) continue;
+      const p = P(-1.5 - Math.abs(i) * 0.25 - ((i * 7 + k * 3) % 5) * 0.12, i * 1.9);
+      b.add(GEO.caixa, k % 2 ? aren2 : aren1, p.x, base + k * 1.4 + 0.7, p.z, 2.6 + ((i + k) % 3) * 0.35, 1.4, 2.2, 0, ang + (((i * 3 + k) % 5) - 2) * 0.02, 0);
+    }
+    // os batentes com hieróglifos azuis, a viga com o disco solar alado e a boca escura
+    for (const s of [-1, 1]) {
+      const p = P(-0.2, s * 2.0); b.add(GEO.caixa, calc, p.x, base + 2.4, p.z, 0.9, 4.8, 0.9, 0, ang, s * 0.08);
+      for (let k = 0; k < 3; k++) { const g = P(0.27, s * 2.0); b.add(GEO.caixa, azul, g.x, base + 1.4 + k * 1.2, g.z, 0.6, 0.8, 0.04, 0, ang, 0); }
+    }
+    { const p = P(-0.2, 0); b.add(GEO.caixa, calc, p.x, base + 5.3, p.z, 5.6, 1.3, 1.1, 0, ang, 0); b.add(GEO.caixa, escuro, p.x, base + 2.1, p.z, 3.0, 4.2, 0.9, 0, ang, 0);
+      const f = P(0.36, 0); b.add(GEO.cil, sol, f.x, base + 5.3, f.z, 0.9, 0.06, 0.9, Math.PI / 2, ang, 0);
+      for (const s of [-1, 1]) for (let k = 0; k < 3; k++) { const w = P(0.36, s * (1.05 + k * 0.5)); b.add(GEO.caixa, k % 2 ? ouro : azul, w.x, base + 5.4 - k * 0.1, w.z, 0.55, 0.2, 0.04, 0, ang, s * 0.12); } }
+    // os 2 colossos de faraó (em pé, com a coroa branca)
+    for (const s of [-1, 1]) {
+      const p = P(0.6, s * 3.6);
+      b.add(GEO.caixa, calc, p.x, base + 0.4, p.z, 1.4, 0.8, 1.4, 0, ang, 0);
+      b.add(GEO.caixa, estatua, p.x, base + 1.6, p.z, 0.9, 1.7, 0.6, 0, ang, 0);
+      b.add(GEO.caixa, estatua, p.x, base + 2.85, p.z, 1.0, 0.8, 0.65, 0, ang, 0);
+      b.add(GEO.caixa, estatua, p.x, base + 3.85, p.z, 1.2, 1.3, 0.6, 0, ang, 0);
+      b.add(GEO.caixa, estatua, p.x, base + 4.85, p.z, 0.6, 0.7, 0.55, 0, ang, 0);
+      b.add(GEO.cil, coroa, p.x, base + 5.55, p.z, 0.55, 0.9, 0.55);
+      obst(p.x, p.z, 0.9);
+    }
+    // a escada, os braseiros e as ânforas
+    for (let k = 0; k < 4; k++) { const p = P(1.2 + k * 0.7, 0); b.add(GEO.caixa, calc, p.x, base + 0.12, p.z, 3.4, 0.25, 0.7, 0, ang, 0); }
+    for (const s of [-1, 1]) {
+      const p = P(2.6, s * 2.6);
+      b.add(GEO.caixa, calc, p.x, base + 0.3, p.z, 1.1, 0.6, 1.1, 0, ang, 0); b.add(GEO.cil, bronze, p.x, base + 1.2, p.z, 1, 0.3, 1);
+      b.add(GEO.cilFino, bronze, p.x, base + 0.85, p.z, 0.25, 0.6, 0.25); b.add(GEO.cone, fogo, p.x, base + 1.65, p.z, 0.55, 0.8, 0.55);
+      obst(p.x, p.z, 0.6);
+      const a = P(1.0, s * 1.5); b.add(GEO.ico, barro, a.x, base + 0.35, a.z, 0.55, 0.7, 0.55);
+      const m = P(1.4, s * 3); b.add(GEO.ico, areia, m.x, base + 0.3, m.z, 3, 0.9, 2.4);
     }
     const c = P(-3.4, 0);
     obst(c.x, c.z, 4.6);
+    for (const s of [-1, 1]) { const q = P(-1.6, s * 6); obst(q.x, q.z, 3.2); }
   },
 };

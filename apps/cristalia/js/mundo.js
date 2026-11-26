@@ -16,6 +16,7 @@ import { CaminhoDasBrasas } from './brasas.js';
 import { TrilhaAncestral, CRISTAL_ESCONDIDO } from './raizes.js';
 import { BiomaGelo } from './biomas/gelo.js';
 import { BiomaFloresta } from './biomas/floresta.js';
+import { BiomaDeserto } from './biomas/deserto.js';
 import { ClimaBiomas } from './biomas/clima.js';
 import { Reino, FONTE_REINO, NASCER_REINO, ARENA_REINO, CASA_REINO, nivelRevanche } from './reino.js';
 import { JardimMundo, passarFome } from './jardim.js';
@@ -137,6 +138,7 @@ export class Mundo {
     this.masmorras = new Masmorras(this); // as masmorras novas: a entrada no mapa e a área separada
     this.gelo = new BiomaGelo(this); // as peças únicas do Gelo (acampamento, trilha, lago, arco, fonte termal) e a neve caindo
     this.floresta2 = new BiomaFloresta(this); // as peças únicas da Floresta (Catedral das Cortinas, Pontes de Raiz, Pântano das Lanternas Azuis)
+    this.deserto = new BiomaDeserto(this); // as peças únicas do Deserto (o caminho até as pirâmides, o oásis, a caravana) e a tempestade de Khamsin
     this.clima = new ClimaBiomas(this); // a cor do céu e da luz de cada bioma
     this.criarMontanhas();
     this.criarEstrelas();
@@ -874,6 +876,7 @@ export class Mundo {
     this.chunks.animar(t);
     this.gelo.atualizar(dt, t);
     this.floresta2.atualizar(dt, t);
+    this.deserto.atualizar(dt, t, pausado);
 
     // Relâmpagos nos Picos Nevados (região de Raio)
     const zonaAtual = zonaEm(this.pos.x, this.pos.z);

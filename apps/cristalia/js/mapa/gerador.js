@@ -348,7 +348,38 @@ export function alturaBase(x, z) {
     const k = suave(v.r + EMENDA_VILA, v.r + 1, d);
     h = h * (1 - k) + v.h * k;
   }
-  return h;
+  return aplainarDeserto(x, z, h);
+}
+
+// ---------- Deserto: o caminho aplainado (melhorias dos biomas, o guia do Lâmina) ----------
+// O caminho das "Areias de Djeser-Ra" sai do fim da Estrada Real do Deserto e vai reto até o
+// Planalto das Pirâmides: a Estrada Cerimonial (corredor de 14 m), o pátio do Templo Solar e o
+// planalto. Só ali o chão fica plano (as dunas e os cânions continuam no resto do bioma).
+// Não muda a semente, os rios, as vilas nem as masmorras (que ficam longe do caminho).
+const ESTRADA_DESERTO = ESTRADAS.find((e) => e.bioma === 'terra');
+export const CAMINHO_DESERTO = {
+  dir: ESTRADA_DESERTO.dir, lat: { x: -ESTRADA_DESERTO.dir.z, z: ESTRADA_DESERTO.dir.x },
+  lado: 12,                      // o caminho fica 12 m para o lado da linha da estrada (o arco de pedra fica livre)
+  ao0: 138, ao1: 322,            // começo e fim da Estrada Cerimonial (metros do centro)
+  templo: [222, 256],            // o pátio do Templo Solar
+  planalto: { ao: 334, lado: 20, r: 52 }, // o Planalto das Pirâmides (elíptico)
+  hEstrada: 2.9, hPlanalto: 3.6,
+};
+// Quanto aplainar num ponto: [altura desejada, força de 0 a 1]
+export function alvoDeserto(x, z) {
+  const C = CAMINHO_DESERTO, ao = x * C.dir.x + z * C.dir.z, l = x * C.lat.x + z * C.lat.z;
+  let k = 0, h = C.hEstrada;
+  if (ao > C.ao0 && ao < C.ao1) k = suave(14, 7, Math.abs(l - C.lado)) * suave(C.ao0 - 2, C.ao0 + 8, ao);
+  if (ao > C.templo[0] && ao < C.templo[1]) k = Math.max(k, suave(19, 13, Math.abs(l - C.lado)));
+  const dp = Math.hypot(ao - C.planalto.ao, (l - C.planalto.lado) * 0.7);
+  const kp = suave(C.planalto.r, C.planalto.r - 14, dp);
+  if (kp > k) { k = kp; h = C.hEstrada + (C.hPlanalto - C.hEstrada) * suave(318, 330, ao); }
+  return [h, k];
+}
+function aplainarDeserto(x, z, h) {
+  if (x * CAMINHO_DESERTO.dir.x + z * CAMINHO_DESERTO.dir.z < 120) return h; // (rápido: longe do caminho)
+  const [alvo, k] = alvoDeserto(x, z);
+  return k > 0.001 ? h * (1 - k) + alvo * k : h;
 }
 function alturaSemVila(x, z) {
   const P = pesosEm(x, z);

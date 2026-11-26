@@ -394,7 +394,7 @@ O Reino fica **no meio do mapa** (mundo novo, `PLANO.md`): é o lugar seguro ond
 
 São **2 por bioma** (o Caminho das Brasas e a Trilha Ancestral contam como uma delas e continuam como corredores abertos), nos lugares que a semente guardou em `LUGARES` (`js/mapa/gerador.js`). **Masmorras são difíceis e demoradas; dungeons são fáceis** (passo 5). Prontas: **Gruta do Trovão** e **Torre da Nevasca** (Gelo), **Mina Abandonada** e **Tumba das Areias** (Deserto), **Pântano Sombrio** (Floresta), **Forja Antiga** (Vulcânico), **Templo Submerso** e **Gruta das Marés** (Arquipélago): as 8 completas.
 
-- **Entrada escondida:** no mapa só fica a porta, **sem ícone**. A **Gruta do Trovão é a exceção**: a entrada é a caverna de gelo da arte do Lâmina (paredão de rocha escura, vigas de mina, pingentes, brilho ciano lá dentro e uma lanterna), bem à vista. A 22 m dela aparece **"Você descobriu a Gruta do Trovão!"** (fica salvo: `estado.masmorras.trovao.achada`). Encostou na boca, a tela escurece e o jogo monta **só a masmorra**.
+- **Entrada escondida:** no mapa só fica a porta, **sem ícone**. As exceções, bem à vista, pelas artes do Lâmina: a **Gruta do Trovão** (a caverna de gelo: paredão de rocha escura, vigas de mina, pingentes, brilho ciano lá dentro e uma lanterna) e a **Tumba das Areias** (o hipogeu no penhasco de arenito, com o disco solar alado e 2 colossos). A 22 m dela aparece **"Você descobriu a Gruta do Trovão!"** (fica salvo: `estado.masmorras.trovao.achada`). Encostou na boca, a tela escurece e o jogo monta **só a masmorra**.
 - **Área separada:** cada masmorra fica **bem longe do mapa redondo** (x = 1800, 2700, ...). Lá dentro, `alturaEm`, a colisão e a região perguntam à forma da masmorra (`interiorEm` em `js/masmorras/forma.js`); o mapa de fora some sozinho (os chunks ficam longe e são apagados) e os monstros dele somem. Ao sair, **tudo da masmorra é apagado da memória** (só uma existe por vez).
 - **5 etapas + o chefe.** Cada etapa tem **1 grupo com líder** e até 4 monstros soltos. O **portão selado** (a parede de energia azul) da saída da etapa **só abre quando o líder é vencido**. Cada vez que você entra, os portões começam fechados de novo.
 - **Monstros:** só os tipos do bioma (na Gruta: linha Raio e Imanito); Sol, Luz, Lua e Trevas como visitantes raros (`aparicoes`).
@@ -574,7 +574,7 @@ Sai da borda do mapa pela Floresta, seguindo as lanternas de flor (a direção d
 | Reino | No meio do mapa: castelo, vila, loja, arena e os 5 portões | Ninguém (é seguro). Logo depois dos portões, o anel tranquilo (monstros fracos) |
 | Picos Nevados | **Gelo**: montanhas, pinheiros carregados de neve, rochas escuras com neve, rios e lagos congelados, o Acampamento do Gelo e o cristal de gelo gigante (veja "Bioma do Gelo") | Raio (Faisquinho), com relâmpagos; Luz de dia, Trevas à noite |
 | Floresta | **Mata de Véu-Âmbar**: Carvalhos-Véu com cortinas de âmbar, freixos, salgueiros, samambaias, cogumelos ciano, a Catedral das Cortinas, as Pontes de Raiz e o Pântano das Lanternas Azuis (veja "Bioma da Floresta") | Planta (Musguinho), Espinhal (raro); Luz de dia, Trevas à noite. Daqui sai a Trilha Ancestral |
-| Deserto | Deserto: dunas, cânions, cactos, arco de pedra e oásis | Terra (Pedrisco); Sol de dia, Lua à noite |
+| Deserto | **Areias de Djeser-Ra** (Antigo Egito): dunas, cânions, acácias, o caminho até as pirâmides, o Templo Solar, a Avenida das Esfinges, o Oásis do Lótus Azul e a tempestade de Khamsin (veja "Bioma do Deserto") | Terra (Pedrisco); Sol de dia, Lua à noite |
 | Vulcão | **Vulcânico**: chão vulcânico, vulcão com cratera, rios de lava | Fogo (Brasito), Vulcarapa (raro); Sol de dia, Trevas à noite. Daqui sai o Caminho das Brasas |
 | Arquipélago | **Água**: quase todo água rasa (dá para andar, mais devagar), ilhas com palmeiras e canais fundos | Água (Gotinho), Aquaraia (raro); Luz de dia, Lua à noite |
 | Lago | Em volta dos lagos da Floresta e do oásis do Deserto | Água (Gotinho), Aquaraia (raro) |
@@ -610,6 +610,25 @@ Paleta do guia: âmbar `#D99B26`, musgo profundo `#1E3F35`, prata `#7A8489`, azu
 - **Clima:** névoa verde-azulada e sol dourado (o crepúsculo de mel e esmeralda do guia), misturando aos poucos na borda do bioma (`js/biomas/clima.js`).
 - **Leve no celular:** a Floresta ficou **mais leve que antes** (de 15 a 35 desenhos a menos por quadro), graças à etapa 0 (os objetos de cada chunk juntados numa malha só) e às partes pequenas que somem de longe.
 - **Código:** `js/biomas/floresta.js` (as peças e `BiomaFloresta`), os lugares em `FLORESTA` (`js/biomas/lugares.js`), as peças nos chunks (`pecaFloresta` e `corDaFloresta` no `js/mapa/chunks.js`) e o centro no `js/raizes.js`.
+
+## Bioma do Deserto: Areias de Djeser-Ra (o guia do Lâmina, Antigo Egito)
+
+Paleta do guia: areia `#E8C170`, terracota `#9E5A38`, calcário `#D9C7A3`, basalto `#2B282C`, lápis-lazúli `#215E8C`, turquesa `#3AB5A8` e ouro `#F2A922`.
+
+O esquema do guia, do fim da Estrada Real do Deserto (a entrada sul) até o fundo do bioma:
+- **Desfiladeiro dos Pilares Partidos:** paredões de arenito em camadas e pilares quebrados.
+- **Estrada Cerimonial:** lajes rachadas, colunas com capitel de papiro e braseiros de bronze com fogo (brilho falso, mais forte à noite).
+- **Templo Solar:** colunas e vigas quebradas, o portão (pilone) com o disco solar alado, escadas, braseiros, esfinges e o obelisco de basalto caído com hieróglifos turquesa.
+- **Avenida das Esfinges:** esfinges (uma sem cabeça) e obeliscos de basalto com hieróglifos azuis.
+- **Planalto das Pirâmides:** a Grande Pirâmide com o topo de ouro e a entrada selada, a pirâmide escalonada meio soterrada e uma menor.
+- **Oásis do Lótus Azul:** água turquesa, tamareiras com tâmaras, papiro, lótus azul, o cais com colunas e o obelisco submerso.
+- **Mar de Dunas:** a caravana soterrada e as costelas de uma criatura gigante.
+- **Vale das Tumbas:** a entrada da **Tumba das Areias** virou o hipogeu escavado no penhasco (não é mais escondida).
+- **No deserto todo:** acácias, tufos secos, pedras de arenito, pedaços de coluna e ânforas (**sem cactos**), areia voando em volta do jogador e a luz quente e dourada.
+- **Tempestade de Khamsin:** rara (de 5 a 12 minutos no deserto entre uma e outra, 90 s cada). O céu fica ocre, a névoa fecha e voa muita areia. Só visual.
+- **O caminho aplainado:** só no caminho (estrada, pátio do templo e planalto) o chão fica plano (`CAMINHO_DESERTO` e `alvoDeserto` no `js/mapa/gerador.js`, como o chão das vilas). Não muda a semente, as vilas, as masmorras, os rios nem o oásis.
+- **Leve no celular:** o Deserto ficou mais leve que antes (de 5 a 17 desenhos a menos por quadro).
+- **Código:** `js/biomas/deserto.js` (`BiomaDeserto` e as peças comuns), o hipogeu em `js/masmorras/tumba-areias.js`, o chão e as peças nos chunks (`corDoDeserto`) e a Khamsin no `js/biomas/clima.js`.
 
 ## Mapa procedural
 
@@ -1096,6 +1115,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/biomas/lugares.js` | Onde ficam as peças únicas das melhorias dos biomas (Gelo: acampamento, trilha, lago, arco, fonte termal, floresta). Só matemática |
 | `js/biomas/comum.js` | As formas e ferramentas das melhorias dos biomas: o `Forno` (junta peças numa malha só), o brilho falso e as peças que ficam transparentes na frente da câmera |
 | `js/biomas/floresta.js` | A Floresta (Mata de Véu-Âmbar): as peças e a Catedral das Cortinas, as Pontes de Raiz e o Pântano das Lanternas Azuis |
+| `js/biomas/deserto.js` | O Deserto (Areias de Djeser-Ra): o caminho até as pirâmides, o oásis, a caravana, a areia voando, a Khamsin e as peças comuns |
 | `js/biomas/clima.js` | A cor do céu, da névoa e da luz de cada bioma |
 | `js/biomas/gelo.js` | As peças únicas do Gelo (`BiomaGelo`), o brilho falso, a neve caindo e o pinheiro nevado |
 | `js/mapa/chunks.js` | Os chunks: cria o chão, a água, a lava e os objetos de cada pedaço do mapa, carrega e apaga conforme você anda, e o LOD |

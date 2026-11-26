@@ -17,7 +17,7 @@ import * as THREE from 'three';
 import { CONFIG_MAPA as C, QUALIDADES } from './config.js';
 import {
   SEMENTE, RAIO_MUNDO, NIVEL_AGUA, POIS, RESERVAS, LAGOA, aleatorio, semente3,
-  pesosEm, idDoPeso, N_PESOS, biomaEm, lagoEm, geloEm, naEstradaReal, ESTRADA,
+  pesosEm, idDoPeso, N_PESOS, biomaEm, lagoEm, geloEm, naEstradaReal, ESTRADA, CAMINHO_DESERTO,
 } from './gerador.js';
 import { alturaVertice, alturaEm, ESPACO } from './altura.js';
 import { TRACADOS, REINO, S_LAGO, foraDungeons } from '../dungeon.js';
@@ -25,6 +25,7 @@ import { GELO, naTrilhaGelo } from '../biomas/lugares.js';
 import { PAL_GELO, pinheiroNevado } from '../biomas/gelo.js';
 import { semIndice, UNI } from '../biomas/comum.js';
 import * as FL from '../biomas/floresta.js';
+import * as DS from '../biomas/deserto.js';
 
 const T = C.tamChunk, DIV = C.divisoes;
 
@@ -65,6 +66,7 @@ const MAT_CHAO = lambert({ vertexColors: true });
 const GELO_LAGO = ['#4a89aa', '#5596b6', '#3f7d9e', '#6aaac8', '#4a89aa'];
 const GELO_RIO = ['#5596b6', '#6aaac8', '#4a89aa', '#8fc4dc'];
 const MAT_AGUA = lambert({ color: '#4fc3f7', transparent: true, opacity: 0.82 });
+const MAT_AGUA_OASIS = lambert({ color: '#3ab5a8', transparent: true, opacity: 0.85, emissive: '#0a3a36', emissiveIntensity: 0.35 }); // o oásis do Deserto: turquesa
 const MAT_AGUA_FLORESTA = lambert({ color: '#2b4652', transparent: true, opacity: 0.9, emissive: '#0a1a1e', emissiveIntensity: 0.3 }); // água escura de tanino
 const MAT_LAVA = lambert({ color: '#ff7a2a', emissive: '#ff4a10', emissiveIntensity: 0.85 });
 
@@ -329,6 +331,7 @@ export class Chunks {
     if (geloEm(x, z)) return sorteio(rng, GELO_LAGO); // lago congelado: o gelo ciano do guia
     if (id === 'raio') return this.corDoGelo(x, z, y, inc, rng);
     if (id === 'planta') return this.corDaFloresta(y, inc, rng);
+    if (id === 'terra') return this.corDoDeserto(x, z, y, inc, rng);
     if (y < NIVEL_AGUA - 0.15) return id === 'fogo' ? '#3a1a12' : id === 'agua' ? (y < -1.3 ? '#2f7fa0' : '#5fc8c0') : '#4f9fb8'; // no Arquipélago: rasa clarinha, funda escura
     if (y < NIVEL_AGUA + 0.45) return id === 'fogo' ? sorteio(rng, ['#c8461a', '#8a2e14']) : id === 'raio' ? '#d8e8f2' : sorteio(rng, ['#e2cd90', '#ecd9a0']);
     if (y > 13 && id !== 'fogo' && inc > 0.55) return sorteio(rng, PALETA.raio); // neve no alto dos picos
@@ -363,11 +366,25 @@ export class Chunks {
     return rng() < 0.05 ? sorteio(rng, ['#4a4a2a', '#55502e']) : sorteio(rng, ['#2c5a40', '#335f45', '#26503a', '#2f5a3c', '#3a6a44']);
   }
 
+  // O chão do Deserto (a paleta do guia "Areias de Djeser-Ra"): areia dourada ao sol, terracota nas
+  // sombras das dunas, arenito em camadas nos cânions, lajes no caminho, calcário no planalto e o oásis
+  corDoDeserto(x, z, y, inc, rng) {
+    const O = DS.OASIS;
+    if (O) { const d = Math.hypot(x - O.x, z - O.z); if (d < O.r + 0.5) return sorteio(rng, ['#3ab5a8', '#34a89c', '#44c0b2']); if (d < O.r + 4) return rng() < 0.12 ? '#e8e4d4' : sorteio(rng, ['#4a5a3a', '#5a6a3e', '#56663c']); }
+    if (y < NIVEL_AGUA + 0.3) return sorteio(rng, ['#9e5a38', '#8a4e32']);
+    const C = CAMINHO_DESERTO, ao = x * C.dir.x + z * C.dir.z, l = x * C.lat.x + z * C.lat.z;
+    if (ao > C.ao0 + 8 && ao < C.ao1 - 8 && Math.abs(l - C.lado) < 3.2 && rng() < 0.8) return sorteio(rng, ['#cfc3a8', '#bfb39a', '#d9cdb2', '#c4b898']); // lajes da estrada
+    if (Math.hypot(ao - C.planalto.ao, (l - C.planalto.lado) * 0.7) < C.planalto.r - 12) return sorteio(rng, ['#d9c7a3', '#cdbb94', '#e0cfaa']); // planalto calcário
+    if (inc < 0.72) return Math.floor(y * 1.6) % 2 ? '#9e5a38' : '#b8714a';  // arenito em camadas
+    if (inc < 0.86) return sorteio(rng, ['#c9934e', '#b8834a']);              // sombra das dunas
+    return sorteio(rng, ['#e8c170', '#e2b964', '#edc97c', '#dfb35e']);        // areia ao sol
+  }
+
   // ---------- água e lava ----------
   criarLiquidos(ch) {
     const passo = ch.lod ? DIV / C.divisoesLonge : 1, n = DIV / passo;
     const i0 = ch.cx * DIV, j0 = ch.cz * DIV, E = ESPACO;
-    const agua = [], lava = [], aguaF = [];
+    const agua = [], lava = [], aguaF = [], aguaO = [];
     for (let a = 0; a < n; a++) for (let b = 0; b < n; b++) {
       const i = i0 + a * passo, j = j0 + b * passo, ip = i + passo, jp = j + passo;
       const hmin = Math.min(alturaVertice(i, j), alturaVertice(ip, j), alturaVertice(i, jp), alturaVertice(ip, jp));
@@ -377,7 +394,7 @@ export class Chunks {
       if (Math.hypot(mx - LAGOA.x, mz - LAGOA.z) < LAGOA.r + 8) continue;      // o lago escondido tem a dele
       const bm = biomaEm(mx, mz);
       if (bm === 'raio') continue;                                            // no Gelo os rios são congelados (o chão já é gelo)
-      (bm === 'fogo' ? lava : bm === 'planta' ? aguaF : agua).push(i * E, j * E, ip * E, jp * E);
+      (bm === 'fogo' ? lava : bm === 'planta' ? aguaF : bm === 'terra' ? aguaO : agua).push(i * E, j * E, ip * E, jp * E);
     }
     const malha = (lista, mat, y) => {
       if (!lista.length) return;
@@ -400,6 +417,7 @@ export class Chunks {
     };
     malha(agua, MAT_AGUA, NIVEL_AGUA);
     malha(aguaF, MAT_AGUA_FLORESTA, NIVEL_AGUA);
+    malha(aguaO, MAT_AGUA_OASIS, NIVEL_AGUA);
     malha(lava, MAT_LAVA, NIVEL_AGUA + 0.04);
   }
 
@@ -454,6 +472,7 @@ export class Chunks {
     for (const t of TRACADOS) if (t.reservado(x, z)) return false;
     { const e = naEstradaReal(x, z); if (e.dentro && e.lat < ESTRADA.largura + 2.5) return false; } // a Estrada Real fica livre
     for (const r of RESERVAS) if (Math.hypot(x - r.x, z - r.z) < r.r) return false;
+    if (DS.reservadoDeserto(x, z)) return false; // o caminho e os lugares do Deserto se decoram sozinhos
     for (const r of this.m.reservas) if (Math.hypot(x - r.x, z - r.z) < r.r) return false;
     const h = alturaEm(x, z);
     if (h < NIVEL_AGUA + 0.35 || geloEm(x, z)) return false;
@@ -483,7 +502,7 @@ export class Chunks {
       if (r2 < C.densidade[id] * dq) this.objeto(id, x, z, r3, esc, k);
       else if (id === 'planta' && r2 > 0.85) this.pecaFloresta(FL.samambaia, x, z, 0.6 + esc * 0.4, k, 0, 0.3, true);
       else if (id === 'campo' && r2 > 0.78) add('flor', 'base', x, alturaEm(x, z) + 0.12, z, 1, 1, 1, 0, 0, 0, sorteio(rng, COR.flor), true);
-      else if (id === 'terra' && r2 > 0.93) this.arbusto(x, z, 0.6 + esc * 0.4, sorteio(rng, ['#a8743f', '#9a8a4a']), k);
+      else if (id === 'terra' && r2 > 0.93) this.pecaFloresta(DS.tufoSeco, x, z, 0.6 + esc * 0.4, k, 0, 0.3, true);
       else if (id === 'raio' && r2 > 0.9) { if (esc < 0.6) this.capimSeco(x, z, k); else this.montinhoNeve(x, z, k); }
     }
     return { recs, obst };
@@ -514,12 +533,12 @@ export class Chunks {
         else { this.pecaFloresta(FL.troncoCaido, x, z, 0.8, k, 0, 0.3); k.ob(x, z, 1.2); }
         return;
       }
-      case 'terra':
-        if (lagoEm(x, z, 9, 'agua')?.oasis) {
-          if (r3 < 0.7) this.palmeira(x, z, 0.85 + esc * 0.4, k); else this.arbusto(x, z, 0.8, '#5cb553', k);
-        } else if (r3 < 0.45) this.cacto(x, z, 0.8 + esc * 0.6, k);
-        else if (r3 < 0.85) this.pedra(x, z, esc < 0.25 ? 1.6 + esc * 4 : 0.6 + esc * 0.9, sorteio(rng, COR.pedra.terra), k);
-        else this.arbusto(x, z, 0.6 + esc * 0.5, '#a8743f', k);
+      case 'terra': // Deserto: "Areias de Djeser-Ra" (o guia do Lâmina; sem cactos, que não existem no Egito)
+        if (r3 < 0.18) this.pecaFloresta(DS.acacia, x, z, 0.8 + esc * 0.5, k, 0.35, 0.3);
+        else if (r3 < 0.55) this.pecaFloresta(DS.tufoSeco, x, z, 0.8 + esc * 0.6, k, 0, 0.3, true);
+        else if (r3 < 0.78) this.pecaFloresta(DS.pedraArenito, x, z, esc < 0.2 ? 1.6 + esc * 4 : 0.5 + esc * 1.2, k, 0.7, 0.5);
+        else if (r3 < 0.92) this.pecaFloresta(DS.fragmento, x, z, 1, k, 0.6, 0.5);
+        else this.pecaFloresta(DS.anforaBarro, x, z, 0.7, k, 0.35, 0.3);
         return;
       case 'raio': // Gelo (o guia do Lâmina)
         if (r3 < 0.55) this.pinheiroGelo(x, z, 0.75 + esc * 0.7, k);
