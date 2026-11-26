@@ -431,6 +431,67 @@ const VISUAL = {
       brilho(g, caixa(0.15, 0.22, 0.01), '#f4f8ff', [x, y + 0.14, z + 0.03], [0, 0, -0.2]);
       for (let i = 0; i < 4; i++) brilho(g, new THREE.OctahedronGeometry(0.05), i % 2 ? '#c070ff' : '#50e8ff', [(i % 2 ? 1 : -1) * 0.55, 0.5 + i * 0.18, 0.1]);
     } },
+  // ---------- os treinadores da Vila das Folhas (pela arte do Lâmina) ----------
+  // Richard (Fogo): moicano vermelho, jaqueta vermelha e cinza com ombreiras de espinhos, joelheiras, frascos acesos e os punhos de fogo
+  richard: { pose: ['frente', 'frente'], roupa: '#b8402a', manga: '#b8402a', calca: '#5a4030', bota: '#8a3a24', botaAlta: true, cinto: '#4a4a50', pele: '#a8703e', olho: '#ff9a2a', olhoBrilha: true, luva: '#4a2a1a', colete: '#5a5a60',
+    extra(g) {
+      for (const s of [-1, 1]) { peca(g, ico(0.17, 0), '#a8402a', [s * 0.3, 1.04, 0]); for (let i = 0; i < 3; i++) peca(g, cone(0.04, 0.14, 4), '#d8603a', [s * (0.26 + i * 0.06), 1.17, -0.05 + i * 0.05]); peca(g, caixa(0.18, 0.12, 0.08), '#8a8a90', [s * 0.12, 0.3, 0.11]); }
+      for (let i = 0; i < 3; i++) brilho(g, cil(0.04, 0.04, 0.12, 5), '#ff8a2a', [-0.15 + i * 0.15, 0.52, 0.17]); // frascos do cinto
+      peca(g, ico(0.25, 1), '#a8703e', [0, 1.35, -0.04]);
+      peca(g, caixa(0.12, 0.16, 0.42), '#a82020', [0, 1.55, -0.04]); // moicano
+      for (const s of [-1, 1]) { const [x, y, z] = M('frente', s, 0.1); brilho(g, ico(0.12, 0), '#ffb030', [x, y, z]); for (let i = 0; i < 4; i++) brilho(g, cone(0.04, 0.16, 3), '#ff6a1a', [x + Math.cos(i * 1.6) * 0.16, y + Math.sin(i * 1.6) * 0.16, z], [0, 0, i * 1.6 - 1.57]); }
+    } },
+  // Sally (Planta): chapéu com flores e óculos, cabelo verde curto, sardas, capa verde, blusa listrada, bermuda, meias e a mochila; flores acesas na mão
+  sally: { pose: ['estendido', 'baixo'], roupa: '#7a4a2a', manga: '#5a3a4a', calca: '#3a4a2a', bota: '#4a3a2a', cinto: '#3a4a2a', pele: '#e8c0a0', olho: '#3aa050', luva: '#4a3a2a',
+    extra(g) {
+      for (let i = 0; i < 3; i++) peca(g, caixa(0.505, 0.05, 0.305), '#5a3a4a', [0, 0.62 + i * 0.12, 0]); // listras
+      peca(g, caixa(0.62, 0.3, 0.38), '#5a9a4a', [0, 0.95, 0.02]); // a capa verde
+      for (const s of [-1, 1]) for (let i = 0; i < 3; i++) peca(g, caixa(0.19, 0.04, 0.21), '#1e1a1e', [s * 0.12, 0.12 + i * 0.07, 0]); // meias listradas
+      peca(g, caixa(0.36, 0.42, 0.18), '#7a5a34', [0, 0.82, -0.26]); peca(g, cil(0.09, 0.09, 0.42, 6), '#4a7a3a', [0, 1.08, -0.3], [0, 0, Math.PI / 2]); // mochila
+      peca(g, ico(0.265, 1), '#4a9a5a', [0, 1.34, -0.03]);
+      peca(g, cil(0.36, 0.36, 0.05, 10), '#c8c0a0', [0, 1.5, 0]); peca(g, cil(0.24, 0.27, 0.18, 10), '#c8c0a0', [0, 1.6, 0]); // chapéu
+      for (const s of [-1, 1]) peca(g, cil(0.06, 0.06, 0.05, 8), '#d8a030', [s * 0.08, 1.62, 0.25], [Math.PI / 2, 0, 0]); // óculos
+      const [x, y, z] = M('estendido');
+      peca(g, cil(0.015, 0.015, 0.3, 4), '#4a8a3a', [x, y + 0.15, z]);
+      for (let i = 0; i < 3; i++) brilho(g, ico(0.06), '#d8ffd8', [x - 0.08 + i * 0.08, y + 0.3 + (i % 2) * 0.06, z]);
+    } },
+  // Pâmela (Água): cachos pretos com uma flor roxa, vestido roxo e azul de um ombro só, cinto prateado, sandálias de tiras e a água com flores
+  pamela: { pose: ['estendido', 'baixo'], roupa: '#6a2a7a', manga: '#7a4a9a', calca: '#b07a50', bota: '#c8c8d0', botaAlta: true, cinto: '#c8c8d0', pele: '#b07a50', olho: '#c080e0', luva: '#b07a50',
+    extra(g) {
+      peca(g, caixa(0.52, 0.42, 0.34), '#2a6a8a', [0, 0.34, 0], [0, 0, -0.1]); // a saia (azul por baixo)
+      peca(g, caixa(0.3, 0.44, 0.35), '#6a2a7a', [-0.1, 0.34, 0.01], [0, 0, -0.1]);
+      for (const s of [-1, 1]) for (let i = 0; i < 2; i++) peca(g, caixa(0.19, 0.03, 0.21), '#c8c8d0', [s * 0.12, 0.22 + i * 0.08, 0]); // tiras da sandália
+      peca(g, ico(0.27, 1), '#141420', [0, 1.36, -0.05]);
+      for (let i = 0; i < 8; i++) peca(g, ico(0.09, 0), '#141420', [-0.24 + (i % 4) * 0.16, 1.2 - Math.floor(i / 4) * 0.14, -0.18]);
+      brilho(g, new THREE.OctahedronGeometry(0.07), '#c070e0', [-0.22, 1.47, 0.08]); // a flor no cabelo
+      brilho(g, new THREE.TorusGeometry(0.26, 0.04, 4, 12, Math.PI * 1.6), '#b0a8ff', M('estendido', 1, 0.08), [0.3, 0.6, 0]);
+      brilho(g, new THREE.TorusGeometry(0.24, 0.04, 4, 12, Math.PI * 1.6), '#b0a8ff', [-0.55, 0.7, 0.1], [0.5, -0.6, 0]);
+    } },
+  // Lais (Planta): tranças azuis com presilhas prateadas, peitoral azul e prateado, ombreira, capa azul comprida e um cajado com flores
+  lais: { pose: ['cintura', 'baixo'], roupa: '#4a5ab0', manga: '#3e2618', calca: '#16161e', bota: '#1e1e3a', botaAlta: true, cinto: '#c8c8d8', pele: '#3e2618', olho: '#ffc040', luva: '#c8c8d8',
+    extra(g) {
+      peca(g, caixa(0.34, 0.3, 0.05), '#c8c8e0', [0, 0.82, 0.16]); // peitoral prateado
+      peca(g, caixa(0.2, 0.1, 0.26), '#6a7ac8', [-0.3, 1.06, 0], [0, 0, 0.4]); // ombreira
+      peca(g, caixa(0.6, 1.0, 0.06), '#2a2a8a', [0, 0.58, -0.2], [-0.08, 0, 0]); // capa
+      peca(g, caixa(0.44, 0.42, 0.06), '#4a5ab0', [0.05, 0.34, 0.16]); // a frente da saia
+      peca(g, ico(0.265, 1), '#1a1e5a', [0, 1.36, -0.05]);
+      rabo(g, '#1a1e5a', '#c8c8d8', 8, 1.15);
+      const [x, y, z] = M('baixo', -1, 0);
+      peca(g, cil(0.03, 0.035, 1.7, 5), '#6a5a3a', [x, y + 0.2, z + 0.02]); // o cajado
+      for (let i = 0; i < 3; i++) brilho(g, ico(0.06), '#a8b0ff', [x + 0.06 - i * 0.05, y + 1.0 + i * 0.1, z]);
+    } },
+  // Rox (Planta, a Campeã): elfa de cabelo comprido prateado e verde, tiara de folhas, peitoral prateado com gema, casaco branco e verde e flores brancas em volta
+  rox: { pose: ['estendido', 'estendido'], sob: '#c8d0c8', roupa: '#c8ccd4', manga: '#e8ece8', calca: '#1e4a2e', bota: '#d8dce4', botaAlta: true, cinto: '#c8ccd4', pele: '#f2e6e0', olho: '#40d080', olhoBrilha: true, luva: '#1e6a3e',
+    extra(g) {
+      casacoLongo(g, '#eef0ee', '#40b070', 0.95);
+      brilho(g, new THREE.OctahedronGeometry(0.06), '#30e080', [0, 0.95, 0.17]); // a gema do peitoral
+      peca(g, ico(0.27, 1), '#e8ecf0', [0, 1.36, -0.05]);
+      peca(g, caixa(0.5, 0.75, 0.1), '#e8ecf0', [0, 1.0, -0.2]); // o cabelo comprido
+      peca(g, caixa(0.5, 0.25, 0.11), '#60d090', [0, 0.65, -0.2]); // as pontas verdes
+      for (const s of [-1, 1]) peca(g, cone(0.05, 0.16, 3), '#f2e6e0', [s * 0.27, 1.32, -0.02], [0, 0, s * -1.2]); // orelhas de elfa
+      for (let i = 0; i < 5; i++) peca(g, cone(0.04, 0.14, 3), '#3aa060', [-0.16 + i * 0.08, 1.56, 0.12], [0.3, 0, (i - 2) * 0.35]); // tiara de folhas
+      for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; brilho(g, new THREE.OctahedronGeometry(0.07), '#f0fff4', [Math.cos(a) * 0.75, 0.55 + Math.sin(a) * 0.3 + (i % 2) * 0.1, Math.sin(a) * 0.35 + 0.1]); }
+    } },
   // Saphira (Fogo, a Campeã): trança vermelha longa, jaqueta vermelha e preta com chamas, gola de pelo, calça oliva
   saphira: { pose: ['estendido', 'baixo'], roupa: '#1e1a1a', manga: '#c8302a', calca: '#6a6a3a', bota: '#1e1a1a', botaAlta: true, cinto: '#6a4a2a', pele: '#d8a070', olho: '#ff9a2a', olhoBrilha: true, luva: '#5a2a1a',
     extra(g) {

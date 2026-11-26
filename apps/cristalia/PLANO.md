@@ -210,12 +210,12 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
           o Campeão do elemento do bioma; vencer o Campeão = novo campeão: título (o jogador escolhe), ouro, 1 ovo na 1ª vitória
           e **75 de ouro a cada 10 min** (até 300) pelo **saquinho** da tela (o do Reino também). Níveis: Nv.55/60/65/70 e o
           Campeão Nv.75. *Feito:* `js/vilas.js`, o saquinho, os títulos e as lutas (prontas para os treinadores).
-      - [ ] **Os treinadores das vilas** (nomes e equipes): **o Lâmina vai fazer** (`TREINADORES_VILA` no `js/vilas.js`).
+      - [x] **Os treinadores das vilas** (nomes e artes do Lâmina; `TREINADORES_VILA` no `js/vilas.js`): as 5 vilas completas.
         - [x] **Vila das Cinzas:** Sandy (Luz), Brawn (Terra), Blaze (Raio), Sotty (Água) e a Campeã Saphira (Fogo), com o visual pela arte do Lâmina.
         - [x] **Vila da Areia:** Nicky (Trevas), Rony (Fogo), Jean (Água), Nando (Planta) e o Campeão Pedro (Terra), com o visual pela arte do Lâmina.
         - [x] **Vila das Marés:** Karah (Fogo), Angelica (Fogo), Lanny (Raio), Ilia (Trevas) e a Campeã Serena (Água), com o visual pela arte do Lâmina.
         - [x] **Vila da Neve:** Clayton (Água), Siberius (Planta), Hela (Raio), Tila (Fogo) e o Campeão Joker (Raio), com o tema do baralho, pela arte do Lâmina.
-        - [ ] Vila das Folhas.
+        - [x] **Vila das Folhas:** Richard (Fogo), Sally (Planta), Pâmela (Água), Lais (Planta) e a Campeã Rox (Planta), com o visual pela arte do Lâmina.
     - [ ] **Passo 4 — Masmorras novas** (2 por bioma; as novas são áreas separadas).
     - [ ] **Passo 5 — Dungeons** (a especificação do Lâmina, com o adaptador).
     - [ ] **Passo 6 — Níveis** (o Lâmina vai rever a regra mais para frente).

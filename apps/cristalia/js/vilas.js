@@ -43,7 +43,19 @@ export const PREMIO_VILA = { ouro: 1000 };
 // =============================================================
 const cor = (el) => ELEMENTOS[el].cor;
 export const TREINADORES_VILA = {
-  planta: [],
+  // Vila das Folhas (Floresta): os treinadores do Lâmina. A Campeã é a Rox (Planta).
+  planta: [
+    { id: 'richard', nome: 'Richard', elemento: 'fogo', cor: cor('fogo'), niveis: [55, 55],
+      equipe: [['L:fogo', 55], ['L:fogoPlanta', 55], ['L:fogo', 55]], fala: 'Richard: Fogo na floresta? Só se você deixar. Vem!', premio: { forte: 2 }, moedas: 250, revanche: 75 },
+    { id: 'sally', nome: 'Sally', elemento: 'planta', cor: cor('planta'), niveis: [60, 60],
+      equipe: [['L:planta', 60], ['espinhal', 60], ['L:planta', 60]], fala: 'Sally: Eu conheço cada trilha desta floresta. E cada truque!', premio: { forte: 2 }, moedas: 300, revanche: 80 },
+    { id: 'pamela', nome: 'Pâmela', elemento: 'agua', cor: cor('agua'), niveis: [65, 65],
+      equipe: [['L:agua', 65], ['L:aguaFogo', 65], ['L:agua', 65]], fala: 'Pâmela: As flores bebem da minha água. Você vai se afogar nela.', premio: { forte: 3 }, moedas: 350, revanche: 85 },
+    { id: 'lais', nome: 'Lais', elemento: 'planta', cor: cor('planta'), niveis: [70, 70],
+      equipe: [['L:planta', 70], ['L:luz', 70], ['L:planta', 70]], fala: 'Lais: Meu cajado já brotou mais vitórias do que você imagina.', premio: { forte: 3 }, moedas: 400, revanche: 90 },
+    { id: 'rox', nome: 'Rox', elemento: 'planta', cor: cor('planta'), niveis: [75, 75], campeao: true, chamada: 'Campeã',
+      equipe: [['L:planta', 75], ['espinhal', 75], ['L:fogoPlanta', 75], ['L:planta', 75]], fala: 'Rox: A floresta inteira me escuta. Mostre que merece esta coroa.', premio: { forte: 3, supremo: 2 }, moedas: 800, revanche: 100 },
+  ],
   // Vila da Neve (Gelo): os treinadores do Lâmina, com o tema do baralho. O Campeão é o Joker (Raio).
   raio: [
     { id: 'clayton', nome: 'Clayton', elemento: 'agua', cor: cor('agua'), niveis: [55, 55],

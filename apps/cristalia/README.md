@@ -194,7 +194,7 @@ Mundo novo, passo 3 (`PLANO.md`). Cada bioma tem uma vila de **30 m de raio**, n
 
 - **O que tem:** cerca baixa com **2 entradas** (uma virada para o Reino, outra para fora), a **praça** com uma estátua de cristal na cor do elemento, a **Loja de Poções** (só poções, com os mesmos preços do Reino; as sementes ficam só na Loja do Reino), **5 casas** com a cara do bioma (no Arquipélago, sobre estacas) e, no fundo, a **arena** (coliseu de 13 m, menor que o do Reino, com ~210 bonequinhos na plateia).
 - **Zona segura:** nenhum selvagem entra (eles dão meia-volta antes da cerca) e não dá para fincar a bandeira lá dentro. Uma bandeira que estava onde a vila nasceu volta para a Bolsa.
-- **Arena:** 5 plataformas na areia: **4 treinadores e o Campeão** (a do Campeão é dourada, no fundo). As regras são as do Reino: em ordem, um monstro de cada vez, sem captura; depois de conquistada, todos viram **revanche**. **Os treinadores ainda vão ser feitos pelo Lâmina:** enquanto isso, as plataformas mostram "em breve". Eles entram em `TREINADORES_VILA` (`js/vilas.js`), no mesmo formato dos treinadores do Reino (níveis combinados: Nv.55, 60, 65 e 70, e o Campeão Nv.75 na forma final).
+- **Arena:** 5 plataformas na areia: **4 treinadores e o Campeão** (a do Campeão é dourada, no fundo). As regras são as do Reino: em ordem, um monstro de cada vez, sem captura; depois de conquistada, todos viram **revanche**. **Os treinadores são do Lâmina** (nomes e artes dele) e as 5 vilas já estão completas. Eles entram em `TREINADORES_VILA` (`js/vilas.js`), no mesmo formato dos treinadores do Reino (níveis combinados: Nv.55, 60, 65 e 70, e o Campeão Nv.75 na forma final).
 - **Vila das Cinzas** (os primeiros treinadores das vilas, feitos pelo Lâmina; o desenho de cada um segue a arte dele):
 
   | Ordem | Treinador | Elemento | Monstros (1ª vez) | Revanche |
@@ -226,6 +226,17 @@ Mundo novo, passo 3 (`PLANO.md`). Cada bioma tem uma vila de **30 m de raio**, n
   | 3 | Hela | Raio | Raio, Luz, Raio · Nv.65 | Nv.85 |
   | 4 | Tila | Fogo | Fogo, Vulcarapa, Fogo · Nv.70 | Nv.90 |
   | 5 | **Joker** (Campeão) | Raio | Raio, Terra + Raio, Raio, Raio · Nv.75 (forma final) | Nv.100 |
+
+  Prêmios iguais aos da Vila das Cinzas (pela ordem).
+- **Vila das Folhas** (também do Lâmina, com o visual pela arte dele):
+
+  | Ordem | Treinador | Elemento | Monstros (1ª vez) | Revanche |
+  |---|---|---|---|---|
+  | 1 | Richard | Fogo | Fogo, Fogo + Planta, Fogo · Nv.55 | Nv.75 |
+  | 2 | Sally | Planta | Planta, Espinhal, Planta · Nv.60 | Nv.80 |
+  | 3 | Pâmela | Água | Água, Água + Fogo, Água · Nv.65 | Nv.85 |
+  | 4 | Lais | Planta | Planta, Luz, Planta · Nv.70 | Nv.90 |
+  | 5 | **Rox** (Campeã) | Planta | Planta, Espinhal, Fogo + Planta, Planta · Nv.75 (forma final) | Nv.100 |
 
   Prêmios iguais aos da Vila das Cinzas (pela ordem).
 - **Vila das Marés** (também do Lâmina, com o visual pela arte dele):
