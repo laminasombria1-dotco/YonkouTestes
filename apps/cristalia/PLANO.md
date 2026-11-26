@@ -214,7 +214,8 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
         - [x] **Vila das Cinzas:** Sandy (Luz), Brawn (Terra), Blaze (Raio), Sotty (Água) e a Campeã Saphira (Fogo), com o visual pela arte do Lâmina.
         - [x] **Vila da Areia:** Nicky (Trevas), Rony (Fogo), Jean (Água), Nando (Planta) e o Campeão Pedro (Terra), com o visual pela arte do Lâmina.
         - [x] **Vila das Marés:** Karah (Fogo), Angelica (Fogo), Lanny (Raio), Ilia (Trevas) e a Campeã Serena (Água), com o visual pela arte do Lâmina.
-        - [ ] Vila da Neve e das Folhas.
+        - [x] **Vila da Neve:** Clayton (Água), Siberius (Planta), Hela (Raio), Tila (Fogo) e o Campeão Joker (Raio), com o tema do baralho, pela arte do Lâmina.
+        - [ ] Vila das Folhas.
     - [ ] **Passo 4 — Masmorras novas** (2 por bioma; as novas são áreas separadas).
     - [ ] **Passo 5 — Dungeons** (a especificação do Lâmina, com o adaptador).
     - [ ] **Passo 6 — Níveis** (o Lâmina vai rever a regra mais para frente).

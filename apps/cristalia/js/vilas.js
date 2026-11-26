@@ -43,7 +43,20 @@ export const PREMIO_VILA = { ouro: 1000 };
 // =============================================================
 const cor = (el) => ELEMENTOS[el].cor;
 export const TREINADORES_VILA = {
-  raio: [], planta: [],
+  planta: [],
+  // Vila da Neve (Gelo): os treinadores do Lâmina, com o tema do baralho. O Campeão é o Joker (Raio).
+  raio: [
+    { id: 'clayton', nome: 'Clayton', elemento: 'agua', cor: cor('agua'), niveis: [55, 55],
+      equipe: [['L:agua', 55], ['aquaraia', 55], ['L:agua', 55]], fala: 'Clayton: Cartas na mesa. A casa sempre ganha.', premio: { forte: 2 }, moedas: 250, revanche: 75 },
+    { id: 'siberius', nome: 'Siberius', elemento: 'planta', cor: cor('planta'), niveis: [60, 60],
+      equipe: [['L:planta', 60], ['L:fogoPlanta', 60], ['L:planta', 60]], fala: 'Siberius: Copas na mão e flores no coração. Aposta comigo?', premio: { forte: 2 }, moedas: 300, revanche: 80 },
+    { id: 'hela', nome: 'Hela', elemento: 'raio', cor: cor('raio'), niveis: [65, 65],
+      equipe: [['L:raio', 65], ['L:luz', 65], ['L:raio', 65]], fala: 'Hela: Ouros e raios. As duas coisas que eu nunca perco.', premio: { forte: 3 }, moedas: 350, revanche: 85 },
+    { id: 'tila', nome: 'Tila', elemento: 'fogo', cor: cor('fogo'), niveis: [70, 70],
+      equipe: [['L:fogo', 70], ['vulcarapa', 70], ['L:fogo', 70]], fala: 'Tila: Paus pegando fogo! Vamos ver se você aguenta o jogo.', premio: { forte: 3 }, moedas: 400, revanche: 90 },
+    { id: 'joker', nome: 'Joker', elemento: 'raio', cor: cor('raio'), niveis: [75, 75], campeao: true,
+      equipe: [['L:raio', 75], ['L:terraRaio', 75], ['L:raio', 75], ['L:raio', 75]], fala: 'Joker: Ha! O coringa sempre vence no final. Quer ver?', premio: { forte: 3, supremo: 2 }, moedas: 800, revanche: 100 },
+  ],
   // Vila das Marés (Arquipélago): os treinadores do Lâmina. A Campeã é a Serena (Água).
   agua: [
     { id: 'karah', nome: 'Karah', elemento: 'fogo', cor: cor('fogo'), niveis: [55, 55],

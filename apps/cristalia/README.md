@@ -217,6 +217,17 @@ Mundo novo, passo 3 (`PLANO.md`). Cada bioma tem uma vila de **30 m de raio**, n
   | 5 | **Pedro** (Campeão) | Terra (pedra) | Terra, Terra + Raio, Terra, Terra · Nv.75 (forma final) | Nv.100 |
 
   Prêmios iguais aos da Vila das Cinzas (pela ordem).
+- **Vila da Neve** (também do Lâmina, com o tema do baralho):
+
+  | Ordem | Treinador | Elemento | Monstros (1ª vez) | Revanche |
+  |---|---|---|---|---|
+  | 1 | Clayton | Água | Água, Aquaraia, Água · Nv.55 | Nv.75 |
+  | 2 | Siberius | Planta | Planta, Fogo + Planta, Planta · Nv.60 | Nv.80 |
+  | 3 | Hela | Raio | Raio, Luz, Raio · Nv.65 | Nv.85 |
+  | 4 | Tila | Fogo | Fogo, Vulcarapa, Fogo · Nv.70 | Nv.90 |
+  | 5 | **Joker** (Campeão) | Raio | Raio, Terra + Raio, Raio, Raio · Nv.75 (forma final) | Nv.100 |
+
+  Prêmios iguais aos da Vila das Cinzas (pela ordem).
 - **Vila das Marés** (também do Lâmina, com o visual pela arte dele):
 
   | Ordem | Treinador | Elemento | Monstros (1ª vez) | Revanche |
