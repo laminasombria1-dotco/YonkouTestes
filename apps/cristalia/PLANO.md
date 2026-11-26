@@ -256,7 +256,11 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
             Pontes de Raiz num rio, Pântano das Lanternas Azuis no lago grande, água de tanino, névoa verde-azulada).
             Esperando as decisões: etapa 0 junto (recomendado), gigantes e cogumelos do mapa trocados, árvores especiais
             que somem perto da câmera.
-      - [ ] **Deserto**
+      - [ ] **Deserto** — o Lâmina mandou o guia "Areias de Djeser-Ra" (Antigo Egito) e as artes. *Maquete feita:*
+            Desfiladeiro dos Pilares Partidos no fim da Estrada Real, Estrada Cerimonial (colunas de papiro e braseiros),
+            Templo Solar, Avenida das Esfinges com obeliscos de basalto, Planalto das Pirâmides (Grande Pirâmide com topo de
+            ouro), Oásis do Lótus Azul, caravana soterrada, hipogeu na entrada da Tumba das Areias, acácias no lugar dos
+            cactos e luz quente. Esperando as decisões: aplainar o chão só no caminho, hipogeu, tirar os cactos, Khamsin.
       - [ ] **Vulcânico**
       - [ ] **Arquipélago**
     - [ ] **Passo 5 — Dungeons** (a especificação do Lâmina, com o adaptador).
