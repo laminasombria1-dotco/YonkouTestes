@@ -780,6 +780,8 @@ export const MASMORRA = {
     torre: [['tempestor', 1], ['titanvolt', 1]],
     mina: [['montanhar', 1], ['titanvolt', 1]],
     tumba: [['montanhar', 1], ['titanvolt', 1]],
+    pantano: [['florestral', 1], ['florinferno', 1], ['mandacarao', 5]],
+    forja: [['magmalobo', 1], ['caldeirax', 1], ['florinferno', 1], ['colossarapa', 5]],
   },
 };
 
@@ -798,6 +800,7 @@ export const MASMORRA = {
 // =============================================================
 export const MASMORRAS_NOVAS = {
   trovao: {
+    fem: true, fimFem: false, // feminino? (para os textos: na/no, da/do)
     nome: 'Gruta do Trovão', bioma: 'raio', lugar: 1, regiao: 'Picos Nevados', chefe: null, fim: 'Trono da Tempestade',
     zonaSoltos: 'raio', zonaChefe: 'raio',
     semCasa: 'O vento da Gruta do Trovão arranca a bandeira. Finque do lado de fora.',
@@ -813,6 +816,7 @@ export const MASMORRAS_NOVAS = {
     aparicoes: [['L:raio', 9], ['L:terraRaio', 3], ['L:sol', 0.5], ['L:luz', 0.5], ['L:lua', 0.5], ['L:trevas', 0.5]],
   },
   torre: {
+    fem: true, fimFem: false, // feminino? (para os textos: na/no, da/do)
     nome: 'Torre da Nevasca', bioma: 'raio', lugar: 2, regiao: 'Picos Nevados', chefe: null, fim: 'Sino da Nevasca',
     zonaSoltos: 'raio', zonaChefe: 'raio',
     semCasa: 'A nevasca da Torre não deixa fincar a bandeira. Finque do lado de fora.',
@@ -827,6 +831,7 @@ export const MASMORRAS_NOVAS = {
     aparicoes: [['L:raio', 9], ['L:terraRaio', 3], ['L:sol', 0.5], ['L:luz', 0.5], ['L:lua', 0.5], ['L:trevas', 0.5]],
   },
   mina: {
+    fem: true, fimFem: false, // feminino? (para os textos: na/no, da/do)
     nome: 'Mina Abandonada', bioma: 'terra', lugar: 1, regiao: 'Deserto', chefe: null, fim: 'Coração da Terra',
     zonaSoltos: 'terra', zonaChefe: 'terra',
     semCasa: 'O chão da mina treme demais para fincar a bandeira. Finque do lado de fora.',
@@ -842,6 +847,7 @@ export const MASMORRAS_NOVAS = {
     aparicoes: [['L:terra', 9], ['L:terraRaio', 3], ['L:sol', 0.5], ['L:luz', 0.5], ['L:lua', 0.5], ['L:trevas', 0.5]],
   },
   tumba: {
+    fem: true, fimFem: true, // feminino? (para os textos: na/no, da/do)
     nome: 'Tumba das Areias', bioma: 'terra', lugar: 2, regiao: 'Deserto', chefe: null, fim: 'Câmara do Faraó',
     zonaSoltos: 'terra', zonaChefe: 'terra',
     semCasa: 'A areia da Tumba engole a bandeira. Finque do lado de fora.',
@@ -856,7 +862,43 @@ export const MASMORRAS_NOVAS = {
     // Terra; na tumba, Sol e Trevas aparecem um pouco mais (os deuses do sol e da escuridão)
     aparicoes: [['L:terra', 10], ['L:terraRaio', 2], ['L:sol', 0.8], ['L:luz', 0.4], ['L:lua', 0.4], ['L:trevas', 0.8]],
   },
+  // Floresta e Vulcânico: a outra masmorra do bioma é a de hoje (Trilha Ancestral / Caminho das Brasas),
+  // que acompanha a equipe sem piso. Por isso estas duas usam o piso mais alto (o da 2ª do bioma).
+  pantano: {
+    fem: false, fimFem: true, // feminino? (para os textos: na/no, da/do)
+    nome: 'Pântano Sombrio', bioma: 'planta', lugar: 1, regiao: 'Floresta', chefe: 'silvarion', fim: 'Árvore Morta Ancestral',
+    zonaSoltos: 'planta', zonaChefe: 'planta',
+    semCasa: 'O chão do Pântano é mole demais para a bandeira. Finque do lado de fora.',
+    piso: { comum: 62, lider: 70, chefe: 80 },
+    etapas: [
+      { nome: 'Etapa 1 · Charco das Névoas',        extra: 0 },
+      { nome: 'Etapa 2 · Bosque dos Cogumelos',      extra: 2 },
+      { nome: 'Etapa 3 · Cabana da Bruxa',           extra: 4 },
+      { nome: 'Etapa 4 · Raízes Afogadas',           extra: 6 },
+      { nome: 'Etapa 5 · Lagoa dos Vaga-lumes',      extra: 8 },
+    ],
+    // Planta, o Espinhal e o Brotobrasa (Fogo + Planta); no pântano escuro, Lua e Trevas aparecem um pouco mais
+    aparicoes: [['L:planta', 9], ['espinhal', 2], ['L:fogoPlanta', 1.5], ['L:sol', 0.3], ['L:luz', 0.3], ['L:lua', 0.7], ['L:trevas', 0.7]],
+  },
+  forja: {
+    fem: true, fimFem: false, // feminino? (para os textos: na/no, da/do)
+    nome: 'Forja Antiga', bioma: 'fogo', lugar: 1, regiao: 'Vulcão', chefe: 'ignarion', fim: 'Coração da Forja',
+    zonaSoltos: 'fogo', zonaChefe: 'fogo',
+    semCasa: 'O chão da Forja queima a bandeira. Finque do lado de fora.',
+    piso: { comum: 62, lider: 70, chefe: 80 },
+    etapas: [
+      { nome: 'Etapa 1 · Campo de Cinzas',      extra: 0 },
+      { nome: 'Etapa 2 · Rio de Lava',          extra: 2 },
+      { nome: 'Etapa 3 · Portão da Forja',      extra: 4 },
+      { nome: 'Etapa 4 · Salão das Bigornas',   extra: 6 },
+      { nome: 'Etapa 5 · Fundição',             extra: 8 },
+    ],
+    // Fogo, a Vulcarapa, o Vaporito (Água + Fogo) e o Brotobrasa (Fogo + Planta)
+    aparicoes: [['L:fogo', 9], ['vulcarapa', 2], ['L:aguaFogo', 1.5], ['L:fogoPlanta', 1], ['L:sol', 0.5], ['L:luz', 0.5], ['L:lua', 0.5], ['L:trevas', 0.5]],
+  },
 };
+// Artigo e preposição certos para o nome (fem = feminino): com('em', true) = 'na', com('de', false) = 'do'
+export function com(prep, fem) { return { em: fem ? 'na' : 'no', de: fem ? 'da' : 'do', o: fem ? 'a' : 'o', O: fem ? 'A' : 'O' }[prep]; }
 export const MASMORRA_NOVA = { captura: 0.5, ouroBase: 300, ouroPorNivel: 50 };
 // Níveis das etapas de uma masmorra nova (com o piso)
 export function niveisMasmorraNova(media, etapa, id, nivelMasmorra = 1) {

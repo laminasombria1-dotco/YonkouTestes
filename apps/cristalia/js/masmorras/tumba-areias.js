@@ -113,7 +113,7 @@ export const TUMBA_AREIAS = {
     { x: 0, z: -76, etapa: 0 }, { x: 6, z: -185, etapa: 1 }, { x: 0, z: -292, etapa: 2 },
     { x: -8, z: -387, etapa: 3 }, { x: 6, z: -477, etapa: 4 },
   ],
-  inicio: { x: 0, z: -1, ang: Math.PI },
+  inicio: { x: 0, z: -8, ang: Math.PI },   // (um pouco para dentro: a viga da porta de luz fica atrás da câmera)
   saida: { x: 0, z: 7.6, r: 2.2 },
   trono: { x: 0, z: -566, ang: 0 },
   portal: { x: -12, z: -566, ang: 0.3 },

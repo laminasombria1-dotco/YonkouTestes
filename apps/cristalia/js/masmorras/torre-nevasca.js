@@ -55,7 +55,7 @@ export const TORRE_NEVASCA = {
     { x: 8, z: -62, etapa: 0 }, { x: 0, z: -150, etapa: 1 }, { x: -10, z: -238, etapa: 2 },
     { x: -4, z: -324, etapa: 3 }, { x: 18, z: -432, etapa: 4 },
   ],
-  inicio: { x: 0, z: -1, ang: Math.PI },
+  inicio: { x: 0, z: -8, ang: Math.PI },   // (um pouco para dentro: a viga da porta de luz fica atrás da câmera)
   saida: { x: 0, z: 7.6, r: 2.2 },
   trono: { x: 8, z: -517, ang: 0 },
   portal: { x: -7, z: -520, ang: 0.3 },

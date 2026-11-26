@@ -902,7 +902,7 @@ class Jogo {
     if (b.chefe && vencidos.length) {
       ganho.forte += 3; ganho.supremo += 2;
       const chefe = ESPECIES[b.chefeEspecie] || ESPECIES.ignarion, masmorra = b.selvagem.masmorra;
-      const onde = masmorra ? `do ${masmorra.cfg.fim}` : chefe.onde || 'da masmorra';
+      const onde = masmorra ? `${masmorra.cfg.fimFem ? 'da' : 'do'} ${masmorra.cfg.fim}` : chefe.onde || 'da masmorra';
       this.aviso(b.capturados.length ? `Você capturou ${chefe.nome}, o chefe ${onde}!` : `Você venceu ${chefe.nome}, o chefe ${onde}! Um novo chefe chega no próximo amanhecer.`);
       masmorra?.chefeVencido(); // o Nível da Masmorra sobe
     }

@@ -228,7 +228,8 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
             chefe, saídas, salvar e GM. `js/masmorras/` e `MASMORRAS_NOVAS` (`js/dados.js`).
       - [x] **4.2 — Gelo e Deserto:** Torre da Nevasca, Mina Abandonada e Tumba das Areias (pirâmides em degraus e gigantes,
             esfinges com cabeça de gato, deuses gato). `torre-nevasca.js`, `mina-abandonada.js`, `tumba-areias.js` e `pecas.js`.
-      - [ ] **4.3 — Floresta e Vulcânico:** Pântano Sombrio e Forja Antiga.
+      - [x] **4.3 — Floresta e Vulcânico:** Pântano Sombrio e Forja Antiga (piso da 2ª do bioma, porque a outra é o corredor
+            de hoje; com os lendários Silvárion e Ignárion no Nível 9+). `pantano-sombrio.js` e `forja-antiga.js`.
       - [ ] **4.4 — Arquipélago:** Templo Submerso e Gruta das Marés.
     - [ ] **Passo 5 — Dungeons** (a especificação do Lâmina, com o adaptador).
     - [ ] **Passo 6 — Níveis** (o Lâmina vai rever a regra mais para frente).

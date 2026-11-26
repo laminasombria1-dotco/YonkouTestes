@@ -86,3 +86,20 @@ export function portaoSimples(ms, b, { lx, lz, base, ang, larg, px, pz }, pedra,
   }
   b.add(GEO.caixa, viga, o.x + lx, base + 6.9, o.z + lz, (larg + 2.2) * 2, 1.2, 1.9, 0, ang, 0);
 }
+
+// Um plano de água ou de lava (só desenho: quem bloqueia são os buracos e os abismos da forma)
+export function liquido(ms, mat, lx, y, lz, largura, comprimento, ang = 0) {
+  const me = ms.malha(GEO_PLANO, mat, lx, y, lz, false);
+  me.scale.set(largura, comprimento, 1);
+  me.rotation.order = 'YXZ';           // primeiro deita o plano, depois gira para o lado do corredor
+  me.rotation.set(-Math.PI / 2, ang, 0);
+  return me;
+}
+const GEO_PLANO = new THREE.PlaneGeometry(1, 1);
+
+// Árvore morta (tronco escuro e galhos tortos)
+export function arvoreMorta(ms, mat, x, z, e = 1) {
+  const r = ms.rng;
+  ms.peca(GEO.cil, mat, x, 2 * e, z, 0.5 * e, 4 * e, 0.5 * e, (r() - 0.5) * 0.15, 0, (r() - 0.5) * 0.15);
+  for (let i = 0; i < 4; i++) ms.peca(GEO.caixa, mat, x, (2.4 + i * 0.6) * e, z, 0.18 * e, 0.18 * e, (2.4 - i * 0.4) * e, 0.6 - i * 0.15, i * 1.7 + r(), 0);
+}

@@ -562,7 +562,7 @@ export class PainelGM {
         sv.espera = false;
         if (acao === 'mmSortear') sv.chefe = sortearChefe(d.dg, Math.min(sv.nivel, MASMORRA.lendarioDesde - 1));
         if (a?.id === d.dg) { if (a.chefe) this.mundo.removerSelvagem(a.chefe); a.chefe = null; a.esperaAmanhecer = false; a.spawnarChefe(); }
-        this.jogo.aviso(`GM: o chefe do ${MASMORRAS_NOVAS[d.dg].fim} é ${ESPECIES[sv.chefe || a?.chefe?.dados.especie || MASMORRA.chefes[d.dg][0][0]].nome}.`);
+        this.jogo.aviso(`GM: o chefe ${MASMORRAS_NOVAS[d.dg].fimFem ? 'da' : 'do'} ${MASMORRAS_NOVAS[d.dg].fim} é ${ESPECIES[sv.chefe || a?.chefe?.dados.especie || MASMORRA.chefes[d.dg][0][0]].nome}.`);
         this.salvar(); break;
       }
       case 'soltoDungeon': this.soltoDungeon(d.dg); break;

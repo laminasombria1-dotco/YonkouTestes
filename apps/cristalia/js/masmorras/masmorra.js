@@ -18,7 +18,7 @@ import { Lote, Bloco, GEO, aleatorio, sortear } from '../dungeon.js';
 import { alturaEm, alturaVertice, ESPACO, esquecerAlturas } from '../mapa/altura.js';
 import { LUGARES } from '../mapa/gerador.js';
 import {
-  ESPECIES, ELEMENTOS, MASMORRAS_NOVAS, MASMORRA, MASMORRA_NOVA, niveisMasmorraNova, nivelChefeMasmorraNova,
+  ESPECIES, ELEMENTOS, MASMORRAS_NOVAS, com, MASMORRA, MASMORRA_NOVA, niveisMasmorraNova, nivelChefeMasmorraNova,
   criarMonstro, statsDe, especieDaEscolha, dadosMasmorra, sortearChefe,
 } from '../dados.js';
 import { FormaMasmorra, INTERIOR } from './forma.js';
@@ -26,9 +26,11 @@ import { GRUTA_TROVAO } from './gruta-trovao.js';
 import { TORRE_NEVASCA } from './torre-nevasca.js';
 import { MINA_ABANDONADA } from './mina-abandonada.js';
 import { TUMBA_AREIAS } from './tumba-areias.js';
+import { PANTANO_SOMBRIO } from './pantano-sombrio.js';
+import { FORJA_ANTIGA } from './forja-antiga.js';
 
 // Os desenhos de cada masmorra (as que ainda não existem não aparecem no mapa)
-const PLANOS = { trovao: GRUTA_TROVAO, torre: TORRE_NEVASCA, mina: MINA_ABANDONADA, tumba: TUMBA_AREIAS };
+const PLANOS = { trovao: GRUTA_TROVAO, torre: TORRE_NEVASCA, mina: MINA_ABANDONADA, tumba: TUMBA_AREIAS, pantano: PANTANO_SOMBRIO, forja: FORJA_ANTIGA };
 
 const MAX_SOLTOS = 4;           // monstros soltos ao mesmo tempo (na sala onde você está)
 const ESCALA_CHEFE = 1.5;       // o chefe (forma final) fica maior que os outros
@@ -193,7 +195,7 @@ export class MasmorraNova {
     if (!p || p.aberto) return;
     p.aberto = true;
     for (const o of p.obs) { this.m.obstaculos.tirar(o); this.obstaculos.splice(this.obstaculos.indexOf(o), 1); }
-    if (avisar && this.m.jogo.estado) this.m.jogo.aviso(i === this.portoes.length - 1 ? `O portão do ${this.cfg.fim} se abriu! O chefe espera lá dentro.` : 'O portão selado se abriu! Siga para a próxima etapa.');
+    if (avisar && this.m.jogo.estado) this.m.jogo.aviso(i === this.portoes.length - 1 ? `O portão ${com('de', this.cfg.fimFem)} ${this.cfg.fim} se abriu! O chefe espera lá dentro.` : 'O portão selado se abriu! Siga para a próxima etapa.');
   }
 
   // ---------- grupos (1 por etapa, com líder) ----------
@@ -308,7 +310,7 @@ export class MasmorraNova {
         this.esperaAmanhecer = false;
         if (this.salvo) this.salvo.espera = false;
         this.spawnarChefe();
-        if (m.jogo.estado) m.jogo.aviso(`${this.nomeChefe} é o novo chefe do ${this.cfg.fim}.`);
+        if (m.jogo.estado) m.jogo.aviso(`${this.nomeChefe} é o novo chefe ${com('de', this.cfg.fimFem)} ${this.cfg.fim}.`);
       }
     }
     if (this.chefe) {
@@ -428,8 +430,8 @@ export class MasmorraNova {
     if (e == null || e === this.etapaAvisada || !m.jogo.estado) return;
     this.etapaAvisada = e;
     if (e === 'fim') {
-      if (this.chefe) m.jogo.aviso(`O chefe ${this.nomeChefe} (Nv.${this.chefe.dados.nivel}) espera no ${this.cfg.fim}. Encoste nele para lutar.`);
-      else m.jogo.aviso(`O ${this.cfg.fim} está vazio. Um novo chefe chega no próximo amanhecer. Use o portal para sair.`);
+      if (this.chefe) m.jogo.aviso(`O chefe ${this.nomeChefe} (Nv.${this.chefe.dados.nivel}) espera ${com('em', this.cfg.fimFem)} ${this.cfg.fim}. Encoste nele para lutar.`);
+      else m.jogo.aviso(`${com('O', this.cfg.fimFem)} ${this.cfg.fim} está ${this.cfg.fimFem ? 'vazia' : 'vazio'}. Um novo chefe chega no próximo amanhecer. Use o portal para sair.`);
       return;
     }
     const nv = this.niveis(e), a = this.acampamentos.find((x) => x.etapa === e);
@@ -577,7 +579,7 @@ export class Masmorras {
     m.posicionarCamera(1);
     m.zonaAvisada = null;
     m.jogo.mostrarZona?.(ms.cfg.nome + ' · Nível ' + ms.nivelMasmorra);
-    if (m.jogo.estado) m.jogo.aviso(`Você entrou na ${ms.cfg.nome}. Encoste na porta de luz para sair a qualquer hora.`);
+    if (m.jogo.estado) m.jogo.aviso(`Você entrou ${com('em', ms.cfg.fem)} ${ms.cfg.nome}. Encoste na porta de luz para sair a qualquer hora.`);
     this.mudando = false;
   }
 
@@ -594,7 +596,7 @@ export class Masmorras {
       m.ang = e.ang;
       m.orbita.yaw = e.ang + Math.PI;
       m.graca = 2.5;
-      m.jogo.aviso(`Você saiu da ${e.cfg.nome}.`);
+      m.jogo.aviso(`Você saiu ${com('de', e.cfg.fem)} ${e.cfg.nome}.`);
     }
     m.chunks.carregarTudoPerto(m.pos.x, m.pos.z);
     m.zonaAvisada = null;
@@ -618,7 +620,7 @@ export class Masmorras {
       if (!sv.achada && d < DIST_DESCOBRIR) {
         sv.achada = true;
         m.jogo.mostrarZona?.(e.cfg.nome);
-        m.jogo.aviso(`Você descobriu a ${e.cfg.nome}! Masmorra difícil · Nível ${sv.nivel}.`);
+        m.jogo.aviso(`Você descobriu ${com('o', e.cfg.fem)} ${e.cfg.nome}! Masmorra difícil · Nível ${sv.nivel}.`);
         m.jogo.salvar?.();
       }
       if (m.graca <= 0 && Math.hypot(m.pos.x - e.porta.x, m.pos.z - e.porta.z) < 1.9) { this.entrar(e.id); return; }

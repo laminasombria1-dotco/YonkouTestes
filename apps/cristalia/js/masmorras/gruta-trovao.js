@@ -67,7 +67,7 @@ export const GRUTA_TROVAO = {
     { x: 2, z: -66, etapa: 0 }, { x: 22, z: -170, etapa: 1 }, { x: 28, z: -270, etapa: 2 },
     { x: -6, z: -392, etapa: 3 }, { x: 6, z: -476, etapa: 4 },
   ],
-  inicio: { x: 0, z: -1, ang: Math.PI },       // olhando para dentro (−z)
+  inicio: { x: 0, z: -8, ang: Math.PI },   // (um pouco para dentro: a viga da porta de luz fica atrás da câmera)       // olhando para dentro (−z)
   saida: { x: 0, z: 7.6, r: 2.2 },             // a porta de luz
   trono: { x: 6, z: -564, ang: 0 },            // o chefe olha para a entrada (+z)
   portal: { x: -9, z: -566, ang: 0.35 },
