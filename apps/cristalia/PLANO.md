@@ -252,7 +252,10 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
             vale 87 → 86, picos 78 → 88 desenhos; na Fraco, quase igual. Triângulos: até 68 mil.
       - [ ] **Floresta** — o Lâmina mandou o guia "Mata de Véu-Âmbar" e as artes (carvalhos prateados com cortinas de
             âmbar, freixo oco, salgueiro, samambaias, musgo, cogumelos ciano, fungo dourado, pântano das lanternas azuis,
-            pontes de raiz, ruína circular). Próximo: a maquete.
+            pontes de raiz, ruína circular). *Maquete feita* (Catedral das Cortinas com o Observatório numa clareira plana,
+            Pontes de Raiz num rio, Pântano das Lanternas Azuis no lago grande, água de tanino, névoa verde-azulada).
+            Esperando as decisões: etapa 0 junto (recomendado), gigantes e cogumelos do mapa trocados, árvores especiais
+            que somem perto da câmera.
       - [ ] **Deserto**
       - [ ] **Vulcânico**
       - [ ] **Arquipélago**
