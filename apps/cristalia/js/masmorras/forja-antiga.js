@@ -13,6 +13,7 @@
 // =============================================================
 import * as THREE from 'three';
 import { GEO, lambert } from '../dungeon.js';
+import { CALDEIRA } from '../mapa/gerador.js';
 import { nosMorros, pontosNaSala, portaDeLuz, braseiro, portaoSimples, liquido, arvoreMorta } from './pecas.js';
 
 // Fundição: 5 degraus que sobem de 0,5 m (z = -424) até 8 m (z = -472)
@@ -259,18 +260,44 @@ export const FORJA_ANTIGA = {
     }
   },
 
-  // A entrada no mapa: uma porta de obsidiana com runas acesas num paredão de pedra vulcânica (sem ícone)
+  // A porta fica na entrada das Cavernas de Tubos de Lava (a arte do Lâmina), no flanco oeste do
+  // Monte Vael, virada para a Trilha de Basalto (e não no lugar guardado pela semente)
+  lugarNoMapa: { x: CALDEIRA.caverna.x, z: CALDEIRA.caverna.z, ang: CALDEIRA.caverna.ang },
+
+  // A entrada no mapa (a arte do Lâmina: a caverna de tubo de lava, à vista): o arco de obsidiana em
+  // 4 anéis, as rochas do vulcão em volta, a boca escura com o brilho da lava lá no fundo, estalactites
+  // com veios de lava, o rio de lava saindo, as vigas de metal e os fungos laranja que brilham.
   entrada(b, { x, z, ang, y, obst }) {
     const fx = Math.sin(ang), fz = Math.cos(ang), sx = Math.cos(ang), sz = -Math.sin(ang);
     const P = (f, s) => ({ x: x + fx * f + sx * s, z: z + fz * f + sz * s });
-    const rocha = lambert('#2e2220'), rocha2 = lambert('#3a2a26'), obs = lambert('#1e1618'), escuro = lambert('#0a0605'), runa = lambert('#ff8a3a', { emissive: '#ff6a1f', emissiveIntensity: 0.9 });
-    const base = y(x, z);
-    for (const [f, s, e, h, m] of [[-3, 0, 6.5, 6.5, rocha], [-1.5, -4.2, 4.2, 4.6, rocha2], [-1.5, 4.2, 4.2, 4.4, rocha], [-5, -2.5, 4.5, 4, rocha2], [-5, 2.5, 4.5, 4.2, rocha]]) { const p = P(f, s); b.add(GEO.dode, m, p.x, base + h * 0.4, p.z, e, h, e * 0.95, 0.15, f * s, 0); }
-    for (const s of [-1.8, 1.8]) { const p = P(0.6, s); b.add(GEO.caixa, obs, p.x, base + 2.4, p.z, 1.1, 4.8, 1.1, 0, ang, 0); b.add(GEO.caixa, runa, p.x + fx * 0.56, base + 2.4, p.z + fz * 0.56, 0.3, 2.6, 0.06, 0, ang, 0); }
-    const v = P(0.6, 0); b.add(GEO.caixa, obs, v.x, base + 5, v.z, 5, 0.9, 1.3, 0, ang, 0); b.add(GEO.caixa, runa, v.x + fx * 0.66, base + 5, v.z + fz * 0.66, 2.4, 0.25, 0.06, 0, ang, 0);
-    const d = P(0.2, 0); b.add(GEO.caixa, escuro, d.x, base + 2.1, d.z, 2.5, 4.2, 0.4, 0, ang, 0);
-    for (let i = 0; i < 4; i++) { const p = P(1.8 + i * 1.3, (i % 2 ? 0.6 : -0.6)); b.add(GEO.caixa, runa, p.x, base + 0.03, p.z, 0.15, 0.05, 1.6, 0, ang + (i % 2 ? 0.4 : -0.4), 0); }
-    const c = P(-3, 0);
-    obst(c.x, c.z, 4.5);
+    const obs = lambert('#1c191d', { emissive: '#3a1a10', emissiveIntensity: 0.2 }), rocha = lambert('#26222a'), rocha2 = lambert('#2e2a2c'), escuro = lambert('#080404'), metal = lambert('#3a3236');
+    const lava = lambert('#ff8a3a', { emissive: '#ff5e1a', emissiveIntensity: 1 }), fungo = lambert('#ffb050', { emissive: '#ff8a1a', emissiveIntensity: 0.9 }), pe = lambert('#6a4a2a'), junco = lambert('#a8a040');
+    const base = y(P(3, 0).x, P(3, 0).z) - 0.3, R = 3.6;
+    // o arco (4 anéis, um atrás do outro, cada um maior)
+    for (let k = 0; k < 4; k++) for (let i = 0; i <= 10; i++) {
+      const t = (i / 10) * Math.PI, p = P(2 - k * 1.4, Math.cos(t) * (R + k * 1.1));
+      b.add(GEO.caixa, k ? (i % 2 ? rocha : rocha2) : obs, p.x, base + Math.sin(t) * (R + k * 1.1) * 1.15, p.z, 1.6, 1.2 + k * 0.2, 1.3 + k * 0.3, 0, ang, t + Math.PI / 2); // (gira em volta da frente: segue a curva do arco)
+    }
+    // as rochas do vulcão em volta e por cima
+    for (let i = 0; i < 14; i++) { const a = (i / 14) * Math.PI, d = R + 4.5 + (i % 3) * 0.5, p = P(-1 - Math.sin(a) * 2, Math.cos(a) * d); b.add(GEO.dode, i % 2 ? rocha : rocha2, p.x, base + Math.sin(a) * 5 + 1, p.z, 4, 3.5, 3.5, i * 0.7, i * 1.3, 0); }
+    // a boca escura e o brilho da lava lá no fundo
+    { const p = P(0.4, 0); b.add(GEO.caixa, escuro, p.x, base + R * 0.5, p.z, R * 1.7, R * 1.0, 3.2, 0, ang, 0); const g = P(-1.3, 0.6); b.add(GEO.ico, lava, g.x, base + 0.9, g.z, 2.2, 1.6, 0.4, 0, ang, 0); }
+    // estalactites de obsidiana (algumas com veio de lava)
+    for (let i = -5; i <= 5; i++) { const t = Math.PI / 2 + i * 0.22, p = P(2.3, Math.cos(t) * (R - 0.4)), h = 0.7 + ((i * 7 + 13) % 5) * 0.3; b.add(GEO.cone, obs, p.x, base + Math.sin(t) * (R - 0.4) * 1.15 - h / 2, p.z, 0.35, h, 0.35, Math.PI, 0, 0); if (i % 3 === 0) b.add(GEO.caixa, lava, p.x, base + Math.sin(t) * R * 1.1 - h * 0.7, p.z, 0.06, h * 0.5, 0.06, 0, ang, 0); }
+    // o rio de lava saindo da caverna
+    for (let k = 0; k < 9; k++) { const p = P(0 + k * 1.3, Math.sin(k * 0.8) * 0.7); b.add(GEO.caixa, lava, p.x, y(p.x, p.z) + 0.1, p.z, 1.0 - k * 0.06, 0.08, 1.5, 0, ang + Math.sin(k) * 0.3, 0); }
+    // as vigas de metal que escoram a boca
+    for (const s of [-1, 1]) { const p = P(2.6, s * 2.6); b.add(GEO.caixa, metal, p.x, base + 2, p.z, 0.3, 4, 0.3, 0, ang, 0); }
+    { const p = P(2.6, 0); b.add(GEO.caixa, metal, p.x, base + 4, p.z, 0.35, 0.35, 5.6, 0, ang, 0); }
+    // os fungos laranja (Fungo-Crisol) e o junco
+    for (const s of [-1, 1]) for (const [f, l, e] of [[3.4, 3, 1.3], [4.8, 4.4, 0.9], [1.2, 2.2, 0.7]]) {
+      const c = P(f, s * l), yy = y(c.x, c.z);
+      for (let i = 0; i < 4; i++) { const a = i * 1.6 + s, d = i ? 0.4 * e : 0, h = (i ? 0.45 : 0.8) * e, sc = (i ? 0.35 : 0.6) * e, px = c.x + Math.cos(a) * d, pz = c.z + Math.sin(a) * d;
+        b.add(GEO.cilFino, pe, px, yy + h / 2, pz, 0.12 * e, h, 0.12 * e); b.add(GEO.ico, fungo, px, yy + h + sc * 0.3, pz, sc, sc * 0.85, sc); }
+      const j = P(f + 1, s * (l - 1)); for (let i = 0; i < 5; i++) b.add(GEO.cone4, junco, j.x + Math.cos(i) * 0.12, y(j.x, j.z) + 0.35, j.z + Math.sin(i) * 0.12, 0.08, 0.8, 0.08, Math.sin(i) * 0.4, 0, Math.cos(i) * 0.4);
+    }
+    // a caverna é sólida (só a boca é a porta)
+    const c = P(-3, 0); obst(c.x, c.z, 4.6);
+    for (const s of [-1, 1]) { const q = P(0.5, s * 4.6); obst(q.x, q.z, 1.6); }
   },
 };

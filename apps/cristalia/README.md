@@ -394,7 +394,7 @@ O Reino fica **no meio do mapa** (mundo novo, `PLANO.md`): é o lugar seguro ond
 
 São **2 por bioma** (o Caminho das Brasas e a Trilha Ancestral contam como uma delas e continuam como corredores abertos), nos lugares que a semente guardou em `LUGARES` (`js/mapa/gerador.js`). **Masmorras são difíceis e demoradas; dungeons são fáceis** (passo 5). Prontas: **Gruta do Trovão** e **Torre da Nevasca** (Gelo), **Mina Abandonada** e **Tumba das Areias** (Deserto), **Pântano Sombrio** (Floresta), **Forja Antiga** (Vulcânico), **Templo Submerso** e **Gruta das Marés** (Arquipélago): as 8 completas.
 
-- **Entrada escondida:** no mapa só fica a porta, **sem ícone**. As exceções, bem à vista, pelas artes do Lâmina: a **Gruta do Trovão** (a caverna de gelo: paredão de rocha escura, vigas de mina, pingentes, brilho ciano lá dentro e uma lanterna) e a **Tumba das Areias** (o hipogeu no penhasco de arenito, com o disco solar alado e 2 colossos). A 22 m dela aparece **"Você descobriu a Gruta do Trovão!"** (fica salvo: `estado.masmorras.trovao.achada`). Encostou na boca, a tela escurece e o jogo monta **só a masmorra**.
+- **Entrada escondida:** no mapa só fica a porta, **sem ícone**. As exceções, bem à vista, pelas artes do Lâmina: a **Gruta do Trovão** (a caverna de gelo: paredão de rocha escura, vigas de mina, pingentes, brilho ciano lá dentro e uma lanterna) a **Tumba das Areias** (o hipogeu no penhasco de arenito, com o disco solar alado e 2 colossos) e a **Forja Antiga** (a entrada das Cavernas de Tubos de Lava, no flanco do Monte Vael; a porta mudou para lá). A 22 m dela aparece **"Você descobriu a Gruta do Trovão!"** (fica salvo: `estado.masmorras.trovao.achada`). Encostou na boca, a tela escurece e o jogo monta **só a masmorra**.
 - **Área separada:** cada masmorra fica **bem longe do mapa redondo** (x = 1800, 2700, ...). Lá dentro, `alturaEm`, a colisão e a região perguntam à forma da masmorra (`interiorEm` em `js/masmorras/forma.js`); o mapa de fora some sozinho (os chunks ficam longe e são apagados) e os monstros dele somem. Ao sair, **tudo da masmorra é apagado da memória** (só uma existe por vez).
 - **5 etapas + o chefe.** Cada etapa tem **1 grupo com líder** e até 4 monstros soltos. O **portão selado** (a parede de energia azul) da saída da etapa **só abre quando o líder é vencido**. Cada vez que você entra, os portões começam fechados de novo.
 - **Monstros:** só os tipos do bioma (na Gruta: linha Raio e Imanito); Sol, Luz, Lua e Trevas como visitantes raros (`aparicoes`).
@@ -575,7 +575,7 @@ Sai da borda do mapa pela Floresta, seguindo as lanternas de flor (a direção d
 | Picos Nevados | **Gelo**: montanhas, pinheiros carregados de neve, rochas escuras com neve, rios e lagos congelados, o Acampamento do Gelo e o cristal de gelo gigante (veja "Bioma do Gelo") | Raio (Faisquinho), com relâmpagos; Luz de dia, Trevas à noite |
 | Floresta | **Mata de Véu-Âmbar**: Carvalhos-Véu com cortinas de âmbar, freixos, salgueiros, samambaias, cogumelos ciano, a Catedral das Cortinas, as Pontes de Raiz e o Pântano das Lanternas Azuis (veja "Bioma da Floresta") | Planta (Musguinho), Espinhal (raro); Luz de dia, Trevas à noite. Daqui sai a Trilha Ancestral |
 | Deserto | **Areias de Djeser-Ra** (Antigo Egito): dunas, cânions, acácias, o caminho até as pirâmides, o Templo Solar, a Avenida das Esfinges, o Oásis do Lótus Azul e a tempestade de Khamsin (veja "Bioma do Deserto") | Terra (Pedrisco); Sol de dia, Lua à noite |
-| Vulcão | **Vulcânico**: chão vulcânico, vulcão com cratera, rios de lava | Fogo (Brasito), Vulcarapa (raro); Sol de dia, Trevas à noite. Daqui sai o Caminho das Brasas |
+| Vulcão | **Caldeira de Ignis-Vael**: colunas de basalto, obsidiana, Árvores-Brasa, a Forja Primordial, o Monte Vael, a Bacia do Vitriol (ácido) e a Chuva de Cinzas (veja "Bioma Vulcânico") | Fogo (Brasito), Vulcarapa (raro); Sol de dia, Trevas à noite. Daqui sai o Caminho das Brasas |
 | Arquipélago | **Água**: quase todo água rasa (dá para andar, mais devagar), ilhas com palmeiras e canais fundos | Água (Gotinho), Aquaraia (raro); Luz de dia, Lua à noite |
 | Lago | Em volta dos lagos da Floresta e do oásis do Deserto | Água (Gotinho), Aquaraia (raro) |
 
@@ -629,6 +629,25 @@ O esquema do guia, do fim da Estrada Real do Deserto (a entrada sul) até o fund
 - **O caminho aplainado:** só no caminho (estrada, pátio do templo e planalto) o chão fica plano (`CAMINHO_DESERTO` e `alvoDeserto` no `js/mapa/gerador.js`, como o chão das vilas). Não muda a semente, as vilas, as masmorras, os rios nem o oásis.
 - **Leve no celular:** o Deserto ficou mais leve que antes (de 5 a 17 desenhos a menos por quadro).
 - **Código:** `js/biomas/deserto.js` (`BiomaDeserto` e as peças comuns), o hipogeu em `js/masmorras/tumba-areias.js`, o chão e as peças nos chunks (`corDoDeserto`) e a Khamsin no `js/biomas/clima.js`.
+
+## Bioma Vulcânico: Caldeira de Ignis-Vael (o guia do Lâmina)
+
+Paleta do guia: basalto `#1C191D`, cinza `#5C5659`, magma `#FF5E1A` e `#FFD147`, ácido `#8CE62E`, chama ciano `#2CF2C4` e céu ferrugem `#7A3222`.
+
+Do fim da Estrada Real do Fogo (a entrada sul) até o vulcão do meio do bioma:
+- **Fenda das Colunas Partidas:** paredões de colunas de basalto hexagonais.
+- **Trilha de Basalto:** lajes de 6 lados com veios de lava, plana, com colunas dos dois lados.
+- **Forja Primordial:** uma **fenda de lava** cruza a trilha; a **ponte de ferro** passa por cima (é o único lugar para atravessar) entre 2 pilares com correntes e engrenagens. Do outro lado, a plataforma com a **bigorna colossal**, o anel de lava, os dutos e a cascata caindo na fenda.
+- **Rio de lava:** desce do Monte Vael até a fenda (não dá para entrar).
+- **Monte Vael:** o vulcão do meio, com veios de lava descendo, pontas de rocha no cume e a pluma de fumaça com brasas.
+- **Bacia do Vitriol Ígneo:** lagos de **ácido verde** (bloqueiam como a lava) com chamas ciano, crosta e cristais de enxofre, fumarolas e cardos azulados.
+- **Cavernas de Tubos de Lava:** a entrada (arco de obsidiana, estalactites, rio de lava saindo e fungos laranja) é a **porta da masmorra Forja Antiga**, à vista, no flanco do vulcão.
+- **Campos de Cinzas** e o **Cemitério de Cinza-Branca** (viajantes e animais petrificados).
+- **No bioma todo:** colunas de basalto, obsidiana, Árvores-Brasa com folhas de cobre, minério ignita, cristais de enxofre, troncos petrificados e junco; brasas subindo e cinza caindo; céu ferrugem e a luz laranja vindo de baixo.
+- **Chuva de Cinzas:** rara (de 6 a 13 minutos no Vulcânico entre uma e outra, 90 s cada). O céu escurece, a névoa fecha, cai muita cinza e relâmpagos piscam. Só visual.
+- **O chão:** muda só na trilha, na fenda, no rio e na bacia (`CALDEIRA` e `mudarVulcao` no `js/mapa/gerador.js`). A Vila das Cinzas e o Caminho das Brasas não mudam.
+- **Peso:** de 5 a 22 desenhos a mais por quadro (o pior é perto do vulcão, ~109 no Médio).
+- **Código:** `js/biomas/vulcao.js` (`BiomaVulcao` e as peças comuns), a porta em `js/masmorras/forja-antiga.js` (`lugarNoMapa`), o chão nos chunks (`corDoVulcao`) e o céu no `js/biomas/clima.js`.
 
 ## Mapa procedural
 
@@ -1116,6 +1135,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/biomas/comum.js` | As formas e ferramentas das melhorias dos biomas: o `Forno` (junta peças numa malha só), o brilho falso e as peças que ficam transparentes na frente da câmera |
 | `js/biomas/floresta.js` | A Floresta (Mata de Véu-Âmbar): as peças e a Catedral das Cortinas, as Pontes de Raiz e o Pântano das Lanternas Azuis |
 | `js/biomas/deserto.js` | O Deserto (Areias de Djeser-Ra): o caminho até as pirâmides, o oásis, a caravana, a areia voando, a Khamsin e as peças comuns |
+| `js/biomas/vulcao.js` | O Vulcânico (Caldeira de Ignis-Vael): a Forja Primordial, o Monte Vael, a Bacia do Vitriol, as cinzas, a Chuva de Cinzas e as peças comuns |
 | `js/biomas/clima.js` | A cor do céu, da névoa e da luz de cada bioma |
 | `js/biomas/gelo.js` | As peças únicas do Gelo (`BiomaGelo`), o brilho falso, a neve caindo e o pinheiro nevado |
 | `js/mapa/chunks.js` | Os chunks: cria o chão, a água, a lava e os objetos de cada pedaço do mapa, carrega e apaga conforme você anda, e o LOD |

@@ -17,6 +17,7 @@ import { TrilhaAncestral, CRISTAL_ESCONDIDO } from './raizes.js';
 import { BiomaGelo } from './biomas/gelo.js';
 import { BiomaFloresta } from './biomas/floresta.js';
 import { BiomaDeserto } from './biomas/deserto.js';
+import { BiomaVulcao } from './biomas/vulcao.js';
 import { ClimaBiomas } from './biomas/clima.js';
 import { Reino, FONTE_REINO, NASCER_REINO, ARENA_REINO, CASA_REINO, nivelRevanche } from './reino.js';
 import { JardimMundo, passarFome } from './jardim.js';
@@ -139,6 +140,7 @@ export class Mundo {
     this.gelo = new BiomaGelo(this); // as peças únicas do Gelo (acampamento, trilha, lago, arco, fonte termal) e a neve caindo
     this.floresta2 = new BiomaFloresta(this); // as peças únicas da Floresta (Catedral das Cortinas, Pontes de Raiz, Pântano das Lanternas Azuis)
     this.deserto = new BiomaDeserto(this); // as peças únicas do Deserto (o caminho até as pirâmides, o oásis, a caravana) e a tempestade de Khamsin
+    this.vulcao = new BiomaVulcao(this); // as peças únicas do Vulcânico (a Forja Primordial, o Monte Vael, a Bacia do Vitriol...) e a Chuva de Cinzas
     this.clima = new ClimaBiomas(this); // a cor do céu e da luz de cada bioma
     this.criarMontanhas();
     this.criarEstrelas();
@@ -877,6 +879,7 @@ export class Mundo {
     this.gelo.atualizar(dt, t);
     this.floresta2.atualizar(dt, t);
     this.deserto.atualizar(dt, t, pausado);
+    this.vulcao.atualizar(dt, t, pausado);
 
     // Relâmpagos nos Picos Nevados (região de Raio)
     const zonaAtual = zonaEm(this.pos.x, this.pos.z);

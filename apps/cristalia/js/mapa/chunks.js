@@ -17,7 +17,7 @@ import * as THREE from 'three';
 import { CONFIG_MAPA as C, QUALIDADES } from './config.js';
 import {
   SEMENTE, RAIO_MUNDO, NIVEL_AGUA, POIS, RESERVAS, LAGOA, aleatorio, semente3,
-  pesosEm, idDoPeso, N_PESOS, biomaEm, lagoEm, geloEm, naEstradaReal, ESTRADA, CAMINHO_DESERTO,
+  pesosEm, idDoPeso, N_PESOS, biomaEm, lagoEm, geloEm, naEstradaReal, ESTRADA, CAMINHO_DESERTO, CALDEIRA, naBaciaAcida,
 } from './gerador.js';
 import { alturaVertice, alturaEm, ESPACO } from './altura.js';
 import { TRACADOS, REINO, S_LAGO, foraDungeons } from '../dungeon.js';
@@ -26,6 +26,7 @@ import { PAL_GELO, pinheiroNevado } from '../biomas/gelo.js';
 import { semIndice, UNI } from '../biomas/comum.js';
 import * as FL from '../biomas/floresta.js';
 import * as DS from '../biomas/deserto.js';
+import * as VU from '../biomas/vulcao.js';
 
 const T = C.tamChunk, DIV = C.divisoes;
 
@@ -56,7 +57,9 @@ const MAT = {
   ouro: lambert({ color: '#f2c040', emissive: '#f2a922', emissiveIntensity: 0.55 }),
 };
 // tipo das peças do Forno (biomas/) -> material dos chunks
-const TIPO_MAT = { n: 'base', a: 'ambar', c: 'ciano', o: 'ouro' };
+// (no chunk o enxofre e a obsidiana usam o material comum com a cor deles: 1 desenho a menos cada, por chunk)
+const TIPO_MAT = { n: 'base', a: 'ambar', c: 'ciano', o: 'ouro', f: 'lavaViva', e: 'base', g: 'base' };
+const TIPO_COR = { e: '#f2d84a', g: '#1c191d' };
 // Etapa 0 (melhorias dos biomas): os objetos de cada chunk são JUNTADOS numa malha só por
 // material (a cor de cada peça vai nos vértices). Mesmo visual, bem menos desenhos por quadro.
 // Por isso cada material tem uma cópia com "cor nos vértices" (a peça sem cor fica branca = a cor do material).
@@ -66,6 +69,7 @@ const MAT_CHAO = lambert({ vertexColors: true });
 const GELO_LAGO = ['#4a89aa', '#5596b6', '#3f7d9e', '#6aaac8', '#4a89aa'];
 const GELO_RIO = ['#5596b6', '#6aaac8', '#4a89aa', '#8fc4dc'];
 const MAT_AGUA = lambert({ color: '#4fc3f7', transparent: true, opacity: 0.82 });
+const MAT_ACIDO = lambert({ color: '#b8f060', emissive: '#8ce62e', emissiveIntensity: 0.85 }); // os lagos de ácido do Vulcânico
 const MAT_AGUA_OASIS = lambert({ color: '#3ab5a8', transparent: true, opacity: 0.85, emissive: '#0a3a36', emissiveIntensity: 0.35 }); // o oásis do Deserto: turquesa
 const MAT_AGUA_FLORESTA = lambert({ color: '#2b4652', transparent: true, opacity: 0.9, emissive: '#0a1a1e', emissiveIntensity: 0.3 }); // água escura de tanino
 const MAT_LAVA = lambert({ color: '#ff7a2a', emissive: '#ff4a10', emissiveIntensity: 0.85 });
@@ -332,6 +336,7 @@ export class Chunks {
     if (id === 'raio') return this.corDoGelo(x, z, y, inc, rng);
     if (id === 'planta') return this.corDaFloresta(y, inc, rng);
     if (id === 'terra') return this.corDoDeserto(x, z, y, inc, rng);
+    if (id === 'fogo') return this.corDoVulcao(x, z, y, inc, rng);
     if (y < NIVEL_AGUA - 0.15) return id === 'fogo' ? '#3a1a12' : id === 'agua' ? (y < -1.3 ? '#2f7fa0' : '#5fc8c0') : '#4f9fb8'; // no Arquipélago: rasa clarinha, funda escura
     if (y < NIVEL_AGUA + 0.45) return id === 'fogo' ? sorteio(rng, ['#c8461a', '#8a2e14']) : id === 'raio' ? '#d8e8f2' : sorteio(rng, ['#e2cd90', '#ecd9a0']);
     if (y > 13 && id !== 'fogo' && inc > 0.55) return sorteio(rng, PALETA.raio); // neve no alto dos picos
@@ -380,11 +385,25 @@ export class Chunks {
     return sorteio(rng, ['#e8c170', '#e2b964', '#edc97c', '#dfb35e']);        // areia ao sol
   }
 
+  // O chão do Vulcânico (a paleta do guia "Caldeira de Ignis-Vael"): basalto escuro, borda da lava
+  // incandescente, o enxofre em volta do ácido, as lajes da trilha e os campos de cinzas
+  corDoVulcao(x, z, y, inc, rng) {
+    if (y < NIVEL_AGUA + 0.05) return naBaciaAcida(x, z) ? '#4a7a1a' : '#3a1a12';
+    if (y < NIVEL_AGUA + 0.6) return naBaciaAcida(x, z) ? '#c8b02a' : sorteio(rng, ['#ff5e1a', '#c8461a', '#2a1a16']);
+    const C = CALDEIRA, ao = x * C.dir.x + z * C.dir.z, l = x * C.lat.x + z * C.lat.z, A = C.acido;
+    const da = Math.hypot((ao - A.ao) / A.rx, (l - A.lado) / A.rz);
+    if (da < 1.25) return da < 1.05 && rng() < 0.25 ? '#d8c02a' : sorteio(rng, ['#2a2e22', '#33362a', '#c8b02a', '#2a2e22']); // enxofre
+    if (ao > C.trilha[0] + 4 && ao < C.trilha[1] - 2 && Math.abs(l) < 3.4) return sorteio(rng, ['#2a2628', '#36302f', '#221e20']); // a trilha
+    if (l < -18 && ao < 215 && ao > 135) return sorteio(rng, ['#5c5659', '#6a6467', '#4e484b', '#7a7477']);                         // campos de cinzas
+    if (inc < 0.6) return sorteio(rng, ['#1c191d', '#26222a', '#2e2a2c']);
+    return sorteio(rng, ['#2e2a2c', '#3a3436', '#24201f', '#463e3c', '#2e2a2c']);
+  }
+
   // ---------- água e lava ----------
   criarLiquidos(ch) {
     const passo = ch.lod ? DIV / C.divisoesLonge : 1, n = DIV / passo;
     const i0 = ch.cx * DIV, j0 = ch.cz * DIV, E = ESPACO;
-    const agua = [], lava = [], aguaF = [], aguaO = [];
+    const agua = [], lava = [], aguaF = [], aguaO = [], acido = [];
     for (let a = 0; a < n; a++) for (let b = 0; b < n; b++) {
       const i = i0 + a * passo, j = j0 + b * passo, ip = i + passo, jp = j + passo;
       const hmin = Math.min(alturaVertice(i, j), alturaVertice(ip, j), alturaVertice(i, jp), alturaVertice(ip, jp));
@@ -394,7 +413,7 @@ export class Chunks {
       if (Math.hypot(mx - LAGOA.x, mz - LAGOA.z) < LAGOA.r + 8) continue;      // o lago escondido tem a dele
       const bm = biomaEm(mx, mz);
       if (bm === 'raio') continue;                                            // no Gelo os rios são congelados (o chão já é gelo)
-      (bm === 'fogo' ? lava : bm === 'planta' ? aguaF : bm === 'terra' ? aguaO : agua).push(i * E, j * E, ip * E, jp * E);
+      (bm === 'fogo' ? (naBaciaAcida(mx, mz) ? acido : lava) : bm === 'planta' ? aguaF : bm === 'terra' ? aguaO : agua).push(i * E, j * E, ip * E, jp * E);
     }
     const malha = (lista, mat, y) => {
       if (!lista.length) return;
@@ -418,6 +437,7 @@ export class Chunks {
     malha(agua, MAT_AGUA, NIVEL_AGUA);
     malha(aguaF, MAT_AGUA_FLORESTA, NIVEL_AGUA);
     malha(aguaO, MAT_AGUA_OASIS, NIVEL_AGUA);
+    malha(acido, MAT_ACIDO, NIVEL_AGUA + 0.04);
     malha(lava, MAT_LAVA, NIVEL_AGUA + 0.04);
   }
 
@@ -426,6 +446,7 @@ export class Chunks {
     for (const m of this.liquidos) m.position.y = m.userData.y0 + Math.sin(t * 1.3) * 0.05;
     MAT_LAVA.emissiveIntensity = 0.75 + Math.sin(t * 2.2) * 0.15;
     MAT_J.lavaViva.emissiveIntensity = 0.8 + Math.sin(t * 2.6) * 0.2;
+    MAT_ACIDO.emissiveIntensity = 0.75 + Math.sin(t * 1.8) * 0.15; // o ácido borbulha
     MAT_J.ciano.emissiveIntensity = 0.5 + 0.6 * (this.m.fatorNoite || 0); // os cogumelos da Floresta brilham mais à noite
   }
 
@@ -472,7 +493,7 @@ export class Chunks {
     for (const t of TRACADOS) if (t.reservado(x, z)) return false;
     { const e = naEstradaReal(x, z); if (e.dentro && e.lat < ESTRADA.largura + 2.5) return false; } // a Estrada Real fica livre
     for (const r of RESERVAS) if (Math.hypot(x - r.x, z - r.z) < r.r) return false;
-    if (DS.reservadoDeserto(x, z)) return false; // o caminho e os lugares do Deserto se decoram sozinhos
+    if (DS.reservadoDeserto(x, z) || VU.reservadoVulcao(x, z)) return false; // o caminho e os lugares do Deserto se decoram sozinhos
     for (const r of this.m.reservas) if (Math.hypot(x - r.x, z - r.z) < r.r) return false;
     const h = alturaEm(x, z);
     if (h < NIVEL_AGUA + 0.35 || geloEm(x, z)) return false;
@@ -547,10 +568,14 @@ export class Chunks {
         else if (r3 < 0.94) this.cristal(x, z, 0.6 + esc * 0.8, k);
         else this.add_monteNeve(x, z, esc, k);
         return;
-      case 'fogo':
-        if (r3 < 0.4) this.pedra(x, z, 0.6 + esc * 1.1, sorteio(rng, COR.pedra.fogo), k);
-        else if (r3 < 0.7) this.pedra(x, z, 0.5 + esc * 0.9, null, k, false, true);
-        else this.arvoreMorta(x, z, 0.8 + esc * 0.6, k);
+      case 'fogo': // Vulcânico: "Caldeira de Ignis-Vael" (o guia do Lâmina; as peças ficam em biomas/vulcao.js)
+        if (r3 < 0.24) this.pecaFloresta(VU.basaltoColunas, x, z, 0.6 + esc * 0.7, k, 1.2, 0.5);
+        else if (r3 < 0.4) this.pecaFloresta(VU.obsidiana, x, z, 0.6 + esc * 0.6, k, 0.7, 0.4);
+        else if (r3 < 0.56) this.pecaFloresta((add, rr, ...a) => VU.arvoreBrasa(add, rr, ...a, esc < 0.5), x, z, 0.7 + esc * 0.5, k, 0.5, 0.3);
+        else if (r3 < 0.68) this.pecaFloresta(VU.ignita, x, z, 0.7 + esc * 0.5, k, 0.6, 0.4);
+        else if (r3 < 0.78) this.pecaFloresta(VU.cristaisEnxofre, x, z, 0.6 + esc * 0.5, k, 0.5, 0.3);
+        else if (r3 < 0.88) this.pecaFloresta(VU.petrificado, x, z, 0.7, k, 0.5, 0.4);
+        else this.pecaFloresta(VU.juncoEnxofre, x, z, 0.9, k, 0, 0.3, true);
         return;
       case 'agua': // ilhas do Arquipélago
         if (r3 < 0.55) this.palmeira(x, z, 0.85 + esc * 0.45, k);
@@ -563,7 +588,7 @@ export class Chunks {
   // pequena = some de longe (LOD)
   pecaFloresta(fn, x, z, e, k, ob, pe, pequena = false) {
     const y = this.pe(x, z, pe * e);
-    fn((g, tipo, ...a) => { k.add('u_' + g, TIPO_MAT[tipo], ...a.slice(0, 9), a[9] || null, pequena || !!a[10]); k.recs[k.recs.length - 1].o = 1; }, k.rng, x, y, z, e);
+    fn((g, tipo, ...a) => { k.add('u_' + g, TIPO_MAT[tipo], ...a.slice(0, 9), TIPO_COR[tipo] || a[9] || null, pequena || !!a[10]); k.recs[k.recs.length - 1].o = 1; }, k.rng, x, y, z, e);
     if (ob) k.ob(x, z, ob * e);
   }
 

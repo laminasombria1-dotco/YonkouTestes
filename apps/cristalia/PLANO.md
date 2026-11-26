@@ -270,12 +270,18 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
             min de deserto entre uma e outra, 90 s cada); o hipogeu em `masmorras/tumba-areias.js`; chão, água turquesa do
             oásis e peças comuns nos chunks; a luz quente no `biomas/clima.js`. Medido (Médio, sem monstros): estrada 58 → 53,
             templo 61 → 51, avenida 55 → 48, pirâmide 67 → 50, oásis 80 → 65, tumba 61 → 61, dunas 47 → 36 desenhos.
-      - [ ] **Vulcânico** — o Lâmina mandou o guia "Caldeira de Ignis-Vael" (fogo, lava e ácidos flamejantes) e as artes.
-            *Maquete feita:* Fenda das Colunas Partidas, Trilha de Basalto, a Forja Primordial sobre uma fenda de lava (ponte
-            de ferro, pilares com correntes e engrenagens, bigorna colossal, anel e cascata de lava), rio de lava, o Monte Vael
-            (o vulcão de hoje com veios de lava e pluma), a Bacia do Vitriol (ácido verde com chamas ciano), a entrada das
-            Cavernas de Tubos de Lava, os Campos de Cinzas e o Cemitério de Cinza-Branca. Esperando as decisões: mudar o chão
-            (trilha, fenda, rio), ácido bloqueia, a caverna (enfeite ou Forja Antiga), Chuva de Cinzas rara.
+      - [x] **Vulcânico** — "Caldeira de Ignis-Vael" (fogo, lava e ácidos flamejantes), pelo guia e pelas artes do Lâmina.
+            *Decisões:* fica como a maquete; o chão muda (trilha plana, fenda de lava com a ponte, rio de lava); o **ácido
+            bloqueia** como a lava; a entrada das Cavernas de Tubos de Lava **vira a porta da Forja Antiga** (à vista, no
+            flanco do Monte Vael); **Chuva de Cinzas rara** (só visual).
+            *Feito:* o chão no `gerador.js` (`CALDEIRA`, `mudarVulcao`, `acidoEm`, `naBaciaAcida`; a Vila das Cinzas fica
+            intacta); `js/biomas/vulcao.js` (Fenda das Colunas Partidas, Trilha de Basalto, a Forja Primordial com a ponte de
+            ferro, correntes, engrenagens, bigorna e cascata, o rio de lava, o Monte Vael com veios e pluma, a Bacia do Vitriol
+            com chamas ciano, os Campos de Cinzas e o Cemitério de Cinza-Branca, brasas e cinza no ar, a Chuva de Cinzas: de 6
+            a 13 min entre uma e outra, 90 s, com relâmpagos); a porta da Forja Antiga (`lugarNoMapa` no plano, aceito pelo
+            `masmorra.js`) e a caverna em `masmorras/forja-antiga.js`; chão, ácido e peças comuns nos chunks; o céu ferrugem
+            e a luz de baixo no `clima.js` (que agora mistura as cores como a gente vê). Medido (Médio, sem monstros):
+            trilha 66 → 71, Forja 63 → 75, ácido 49 → 60, caverna 71 → 93, cinzas 61 → 68, vulcão 88 → 109, borda 61 → 76.
       - [ ] **Arquipélago**
     - [ ] **Passo 5 — Dungeons** (a especificação do Lâmina, com o adaptador).
     - [ ] **Passo 6 — Níveis** (o Lâmina vai rever a regra mais para frente).

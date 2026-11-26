@@ -514,10 +514,12 @@ export class Masmorras {
     for (const [id, cfg] of Object.entries(MASMORRAS_NOVAS)) {
       const plano = PLANOS[id];
       if (!plano) continue;
-      const lugar = LUGARES.filter((l) => l.tipo === 'masmorra' && l.bioma === cfg.bioma)[cfg.lugar - 1];
+      // o lugar guardado pela semente (LUGARES), ou um lugar próprio do plano (lugarNoMapa: a Forja Antiga
+      // ficou na caverna de lava do Vulcânico, pela arte do Lâmina)
+      const lugar = plano.lugarNoMapa || LUGARES.filter((l) => l.tipo === 'masmorra' && l.bioma === cfg.bioma)[cfg.lugar - 1];
       if (!lugar) continue;
-      // a porta olha para o centro do mapa (de onde o jogador vem)
-      const ang = Math.atan2(-lugar.x, -lugar.z);
+      // a porta olha para o centro do mapa (de onde o jogador vem), ou para onde o plano disser
+      const ang = lugar.ang ?? Math.atan2(-lugar.x, -lugar.z);
       const e = { id, cfg, x: lugar.x, z: lugar.z, ang };
       e.porta = { x: lugar.x + Math.sin(ang) * 3.2, z: lugar.z + Math.cos(ang) * 3.2 };   // onde encostar
       e.fora = { x: lugar.x + Math.sin(ang) * 7, z: lugar.z + Math.cos(ang) * 7 };        // onde você aparece ao sair

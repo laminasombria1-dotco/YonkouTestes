@@ -7,7 +7,8 @@
 //  - Brilho falso: pontos com uma textura redonda e macia (sem luz de verdade).
 // Os tipos de material (a letra usada nas peças):
 //   n = normal · b = brilho total (janela, lanterna) · a = âmbar (meio transparente)
-//   c = ciano que brilha (cogumelos) · o = ouro · l = lápis-lazúli · t = turquesa · f = fogo
+//   c = ciano que brilha (cogumelos) · o = ouro · l = lápis-lazúli · t = turquesa · f = fogo/lava
+//   e = enxofre · v = chama do ácido (soma luz) · g = obsidiana
 // =============================================================
 import * as THREE from 'three';
 
@@ -30,6 +31,12 @@ export const UNI = {
   capitel: new THREE.CylinderGeometry(0.95, 0.45, 1, 10),                    // capitel de papiro (abre para cima)
   torre: new THREE.CylinderGeometry(0.62, 0.88, 1, 4).rotateY(Math.PI / 4),  // torre que afina (pilone do templo)
   obel: new THREE.CylinderGeometry(0.34, 0.5, 1, 4).rotateY(Math.PI / 4),    // obelisco
+  hex: new THREE.CylinderGeometry(0.5, 0.5, 1, 6),                            // coluna de basalto
+  octa: new THREE.OctahedronGeometry(0.5, 0),                                 // cristal (obsidiana, enxofre)
+  toro: new THREE.TorusGeometry(1, 0.12, 4, 14),                              // anel (de lava)
+  elo: new THREE.TorusGeometry(0.5, 0.12, 4, 8),                              // elo de corrente
+  disco: new THREE.CylinderGeometry(1, 1, 0.1, 14),
+  dente: new THREE.CylinderGeometry(1, 1, 0.3, 12),                           // engrenagem
 };
 
 const lambert = (o) => new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, ...o });
@@ -43,6 +50,9 @@ export const MAT_FORNO = {
   l: lambert({ color: '#2f6fa8', emissive: '#215e8c', emissiveIntensity: 0.45 }),
   t: lambert({ color: '#5fd8c8', emissive: '#3ab5a8', emissiveIntensity: 0.8 }),
   f: lambert({ color: '#ffb040', emissive: '#ff6a10', emissiveIntensity: 1 }),
+  e: lambert({ color: '#f2d84a', emissive: '#c8a810', emissiveIntensity: 0.35 }),                          // enxofre
+  v: new THREE.MeshBasicMaterial({ color: '#2cf2c4', transparent: true, opacity: 0.7, depthWrite: false, blending: THREE.AdditiveBlending }), // chama de ácido
+  g: lambert({ color: '#1c191d', emissive: '#3a1a10', emissiveIntensity: 0.2 }),                          // obsidiana
 };
 for (const m of Object.values(MAT_FORNO)) m.userData.fixo = true;
 

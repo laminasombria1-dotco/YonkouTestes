@@ -348,7 +348,7 @@ export function alturaBase(x, z) {
     const k = suave(v.r + EMENDA_VILA, v.r + 1, d);
     h = h * (1 - k) + v.h * k;
   }
-  return aplainarDeserto(x, z, h);
+  return mudarVulcao(x, z, aplainarDeserto(x, z, h));
 }
 
 // ---------- Deserto: o caminho aplainado (melhorias dos biomas, o guia do Lâmina) ----------
@@ -380,6 +380,78 @@ function aplainarDeserto(x, z, h) {
   if (x * CAMINHO_DESERTO.dir.x + z * CAMINHO_DESERTO.dir.z < 120) return h; // (rápido: longe do caminho)
   const [alvo, k] = alvoDeserto(x, z);
   return k > 0.001 ? h * (1 - k) + alvo * k : h;
+}
+// ---------- Vulcânico: o chão da "Caldeira de Ignis-Vael" (melhorias dos biomas, o guia do Lâmina) ----------
+// A Estrada Real do Fogo aponta para o vulcão do meio do bioma (o Monte Vael). No caminho:
+//  - a Trilha de Basalto (plana) do fim da Estrada Real até a Forja Primordial;
+//  - a FENDA de lava que cruza a trilha (com a ponte de basalto no meio, por onde se passa);
+//  - o RIO de lava que desce do flanco do vulcão até a fenda;
+//  - a Bacia do Vitriol Ígneo (plana) com os lagos de ÁCIDO cavados (bloqueiam como a lava).
+// Só ali o chão muda: não muda a semente, as vilas, as masmorras nem o Caminho das Brasas.
+const ESTRADA_FOGO = ESTRADAS.find((e) => e.bioma === 'fogo');
+export const CALDEIRA = {
+  dir: ESTRADA_FOGO.dir, lat: { x: -ESTRADA_FOGO.dir.z, z: ESTRADA_FOGO.dir.x },
+  trilha: [136, 210], fenda: 191, larguraFenda: 4, meiaPonte: 2.2, comprimentoFenda: 42, hTrilha: 3,
+  forja: { ao: 200, raio: 9 },
+  acido: { ao: 216, lado: 31, rx: 22, rz: 13, h: 0.1 }, // (a bacia fica baixa: o ácido quase rente, dá para ver)
+  // os lagos de ácido (ao, lado, raio ao longo, raio para o lado)
+  lagos: [[212, 31, 10, 7], [228, 33, 6, 4.5], [199, 23, 5, 4], [233, 24, 4.5, 3.5]],
+  rio: [],
+  // a entrada das Cavernas de Tubos de Lava (a porta da masmorra Forja Antiga), no flanco oeste do Monte Vael
+  caverna: { ao: 238, lado: -36, olhaAo: 222, olhaLado: -22, h: null },
+};
+{ const C = CALDEIRA, cv = C.caverna;
+  cv.x = C.dir.x * cv.ao + C.lat.x * cv.lado; cv.z = C.dir.z * cv.ao + C.lat.z * cv.lado;
+  const ox = C.dir.x * cv.olhaAo + C.lat.x * cv.olhaLado, oz = C.dir.z * cv.olhaAo + C.lat.z * cv.olhaLado;
+  cv.ang = Math.atan2(ox - cv.x, oz - cv.z); // a boca olha para a trilha
+}
+{ const C = CALDEIRA; for (let k = 0; k <= 12; k++) { const t = k / 12, ao = 234 - t * 40, l = -12 - Math.sin(t * 3.1) * 6; C.rio.push({ x: C.dir.x * ao + C.lat.x * l, z: C.dir.z * ao + C.lat.z * l }); } }
+function distRioLava(x, z) {
+  let d = Infinity; const R = CALDEIRA.rio;
+  for (let i = 0; i < R.length - 1; i++) {
+    const a = R[i], b = R[i + 1], dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz;
+    const t = Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / L2));
+    d = Math.min(d, Math.hypot(x - a.x - dx * t, z - a.z - dz * t));
+  }
+  return d;
+}
+// Está num lago de ácido? (0 = fora; perto de 1 = no meio)
+export function acidoEm(x, z) {
+  const C = CALDEIRA, ao = x * C.dir.x + z * C.dir.z, l = x * C.lat.x + z * C.lat.z;
+  let k = 0;
+  for (const [a0, l0, rx, rz] of C.lagos) { const d = Math.hypot((ao - a0) / rx, (l - l0) / rz); if (d < 1.05) k = Math.max(k, suave(1.05, 0.85, d)); }
+  return k > 0 ? k * longeDaVilaFogo(x, z) : 0;
+}
+// a Vila das Cinzas fica intacta (o chão plano dela e a emenda em volta)
+const VILA_FOGO = LUGARES.find((l) => l.tipo === 'vila' && l.bioma === 'fogo');
+const longeDaVilaFogo = (x, z) => (VILA_FOGO ? suave(VILA_FOGO.r + 12, VILA_FOGO.r + 20, Math.hypot(x - VILA_FOGO.x, z - VILA_FOGO.z)) : 1);
+// Está dentro da Bacia do Vitriol? (o líquido de lá é ácido, não lava)
+export function naBaciaAcida(x, z) {
+  const C = CALDEIRA, A = C.acido, ao = x * C.dir.x + z * C.dir.z, l = x * C.lat.x + z * C.lat.z;
+  return Math.hypot((ao - A.ao) / A.rx, (l - A.lado) / A.rz) < 1.3;
+}
+function mudarVulcao(x, z, h) {
+  const C = CALDEIRA, ao = x * C.dir.x + z * C.dir.z;
+  if (ao < 125 || ao > 250) return h; // (rápido: longe)
+  const g = longeDaVilaFogo(x, z);
+  if (g <= 0) return h;
+  const h0 = h, l = x * C.lat.x + z * C.lat.z;
+  let alvo = C.hTrilha, k = 0;
+  if (ao > C.trilha[0] && ao < C.trilha[1]) k = suave(10, 5, Math.abs(l)) * suave(C.trilha[0] - 2, C.trilha[0] + 8, ao);
+  const fp = Math.hypot(ao - C.forja.ao, l) / C.forja.raio; if (fp < 1.4) k = Math.max(k, suave(1.4, 1, fp));
+  const A = C.acido, da = Math.hypot((ao - A.ao) / A.rx, (l - A.lado) / A.rz);
+  if (da < 1.3) { const kk = suave(1.3, 1, da); if (kk > k) { k = kk; alvo = A.h; } }
+  h = h * (1 - k) + alvo * k;
+  { const cv = C.caverna, dc = Math.hypot(x - cv.x - Math.sin(cv.ang) * 3, z - cv.z - Math.cos(cv.ang) * 3); // a boca da caverna: um pátio plano
+    if (dc < 10) { if (cv.h == null) cv.h = alturaSemVila(cv.x + Math.sin(cv.ang) * 3, cv.z + Math.cos(cv.ang) * 3); const kc = suave(10, 6, dc); h = h * (1 - kc) + cv.h * kc; } }
+  const ka = acidoEm(x, z); if (ka > 0) h = h * (1 - ka) - 1.1 * ka;                          // os lagos de ácido
+  const df = Math.abs(ao - C.fenda);
+  if (df < C.larguraFenda && Math.abs(l) < C.comprimentoFenda && Math.abs(l) > C.meiaPonte) {  // a fenda de lava
+    const kk = suave(C.larguraFenda, C.meiaPonte, df) * suave(C.comprimentoFenda, C.comprimentoFenda - 8, Math.abs(l)) * suave(C.meiaPonte, C.meiaPonte + 0.6, Math.abs(l));
+    h = h * (1 - kk) - 1.8 * kk;
+  }
+  if (ao > C.fenda) { const dr = distRioLava(x, z); if (dr < 3.2) { const kk = suave(3.2, 1.6, dr); h = h * (1 - kk) - 1.8 * kk; } } // o rio de lava
+  return h0 + (h - h0) * g;
 }
 function alturaSemVila(x, z) {
   const P = pesosEm(x, z);
