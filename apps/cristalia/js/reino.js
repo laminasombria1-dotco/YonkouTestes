@@ -484,6 +484,8 @@ export class Reino {
     this.vivo.rotation.y = REINO.giro;
     mundo.cena.add(this.vivo);
     this.criarPlateia();
+    // o nome de cada treinador em cima da cabeça (o do Rei em dourado)
+    for (const n of this.nomesTreinadores) { const p = placaDeNome(n.tr.nome, n.tr.cor, !!n.tr.campeao); p.position.set(n.x, n.y, n.z); this.vivo.add(p); }
     this.criarPortas();
     this.estrada();
   }
@@ -762,6 +764,7 @@ export class Reino {
     this.posTreinadores = [];   // onde o jogador encosta para lutar (na frente do degrau)
     this.topoTreinadores = [];  // em cima da cabeça dele (para a placa com o nome)
     this.armado = TREINADORES.map(() => true);
+    this.nomesTreinadores = []; // o nome em cima da cabeça (as plaquinhas vão para o grupo vivo)
     for (const tr of TREINADORES) {
       const a = (tr.ang * Math.PI) / 180, x = Math.cos(a) * tr.r, z = Math.sin(a) * tr.r, h = tr.alt;
       const rb = tr.campeao ? 1.7 : 1.45;                                        // raio da plataforma
@@ -783,7 +786,8 @@ export class Reino {
       desenharTreinador(g, tr.id, [x, 0.33 + h, z], virar);
       this.obst(ARENA_REINO.x + x, ARENA_REINO.z + z, rb + 0.25);
       this.posTreinadores.push(REINO.paraMundo(ARENA_REINO.x + x + dx * 1.6, ARENA_REINO.z + z + dz * 1.6)); // onde o jogador fala com ele
-      this.topoTreinadores.push({ ...REINO.paraMundo(ARENA_REINO.x + x, ARENA_REINO.z + z), y: REINO.h + 0.33 + h + 1.75 });
+      this.topoTreinadores.push({ ...REINO.paraMundo(ARENA_REINO.x + x, ARENA_REINO.z + z), y: REINO.h + 0.33 + h + (tr.campeao ? 2.85 : 2.55) }); // (acima do nome)
+      this.nomesTreinadores.push({ tr, x: ARENA_REINO.x + x, y: 0.33 + h + (tr.campeao ? 2.3 : 2.0), z: ARENA_REINO.z + z });
     }
     // estandartes coloridos do lado de fora
     for (let i = 1; i < N; i += 3) {
@@ -985,6 +989,24 @@ export class Reino {
     }
     this.malhasEstrada = assar(g, this.m.cena);
   }
+}
+
+// Uma plaquinha com o nome (sempre virada para a câmera): fundo escuro, borda na cor do elemento.
+// O nome do Campeão fica dourado.
+export function placaDeNome(nome, cor, campeao) {
+  const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
+  const c = cv.getContext('2d');
+  c.font = 'bold 34px system-ui, sans-serif';
+  const w = Math.min(244, c.measureText(nome).width + 40), x0 = (256 - w) / 2;
+  c.fillStyle = 'rgba(16, 20, 36, 0.82)'; c.strokeStyle = cor; c.lineWidth = 5;
+  c.beginPath(); if (c.roundRect) c.roundRect(x0, 8, w, 48, 24); else c.rect(x0, 8, w, 48); c.fill(); c.stroke();
+  c.fillStyle = campeao ? '#ffd23f' : '#ffffff'; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText(nome, 128, 33);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
+  sp.scale.set(2.3, 0.575, 1);
+  return sp;
 }
 
 // ---------- plateia (usada no mapa e na batalha) ----------

@@ -16,7 +16,7 @@
 import * as THREE from 'three';
 import { VILAS, NIVEL_AGUA } from './mapa/gerador.js';
 import { alturaEm } from './mapa/altura.js';
-import { peca, brilho, duplo, caixa, cil, cone, prisma, assar, criarPlateia, animarPlateia, desenharTreinador } from './reino.js';
+import { peca, brilho, duplo, caixa, cil, cone, prisma, assar, criarPlateia, animarPlateia, desenharTreinador, placaDeNome } from './reino.js';
 import { ELEMENTOS } from './dados.js';
 import { criarCoroa } from './modelos.js';
 
@@ -322,24 +322,6 @@ export class Vilas {
       }
     }
   }
-}
-
-// Uma plaquinha com o nome (sempre virada para a câmera): fundo escuro, borda na cor do elemento.
-// O nome do Campeão fica dourado.
-function placaDeNome(nome, cor, campeao) {
-  const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
-  const c = cv.getContext('2d');
-  c.font = 'bold 34px system-ui, sans-serif';
-  const w = Math.min(244, c.measureText(nome).width + 40), x0 = (256 - w) / 2;
-  c.fillStyle = 'rgba(16, 20, 36, 0.82)'; c.strokeStyle = cor; c.lineWidth = 5;
-  c.beginPath(); if (c.roundRect) c.roundRect(x0, 8, w, 48, 24); else c.rect(x0, 8, w, 48); c.fill(); c.stroke();
-  c.fillStyle = campeao ? '#ffd23f' : '#ffffff'; c.textAlign = 'center'; c.textBaseline = 'middle';
-  c.fillText(nome, 128, 33);
-  const tex = new THREE.CanvasTexture(cv);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
-  sp.scale.set(2.3, 0.575, 1);
-  return sp;
 }
 
 // O ponto de saída da arena de uma vila (pelo túnel, de costas para a arena)
