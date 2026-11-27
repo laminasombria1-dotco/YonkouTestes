@@ -43,7 +43,7 @@ Protótipo 3D low poly de caçar, capturar e evoluir monstros. **Three.js 0.170,
 - **Contas na nuvem** (Firebase, projeto `cristalia-91fd6`, pela internet direto em `js/nuvem.js`): nome e senha. Cada conta tem o seu jogo salvo: `cristalia-save-v1:<id>` no celular e `jogadores/<uid>` no Firestore. A conta **GM** fica só no aparelho e abre o painel GM (`js/gm.js`).
 - **Plenilúnio** (forma final da Lua): lobo da lua cheia com orelhas de coelho, feito de formas simples em `lobisomemLunar` (`js/modelos.js`), com as meias-luas ( ) e a lua cheia nas costas (acima da cabeça, para não tapar o corpo na câmera da batalha).
 - **O protagonista** (`js/personagem.js`, seção "Protagonista" do `PLANO.md`): masculino ou feminino com corpo de gente (pelas referências do Lâmina), pele, cabelo e as roupas Explorador, Utilitário, Traje Real e Palhaço; a Coroa do Rei entra no lugar do chapéu. Salvo em `estado.personagem` (save antigo = masculino Explorador). As 3 etapas prontas: a tela de criação (`js/criacao.js`: Novo jogo → personagem → roupa → parceiro) e o **Guarda-roupa** (Bolsa, perto da casa; mesma tela no modo `guarda`). Roupas liberadas em `roupasLiberadas` (grátis, Traje Real do Campeão, compradas em `estado.roupas`; o Palhaço na Loja do Reino).
-- **Brasito 3D**: `modelos/brasito.glb` com animações (`js/modelos3d.js`, GLTFLoader em `lib/addons/`).
+- **Brasito 3D** e **Gotinho 3D**: `modelos/brasito.glb` e `modelos/gotinho.glb` (do Lâmina, texturas em WebP) com animações (`js/modelos3d.js`, GLTFLoader em `lib/addons/`). O Gotinho também tem levar dano e desmaiar (`tocarReacao`, chamada pela batalha). Detalhes em `modelos/README.md`.
 - **Monstro invocado** (`js/companheiro.js`) e **modo treino** (`js/treino.js`: os golpes no mapa, "no ar").
 - **Só deitado**: tela "Vire o celular" (pausa), manifest `landscape`, app Android `sensorLandscape`.
 - **Mapa procedural** (`js/mapa/`, mundo novo = `versaoMapa: 2`): semente única para todos (`CONFIG_MAPA.semente` em `js/mapa/config.js`), raio de **390 m**, o **Reino no meio** (100 m de raio, 5 portões) e os **5 biomas em fatias numa ordem fixa**: Gelo (raio) > Floresta (planta) > Deserto (terra) > Vulcânico (fogo) > Arquipélago (agua, quase todo água rasa com ilhas). Rios, lagos e lava, em **chunks** de 32 m, com LOD e qualidade Fraco/Médio/Forte no menu de pausa. Os lugares das vilas e das masmorras novas já ficam guardados em `LUGARES` (`gerador.js`).
@@ -84,7 +84,7 @@ Protótipo 3D low poly de caçar, capturar e evoluir monstros. **Three.js 0.170,
 ### Artifact (versão de teste no claude.ai)
 - Fica em **https://claude.ai/artifact/8ux9GY7VGgGghMKBpJoVcN** e só dá para publicar pela sessão na nuvem (claude.ai/code).
 - **Leia o artifact antes** de publicar (ação `read`; para os arquivos que vai trocar, leia cada um com `path`). Publique **só os arquivos que mudaram ou são novos**: `index.html`, `js/**/*.js`, `lib/...`, `manifest.webmanifest`, `sw.js`, `icones/`.
-- O artifact **não aceita `.glb`**: lá o Brasito aparece de formas simples.
+- O artifact **não aceita `.glb`**: lá o Brasito e o Gotinho aparecem de formas simples.
 
 ## O jogo Runeclash (`apps/runeclash/`)
 

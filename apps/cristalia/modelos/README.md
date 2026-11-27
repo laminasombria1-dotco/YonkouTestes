@@ -46,3 +46,29 @@ Carregar com `GLTFLoader` (`three/addons/loaders/GLTFLoader.js`) e tocar com `TH
 - **Para mudar:** em `js/modelos3d.js`, `ARQUIVOS.brasito`: `clips` (qual animação em cada estado), `marco` (o momento do golpe em cada animação), `giro` e `velArrancada` (1 = 2,5 s; 2 = metade do tempo).
 - **Não usadas ainda:** `Andar` e `Parado_Ansioso`.
 - **Para acrescentar outro modelo:** ponha o `.glb` nesta pasta e uma entrada em `ARQUIVOS` (em `js/modelos3d.js`) com o nome da espécie.
+
+## gotinho.glb
+
+Gotinho (gota de água) feito no Blender pelo Lâmina (`gotinho_mobile.glb`). Um arquivo só, **0,36 MB**.
+
+- **Malha:** 1 malha com pele, 2.036 triângulos, 13 ossos (`gotinho_rig`: root, hips, spine, head, tip, braços, mãos, pernas e pés).
+- **Tamanho:** 0,9 m de altura no arquivo, pés em y = 0, olha para **+Z**. O jogo aumenta até a altura do Gotinho de formas simples.
+- **Material:** cor e normal (sem brilho próprio), rugosidade 0,87, sem metal.
+- **Texturas:** vieram em PNG 1024 (1,8 MB); viraram **WebP** 1024 (`EXT_texture_webp`, 75 KB + 93 KB) para pesar menos no celular. A malha, os ossos e as animações ficaram iguais ao arquivo do Lâmina. Para refazer com um arquivo novo do Blender: exporte em PNG mesmo e troque as texturas por WebP com um script (Python + Pillow) ou com o `gltf-transform webp`.
+
+### Animações
+
+| Nome | Duração | Uso no jogo |
+|---|---|---|
+| `Parado` | 2,0 s | parado (repete) |
+| `Andar` | 1,0 s | os passinhos antes de correr (toca 1 vez, 2,5× mais rápido = 0,4 s) |
+| `Correr` | 0,5 s | andando/correndo (repete) |
+| `GolpePerto` | 1,0 s | Investida. O bote sai em **0,28 s**. O avanço de 0,4 m do osso `root` foi tirado (o jogo já empurra o monstro) |
+| `GolpeDisparo` | 1,21 s | Jato d'Água / Hidrocanhão. O jato sai em **0,40 s** |
+| `GolpeArea` | 1,04 s | Onda / Maremoto. Ele pula e, ao cair (**0,62 s**), a onda sai |
+| `LevarDano` | 0,5 s | quando leva dano (não corta um golpe que está saindo) |
+| `Desmaiar` | 2,0 s | quando desmaia. Toca 1,4× mais rápido e **para deitado em 1,3 s** (no arquivo, ele levanta no fim) |
+
+- **Novidade no código:** `tocarReacao(modelo, 'dano' | 'desmaiar')` em `js/modelos3d.js`, chamada pela batalha (`aplicarDano` e `desmaiar`). Só os modelos que têm essas animações usam; os outros continuam piscando e tombando de lado como antes.
+- **Só a forma inicial:** Marolo, Marulhão e Tsunamar continuam com as formas simples (`linhaAgua` em `js/modelos.js`).
+- **Para mudar:** `ARQUIVOS.gotinho` em `js/modelos3d.js` (`clips`, `marco`, `velArrancada`, `desmaioFim`, `velDesmaio`).

@@ -30,7 +30,7 @@ import { HabilidadesIgnarion } from './habilidades/ignarion-batalha.js';
 import { HabilidadesSilvarion } from './habilidades/silvarion-batalha.js';
 import { CameraOrbita } from './camera.js';
 import { aplicarPocao, RECARGA_POCAO } from './bolsa.js';
-import { criarModelo, criarCristal, criarCoroa, animarModelo, piscar, descartar, tocarGolpe, pararGolpe } from './modelos.js';
+import { criarModelo, criarCristal, criarCoroa, animarModelo, piscar, descartar, tocarGolpe, pararGolpe, tocarReacao } from './modelos.js';
 
 const MAX_ATIVOS = 2;      // quantos inimigos de um grupo lutam ao mesmo tempo (o próximo par só entra quando estes caírem)
 const ESCALA_LIDER = 1.3;  // o líder do grupo é maior
@@ -783,6 +783,7 @@ export class Batalha {
     if (passou > 0) { this.ignarion.aoAcertar(at); this.ignarion.aoApanhar(alvo); } // Calor Ígneo enche
     if (alvo.tem('sono')) { alvo.status.sono = 0; this.jogo.numero('Acordou!', topo.clone().setY(topo.y + 0.5), '#b9b4ff', 'pequeno'); }
     alvo.flash = 0.18;
+    tocarReacao(alvo.modelo, 'dano'); // modelo do Blender com a animação de levar dano
     // dano "leve" (cada pedaço do lança-chamas): empurra e trava menos
     alvo.stun = opcoes.leve ? 0.06 : 0.18;
     // opcoes.empurrao = empurrão maior (as ondas da linha do Gotinho)
@@ -877,6 +878,7 @@ export class Batalha {
     if (l.lado === 'jogador' && this.jogo.gm?.invencivel) { l.dados.hp = l.stats.hpMax; return; }
     l.morto = true;
     if (l.prep) this.cancelarPreparo(l);
+    l.desmaioGLB = tocarReacao(l.modelo, 'desmaiar'); // modelo do Blender: a animação de cair (no lugar de tombar)
     l.dash = null;
     l.rajada = null;
     this.brasito.parar(l);
@@ -1025,7 +1027,9 @@ export class Batalha {
     m.position.set(c.pos.x, 0, c.pos.z);
     // no modelo do Blender a volta do Rabo de Fogo já está na animação
     m.rotation.y = c.ang + (c.dash?.esquiva ? (0.2 - c.dash.t) * 30 : 0) + (c.giro && !m.userData.glb ? c.giro.spin : 0);
-    if (c.morto) {
+    if (c.morto && c.desmaioGLB) {
+      animarModelo(m, this.t, false); // a animação de desmaiar do arquivo
+    } else if (c.morto) {
       m.rotation.z = THREE.MathUtils.lerp(m.rotation.z, 1.5, 1 - Math.exp(-6 * dt));
       m.userData.corpo.position.y = 0;
     } else if (c.tem('sono')) {

@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import { ESPECIES, CRISTAIS } from './dados.js';
 import { temGLB, montarGLB, animarGLB, piscarGLB, descartarGLB } from './modelos3d.js';
 import { materialFuro } from './biomas/comum.js';
-export { carregarModelos3D, tocarGolpe, ajustarGiro, pararGolpe } from './modelos3d.js';
+export { carregarModelos3D, tocarGolpe, ajustarGiro, pararGolpe, tocarReacao } from './modelos3d.js';
 
 // ---------- peças reaproveitáveis ----------
 const GEO = {};

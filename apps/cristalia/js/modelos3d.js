@@ -1,7 +1,7 @@
 // =============================================================
 // MODELOS 3D FEITOS NO BLENDER (.glb)
-// Hoje: só a forma inicial do Brasito (modelos/brasito.glb). As outras formas
-// continuam com os modelos de formas simples de modelos.js.
+// Hoje: as formas iniciais do Brasito (modelos/brasito.glb) e do Gotinho
+// (modelos/gotinho.glb). As outras formas continuam com os modelos de formas simples de modelos.js.
 //
 // Como funciona:
 //  - carregarModelos3D() baixa os .glb uma vez, quando o jogo abre (main.js espera,
@@ -12,6 +12,8 @@
 //    arrancada -> correndo, ou o golpe que estiver tocando, e faz o fogo pulsar.
 //  - A batalha avisa quando um golpe começa (tocarGolpe) e quando o giro do
 //    Rabo de Fogo começa (ajustarGiro), para a animação bater com o golpe.
+//  - Quem tem as animações de levar dano e desmaiar (o Gotinho) também recebe
+//    tocarReacao(modelo, 'dano' | 'desmaiar') da batalha.
 // =============================================================
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -35,6 +37,26 @@ const ARQUIVOS = {
     giro: { inicio: 0.12, fim: 0.71 },      // parte do Rabo de Fogo em que ele dá a volta
     semAvanco: ['Brasito_Investida'],        // o jogo já move o monstro: tira o avanço do osso root
     velArrancada: 1,                         // 1 = velocidade do arquivo (2,5 s). 2 = metade do tempo
+    fogo: true,                              // o brilho das partes de fogo pulsa
+  },
+  // Gotinho (gota de água): o modelo do Lâmina, 0,9 m no arquivo, 8 animações
+  gotinho: {
+    arquivo: 'modelos/gotinho.glb',
+    clips: {
+      parado: 'Parado',
+      arrancada: 'Andar',        // uns passinhos antes de correr
+      correndo: 'Correr',
+      corpo: 'GolpePerto',       // Investida
+      projetil: 'GolpeDisparo',  // Jato d'Água / Hidrocanhão
+      area: 'GolpeArea',         // Onda / Maremoto (pula e cai soltando a água)
+      dano: 'LevarDano',
+      desmaiar: 'Desmaiar',
+    },
+    marco: { corpo: 0.28, projetil: 0.40, area: 0.62 }, // bote, jato e a queda do pulo
+    semAvanco: ['GolpePerto'],   // o bote anda 0,4 m no arquivo; o jogo já empurra o monstro
+    velArrancada: 2.5,           // o Andar (1 s) vira 0,4 s de passinhos antes do Correr
+    desmaioFim: 1.3,             // o Desmaiar volta a ficar de pé no fim: para deitado aqui (s)
+    velDesmaio: 1.4,             // mais rápido: o monstro desmaiado some da arena em 1,3 s
   },
 };
 const MISTURA = 0.18;          // segundos de transição entre uma animação e outra
@@ -135,6 +157,13 @@ export function animarGLB(modelo, t, movendo) {
   // o jogo passa o tempo total (t); o mixer precisa de quanto passou desde o último quadro
   const dt = g.tAnt == null ? 0 : Math.min(0.1, Math.max(0, t - g.tAnt));
   g.tAnt = t;
+  // desmaiado: só deixa a animação de cair tocar, e para deitado
+  if (g.desmaiado) {
+    g.mixer.update(dt);
+    const a = g.acoes.desmaiar;
+    if (g.cfg.desmaioFim && a.time >= g.cfg.desmaioFim) a.paused = true;
+    return;
+  }
   // golpe esperando o momento certo de começar (o inimigo demora mais para soltar o golpe)
   if (g.pendente) {
     g.pendente.espera -= dt;
@@ -146,6 +175,7 @@ export function animarGLB(modelo, t, movendo) {
     else if (g.estado !== 'parado') trocar(g, 'parado');
   }
   g.mixer.update(dt);
+  if (!g.cfg.fogo) return;
   // fogo pulsando (o brilho do Blender era animado): só nas partes de fogo (emissiveMap)
   const fase = modelo.userData.fase || 0;
   const brilho = 0.7 + 0.2 * Math.sin(t * 8.4 + fase) + 0.1 * Math.sin(t * 31 + fase * 3);
@@ -184,6 +214,32 @@ export function ajustarGiro(modelo, duracao) {
   if (g.golpe !== acao) comecarGolpe(g, 'area', g.cfg.giro.inicio);
   acao.time = g.cfg.giro.inicio;
   acao.timeScale = (g.cfg.giro.fim - g.cfg.giro.inicio) / Math.max(0.05, duracao);
+  return true;
+}
+
+// Levou dano ou desmaiou (só nos modelos que têm essas animações).
+// Devolve true se a animação tocou (no desmaio, a batalha não precisa tombar o modelo).
+export function tocarReacao(modelo, tipo) {
+  const g = modelo?.userData.glb;
+  const acao = g?.acoes[tipo];
+  if (!acao || g.desmaiado) return false;
+  if (tipo === 'desmaiar') {
+    g.pendente = null;
+    g.golpe = null;
+    acao.reset();
+    acao.timeScale = g.cfg.velDesmaio || 1;
+    tocar(g, acao, MISTURA_GOLPE);
+    g.desmaiado = true;
+    g.estado = null;
+    return true;
+  }
+  // levar dano: não corta um golpe que está saindo
+  if (g.golpe || g.pendente) return false;
+  acao.reset();
+  acao.timeScale = 1;
+  tocar(g, acao, MISTURA_GOLPE);
+  g.golpe = acao; // quando acabar, volta para parado ou correndo
+  g.estado = null;
   return true;
 }
 
