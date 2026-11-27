@@ -314,7 +314,19 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
             `pecas.js` (colunas hexagonais, estalactites, bigornas, obeliscos, esfinges, ânforas, barcas, cogumelos, sinos...).
             **Os 5 biomas prontos: 15 dungeons ativas, 30 variações.** Medido (cenário, sem monstros): 8 a 59 desenhos por quadro.
             Testado em cada bioma: descobrir, grupos, portão, Rei, prêmio, sair, reset e o jogo salvo.
-    - [ ] **Passo 6 — Níveis** (o Lâmina vai rever a regra mais para frente).
+    - [x] **Passo 6 — Níveis e atributos.**
+          *Decisões do Lâmina:* **atributos novos**: Nv.1 baixo para todos (Vida 40, Ataque 10, Defesa 10); a cada nível
+          +2 em cada atributo, e esse ganho sobe **+0,1 por nível** (metade depois do Nv.50, como na fase 8.1);
+          **papéis por monstro** (não por elemento): Ataque +20% ataque, Defesa +20% defesa, Vida +35% vida e −10% defesa
+          (empatados); **o Lâmina vai dizer o papel de cada monstro depois** (`PAPEIS_DOS_MONSTROS`, hoje vazio);
+          duplos ×1,05, raros ×1,1 ("medianos", sem papel), lendários ×1,3 (base e crescimento); raros e lendários sobem
+          sozinhos nos Nv.12/30/50 e as formas deles dão +10/20/30%; a vantagem de elemento continua fixa;
+          o dano cresce com a vida do nível do alvo (`escalaDoNivel`), `DANO_GERAL` 0,25 (mesmo número de golpes de antes).
+          **Níveis novos:** grupos = média +1 (+2%) / líder média +2 (+5%) (acabou o "chão" do Nv.50 que dava Rei Nv.55
+          para equipe Nv.36); Rei da Dungeon = média +2 (+10%) (+1 com 3 grupos); selvagens da borda ~1,1×; chefes das
+          masmorras = média +12 (os pisos ficam); treinadores iguais; **+20% de experiência do Nv.10 ao Nv.45**.
+          O jogo salvo converte a vida pela porcentagem (`versaoAtributos: 2`). Se o Lâmina sentir muita diferença, ele avisa.
+      - [ ] **Papéis de cada monstro** (o Lâmina manda a lista).
   - [ ] **8.4 — Regiões** com outros reinos (futuro).
 
 ### Mundo novo: decisões do Lâmina
@@ -334,4 +346,4 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
   o Rei; a dungeon muda de lugar e de variação). Lugares isolados (área separada), mais fáceis, com **2 ou 3 grupos** e o
   **Rei da Dungeon**; **todos capturáveis**; portão selado do Rei; 6 variações por bioma pelo guia do Lâmina.
 - **Sem mapa na tela e sem viagem rápida** (decisão do Lâmina): o jogador anda por tudo.
-- **Níveis:** a regra vai ser revista mais para frente.
+- **Níveis e atributos:** revistos no passo 6 (veja lá).

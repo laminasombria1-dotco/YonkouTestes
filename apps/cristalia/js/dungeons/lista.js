@@ -28,7 +28,6 @@ export const DUNGEON = {
   descobrir: 25,            // a essa distância da entrada você "descobre" a dungeon
   origem: { x: 1800, z: 2600 }, // onde a área separada é montada (longe do mapa e das masmorras)
   extraGrupo: 1,            // cada grupo seguinte vem +1 nível
-  extraRei: 4,              // o Rei: o nível do líder do último grupo + 4
   // prêmio do Rei (decisão do Lâmina): 1 Cristal Forte, 20% de um Supremo, 80 + 10 de ouro por
   // nível da sua equipe e a sorte de Galho Raro e Asa do Anjo (DROPS.reiDungeon, bolsa.js)
   premio: { forte: 1, chanceSupremo: 0.2, ouroBase: 80, ouroPorNivel: 10 },

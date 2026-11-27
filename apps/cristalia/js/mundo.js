@@ -30,7 +30,7 @@ import { interiorEm } from './masmorras/forma.js';
 import { Masmorras } from './masmorras/masmorra.js';
 import { Dungeons } from './dungeons/dungeons.js';
 import { lerQualidade } from './mapa/config.js';
-import { ESPECIES, ELEMENTOS, APARICOES, PERIODO_DA_LINHA, DUPLAS, ORDEM_DUPLAS, INTERVALO_DUPLO, CRISTAIS, criarMonstro, statsDe, formaPorNivel, especieDaEscolha, nomeTipo, tetoSuave } from './dados.js';
+import { ESPECIES, ELEMENTOS, APARICOES, PERIODO_DA_LINHA, DUPLAS, ORDEM_DUPLAS, INTERVALO_DUPLO, CRISTAIS, criarMonstro, statsDe, formaPorNivel, especieDaEscolha, nomeTipo, niveisDeGrupo } from './dados.js';
 
 export { RAIO_MUNDO, alturaEm, SEMENTE };
 const NA_ZONA = { campo: 'no Campo', agua: 'no Lago', fogo: 'no Vulcão', planta: 'na Floresta', terra: 'no Deserto', raio: 'nos Picos Nevados' };
@@ -62,11 +62,7 @@ const RAIO_AREA_GRUPO = 11;               // até onde cada um se afasta do pont
 const PERSEGUE_GRUPO = 10, PERSEGUE_ACAMPAMENTO = 7; // a que distância do monstro mais perto o grupo vem atrás de você
 // Níveis do grupo. Começo do jogo (equipe ~Nv.3): comuns ~Nv.5, líder ~Nv.12.
 // Até o Nv.50 vale o teto de antes (48/50); depois acompanham a equipe, até o Nv.98/100.
-export function niveisDoGrupo(media) {
-  const comum = Math.round(tetoSuave(media * 1.1 + 2, 48, media, 3));
-  const lider = Math.round(tetoSuave(media * 1.4 + 8, 50, media, 5));
-  return { comum: Math.min(98, comum), lider: Math.min(100, lider) };
-}
+export function niveisDoGrupo(media) { return niveisDeGrupo(media); } // a regra fica no dados.js (passo 6)
 // Os selvagens soltos do mapa vão até o Nv.95 (e nunca na forma final)
 export const NIVEL_MAX_SELVAGEM = 95;
 // Cristais do chão: a cor mostra o tipo (sorteado de novo cada vez que reaparece)
@@ -386,7 +382,7 @@ export class Mundo {
   nivelSelvagem(x, z, perto) {
     const media = this.mediaEquipe();
     const frac = Math.min(1, Math.hypot(x, z) / RAIO_MUNDO);
-    let n = Math.round(media * (0.55 + 0.65 * frac) + Math.random() * 2 - 1);
+    let n = Math.round(media * (0.6 + 0.5 * frac) + Math.random() * 2 - 1); // borda: ~1,1× a média (passo 6)
     if (perto) n = Math.min(n, Math.max(1, Math.round(media) - 1));
     if (pertoDoReino(x, z)) n = Math.min(n, 2 + Math.floor(Math.random() * 4)); // em volta do Reino: Nv.2 a 5
     return Math.max(1, Math.min(NIVEL_MAX_SELVAGEM, n));

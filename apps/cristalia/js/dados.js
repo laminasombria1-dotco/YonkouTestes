@@ -460,6 +460,10 @@ export const INTERVALO_DUPLO = 10; // 1 monstro de tipo duplo a cada 10 que apar
 
 // Quanto cada estágio multiplica os atributos, o tamanho e a dificuldade de captura
 const MULT = [1, 1.22, 1.5, 1.85];
+// Raridade (passo 6): multiplica tudo, a base e o que cresce por nível
+export const RARIDADE = { normal: 1, dupla: 1.05, raro: 1.1, lendario: 1.3 };
+// Raros e lendários: o extra de cada forma deles (por cima do "evoluir junto" com os normais)
+const BONUS_FORMA_RARA = [1, 1.1, 1.2, 1.3];
 const MULT_VEL = [1, 1.04, 1.08, 1.12];
 const TAMANHO = [1, 1.1, 1.25, 1.4];
 const CAPTURA = [0.55, 0.4, 0.25, 0.12];
@@ -488,6 +492,7 @@ for (const [el, linha] of Object.entries(LINHAS)) {
       raio: 0.65 * TAMANHO[e] * (1 + e * 0.12),
       altura: (1.7 + e * 0.45) * TAMANHO[e],
       base: { hp: linha.base.hp * MULT[e], atk: linha.base.atk * MULT[e], def: linha.base.def * MULT[e], vel: linha.base.vel * MULT_VEL[e] },
+      forma: MULT[e], raridade: 1, // atributos novos (passo 6): veja statsDe
       golpes: HABILIDADES_DA_LINHA[el]?.golpes[e] ?? golpesDoEstagio(el, e),
       evoluiPara: linha.formas[e + 1]?.[0] ?? null,
       nivelEvolucao: NIVEIS_EVOLUCAO[e] ?? null,
@@ -504,6 +509,7 @@ for (const [k, linha] of Object.entries(DUPLAS)) {
       raio: 0.65 * TAMANHO[e] * (1 + e * 0.12),
       altura: (1.7 + e * 0.45) * TAMANHO[e],
       base: { hp: linha.base.hp * MULT[e], atk: linha.base.atk * MULT[e], def: linha.base.def * MULT[e], vel: linha.base.vel * MULT_VEL[e] },
+      forma: MULT[e], raridade: RARIDADE.dupla,
       golpes: HABILIDADES_DA_LINHA[k]?.golpes[e] ?? golpesDuplos(linha.elementos, e),
       evoluiPara: linha.formas[e + 1]?.[0] ?? null,
       nivelEvolucao: NIVEIS_EVOLUCAO[e] ?? null,
@@ -588,6 +594,9 @@ for (const [k, L] of Object.entries(LINHAS_RARAS)) {
       tamanho: lenda ? L.tamanhos[e] : L.tamanho * t, captura: L.captura * (lenda ? 1 : CAPTURA_RARO[e]),
       raio: lenda ? L.raios[e] : L.raio * t, altura: lenda ? L.alturas[e] : L.altura * t,
       base: { hp: L.base.hp * mult, atk: L.base.atk * mult, def: L.base.def * mult, vel: L.base.vel * MULT_VEL_RARO[e] },
+      // raros e lendários: ficam mais fortes sozinhos nos Nv.12, 30 e 50 (como se evoluíssem junto com
+      // os normais) e cada forma deles dá um extra (BONUS_FORMA_RARA)
+      forma: BONUS_FORMA_RARA[e], formaPeloNivel: true, raridade: lenda ? RARIDADE.lendario : RARIDADE.raro,
       golpes: HABILIDADES_DA_LINHA[k].golpes[e],
       evoluiPara: L.formas[e + 1]?.[0] ?? null,
       nivelEvolucao: (lenda ? NIVEIS_EVOLUCAO_LENDARIO : NIVEIS_EVOLUCAO_RARO)[e] ?? null,
@@ -748,14 +757,23 @@ export function tetoSuave(bruto, tetoAntigo, media, folga) {
 export function niveisDaEtapa(media, etapa, dungeon = 'brasas', nivelMasmorra = 1) {
   const e = DUNGEONS[dungeon].etapas[etapa];
   const extra = MASMORRA.niveisPorNivel * (nivelMasmorra - 1); // Nível da Masmorra: +3 níveis por nível
+  const g = niveisDeGrupo(media);
   return {
-    comum: Math.min(98, Math.round(tetoSuave(media * 1.1 + 2 + e.extraComum, 48, media, 3 + e.extraComum) + extra)),
-    lider: Math.min(100, Math.round(tetoSuave(media * 1.4 + 8 + e.extraLider, 50, media, 5 + e.extraLider) + extra)),
+    comum: Math.min(98, g.comum + e.extraComum + extra),
+    lider: Math.min(100, g.lider + e.extraLider + extra),
   };
 }
-// O chefe fica sempre acima do líder da última etapa
+// NÍVEIS (passo 6): grupos de monstros. Comum = sua média +1 (+2%), líder = média +2 (+5%).
+export function niveisDeGrupo(media) {
+  return {
+    comum: Math.min(98, Math.round(media + 1 + media * 0.02)),
+    lider: Math.min(100, Math.round(media + 2 + media * 0.05)),
+  };
+}
+// O chefe das masmorras: no máximo a sua média +12 (antes +16)
+export const CHEFE_ACIMA = 12;
 export function nivelDoChefe(media, nivelMasmorra = 1) {
-  return Math.min(100, Math.round(tetoSuave(media * 1.4 + 22, 50, media, 16) + MASMORRA.niveisPorNivel * (nivelMasmorra - 1)));
+  return Math.min(100, Math.round(media + CHEFE_ACIMA) + MASMORRA.niveisPorNivel * (nivelMasmorra - 1));
 }
 
 // =============================================================
@@ -936,13 +954,13 @@ export const MASMORRA_NOVA = { captura: 0.5, ouroBase: 300, ouroPorNivel: 50 };
 // Níveis das etapas de uma masmorra nova (com o piso)
 export function niveisMasmorraNova(media, etapa, id, nivelMasmorra = 1) {
   const c = MASMORRAS_NOVAS[id], e = c.etapas[etapa].extra, extra = MASMORRA.niveisPorNivel * (nivelMasmorra - 1);
-  const comum = Math.max(tetoSuave(media * 1.1 + 2 + e, 48, media, 3 + e), c.piso.comum + e);
-  const lider = Math.max(tetoSuave(media * 1.4 + 8 + e, 50, media, 5 + e), c.piso.lider + e);
+  const comum = Math.max(media + 3, c.piso.comum) + e;
+  const lider = Math.max(media + 5, c.piso.lider) + e;
   return { comum: Math.min(98, Math.round(comum + extra)), lider: Math.min(100, Math.round(lider + extra)) };
 }
 export function nivelChefeMasmorraNova(media, id, nivelMasmorra = 1) {
   const c = MASMORRAS_NOVAS[id];
-  return Math.min(100, Math.round(Math.max(tetoSuave(media * 1.4 + 22, 50, media, 16), c.piso.chefe) + MASMORRA.niveisPorNivel * (nivelMasmorra - 1)));
+  return Math.min(100, Math.round(Math.max(media + CHEFE_ACIMA, c.piso.chefe) + MASMORRA.niveisPorNivel * (nivelMasmorra - 1)));
 }
 // Os dados da masmorra no jogo salvo (cria se não tiver: saves antigos começam no nível 1)
 export function dadosMasmorra(estado, id) {
@@ -960,43 +978,89 @@ export function sortearChefe(id, nivel, sorte = Math.random) {
 // Linhas que só existem de dia ou de noite
 export const PERIODO_DA_LINHA = { sol: 'dia', luz: 'dia', lua: 'noite', trevas: 'noite' };
 
-// VIDA: multiplicador inicial e quanto cresce por nível.
-// Ex.: Brasito Nv.1 = 44 × 2,2 = 97 de vida; no Nv.10 = 97 × 2,8 = 271.
-export const VIDA_BASE = 2.2;
-export const VIDA_POR_NIVEL = 0.2;
-// DANO: quanto o dano cresce por nível de quem ataca (menos que a vida,
-// para as batalhas de nível alto durarem um pouco mais)
-export const DANO_POR_NIVEL = 0.15;
-// DANO GERAL: multiplica o dano de todos os golpes (seus e dos inimigos).
-// 0,7 = 30% menos que antes. Para deixar as lutas mais rápidas, suba; mais longas, desça.
-export const DANO_GERAL = 0.7;
-
-// Depois do Nv.50 os atributos crescem pela METADE por nível (decisão do Lâmina, fase 8.1).
-// Assim um Nv.100 fica ~4 vezes mais forte que um Nv.50 (sem isso, ~13 vezes).
+// =============================================================
+// ATRIBUTOS (passo 6, decisões do Lâmina)
+// Todo monstro começa no Nv.1 com Vida 40, Ataque 10 e Defesa 10.
+// A cada nível ganha um pouco em cada atributo: +2 no Nv.2, e esse ganho sobe +0,1 por nível
+// (Nv.12: +3, Nv.22: +4, Nv.50: +6,8). Depois do Nv.50 o ganho vale a METADE (decisão da fase 8.1).
+// Por cima disso:
+//  - a forma (evolução): ×1,22 / ×1,5 / ×1,85 (os raros e lendários sobem sozinhos nos Nv.12, 30 e 50
+//    e ganham +10% / +20% / +30% nas formas deles);
+//  - a raridade (RARIDADE): duplo ×1,05, raro ×1,1, lendário ×1,3;
+//  - o papel do monstro (PAPEIS_DOS_MONSTROS): ataque, defesa ou vida.
+// A velocidade continua como antes (a de cada linha).
+// =============================================================
+export const ATRIBUTOS_NV1 = { hp: 40, atk: 10, def: 10 };
+export const GANHO_INICIAL = 2;        // ganho do Nv.2
+export const GANHO_SOBE = 0.1;         // quanto o ganho sobe a cada nível
 export const NIVEL_CORTE = 50;
-export const CRESCE_DEPOIS_DO_CORTE = 0.5;
-// Quantos "níveis de crescimento" o monstro tem (Nv.1 = 0; no Nv.100 = 49 + 25 = 74)
-export function niveisDeCrescimento(nivel) {
-  if (nivel <= NIVEL_CORTE) return nivel - 1;
-  return NIVEL_CORTE - 1 + (nivel - NIVEL_CORTE) * CRESCE_DEPOIS_DO_CORTE;
+export const CRESCE_DEPOIS_DO_CORTE = 0.5; // depois do Nv.50 o ganho vale a metade
+export function ganhoDoNivel(nivel) {
+  if (nivel < 2) return 0;
+  const g = GANHO_INICIAL + GANHO_SOBE * (nivel - 2);
+  return nivel <= NIVEL_CORTE ? g : g * CRESCE_DEPOIS_DO_CORTE;
+}
+// Quanto o monstro já ganhou até o nível (a soma dos ganhos): Nv.10 = 22, Nv.50 = 216, Nv.100 = 449
+const SOMA_GANHOS = [0, 0];
+for (let n = 2; n <= 120; n++) SOMA_GANHOS[n] = SOMA_GANHOS[n - 1] + ganhoDoNivel(n);
+export function crescimento(nivel) {
+  const n = Math.max(1, Math.min(120, Math.floor(nivel)));
+  return SOMA_GANHOS[n];
 }
 
-export function fatorDanoNivel(nivel) {
-  return 1 + niveisDeCrescimento(nivel) * DANO_POR_NIVEL;
+// PAPÉIS: cada monstro (cada forma) pode ser de ataque, de defesa ou de vida.
+// Ataque: +20% de ataque. Defesa: +20% de defesa. Vida: +35% de vida e -10% de defesa.
+// Os 3 ficam empatados em força (aprovado pelo Lâmina). Raros e lendários não têm papel.
+export const PAPEIS = {
+  ataque: { nome: 'Ataque', hp: 1, atk: 1.2, def: 1 },
+  defesa: { nome: 'Defesa', hp: 1, atk: 1, def: 1.2 },
+  vida: { nome: 'Vida', hp: 1.35, atk: 1, def: 0.9 },
+};
+// O Lâmina vai dizer o papel de cada monstro. Ex.: brasito: 'ataque', pedrisco: 'defesa'.
+// Quem não está aqui fica sem papel (sem bônus).
+export const PAPEIS_DOS_MONSTROS = {
+};
+export function papelDe(especie) {
+  const e = ESPECIES[especie];
+  if (!e || e.raro) return null;
+  return PAPEIS[PAPEIS_DOS_MONSTROS[especie]] || null;
 }
 
-// Ataque e defesa crescem 12% por nível; a vida cresce 20% (metade disso depois do Nv.50)
+// O "tamanho" da forma: os raros e lendários acompanham as evoluções dos normais pelo nível
+const MULT_PELO_NIVEL = (nivel) => (nivel >= 50 ? MULT[3] : nivel >= 30 ? MULT[2] : nivel >= 12 ? MULT[1] : MULT[0]);
+export function multForma(especie, nivel) {
+  const e = ESPECIES[especie];
+  return (e.formaPeloNivel ? MULT_PELO_NIVEL(nivel) * e.forma : e.forma) * e.raridade;
+}
+
+// DANO: 0,25 = o número de golpes de cada luta fica perto do de antes (medido: Investida de Fogo em Água,
+// mesmo nível: Nv.3 22 golpes (antes 18), Nv.15 24 (25), Nv.30 31 (32), Nv.50 29 (31), Nv.80 30 (31))
+// Para lutas mais rápidas, suba.
+export const DANO_GERAL = 0.25;
+// O dano cresce junto com a vida do nível do ALVO: assim dois monstros do mesmo nível levam o mesmo
+// número de golpes no Nv.1 e no Nv.100, e a diferença de nível pesa pelo Ataque ÷ Defesa.
+export function escalaDoNivel(nivel) {
+  return (ATRIBUTOS_NV1.hp + crescimento(nivel)) / ATRIBUTOS_NV1.hp;
+}
+
 export function statsDe(especie, nivel) {
-  const b = ESPECIES[especie].base;
-  const n = niveisDeCrescimento(nivel);
-  const f = 1 + n * 0.12;
+  const e = ESPECIES[especie];
+  const g = crescimento(nivel), f = multForma(especie, nivel), p = papelDe(especie);
+  const n = nivel <= NIVEL_CORTE ? nivel - 1 : NIVEL_CORTE - 1 + (nivel - NIVEL_CORTE) * CRESCE_DEPOIS_DO_CORTE;
   return {
-    hpMax: Math.round(b.hp * VIDA_BASE * (1 + n * VIDA_POR_NIVEL)),
-    atk: b.atk * f,
-    def: b.def * f,
-    vel: b.vel * (1 + n * 0.015),
+    hpMax: Math.max(1, Math.round((ATRIBUTOS_NV1.hp + g) * f * (p?.hp ?? 1))),
+    atk: (ATRIBUTOS_NV1.atk + g) * f * (p?.atk ?? 1),
+    def: (ATRIBUTOS_NV1.def + g) * f * (p?.def ?? 1),
+    vel: e.base.vel * (1 + n * 0.015),
   };
 }
+// A vida máxima pela regra antiga (antes do passo 6): só para converter a vida dos jogos salvos
+export function vidaMaxAntiga(especie, nivel) {
+  const b = ESPECIES[especie].base;
+  const n = nivel <= NIVEL_CORTE ? nivel - 1 : NIVEL_CORTE - 1 + (nivel - NIVEL_CORTE) * CRESCE_DEPOIS_DO_CORTE;
+  return Math.round(b.hp * 2.2 * (1 + n * 0.2));
+}
+export const VERSAO_ATRIBUTOS = 2;
 
 // Experiência para subir: do Nv.50 para cima pede o DOBRO (o conteúdo novo dura mais)
 export const XP_DEPOIS_DO_CORTE = 2;
@@ -1004,8 +1068,12 @@ export function xpParaProximo(nivel) {
   return (12 + nivel * 8) * (nivel >= NIVEL_CORTE ? XP_DEPOIS_DO_CORTE : 1);
 }
 
+// Experiência da vitória. Do Nv.10 ao Nv.45 vem +20% (os grupos e o Rei da Dungeon ficaram mais
+// baixos no passo 6); o bônus some aos poucos até o Nv.55.
 export function xpDaVitoria(nivelInimigo) {
-  return 10 + nivelInimigo * 7;
+  const n = nivelInimigo;
+  const bonus = n < 10 ? 1 + 0.2 * Math.max(0, n - 5) / 5 : n <= 45 ? 1.2 : n >= 55 ? 1 : 1.2 - 0.2 * (n - 45) / 10;
+  return Math.round((10 + n * 7) * bonus);
 }
 
 let contadorUid = 0;

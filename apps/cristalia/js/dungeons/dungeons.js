@@ -113,7 +113,11 @@ class DungeonNova extends MasmorraNova {
   atualizarSoltos() { /* dungeon: só os grupos e o Rei */ }
 
   // ---------- o Rei da Dungeon ----------
-  get nivelRei() { return Math.min(95, this.niveis(Math.max(0, this.sv.grupos - 1)).lider + DUNGEON.extraRei); }
+  // O Rei (passo 6): a sua média +2 (+10%), +1 se forem 3 grupos; sempre acima do último líder
+  get nivelRei() {
+    const m = this.m.mediaEquipe(), ultimo = this.niveis(Math.max(0, this.sv.grupos - 1)).lider;
+    return Math.min(95, Math.max(ultimo + 1, Math.round(m + 2 + m * 0.1) + Math.max(0, this.sv.grupos - 2)));
+  }
   idDoChefe() { return especieDaEscolha(this.sv.rei, this.nivelRei); } // nunca a forma final
   prepararChefe() { if (!this.sv.vencida) this.spawnarChefe(); }
   spawnarChefe() {

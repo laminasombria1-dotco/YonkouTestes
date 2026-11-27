@@ -19,7 +19,7 @@ import { afetoDe } from './jardim.js';
 import { Ovo } from './ovo.js';
 import {
   ESPECIES, ELEMENTOS, GOLPES, ORDEM_ELEMENTOS, RAROS, NOMES_ESTAGIO, NIVEIS_EVOLUCAO, NIVEIS_EVOLUCAO_RARO, ORDEM_LINHAS_RARAS, NIVEIS_EVOLUCAO_LENDARIO, NOMES_ESTAGIO_LENDARIO,
-  criarMonstro, statsDe, xpParaProximo, xpDaVitoria, verificarEvolucao, formasDaLinha, fracoContra,
+  criarMonstro, statsDe, vidaMaxAntiga, VERSAO_ATRIBUTOS, papelDe, xpParaProximo, xpDaVitoria, verificarEvolucao, formasDaLinha, fracoContra,
   textosMelhoria, novidadesDaEvolucao, melhoriaDe, EFEITOS, EFEITO_DO_ELEMENTO, chanceDoEfeito, pct,
   CRISTAIS, CUSTO_FUSAO, ORDEM_DUPLAS, DUPLAS, nomeDupla, nomeTipo, fundoTipo, fracoContraEspecie, forteContraEspecie,
   DURACAO_EFEITO_DISPARO, NIVEL_MAXIMO, missaoDe, contarNaMissao, requisitosEvolucaoRara, fazerEvolucaoRara, ehFormaFinal,
@@ -101,9 +101,14 @@ function lerSave(chave) {
   } catch { return null; }
 }
 
-// Maior valor de cada atributo entre todas as espécies (para as barrinhas)
-const MAXIMOS = { hp: 0, atk: 0, def: 0, vel: 0 };
-for (const e of Object.values(ESPECIES)) for (const k in MAXIMOS) MAXIMOS[k] = Math.max(MAXIMOS[k], e.base[k]);
+// Maior valor de cada atributo entre todas as espécies num nível (para as barrinhas)
+const MAXIMOS = {};
+function maximosNoNivel(nv) {
+  if (MAXIMOS[nv]) return MAXIMOS[nv];
+  const m = { hpMax: 0, atk: 0, def: 0, vel: 0 };
+  for (const id in ESPECIES) { const s = statsDe(id, nv); for (const k in m) m[k] = Math.max(m[k], s[k]); }
+  return (MAXIMOS[nv] = m);
+}
 
 class Jogo {
   constructor(dadosQuentes) {
@@ -475,10 +480,10 @@ class Jogo {
     this.plataforma.sel = i;
     document.querySelectorAll('#col-formas [data-forma]').forEach((b) => b.classList.toggle('ativa', Number(b.dataset.forma) === i));
     const e = ESPECIES[id], el = ELEMENTOS[e.elemento];
-    const barra = (k, nome, txt) => `<div class="stat"><span>${nome}</span><i><b style="width:${Math.round((e.base[k] / MAXIMOS[k]) * 100)}%"></b></i><em>${txt}</em></div>`;
-    // atributos mostrados no nível em que a forma aparece
+    // atributos mostrados no nível em que a forma aparece (a barrinha compara com todos no mesmo nível)
     const nivelForma = e.lendario ? [1, ...NIVEIS_EVOLUCAO_LENDARIO][e.estagio] : e.chefe ? 25 : e.linhaRara ? [1, ...NIVEIS_EVOLUCAO_RARO][e.estagio] : e.raro ? 1 : [1, ...NIVEIS_EVOLUCAO][e.estagio];
-    const st = statsDe(id, nivelForma);
+    const st = statsDe(id, nivelForma), mx = maximosNoNivel(nivelForma);
+    const barra = (k, nome, txt) => `<div class="stat"><span>${nome}</span><i><b style="width:${Math.round((st[k === 'hp' ? 'hpMax' : k] / mx[k === 'hp' ? 'hpMax' : k]) * 100)}%"></b></i><em>${txt}</em></div>`;
     let evo;
     if (e.chefe && !e.evoluiPara) evo = `Lendário: é o chefe ${e.onde}. Ainda não evolui. Só um <b>Cristal Supremo</b> segura ele.`;
     else if (e.chefe) evo = `Lendário: é o chefe ${e.onde}. Só um <b>Cristal Supremo</b> segura ele. Evolui no <b>Nv.${e.nivelEvolucao}</b> (com o botão) para <b>${ESPECIES[e.evoluiPara].nome}</b>.`;
@@ -523,7 +528,7 @@ class Jogo {
       <div class="stats" style="--cor:${el.cor}">
         <small class="nivel-stats">Atributos no Nv.${nivelForma}</small>
         ${barra('hp', 'Vida', st.hpMax)}${barra('atk', 'Ataque', Math.round(st.atk))}
-        ${barra('def', 'Defesa', Math.round(st.def))}${barra('vel', 'Veloc.', st.vel.toFixed(1))}
+        ${barra('def', 'Defesa', Math.round(st.def))}${barra('vel', 'Veloc.', st.vel.toFixed(1))}${papelDe(id) ? `<div class="stat"><span>Papel</span><em>${papelDe(id).nome}</em></div>` : ''}
       </div>
       <div class="golpes-lista">${golpes}</div>
       ${melhorias}
@@ -539,7 +544,7 @@ class Jogo {
 
   novoJogo(especie) {
     this.estado = { equipe: [criarMonstro(especie, 3)], reserva: [], pedras: { comum: 5, forte: 0, supremo: 0 }, capturados: [especie], bandeira: null, bandeiraNivel: 1,
-      moedas: 0, pocoes: { cura: 3, reviver: 1 }, galhos: 0, casaNivel: 1, asas: 0, coracoes: 0 };
+      moedas: 0, pocoes: { cura: 3, reviver: 1 }, galhos: 0, casaNivel: 1, asas: 0, coracoes: 0, versaoAtributos: VERSAO_ATRIBUTOS };
     this.mundo.hora = 0.08;
     this.entrarNoMundo();
     this.mundo.povoar();
@@ -552,7 +557,15 @@ class Jogo {
 
   entrarNoMundo() {
     Bolsa.garantir(this.estado); // saves antigos: moedas e poções
-    // atributos novos depois do Nv.50 (fase 8.1): a vida salva não passa do máximo novo
+    // atributos novos (passo 6): a vida salva vira a mesma porcentagem na vida nova (uma vez só)
+    if ((this.estado.versaoAtributos || 1) < VERSAO_ATRIBUTOS) {
+      const conv = (mo) => { const antes = vidaMaxAntiga(mo.especie, mo.nivel), agora = statsDe(mo.especie, mo.nivel).hpMax;
+        mo.hp = mo.hp <= 0 ? 0 : Math.max(1, Math.round(Math.min(1, mo.hp / antes) * agora)); };
+      for (const mo of [...this.estado.equipe, ...this.estado.reserva]) conv(mo);
+      for (const mo of Object.values(this.estado.guardados || {})) conv(mo);
+      this.estado.versaoAtributos = VERSAO_ATRIBUTOS;
+    }
+    // a vida salva não passa do máximo novo
     for (const mo of [...this.estado.equipe, ...this.estado.reserva]) mo.hp = Math.min(mo.hp, statsDe(mo.especie, mo.nivel).hpMax);
     if (this.estado.arena?.ovoPendente) this.ovo.receber(); // dominou antes de o ovo existir
     // a bandeira salva volta para o lugar onde estava; a casa do Reino fica no nível salvo

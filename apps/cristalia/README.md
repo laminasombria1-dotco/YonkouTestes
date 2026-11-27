@@ -345,7 +345,8 @@ O Reino fica **no meio do mapa** (mundo novo, `PLANO.md`): é o lugar seguro ond
 ## Grupos de monstros
 
 - Pelo mapa andam **grupos de 6 monstros**: 5 comuns e 1 **líder**, que é maior e usa coroa dourada.
-- **Níveis:** acompanham a sua equipe. Comuns ficam em ~1,1× o seu nível médio + 2; o líder em ~1,4× + 8. No começo do jogo (equipe Nv.3), os comuns ficam no Nv.5 e o líder no Nv.12.
+- **Níveis (passo 6):** acompanham a sua equipe. Comuns = o seu nível médio + 1 (+2% da média); líder = média + 2 (+5%). Ex.: equipe Nv.5 → 6/7; Nv.30 → 32/34; Nv.70 → 72/76 (`niveisDeGrupo` no `js/dados.js`).
+- **Selvagens soltos:** logo depois do anel tranquilo ~0,8× a sua média; na borda do mapa ~1,1× (até o Nv.95). Perto do Reino continuam Nv.2 a 5.
 - **Quantidade:** 1 grupo no começo e mais 1 a cada 5 níveis da equipe, até **4 grupos**.
 - **Cada monstro do grupo se move sozinho:** tem posição, direção, ritmo e animação próprios (uns andam enquanto outros param). Não ficam em fileira: ficam soltos numa área de ~11 m em volta do ponto do grupo.
 - **Duplas soltas:** cada um fica a **~2 m do parceiro** (entre 1,5 e 3,5 m) e a **pelo menos 5 m das outras duplas** (medidos entre os corpos). As duplas são: 1ª e 2ª dupla (as que lutam primeiro) e o 5º monstro junto do líder.
@@ -398,7 +399,7 @@ O Reino fica **no meio do mapa** (mundo novo, `PLANO.md`): é o lugar seguro ond
 - **Prontos os 5 biomas** (as 30 variações do guia do Lâmina): 15 dungeons ativas no mapa ao mesmo tempo.
 - **A entrada:** um arco de pedra com o **vórtice** (o redemoinho colorido que serve de porta), o anel de pedras e a poça de brilho falso. A **25 m** aparece "Você descobriu..." e, daí em diante, um **cristal flutua em cima da entrada** (sem névoa: dá para ver de longe). Sem mapa na tela: é assim que você acha as dungeons.
 - **Lá dentro:** a porta de luz do começo (sair a qualquer hora), as salas com os grupos (os mesmos níveis dos grupos do mapa, +1 a cada grupo) e o **portão selado do Rei**, que só abre quando **todos os grupos** forem vencidos. Os grupos vencidos ficam salvos até o reset (dá para sair no meio). Sem monstros soltos.
-- **O Rei:** maior, com coroa, no trono da última sala. Nível = o líder do último grupo + 4. **Prêmio:** 1 Cristal Forte, **20% de chance de um Supremo**, **80 + 10 de ouro por nível da sua equipe** e a sorte de **Galho Raro e Asa do Anjo** (`DROPS.reiDungeon` no `bolsa.js`: 50% galho, 25% asa). Vencido ou capturado, abre o portal de saída.
+- **O Rei:** maior, com coroa, no trono da última sala. Nível (passo 6) = a sua média + 2 (+10%), +1 se forem 3 grupos, sempre acima do último líder (equipe Nv.36 → Rei Nv.42). **Prêmio:** 1 Cristal Forte, **20% de chance de um Supremo**, **80 + 10 de ouro por nível da sua equipe** e a sorte de **Galho Raro e Asa do Anjo** (`DROPS.reiDungeon` no `bolsa.js`: 50% galho, 25% asa). Vencido ou capturado, abre o portal de saída.
 - **Reset:** depois de vencer o Rei, o cristal fica **cinza** e o vórtice apaga. **2 horas de tempo de jogo** depois (só conta com o jogo aberto, no mapa ou na batalha), a dungeon **se renova**: muda de lugar (para um dos lugares livres do bioma), de variação, sorteia de novo os grupos (2 ou 3) e o Rei, e precisa ser **descoberta de novo**.
 - **Jogo salvo:** na conta e na nuvem, em `estado.dungeons` (`{ agua0: { lugar, variacao, grupos, vencidos, rei, achada, vencida, t } ... }`). Um save antigo ganha dungeons sorteadas na primeira vez. Fechou o jogo lá dentro? Você volta na frente da entrada. A bandeira não pode ser fincada lá dentro.
 - **GM:** aba Dungeons, no começo: ir até a entrada, entrar, ir direto ao Rei, resetar agora e trocar a variação.
@@ -431,7 +432,7 @@ São **2 por bioma** (o Caminho das Brasas e a Trilha Ancestral contam como uma 
 - **Área separada:** cada masmorra fica **bem longe do mapa redondo** (x = 1800, 2700, ...). Lá dentro, `alturaEm`, a colisão e a região perguntam à forma da masmorra (`interiorEm` em `js/masmorras/forma.js`); o mapa de fora some sozinho (os chunks ficam longe e são apagados) e os monstros dele somem. Ao sair, **tudo da masmorra é apagado da memória** (só uma existe por vez).
 - **5 etapas + o chefe.** Cada etapa tem **1 grupo com líder** e até 4 monstros soltos. O **portão selado** (a parede de energia azul) da saída da etapa **só abre quando o líder é vencido**. Cada vez que você entra, os portões começam fechados de novo.
 - **Monstros:** só os tipos do bioma (na Gruta: linha Raio e Imanito); Sol, Luz, Lua e Trevas como visitantes raros (`aparicoes`).
-- **Níveis:** acompanham a equipe (como as masmorras de hoje), mas com um **piso**: a 1ª masmorra do bioma começa com comuns Nv.55, líder Nv.62 e chefe Nv.72; a 2ª com Nv.62/70/80. Cada etapa soma +2. O **Nível da Masmorra** (1 a 10) soma +3 por nível, até o Nv.98/100 (`niveisMasmorraNova`, `nivelChefeMasmorraNova`).
+- **Níveis:** acompanham a equipe (como as masmorras de hoje), mas com um **piso**: a 1ª masmorra do bioma começa com comuns Nv.55, líder Nv.62 e chefe Nv.72; a 2ª com Nv.62/70/80. Acima do piso: comuns = a equipe + 3, líder = + 5 e chefe = + 12 (passo 6). Cada etapa soma +2. O **Nível da Masmorra** (1 a 10) soma +3 por nível, até o Nv.98/100 (`niveisMasmorraNova`, `nivelChefeMasmorraNova`).
 - **Chefe:** sorteado entre as formas finais do tipo (Gruta: Tempestor ou Titanvolt). **Sem lendário** em Gelo, Deserto e Arquipélago até o Lâmina criar os lendários desses tipos. Só o **Cristal Supremo** captura, com **metade da chance** de uma forma final (`fatorCaptura`). Prêmio: 3 cristais fortes, 2 supremos, a sorte de Galho e Asa e **300 + 50 de ouro por Nível da Masmorra**. **Não dá ovo.** Vencido, volta no próximo amanhecer (sorteado de novo).
 - **Sair:** pela **porta de luz** do começo (a qualquer hora) ou pelo **portal** que aparece no trono depois do chefe. Desmaiou lá dentro? Renasce na bandeira ou na fonte, do lado de fora. **Fechou o jogo lá dentro?** O jogo salva a posição na frente da porta, do lado de fora. A **bandeira não pode ser fincada** lá dentro.
 - **Leve:** o chão é feito dos mesmos triângulos de `alturaEm`, em pedaços de 64 m; os enfeites são juntados em lotes de 90 m. O cenário da Gruta custa 37 a 58 desenhos por quadro (o Reino custa ~50); os monstros custam igual ao mapa de fora. No máximo 260 partículas e nenhuma luz extra (os brilhos são cor própria dos materiais).
@@ -546,7 +547,7 @@ Vale para o Caminho das Brasas e para a Trilha Ancestral (cada uma tem o seu ní
 
 - Quando o lendário vem, aparece o aviso **"O Ignárion despertou no Trono de Magma!"**.
 - O sorteio fica salvo: fechar e abrir o jogo não troca o chefe.
-- Nível do chefe: o mesmo de antes até o Nv.50 (1,4× a equipe + 22); depois, a equipe + 16. Os acampamentos seguem a mesma ideia (até o Nv.50 como antes; depois, a equipe + uma folga).
+- Nível do chefe (passo 6): a equipe + 12 (`CHEFE_ACIMA`). Os acampamentos usam a regra dos grupos do mapa mais o extra de cada etapa.
 - Tudo isso fica em `MASMORRA`, `dadosMasmorra`, `sortearChefe`, `niveisDaEtapa` e `nivelDoChefe` (`js/dados.js`), e em `spawnarChefe` e `chefeVencido` (`js/dungeon.js`).
 
 ### Chefe: Ignárion (lendário)
@@ -556,7 +557,7 @@ Vale para o Caminho das Brasas e para a Trilha Ancestral (cada uma tem o seu ní
 - Fica no **Trono de Magma**, no fim do caminho, aos pés de um vulcão gigante.
 - Tipo **Ígneo**, um elemento novo: um fogo mais forte, que é super efetivo contra Planta, Terra e até Fogo. Só a **Água** é forte contra ele.
 - Efeito do Ígneo: **Combustão**, que tira 6% da vida por segundo e impede cura.
-- Nível: 1,4× o nível da equipe + 22 (Nv.26 com equipe Nv.3).
+- Nível: o da equipe + 12 (Nv.15 com equipe Nv.3).
 - Com menos da metade da vida, entra em **fúria** e ataca bem mais rápido.
 - Usa os golpes de lendário (veja "Golpes do Ignárion"), com o **Calor Ígneo**: quando a barra enche, entra em **Ignição** (mais dano por 5 s). A placa mostra "Calor N%".
 - Só é capturado com **Cristal Supremo**, e a chance é bem baixa.
@@ -587,7 +588,7 @@ Sai da borda do mapa pela Floresta, seguindo as lanternas de flor (a direção d
 - Tipo **Silvestre**, um elemento novo: uma planta mais forte, super efetiva contra Água, Terra e até Planta. Só **Fogo** (e o Ígneo) são fortes contra ele.
 - Efeito do Silvestre: **Parasita**: uma semente suga 2,5% da vida a cada meio segundo, cura quem a plantou e deixa 30% mais lento. Os três golpes dele (Galhada Ancestral, Semente Parasita e Selva Viva) causam o efeito.
 - Arena própria: **Santuário da Árvore-Mãe** (favorece Silvestre). Perigo: **raízes saem do chão** onde aparece um círculo verde; machucam e prendem (Planta e Silvestre não sentem).
-- Nível: 1,4× o nível da equipe + 22 (Nv.26 com equipe Nv.3). Com menos da metade da vida, entra em **fúria**.
+- Nível: o da equipe + 12 (Nv.15 com equipe Nv.3). Com menos da metade da vida, entra em **fúria**.
 - É um **filhote de cervo** (a forma inicial do lendário) e usa a **Seiva Vital**: a Parasita enche a barra e a Selva Viva gasta a Seiva para curar. A placa mostra "Seiva N%". Veja "Golpes do Silvárion".
 - Só é capturado com **Cristal Supremo**. Vencido ou capturado, deixa 3 Cristais Fortes e 2 Supremos e volta no próximo amanhecer.
 
@@ -756,7 +757,7 @@ Tudo dá para ajustar lá: a semente, o tamanho do mundo, o tamanho dos chunks, 
 
 Raros com formas novas (fase 6 do `PLANO.md`): evoluem no **Nv.55** e no **Nv.70** sozinhos e fazem a **evolução rara no Nv.90** com o botão
 (missão no Nv.85: derrotar 60 monstros do Nv.40 para cima; custo: 5 Asas do Anjo, 5 Corações do Guardião e 6.000 de ouro).
-Os atributos seguem a mesma regra para os 3: a base da forma inicial × 1 / 1,7 / 2,0 / 2,35 (em `LINHAS_RARAS` e `MULT_RARO`, no `js/dados.js`).
+Atributos (passo 6): veja "Vida e dano". Os raros são ×1,1 em tudo, ficam mais fortes sozinhos nos Nv.12, 30 e 50 (como os normais) e cada forma deles dá +10% / +20% / +30%.
 
 | Raro | Forma inicial (Nv.1) | 1ª evolução (Nv.55) | 2ª evolução (Nv.70) | Evolução rara (Nv.90) |
 |---|---|---|---|---|
@@ -765,7 +766,7 @@ Os atributos seguem a mesma regra para os 3: a base da forma inicial × 1 / 1,7 
 | Planta | Espinhal | Cactouriço | Espinhaço | Mandacarão |
 Lendários (os chefes das masmorras; fase 7 do `PLANO.md`): a forma de hoje vale do Nv.1 ao 64 e as **3 evoluções são todas com o botão**
 (missão + itens + ouro): Nv.65 (missão no Nv.60, inimigos do Nv.50+; 2 Asas, 2 Corações, 4.000 de ouro), Nv.75 (Nv.70, Nv.60+; 4/4/8.000)
-e Nv.90 (Nv.85, Nv.80+; 6/6/15.000). Atributos iguais para todos os lendários: a base × 1 / 1,3 / 1,6 / 2,0 (`MULT_LENDARIO` no `js/dados.js`).
+e Nv.90 (Nv.85, Nv.80+; 6/6/15.000). Atributos (passo 6): ×1,3 em tudo (a base e o que cresce por nível), com a mesma regra de forma dos raros.
 
 | Lendário | Forma inicial (Nv.1) | 1ª evolução (Nv.65) | 2ª evolução (Nv.75) | 3ª evolução (Nv.90) |
 |---|---|---|---|---|
@@ -774,14 +775,19 @@ e Nv.90 (Nv.85, Nv.80+; 6/6/15.000). Atributos iguais para todos os lendários: 
 
 Todos os raros e lendários já têm formas novas: no Monstruário cada um tem a sua aba (a aba "Raros" sumiu).
 
-## Vida e dano
+## Vida e dano (atributos, passo 6)
 
-- A vida começa em **2,2×** o valor base da espécie e cresce **20% por nível**.
-- O dano cresce **15% por nível** de quem ataca, um pouco menos que a vida.
-- **Depois do Nv.50, tudo cresce pela metade** por nível (vida +10%, ataque e defesa +6%, dano +7,5%). Assim um Nv.100 fica umas 4 vezes mais forte que um Nv.50, e não 13. Fica em `NIVEL_CORTE` e `CRESCE_DEPOIS_DO_CORTE` (`niveisDeCrescimento` no `dados.js`).
-- **Experiência:** para subir, cada nível pede `12 + 8 × nível`; do **Nv.50 para cima, o dobro** (`XP_DEPOIS_DO_CORTE`). A vitória dá `10 + 7 × nível do inimigo`, então vencer monstros muito mais fracos já rende pouco. Por isso as batalhas de nível alto duram um pouco mais.
-- Todo dano de golpe (o seu e o dos inimigos) passa por `DANO_GERAL` (0,7 = 30% menos). Num confronto neutro, são necessários uns **10 disparos** no começo e uns **17** no nível 30. Vantagem e desvantagem de elemento mudam bastante esse número.
-- Esses valores ficam em `dados.js`: `VIDA_BASE`, `VIDA_POR_NIVEL`, `DANO_POR_NIVEL` e `DANO_GERAL`.
+- **Nv.1:** todo monstro começa com **Vida 40, Ataque 10 e Defesa 10** (`ATRIBUTOS_NV1`).
+- **A cada nível** ganha um pouco em cada atributo: **+2 no Nv.2**, e o ganho sobe **+0,1 por nível** (Nv.12: +3, Nv.22: +4, Nv.50: +6,8). **Depois do Nv.50 o ganho vale a metade** (Nv.51: +3,45; Nv.100: +5,9). Soma: Nv.10 = +22, Nv.30 = +99, Nv.50 = +216, Nv.100 = +449 (`ganhoDoNivel` e `crescimento`).
+- **Forma:** as evoluções multiplicam tudo: ×1,22 (Nv.12), ×1,5 (Nv.30), ×1,85 (evolução rara). Raros e lendários sobem sozinhos nesses níveis e cada forma deles dá +10%/+20%/+30%.
+- **Raridade** (`RARIDADE`): tipo duplo ×1,05, raro ×1,1, lendário ×1,3.
+- **Papel** (`PAPEIS` e `PAPEIS_DOS_MONSTROS`): cada monstro pode ser de **Ataque** (+20% ataque), **Defesa** (+20% defesa) ou **Vida** (+35% vida e −10% defesa). Os três ficam empatados em força. **O Lâmina ainda vai dizer o papel de cada monstro**; quem não está na lista fica sem papel. Raros e lendários não têm papel. O Monstruário mostra o papel.
+- Exemplos (Vida / Ataque): Brasito Nv.1 40/10; Fornalobo Nv.30 208/163; Magmalobo Nv.50 473/417 e Nv.100 905/850; Infernárion Nv.100 1.530/1.436.
+- **Dano:** `DANO_GERAL` (0,25) × poder do golpe × Ataque ÷ Defesa × elemento × **a escala do nível do alvo** (`escalaDoNivel`: a vida-base do nível dele ÷ 40). Assim dois monstros do mesmo nível levam o mesmo número de golpes no Nv.1 e no Nv.100, e a diferença de nível pesa pelo Ataque ÷ Defesa. Medido (Investida de Fogo em Água, mesmo nível): 22 golpes no Nv.3, 24 no Nv.15, 31 no Nv.30, 29 no Nv.50 e 30 no Nv.80, quase igual a antes.
+- **A vantagem de elemento** continua fixa (×1,5 forte, ×0,6 fraco); não cresce com o nível.
+- **Velocidade:** a de cada linha, como antes.
+- **Jogo salvo:** os atributos são calculados na hora (o monstro guarda só espécie, nível, experiência e vida). Na 1ª vez com a regra nova, a vida salva vira a mesma porcentagem na vida nova (`estado.versaoAtributos = 2`, `vidaMaxAntiga`).
+- **Experiência:** para subir, cada nível pede `12 + 8 × nível`; do **Nv.50 para cima, o dobro** (`XP_DEPOIS_DO_CORTE`). A vitória dá `10 + 7 × nível do inimigo`, com **+20% do Nv.10 ao Nv.45** (sobe aos poucos do Nv.5 ao 10 e some aos poucos até o Nv.55), porque os grupos e o Rei da Dungeon ficaram mais baixos no passo 6.
 
 ## Arenas de batalha
 

@@ -2,6 +2,8 @@
 
 Dungeons são **mais fáceis que as masmorras**: lugares isolados (área separada, como as masmorras) com **2 ou 3 grupos** e o **Rei da Dungeon**. Todos são capturáveis. Cada bioma tem **3 ativas**, cada uma num dos **6 lugares** do bioma e com uma das **6 variações do guia do Lâmina**. Depois de vencer o Rei, em **2 horas de jogo** ela se renova em outro lugar.
 
+**Níveis (passo 6):** os grupos usam a regra dos grupos do mapa (`niveisDeGrupo` no `js/dados.js`: comum = a média da equipe +1 (+2%), líder = +2 (+5%)), +1 a cada grupo; o **Rei** = a média +2 (+10%), +1 se forem 3 grupos, sempre acima do último líder, até o Nv.95 (`nivelRei` no `dungeons.js`). Equipe Nv.36 → grupos 38/40 e 39/41, Rei Nv.42.
+
 | Arquivo | O que faz |
 |---|---|
 | `dungeons.js` | O motor. `Dungeons` (o gerente: as vagas do jogo salvo, a entrada no mapa com o vórtice e o cristal flutuante, descobrir, entrar, o reset) e `DungeonNova` (a dungeon montada: os grupos, o portão do Rei, o Rei e o prêmio). |

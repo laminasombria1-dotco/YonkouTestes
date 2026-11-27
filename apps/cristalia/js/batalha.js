@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import {
   ESPECIES, GOLPES, ELEMENTOS, EFEITOS, EFEITO_DO_ELEMENTO, PODER_DISPARO_EXTRA, DURACAO_EFEITO_PERTO, DURACAO_EFEITO_DISPARO,
-  multiplicadorContra, chanceCaptura, melhoriaDe, statsDe, modificadorArena, fatorDanoNivel, CRISTAIS, nomeTipo, fundoTipo, DANO_GERAL,
+  multiplicadorContra, chanceCaptura, melhoriaDe, statsDe, modificadorArena, escalaDoNivel, CRISTAIS, nomeTipo, fundoTipo, DANO_GERAL,
   fracoContraEspecie, chanceDoEfeito, pct, cristalMinimo, ehFormaFinal,
 } from './dados.js';
 import { VisualTrevas } from './habilidades/trevas-batalha.js';
@@ -759,7 +759,7 @@ export class Batalha {
     // Blindado (linha do Vaporito): mais defesa por um tempo
     const def = alvo.stats.def * (alvo.tem('soterrado') ? 0.7 : 1) * (alvo.blindado ? 1 + alvo.blindado.f : 1);
     const exposto = alvo.tem('exposto') ? 1.3 : 1;
-    const nivel = fatorDanoNivel(at.dados.nivel);  // dano cresce com o nível de quem ataca
+    const nivel = escalaDoNivel(alvo.dados.nivel); // dano cresce com a vida do nível do alvo (passo 6)
     const arena = at.mod?.dano ?? 1;               // bônus/penalidade da arena
     // Sol da linha do Solito: quem soltou causa mais dano e recebe menos
     const sol = (1 + (at.sol?.cfg.ataque ?? 0)) * (1 - (alvo.sol?.cfg.defesa ?? 0));
