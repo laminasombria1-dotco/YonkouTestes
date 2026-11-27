@@ -12,6 +12,7 @@ import { Batalha } from './batalha.js';
 import { Plataforma, CenaEvolucao } from './plataforma.js';
 import { carregarModelos3D } from './modelos.js';
 import { Companheiro } from './companheiro.js';
+import { PERSONAGEM_PADRAO, normalizarPersonagem } from './personagem.js';
 import { TREINADORES, equipeDoTreinador } from './reino.js';
 import { TREINADORES_VILA, TESOURO_VILA, PREMIO_VILA, NOMES_VILA, ORDEM_VILAS, tituloDaVila } from './vilas.js';
 import { Bolsa, MOEDAS, sortearDrop, bonusDrop } from './bolsa.js';
@@ -542,8 +543,8 @@ class Jogo {
     this.plataforma.enquadrar({ left: r.left - a.left, top: r.top - a.top, width: r.width, height: r.height });
   }
 
-  novoJogo(especie) {
-    this.estado = { equipe: [criarMonstro(especie, 3)], reserva: [], pedras: { comum: 5, forte: 0, supremo: 0 }, capturados: [especie], bandeira: null, bandeiraNivel: 1,
+  novoJogo(especie, personagem = PERSONAGEM_PADRAO) {
+    this.estado = { personagem: normalizarPersonagem(personagem), equipe: [criarMonstro(especie, 3)], reserva: [], pedras: { comum: 5, forte: 0, supremo: 0 }, capturados: [especie], bandeira: null, bandeiraNivel: 1,
       moedas: 0, pocoes: { cura: 3, reviver: 1 }, galhos: 0, casaNivel: 1, asas: 0, coracoes: 0, versaoAtributos: VERSAO_ATRIBUTOS };
     this.mundo.hora = 0.08;
     this.entrarNoMundo();
@@ -580,6 +581,9 @@ class Jogo {
     this.mundo.trocarModeloCasa();
     this.mundo.trocarModeloBandeira();
     this.mundo.dungeonsNovas.prepararEstado(); // as dungeons do jogo salvo (onde estão, quais já foram achadas)
+    // o protagonista (saves de antes da criação de personagem: o padrão) e a Coroa do Rei
+    this.estado.personagem = normalizarPersonagem(this.estado.personagem);
+    this.mundo.vestirPersonagem(this.estado.personagem);
     this.mundo.vestirCoroa(!!(this.estado.coroa && this.estado.coroaVestida));
     this.mundo.irParaBase();
     this.mostrarTela('mundo');

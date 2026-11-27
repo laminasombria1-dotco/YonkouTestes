@@ -1701,35 +1701,7 @@ function criarModeloGLB(especie) {
   return m;
 }
 
-// ---------- Treinador (o jogador no mundo) ----------
-export function criarTreinador() {
-  const r = base(1);
-  const c = r.userData.corpo;
-  const calca = mat('#2d3a5c'), jaqueta = mat('#ffb03b'), pele = mat('#f2c9a0'), bone = mat('#e8443a'), mochila = mat('#3a8ee0');
-  const pernas = [], bracos = [];
-  for (const s of [-1, 1]) {
-    const pivo = new THREE.Group();
-    pivo.position.set(s * 0.12, 0.5, 0);
-    p(pivo, G.caixa(0.18, 0.48, 0.2), calca, [0, -0.24, 0]);
-    c.add(pivo);
-    pernas.push(pivo);
-    const pb = new THREE.Group();
-    pb.position.set(s * 0.33, 1.0, 0);
-    p(pb, G.caixa(0.13, 0.46, 0.15), jaqueta, [0, -0.22, 0]);
-    c.add(pb);
-    bracos.push(pb);
-  }
-  p(c, G.caixa(0.5, 0.56, 0.3), jaqueta, [0, 0.77, 0]);
-  p(c, G.ico(0.25, 1), pele, [0, 1.28, 0]);
-  p(c, G.cil(0.26, 0.26, 0.13, 8), bone, [0, 1.45, 0]);
-  p(c, G.caixa(0.3, 0.04, 0.22), bone, [0, 1.4, 0.24]);
-  p(c, G.caixa(0.38, 0.42, 0.18), mochila, [0, 0.82, -0.24]);
-  olhos(c, 1.3, 0.21, 0.09, 0.05);
-  r.userData.pernas = pernas;
-  r.userData.bracos = bracos;
-  juntarPecas(r, pecasQueMexem(r.userData));
-  return r;
-}
+// O jogador no mundo (o protagonista) fica em personagem.js
 
 // ---------- Coroa do líder de grupo ----------
 export function criarCoroa(escala = 1) {

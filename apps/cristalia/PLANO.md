@@ -349,3 +349,28 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
   **Rei da Dungeon**; **todos capturáveis**; portão selado do Rei; 6 variações por bioma pelo guia do Lâmina.
 - **Sem mapa na tela e sem viagem rápida** (decisão do Lâmina): o jogador anda por tudo.
 - **Níveis e atributos:** revistos no passo 6 (veja lá).
+
+## Protagonista: criação de personagem (pedido do Lâmina)
+Uma tela nova de criar o personagem, depois de "Novo jogo" e antes de escolher o monstro inicial.
+
+### Decisões do Lâmina
+- **Bonecos pelas referências dele** (base masculina e feminina com corpo de gente, low poly), feitos **em código**
+  (formas simples, sem `.glb`) por enquanto. Se um dia vierem modelos `.glb` de verdade, eles entram no lugar,
+  com o mesmo sistema de roupas.
+- **Proporção:** corpo de gente com a **cabeça 10% maior** (para enxergar na câmera do jogo).
+- **Roupas (pelas referências dele):** Explorador(a) e Utilitário **grátis**; **Traje Real** ao virar **Campeão do Reino**;
+  **Palhaço** comprado na **Loja do Reino** com ouro. As roupas dos biomas ficam para depois, quando ele mandar as artes.
+- **Cor da pele** (5) e **do cabelo** (6), todas liberadas.
+- **Trocar depois:** no **Guarda-roupa** da casa do Reino, de graça (gênero, pele, cabelo e roupa).
+- **Coroa do Rei:** a coroa da referência dele; quando está na cabeça, **o chapéu sai**.
+- **Nome:** o nome da conta (sem campo novo).
+- **Jogo salvo antigo:** fica com **masculino + Explorador** (o padrão).
+
+### Etapas
+- [x] **Etapa 1 — Bonecos e roupas no jogo:** `js/personagem.js` (masculino e feminino, pele, cabelo, as 4 roupas,
+      a Coroa do Rei no lugar do chapéu); `estado.personagem` no jogo salvo (antigo = padrão); `vestirPersonagem` e
+      `vestirCoroa` no `mundo.js`. O `criarTreinador` antigo saiu do `modelos.js`.
+- [ ] **Etapa 2 — Tela de criação:** Novo jogo → 1. Personagem (gênero, pele, cabelo) → 2. Roupa → 3. Parceiro.
+- [ ] **Etapa 3 — Guarda-roupa, roupas ganhas e GM:** o Guarda-roupa na casa (pela Bolsa, perto da casa), o Traje Real
+      ao virar Campeão, o Palhaço na Loja do Reino (`estado.roupas`), e no GM "Liberar todas as roupas" e "Trocar o personagem".
+

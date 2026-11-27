@@ -8,7 +8,8 @@
 // Monstros selvagens passeiam; encostou, começa a batalha.
 // =============================================================
 import * as THREE from 'three';
-import { criarModelo, criarTreinador, criarCristal, pintarCristal, criarCoroa, criarCasa, animarCasa, criarBandeira, animarBandeira, animarModelo, criarAuraDupla, animarAura, descartar } from './modelos.js';
+import { criarPersonagem, normalizarPersonagem, PERSONAGEM_PADRAO } from './personagem.js';
+import { criarModelo, criarCristal, pintarCristal, criarCoroa, criarCasa, animarCasa, criarBandeira, animarBandeira, animarModelo, criarAuraDupla, animarAura, descartar } from './modelos.js';
 import { CameraOrbita } from './camera.js';
 import { TRACADOS, REINO, tracadoPerto, prenderDungeons, dentroDungeonLivre, semCasaDungeons } from './dungeon.js';
 import { Vilas, saidaDaArena, TREINADORES_VILA } from './vilas.js';
@@ -145,10 +146,13 @@ export class Mundo {
     this.criarMontanhas();
     this.criarEstrelas();
 
-    this.jogador = criarTreinador();
-    this.cena.add(this.jogador);
     this.pos = new THREE.Vector3(NASCER.x, 0, NASCER.z);
     this.ang = ANG_NASCER;
+    // o protagonista (gênero, pele, cabelo e roupa do jogo salvo; trocado em vestirPersonagem)
+    this.personagem = { ...PERSONAGEM_PADRAO };
+    this.coroaVestida = false;
+    this.jogador = null;
+    this.montarPersonagem();
     this.graca = 0;
     this.avisoT = 0;
     this.hora = 0.08; // 0 a 1: menos de 0.5 é dia
@@ -583,14 +587,30 @@ export class Mundo {
     if (!g.membros.length) this.removerGrupo(g);
   }
 
-  // A Coroa do Rei na cabeça do jogador (o Campeão do Reino pode vestir ou tirar)
+  // ---------- o protagonista ----------
+  // Monta o boneco de novo (com a roupa e a coroa de agora), no mesmo lugar e virado para o mesmo lado
+  montarPersonagem() {
+    const velho = this.jogador;
+    this.jogador = criarPersonagem({ ...this.personagem, coroa: this.coroaVestida });
+    this.jogador.position.copy(this.pos);
+    this.jogador.rotation.y = this.ang;
+    this.cena.add(this.jogador);
+    if (velho) { this.cena.remove(velho); descartar(velho); }
+  }
+
+  // Troca o gênero, a pele, o cabelo ou a roupa (o que vier do jogo salvo ou do Guarda-roupa)
+  vestirPersonagem(pp) {
+    const novo = normalizarPersonagem(pp);
+    if (JSON.stringify(novo) === JSON.stringify(this.personagem)) return;
+    this.personagem = novo;
+    this.montarPersonagem();
+  }
+
+  // A Coroa do Rei na cabeça do jogador (o Campeão do Reino pode vestir ou tirar): o chapéu sai
   vestirCoroa(sim) {
-    if (sim && !this.coroaJogador) {
-      this.coroaJogador = criarCoroa(0.85);
-      this.coroaJogador.position.set(0, 1.53, 0); // em cima do boné
-      this.jogador.userData.corpo.add(this.coroaJogador);
-    }
-    if (this.coroaJogador) this.coroaJogador.visible = !!sim;
+    if (!!sim === this.coroaVestida) return;
+    this.coroaVestida = !!sim;
+    this.montarPersonagem();
   }
 
   // ---------- bandeira do Reino (onde você renasce) ----------

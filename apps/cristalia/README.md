@@ -69,6 +69,24 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
   }
   ```
 
+## O protagonista (o seu personagem)
+
+- **Masculino ou feminino**, com corpo de gente (pelas referências do Lâmina): 5 tons de pele, 6 cores de cabelo (o masculino com cabelo repicado, o feminino com franja de lado e rabo de cavalo alto), olhos cor de âmbar. A cabeça é 10% maior que o "natural", para enxergar melhor na câmera do jogo. Altura: ~1,8 m (o feminino um pouco menor).
+- **As roupas (skins)**, pelas referências do Lâmina:
+
+  | Roupa | Peças | Como ganha |
+  |---|---|---|
+  | 🧢 **Explorador(a)** | boné vermelho com a gema azul, colete de bolsos com o cristal, camisa de manga dobrada, bermuda cargo, botas, luvas sem dedo e relógio com gema | grátis (é a dos jogos salvos antigos) |
+  | 🎒 **Utilitário** | o mesmo boné, jaqueta utilitária com gola, colar de dentes, calça cargo, mochila e cachecol | grátis |
+  | 👑 **Traje Real** | manto vermelho com arminho, faixa dourada, botas e manoplas douradas, cetro com gema | ao virar **Campeão do Reino** |
+  | 🤡 **Palhaço** | chapeuzinho listrado, gola de babado com bolinhas, camisa listrada com pompons, calça de retalhos com estrelas e sapatões | **Loja do Reino** (ouro) |
+
+- **Coroa do Rei:** quando está na cabeça, **o chapéu sai** (boné ou chapeuzinho) e a coroa (dourada, de pontas altas, com gemas vermelhas e verdes) senta no cabelo.
+- **Ele é o mesmo em todo lugar:** no Reino, no mapa, nas vilas, nas masmorras e nas dungeons (é o `mundo.jogador`). A batalha, o monstro invocado e o modo treino não usam o boneco.
+- **Jogo salvo:** fica em `estado.personagem` (`{ genero, skin, pele, cabelo }`), no celular e na nuvem junto com o resto. Um jogo salvo de antes (sem `personagem`) ou com algo errado volta para o padrão: **masculino, Explorador** (`normalizarPersonagem`).
+- **Peso no celular:** ~1.500 triângulos. As peças sem estampa levam a cor em cada vértice e usam **um material só**, e o `juntarPecas` junta tudo numa malha por pedaço que mexe (corpo, cabeça, 2 pernas, 2 braços): **~10 malhas** (o Palhaço ~23, por causa das estampas, que são texturas pequenas desenhadas uma vez). Só existe 1 boneco na tela.
+- **Código:** `js/personagem.js` (`criarPersonagem`, `SKINS`, `PELES`, `CABELOS`); no `js/mundo.js`, `vestirPersonagem` (troca a roupa) e `vestirCoroa` (os dois montam o boneco de novo no mesmo lugar, com `montarPersonagem`).
+
 ## Instalar no celular (app que se atualiza sozinho)
 
 O jogo é um **PWA** (aplicativo web instalável). Ele fica no site **https://laminasombria1-dotco.github.io/YonkouTestes/** e, depois de instalado, abre como um app normal.
@@ -311,7 +329,7 @@ O Reino fica **no meio do mapa** (mundo novo, `PLANO.md`): é o lugar seguro ond
 - **Vencer:** experiência cheia (sem o desconto de grupo), ouro (veja "Bolsa, ouro e loja") e cristais. Na 1ª vez: Gill e Cris dão 3 comuns + 1 Forte, Lana 3 comuns + 2 Fortes, Sheyla 3 Fortes e o Rei 3 Fortes + 2 Supremos. Nas revanches: 1 Forte (o Rei dá mais 1 Supremo).
 - **Perder:** você acorda na fonte do castelo, com todos curados. Os treinadores que você já venceu **continuam vencidos**.
 - **Dominar a arena:** vencendo o Rei Julius, você vira o **Campeão do Reino** e ganha:
-  - a **Coroa do Rei**: aparece na cabeça do seu personagem (na Bolsa, seção Campeão do Reino, dá para guardar ou vestir);
+  - a **Coroa do Rei**: aparece na cabeça do seu personagem **no lugar do chapéu** (na Bolsa, seção Campeão do Reino, dá para guardar ou vestir);
   - o título **Campeão do Reino** (na Bolsa e no resumo do jogo salvo, na tela de início);
   - o **ouro do Reino**: **100 de ouro a cada 10 minutos de jogo**, guardando no máximo **600** (1 hora). Para receber, **toque no saquinho 💰** da tela (veja "Vilas");
   - **1 Ovo Misterioso** (veja abaixo). A **2ª vitória** contra o Rei dá **2 ovos**.
@@ -1176,6 +1194,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `manifest.webmanifest`, `sw.js`, `icones/` | O app instalável: nome e ícone, o "ajudante" que guarda o jogo e busca atualizações |
 | `js/dados.js` | **Tabelas do jogo**: elementos, golpes, linhas evolutivas, níveis de evolução, onde cada monstro aparece. Para balancear, mexa aqui. |
 | `js/modelos.js` | Os modelos 3D (o Brasito da forma inicial vem do `.glb`, por `js/modelos3d.js`): um construtor por linha que acrescenta peças a cada evolução. No fim, `juntarPecas` une as peças paradas de mesma aparência numa só (de ~24 para ~11 peças por monstro), deixando caudas, asas, pernas e peças animadas separadas |
+| `js/personagem.js` | **O protagonista** (o jogador no mapa): masculino ou feminino, cor da pele e do cabelo, as roupas (`SKINS`), a Coroa do Rei na cabeça e o padrão dos jogos salvos antigos (`PERSONAGEM_PADRAO`, `normalizarPersonagem`). Veja "O protagonista" |
 | `js/modelos3d.js` | Modelos feitos no Blender (`.glb`): carrega, faz uma cópia com ossos para cada monstro, toca as animações (parado, arrancada → correndo e os 3 golpes, no tempo certo de cada golpe), faz o fogo pulsar e o piscar. Hoje só o Brasito (forma inicial) |
 | `modelos/` | Os arquivos `.glb` (hoje `brasito.glb`) e um README com os detalhes de cada um |
 | `js/plataforma.js` | A vitrine 3D do Monstruário e a animação de evolução |
