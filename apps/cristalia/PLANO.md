@@ -294,7 +294,7 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
             Medido (Médio, sem monstros): estrada 61 → 75, enseada 46 → 60, arco 38 → 46, farol 47 → 57, gruta 77 → 94,
             naufrágio 48 → 59, meio 43 → 48 desenhos.
       **Os 5 biomas estão prontos e já foram publicados na `main`.**
-    - [ ] **Passo 5 — Dungeons** (a especificação do Lâmina, com o adaptador).
+    - [x] **Passo 5 — Dungeons** (a especificação do Lâmina, com o adaptador).
           *Especificação do Lâmina:* lugares isolados como as masmorras, mas mais fáceis, com só 2 ou 3 grupos de monstros
           e o **Rei da Dungeon** (o monstro mais forte); **todos capturáveis**.
           *Decisões do Lâmina (depois da proposta com maquetes):* a dungeon **muda de lugar** no reset; as 2 horas contam
@@ -309,15 +309,11 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
             Farol Submerso de Solis, Cemitério dos Galeões de Coral, Santuário das Águas Bioluminescentes, Caldeira Verde da
             Ilha Alta e Labirinto do Manguezal Translúcido. Medido (cenário, sem monstros): 25 a 59 desenhos por quadro;
             a entrada no mapa ~8.
-      - [ ] **5.2 — Vulcânico** (as 6 do guia: Forja Primordial das Correntes, Bacia do Vitriol Esmeralda, Catedral de
-            Obsidiana Espelhada, Pináculos do Basalto Partido, Necrópole das Cinzas Silenciosas, Garganta dos Gêiseres).
-      - [ ] **5.3 — Deserto** (Pirâmide do Espelho Solar, Hipogeu dos Escribas Azuis, Templo da Ampulheta Seca, Avenida das
-            Esfinges Soterradas, Cisterna Secreta do Oásis, Doca das Barcas Solares). *Falta a arte do Hipogeu.*
-      - [ ] **5.4 — Floresta** (Catedral das Cortinas de Âmbar, Observatório dos Freixos Cantantes, Pântano das
-            Lanternas-do-Brejo, Torre Oca da Árvore-Mãe, Garganta das Pontes Vivas, Jardim dos Esporos Dourados).
-            *Faltam as artes de 4.*
-      - [ ] **5.5 — Gelo** (Coração da Geleira Fendida, Mina Abandonada do Passo Norte, Templo Rúnico da Névoa Branca, Termas
-            Profundas de Vapor e Gelo, Casco do Quebra-Gelo Aprisionado, Torre de Vigia da Cordilheira). *Faltam as artes.*
+      - [x] **5.2 a 5.5 — Vulcânico, Deserto, Floresta e Gelo** (as 24 do guia, pelas artes do Lâmina). *Feito:* um arquivo
+            por bioma (`vulcao.js`, `deserto.js`, `floresta.js`, `gelo.js`), com o molde `fazerPlano` e as peças novas no
+            `pecas.js` (colunas hexagonais, estalactites, bigornas, obeliscos, esfinges, ânforas, barcas, cogumelos, sinos...).
+            **Os 5 biomas prontos: 15 dungeons ativas, 30 variações.** Medido (cenário, sem monstros): 8 a 59 desenhos por quadro.
+            Testado em cada bioma: descobrir, grupos, portão, Rei, prêmio, sair, reset e o jogo salvo.
     - [ ] **Passo 6 — Níveis** (o Lâmina vai rever a regra mais para frente).
   - [ ] **8.4 — Regiões** com outros reinos (futuro).
 

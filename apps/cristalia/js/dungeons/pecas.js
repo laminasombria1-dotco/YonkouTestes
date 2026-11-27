@@ -9,7 +9,7 @@ import { GEO } from '../dungeon.js';
 import { texturaBrilho } from '../biomas/comum.js';
 export { palmeira, coral, estrela } from '../masmorras/templo-submerso.js';
 export { portaDeLuz, portaoSimples, braseiro, liquido, pontosNaSala, cristais } from '../masmorras/pecas.js';
-import { liquido } from '../masmorras/pecas.js';
+import { liquido, portaDeLuz, portaoSimples } from '../masmorras/pecas.js';
 
 // Espalha coisas em volta das salas (dMin..dMax metros PARA FORA da parte andável).
 // Diferente do nosMorros das masmorras, aceita lugares mais baixos (o mar em volta de um convés).
@@ -150,3 +150,144 @@ export function corrente(ms, mat, a, b, elos = 10, cai = 1.2) {
     ms.peca(GEO.toro, mat, x, y, z, 0.6, 0.6, 2.2, i % 2 ? Math.PI / 2 : 0, Math.atan2(b[0] - a[0], b[2] - a[2]), 0, false);
   }
 }
+
+// =============================================================
+// O MOLDE DE UMA DUNGEON (para as variações não repetirem o mesmo código)
+// fazerPlano({ salas, corredores, abismos, buracos, temas, chao, parede, liquido, fundo,
+//   mats, porta, portao, trono, decorar(ms, M), corChao? }) devolve o plano completo:
+//  - acampamentos: o centro de cada sala com "etapa" (0, 1, 2)
+//  - o portão selado: no corredor que entra na sala do Rei (fim: true)
+//  - o chão: chao[tema] (lista de cores) dentro, parede[tipo] (ou parede.todos) fora,
+//    "liquido" no fundo dos buracos e "fundo" embaixo das plataformas
+//  - mats: { nome: '#cor' (normal), '*#cor' (brilha), '~#cor' (transparente que brilha) }
+// =============================================================
+const sorteia = (rng, l) => l[Math.floor(rng() * l.length)];
+export function criarMats(ms, spec) {
+  const M = {};
+  for (const [k, v] of Object.entries(spec)) {
+    if (v.startsWith('*')) M[k] = ms.brilho(v.slice(1), 0.85);
+    else if (v.startsWith('~')) M[k] = transparente(ms, v.slice(1), 0.55, { emissive: v.slice(1), emissiveIntensity: 0.6 });
+    else M[k] = ms.mat(v);
+  }
+  return M;
+}
+export function fazerPlano(cfg) {
+  const S = cfg.salas, fim = S.findIndex((s) => s.fim);
+  const corPortao = cfg.portao || ['#8a8a8a', '#7dffd8'];
+  return {
+    paredeVisivel: cfg.paredeVisivel ?? 30,
+    forma: { salas: S, corredores: cfg.corredores, abismos: cfg.abismos || [], buracos: cfg.buracos || [] },
+    corSelo: corPortao[1],
+    portoes: [{ corredor: cfg.corredores.findIndex((c) => c.b === fim) }],
+    acampamentos: S.map((s, i) => [s, i]).filter(([s]) => s.etapa != null).map(([s]) => ({ x: s.x + (s.ax || 0), z: s.z + (s.az || 0), etapa: s.etapa })),
+    inicio: { x: 0, z: -8, ang: Math.PI },
+    saida: { x: 0, z: 7.6, r: 2.2 },
+    trono: cfg.trono,
+    portal: cfg.portal || { x: S[fim].x + (S[fim].rx ?? S[fim].r) * 0.55, z: S[fim].z + 2, ang: -0.4 }, // (dentro da sala do Rei, ao lado do trono)
+    temas: cfg.temas,
+    corChao(c, info) {
+      if (cfg.corChao && cfg.corChao(c, info)) return c;
+      const { sala, d, h, hChao, tipo, rng } = info, s = S[sala];
+      if (d <= 0.6) {
+        if (h < hChao - 0.6 && cfg.liquido) return c.set(cfg.liquido);
+        return c.set(sorteia(rng, cfg.chao[s.tema] || cfg.chao.todos));
+      }
+      if (tipo === 'plataforma' && cfg.fundo) return c.set(sorteia(rng, cfg.fundo));
+      if (h < hChao - 4 && cfg.fundo) return c.set(sorteia(rng, cfg.fundo));
+      return c.set(sorteia(rng, cfg.parede[s.tema] || cfg.parede[tipo] || cfg.parede.todos));
+    },
+    pecasPortao(ms, b, p) { portaoSimples(ms, b, p, ms.mat(corPortao[0]), ms.brilho(corPortao[1], 0.8), ms.mat(corPortao[0])); },
+    decorar(ms) {
+      const M = criarMats(ms, cfg.mats || {});
+      portaDeLuz(ms, (cfg.porta || corPortao)[0], (cfg.porta || corPortao)[1]);
+      cfg.decorar(ms, M, ms.rng);
+    },
+  };
+}
+// O tempo de uma sala (cor do céu, da luz, da névoa e as partículas). part: brilho, faisca, neve, nevasca, poeira, nenhuma
+export const tema = (ceu, hemi, luz, sol, perto, longe, part = 'brilho', corPart = '#ffffff', extra = {}) => ({ ceu, hemi, luz, sol, nevoa: [perto, longe], part, corPart, ...extra });
+
+// ---------- peças dos outros biomas ----------
+const HEX = new THREE.CylinderGeometry(0.5, 0.5, 1, 6);
+export const GEO_HEX = HEX;
+// Coluna hexagonal de basalto (do chão até "alt")
+export function hexColuna(ms, mat, x, z, alt, larg = 2, bate = true, y = null) {
+  ms.peca(HEX, mat, x, (y ?? 0) + alt / 2, z, larg, alt, larg, 0, ms.rng() * 3, 0, y == null);
+  if (bate) ms.obst(x, z, larg * 0.5);
+}
+// Estalactite (cone de ponta para baixo) pendurada em "topo" (altura do mundo)
+export function estalactite(ms, mat, x, z, topo, comp, larg = 0.7) { ms.peca(GEO.cone, mat, x, topo - comp / 2, z, larg, comp, larg, Math.PI, 0, 0, false); }
+// Estalagmite / ponta de gelo / cristal fino no chão
+export function ponta(ms, mat, x, z, alt, larg = 0.8, bate = false) { ms.peca(GEO.cone, mat, x, alt / 2, z, larg, alt, larg, (ms.rng() - 0.5) * 0.2, ms.rng() * 3, (ms.rng() - 0.5) * 0.2); if (bate) ms.obst(x, z, larg * 0.5); }
+// Bigorna (base, corpo e o chifre)
+export function bigorna(ms, mat, x, z, e = 1, ang = 0) {
+  ms.peca(GEO.caixa, mat, x, 0.45 * e, z, 1 * e, 0.9 * e, 0.8 * e, 0, ang, 0);
+  ms.peca(GEO.caixa, mat, x, 1.05 * e, z, 2 * e, 0.4 * e, 0.9 * e, 0, ang, 0);
+  ms.peca(GEO.cone, mat, x + Math.cos(ang) * 1.3 * e, 1.05 * e, z - Math.sin(ang) * 1.3 * e, 0.45 * e, 0.9 * e, 0.45 * e, 0, ang, Math.PI / 2);
+  ms.obst(x, z, 1 * e);
+}
+// Obelisco (pilar de 4 lados com a ponta)
+export function obelisco(ms, mat, x, z, alt, larg = 1.4, runa = null) {
+  ms.peca(GEO.caixa, mat, x, alt / 2, z, larg, alt, larg, 0, ms.rng() * 0.3, 0);
+  ms.peca(GEO.cone4, mat, x, alt + larg * 0.45, z, larg * 1.42, larg * 0.9, larg * 1.42, 0, Math.PI / 4, 0);
+  if (runa) ms.peca(GEO.caixa, runa, x, alt * 0.55, z, larg * 1.04, alt * 0.6, 0.2, 0, 0, 0);
+  ms.obst(x, z, larg * 0.7);
+}
+// Esfinge deitada (corpo, patas, peito e a cabeça com o lenço do faraó). ang = para onde olha
+export function esfinge(ms, mat, x, z, e = 1, ang = 0, enterrada = 0) {
+  const fx = Math.sin(ang), fz = Math.cos(ang), y = -enterrada;
+  ms.peca(GEO.caixa, mat, x, y + 0.9 * e, z, 2 * e, 1.6 * e, 4.4 * e, 0, ang, 0);
+  ms.peca(GEO.caixa, mat, x + fx * 3 * e, y + 0.35 * e, z + fz * 3 * e, 1.8 * e, 0.6 * e, 2 * e, 0, ang, 0);
+  ms.peca(GEO.caixa, mat, x + fx * 1.8 * e, y + 2 * e, z + fz * 1.8 * e, 1.6 * e, 1.6 * e, 1.3 * e, 0, ang, 0);
+  ms.peca(GEO.cone4, mat, x + fx * 1.7 * e, y + 2.6 * e, z + fz * 1.7 * e, 2.4 * e, 1.6 * e, 1.6 * e, 0, ang + Math.PI / 4, 0);
+  ms.obst(x + fx * e, z + fz * e, 2 * e);
+}
+// Ânfora de barro (corpo, pescoço e boca)
+export function anfora(ms, mat, x, z, e = 1) {
+  ms.peca(GEO.ico, mat, x, 0.7 * e, z, 1 * e, 1.3 * e, 1 * e);
+  ms.peca(GEO.cil, mat, x, 1.55 * e, z, 0.4 * e, 0.6 * e, 0.4 * e);
+  ms.peca(GEO.cil, mat, x, 1.9 * e, z, 0.6 * e, 0.15 * e, 0.6 * e);
+}
+// Barca cerimonial (casco, as pontas curvas e a cabine). ang = direção da proa
+export function barca(ms, M, x, y, z, comp, ang = 0) {
+  const s = Math.sin(ang), c = Math.cos(ang);
+  ms.peca(GEO.caixa, M.cedro, x, y + 0.8, z, comp * 0.28, 1.6, comp * 0.75, 0, ang, 0, false);
+  for (const k of [-1, 1]) {
+    ms.peca(GEO.cone, M.cedro, x + s * comp * 0.42 * k, y + 1.6, z + c * comp * 0.42 * k, 1.2, 3.2, 1.2, -k * 0.7, ang, 0, false);
+    ms.peca(GEO.ico, M.ouro, x + s * comp * 0.5 * k, y + 3.1, z + c * comp * 0.5 * k, 0.8, 0.8, 0.8, 0, 0, 0, false);
+  }
+  ms.peca(GEO.caixa, M.ouro, x, y + 1.65, z, comp * 0.3, 0.2, comp * 0.76, 0, ang, 0, false);
+  ms.peca(GEO.caixa, M.azul, x, y + 2.6, z, comp * 0.18, 1.8, comp * 0.22, 0, ang, 0, false);
+}
+// Cogumelo (pé e chapéu). chapeu pode brilhar
+export function cogumelo(ms, pe, chapeu, x, z, e = 1, y = null) {
+  const chao = y == null, b = y ?? 0;
+  ms.peca(GEO.cil, pe, x, b + 0.6 * e, z, 0.35 * e, 1.2 * e, 0.35 * e, 0, 0, 0, chao);
+  ms.peca(GEO.chapeu, chapeu, x, b + 1.15 * e, z, 0.9 * e, 0.6 * e, 0.9 * e, 0, 0, 0, chao);
+}
+// Árvore de tronco alto e copa (prateada, morta, nevada...)
+export function arvore(ms, tronco, copa, x, z, e = 1, bate = true) {
+  ms.peca(GEO.cil, tronco, x, 4 * e, z, 1.3 * e, 8 * e, 1.3 * e, (ms.rng() - 0.5) * 0.08, 0, (ms.rng() - 0.5) * 0.08);
+  if (copa) ms.peca(GEO.ico, copa, x, 9 * e, z, 5.5 * e, 3.6 * e, 5.5 * e, 0, ms.rng() * 3, 0);
+  if (bate) ms.obst(x, z, 0.9 * e);
+}
+// Ponte de tábuas (com corda dos lados) entre duas salas, seguindo a altura das duas
+export function ponteTabuas(ms, M, A, B, larg = 3.4, cai = 0.3, corda = true) {
+  const n = Math.ceil(Math.hypot(B.x - A.x, B.z - A.z) / 1.4), ang = Math.atan2(B.x - A.x, B.z - A.z);
+  for (let i = 0; i <= n; i++) {
+    const t = i / n, x = A.x + (B.x - A.x) * t, z = A.z + (B.z - A.z) * t, y = A.h + (B.h - A.h) * t - Math.sin(t * Math.PI) * cai;
+    ms.peca(GEO.caixa, i % 2 ? M.tabua : (M.tabua2 || M.tabua), x, y - 0.12, z, larg, 0.22, 1, 0, ang, 0, false);
+  }
+  if (corda) for (const l of [-1, 1]) { const ox = Math.cos(ang) * (larg / 2 + 0.2) * l, oz = -Math.sin(ang) * (larg / 2 + 0.2) * l; corrente(ms, M.corda, [A.x + ox, A.h + 1.1, A.z + oz], [B.x + ox, B.h + 1.1, B.z + oz], 14, 0.5); }
+}
+// Degraus (uma escada reta) de A até B, com a altura de cada ponta
+export function escada(ms, mat, ax, az, ah, bx, bz, bh, larg = 5, n = 12) {
+  const ang = Math.atan2(bx - ax, bz - az);
+  for (let i = 0; i < n; i++) { const t = (i + 0.5) / n; ms.peca(GEO.caixa, mat, ax + (bx - ax) * t, ah + (bh - ah) * t - 0.25, az + (bz - az) * t, larg, 0.5, Math.hypot(bx - ax, bz - az) / n + 0.1, 0, ang, 0, false); }
+}
+// Sino de bronze pendurado
+export function sino(ms, mat, x, y, z, e = 1) {
+  ms.peca(GEO.chapeu, mat, x, y, z, 1.2 * e, 1.8 * e, 1.2 * e, 0, 0, 0, false);
+  ms.peca(GEO.ico, mat, x, y - 0.3 * e, z, 0.3 * e, 0.3 * e, 0.3 * e, 0, 0, 0, false);
+}
+export const GEO_OCT = new THREE.OctahedronGeometry(0.6, 0); // (cristais)
