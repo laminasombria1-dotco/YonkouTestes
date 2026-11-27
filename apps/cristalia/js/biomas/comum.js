@@ -75,9 +75,9 @@ varying float vFade;`)
 // ---------- parede que abre um "furo" quando fica entre a câmera e o jogador ----------
 // Para peças grandes (muralhas, castelo, casas), onde o centro da peça não serve: a placa de vídeo
 // vê, para cada ponto da parede, se ele está perto da linha câmera → jogador. Se estiver, some
-// (pontinhos salteados, que parecem transparência e não pesam no celular). O chão nunca some
+// por completo (totalmente transparente, pedido do Lâmina). O chão nunca some
 // (só o que está acima dos pés do jogador) e nem o que está colado nele.
-export function materialFuro(m, raio = 2.4) {
+export function materialFuro(m, raio = 3.4) {
   m.onBeforeCompile = (sh) => {
     sh.uniforms.uCam = UNIF_DESBOTA.uCam; sh.uniforms.uJog = UNIF_DESBOTA.uJog;
     sh.vertexShader = sh.vertexShader
@@ -90,10 +90,8 @@ uniform vec3 uCam; uniform vec3 uJog; varying vec3 vMundo;`)
 { vec3 a = uCam, d = uJog + vec3(0.0, 1.0, 0.0) - uCam;
   float t = dot(vMundo - a, d) / max(dot(d, d), 0.0001);
   if (t > 0.0 && t < 0.93 && vMundo.y > uJog.y + 0.35) {
-    float r = ${raio.toFixed(2)} * (0.35 + 0.65 * t); // perto da câmera o furo é menor (senão tapa a tela de pontinhos)
-    float f = 1.0 - smoothstep(r * 0.55, r, length(vMundo - (a + d * t)));
-    float ruido = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
-    if (ruido < f * 0.82) discard;
+    float r = ${raio.toFixed(2)} * (0.4 + 0.6 * t); // perto da câmera o furo é um pouco menor
+    if (length(vMundo - (a + d * t)) < r) discard; // dentro do furo: totalmente transparente
   } }`);
   };
   m.customProgramCacheKey = () => 'furo' + raio + m.type + (m.side || 0);
