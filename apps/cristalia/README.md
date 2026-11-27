@@ -757,7 +757,7 @@ Tudo dá para ajustar lá: a semente, o tamanho do mundo, o tamanho dos chunks, 
 
 Raros com formas novas (fase 6 do `PLANO.md`): evoluem no **Nv.55** e no **Nv.70** sozinhos e fazem a **evolução rara no Nv.90** com o botão
 (missão no Nv.85: derrotar 60 monstros do Nv.40 para cima; custo: 5 Asas do Anjo, 5 Corações do Guardião e 6.000 de ouro).
-Atributos (passo 6): veja "Vida e dano". Os raros são ×1,1 em tudo, ficam mais fortes sozinhos nos Nv.12, 30 e 50 (como os normais) e cada forma deles dá +10% / +20% / +30%.
+Atributos (passo 6): veja "Vida e dano". Os raros são ×1,1 em tudo (e têm papel, como os normais), ficam mais fortes sozinhos nos Nv.12, 30 e 50 (como os normais) e cada forma deles dá +10% / +20% / +30%.
 
 | Raro | Forma inicial (Nv.1) | 1ª evolução (Nv.55) | 2ª evolução (Nv.70) | Evolução rara (Nv.90) |
 |---|---|---|---|---|
@@ -781,7 +781,7 @@ Todos os raros e lendários já têm formas novas: no Monstruário cada um tem a
 - **A cada nível** ganha um pouco em cada atributo: **+2 no Nv.2**, e o ganho sobe **+0,1 por nível** (Nv.12: +3, Nv.22: +4, Nv.50: +6,8). **Depois do Nv.50 o ganho vale a metade** (Nv.51: +3,45; Nv.100: +5,9). Soma: Nv.10 = +22, Nv.30 = +99, Nv.50 = +216, Nv.100 = +449 (`ganhoDoNivel` e `crescimento`).
 - **Forma:** as evoluções multiplicam tudo: ×1,22 (Nv.12), ×1,5 (Nv.30), ×1,85 (evolução rara). Raros e lendários sobem sozinhos nesses níveis e cada forma deles dá +10%/+20%/+30%.
 - **Raridade** (`RARIDADE`): tipo duplo ×1,05, raro ×1,1, lendário ×1,3.
-- **Papel** (`PAPEIS` e `PAPEIS_DOS_MONSTROS`): cada monstro pode ser de **Ataque** (+20% ataque), **Defesa** (+20% defesa) ou **Vida** (+35% vida e −10% defesa). Os três ficam empatados em força. **O Lâmina ainda vai dizer o papel de cada monstro**; quem não está na lista fica sem papel. Raros e lendários não têm papel. O Monstruário mostra o papel.
+- **Papel** (`PAPEIS` e `PAPEIS_DOS_MONSTROS`): cada monstro pode ser de **Ataque** (+20% ataque), **Defesa** (+20% defesa) ou **Vida** (+35% vida e −10% defesa). Os três ficam empatados em força. Escolhidos pelo Lâmina na planilha "Papéis dos Monstros" (também os raros e lendários): **Ataque** = Fogo, Água, Raio, Sol, Lua, Luz, Trevas, Brotobrasa, Vulcarapa, Espinhal e Ignárion (todas as formas); **Defesa** = Terra, Vaporito e Imanito; **Vida** = Planta, Aquaraia e Silvárion. Quem não está na lista fica sem papel. O Monstruário mostra o papel.
 - Exemplos (Vida / Ataque): Brasito Nv.1 40/10; Fornalobo Nv.30 208/163; Magmalobo Nv.50 473/417 e Nv.100 905/850; Infernárion Nv.100 1.530/1.436.
 - **Dano:** `DANO_GERAL` (0,25) × poder do golpe × Ataque ÷ Defesa × elemento × **a escala do nível do alvo** (`escalaDoNivel`: a vida-base do nível dele ÷ 40). Assim dois monstros do mesmo nível levam o mesmo número de golpes no Nv.1 e no Nv.100, e a diferença de nível pesa pelo Ataque ÷ Defesa. Medido (Investida de Fogo em Água, mesmo nível): 22 golpes no Nv.3, 24 no Nv.15, 31 no Nv.30, 29 no Nv.50 e 30 no Nv.80, quase igual a antes.
 - **A vantagem de elemento** continua fixa (×1,5 forte, ×0,6 fraco); não cresce com o nível.

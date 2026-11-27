@@ -1010,19 +1010,34 @@ export function crescimento(nivel) {
 
 // PAPÉIS: cada monstro (cada forma) pode ser de ataque, de defesa ou de vida.
 // Ataque: +20% de ataque. Defesa: +20% de defesa. Vida: +35% de vida e -10% de defesa.
-// Os 3 ficam empatados em força (aprovado pelo Lâmina). Raros e lendários não têm papel.
+// Os 3 ficam empatados em força (aprovado pelo Lâmina). Raros e lendários também têm (escolha do Lâmina).
 export const PAPEIS = {
   ataque: { nome: 'Ataque', hp: 1, atk: 1.2, def: 1 },
   defesa: { nome: 'Defesa', hp: 1, atk: 1, def: 1.2 },
   vida: { nome: 'Vida', hp: 1.35, atk: 1, def: 0.9 },
 };
-// O Lâmina vai dizer o papel de cada monstro. Ex.: brasito: 'ataque', pedrisco: 'defesa'.
+// O papel de cada monstro, escolhido pelo Lâmina na planilha "Papéis dos Monstros".
 // Quem não está aqui fica sem papel (sem bônus).
 export const PAPEIS_DOS_MONSTROS = {
+  brasito: 'ataque', brasalobo: 'ataque', fornalobo: 'ataque', magmalobo: 'ataque',
+  gotinho: 'ataque', marolo: 'ataque', marulhao: 'ataque', tsunamar: 'ataque',
+  faisquinho: 'ataque', choquilho: 'ataque', trovolt: 'ataque', tempestor: 'ataque',
+  solito: 'ataque', solario: 'ataque', solaurum: 'ataque', astrorei: 'ataque',
+  lunico: 'ataque', lunarelo: 'ataque', crescentio: 'ataque', plenilunio: 'ataque',
+  lumino: 'ataque', lumelo: 'ataque', prismal: 'ataque', aurealis: 'ataque',
+  breuzinho: 'ataque', sombrelo: 'ataque', umbrafel: 'ataque', noctifero: 'ataque',
+  brotobrasa: 'ataque', chamafolha: 'ataque', ardentroco: 'ataque', florinferno: 'ataque',
+  vulcarapa: 'ataque', basaltuga: 'ataque', crateruga: 'ataque', colossarapa: 'ataque',
+  espinhal: 'ataque', cactourico: 'ataque', espinhaco: 'ataque', mandacarao: 'ataque',
+  ignarion: 'ataque', pirarion: 'ataque', magmarion: 'ataque', infernarion: 'ataque',
+  pedrisco: 'defesa', cascalhao: 'defesa', rochedrao: 'defesa', montanhar: 'defesa',
+  vaporito: 'defesa', fumarolo: 'defesa', geiserao: 'defesa', caldeirax: 'defesa',
+  imanito: 'defesa', magnetito: 'defesa', ferrovolt: 'defesa', titanvolt: 'defesa',
+  musguinho: 'vida', moitao: 'vida', troncudo: 'vida', florestral: 'vida',
+  aquaraia: 'vida', ventaraia: 'vida', mantare: 'vida', leviaraia: 'vida',
+  silvarion: 'vida', bosquarion: 'vida', raizarion: 'vida', ancestrarion: 'vida',
 };
 export function papelDe(especie) {
-  const e = ESPECIES[especie];
-  if (!e || e.raro) return null;
   return PAPEIS[PAPEIS_DOS_MONSTROS[especie]] || null;
 }
 

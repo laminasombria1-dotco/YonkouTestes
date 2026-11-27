@@ -319,14 +319,16 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
           +2 em cada atributo, e esse ganho sobe **+0,1 por nível** (metade depois do Nv.50, como na fase 8.1);
           **papéis por monstro** (não por elemento): Ataque +20% ataque, Defesa +20% defesa, Vida +35% vida e −10% defesa
           (empatados); **o Lâmina vai dizer o papel de cada monstro depois** (`PAPEIS_DOS_MONSTROS`, hoje vazio);
-          duplos ×1,05, raros ×1,1 ("medianos", sem papel), lendários ×1,3 (base e crescimento); raros e lendários sobem
+          duplos ×1,05, raros ×1,1 ("medianos"), lendários ×1,3 (base e crescimento); raros e lendários sobem
           sozinhos nos Nv.12/30/50 e as formas deles dão +10/20/30%; a vantagem de elemento continua fixa;
           o dano cresce com a vida do nível do alvo (`escalaDoNivel`), `DANO_GERAL` 0,25 (mesmo número de golpes de antes).
           **Níveis novos:** grupos = média +1 (+2%) / líder média +2 (+5%) (acabou o "chão" do Nv.50 que dava Rei Nv.55
           para equipe Nv.36); Rei da Dungeon = média +2 (+10%) (+1 com 3 grupos); selvagens da borda ~1,1×; chefes das
           masmorras = média +12 (os pisos ficam); treinadores iguais; **+20% de experiência do Nv.10 ao Nv.45**.
           O jogo salvo converte a vida pela porcentagem (`versaoAtributos: 2`). Se o Lâmina sentir muita diferença, ele avisa.
-      - [ ] **Papéis de cada monstro** (o Lâmina manda a lista).
+      - [x] **Papéis de cada monstro** (pela planilha do Lâmina, também os raros e lendários): Ataque = Fogo, Água, Raio, Sol, Lua,
+            Luz, Trevas, Brotobrasa, Vulcarapa, Espinhal e Ignárion; Defesa = Terra, Vaporito e Imanito; Vida = Planta, Aquaraia e
+            Silvárion (`PAPEIS_DOS_MONSTROS` no `dados.js`).
   - [ ] **8.4 — Regiões** com outros reinos (futuro).
 
 ### Mundo novo: decisões do Lâmina
