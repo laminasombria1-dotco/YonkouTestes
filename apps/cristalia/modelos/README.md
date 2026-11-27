@@ -1,12 +1,33 @@
 # Modelos 3D
 
+## Como colocar um modelo novo do Blender (leia antes)
+
+Exporte em `.glb` com as texturas em PNG mesmo e passe pelo script **`ferramentas/otimizar_glb.py`** (Python 3 + Pillow):
+
+```
+python ferramentas/otimizar_glb.py ardentronco_mobile.glb modelos/ardentroco.glb 512
+```
+
+Ele deixa o modelo pronto para o celular de referência (Helio G95) **sem mexer na malha, nos ossos nem nas animações**:
+
+| O que faz | Por quê |
+|---|---|
+| Texturas viram **WebP 512** | na câmera do jogo o monstro ocupa uns 150 pixels; 1024 só pesava mais (4× mais memória de vídeo) |
+| Pesos dos ossos em **4 bytes** (antes 16) | o glTF aceita sem extensão; o arquivo fica menor |
+| Tira o **"dois lados"** do material | o celular desenha só a frente de cada triângulo (menos trabalho); os 3 modelos são fechados, não aparecem buracos |
+| **Zera o metal** (quando não há textura de metal) | o jogo não tem reflexo de ambiente: metal deixa o monstro **escuro**. Foi o que aconteceu com o Ardentroco (metal 0,76) |
+
+Use `--manter-metal` ou `--dois-lados` se um modelo precisar mesmo (ex.: uma armadura de metal, uma folha fina de um lado só). **No Blender:** deixe o **Metallic em 0** nos monstros que não são de metal.
+
+Pesos depois da otimização (novembro de 2026): Brasito 707 → **524 KB**, Gotinho 355 → **246 KB**, Ardentroco 1.431 → **765 KB** (no total, 2,4 MB → **1,5 MB**; memória de vídeo das texturas de ~43 MB para ~11 MB).
+
 ## brasito.glb
 
-Brasito (raposinha de fogo) feito no Blender. Um arquivo só, 0,7 MB.
+Brasito (raposinha de fogo) feito no Blender. Um arquivo só, **0,52 MB**.
 
 - **Malha:** 1 malha com pele (skin), 3.340 faces, 20 ossos (`RaposaFogo_Rig`).
 - **Tamanho:** 0,5 m de altura, pés em y = 0. Olha para **+Z** (o padrão do `Object3D.lookAt` do Three.js).
-- **Material:** PBR com cor, normal, ORM (oclusão, rugosidade e metal) e `emissiveMap` só nas partes de fogo (ponta do rabo e rachaduras das patas). Texturas 1024 em WebP (`EXT_texture_webp`).
+- **Material:** PBR com cor, normal, ORM (oclusão, rugosidade e metal) e `emissiveMap` só nas partes de fogo (ponta do rabo e rachaduras das patas). Texturas 512 em WebP (`EXT_texture_webp`; eram 1024).
 - **Fogo pulsando:** o brilho do Blender era animado; aqui é preciso mexer no `material.emissiveIntensity` no código (ex.: `0.7 + 0.2*sin(t*8.4) + 0.1*sin(t*31)`).
 
 ### Animações (24 quadros por segundo)
@@ -49,12 +70,12 @@ Carregar com `GLTFLoader` (`three/addons/loaders/GLTFLoader.js`) e tocar com `TH
 
 ## gotinho.glb
 
-Gotinho (gota de água) feito no Blender pelo Lâmina (`gotinho_mobile.glb`). Um arquivo só, **0,36 MB**.
+Gotinho (gota de água) feito no Blender pelo Lâmina (`gotinho_mobile.glb`). Um arquivo só, **0,25 MB**.
 
 - **Malha:** 1 malha com pele, 2.036 triângulos, 13 ossos (`gotinho_rig`: root, hips, spine, head, tip, braços, mãos, pernas e pés).
 - **Tamanho:** 0,9 m de altura no arquivo, pés em y = 0, olha para **+Z**. O jogo aumenta até a altura do Gotinho de formas simples.
 - **Material:** cor e normal (sem brilho próprio), rugosidade 0,87, sem metal.
-- **Texturas:** vieram em PNG 1024 (1,8 MB); viraram **WebP** 1024 (`EXT_texture_webp`, 75 KB + 93 KB) para pesar menos no celular. A malha, os ossos e as animações ficaram iguais ao arquivo do Lâmina. Para refazer com um arquivo novo do Blender: exporte em PNG mesmo e troque as texturas por WebP com um script (Python + Pillow) ou com o `gltf-transform webp`.
+- **Texturas:** vieram em PNG 1024 (1,8 MB); viraram **WebP** 512 (`EXT_texture_webp`) para pesar menos no celular. A malha, os ossos e as animações ficaram iguais ao arquivo do Lâmina. Para um arquivo novo do Blender, use o `ferramentas/otimizar_glb.py` (veja no começo).
 
 ### Animações
 
@@ -75,10 +96,11 @@ Gotinho (gota de água) feito no Blender pelo Lâmina (`gotinho_mobile.glb`). Um
 
 ## ardentroco.glb
 
-Ardentroco (3ª forma da linha do Brotobrasa) feito no Blender pelo Lâmina (`ardentronco_mobile.glb`). Um arquivo só, **1,47 MB**.
+Ardentroco (3ª forma da linha do Brotobrasa) feito no Blender pelo Lâmina (`ardentronco_mobile.glb`). Um arquivo só, **0,77 MB** (o original tinha 1,47 MB).
 
 - **Malha:** 5.004 triângulos, 23 ossos (com as duas frutas da cabeça, `fruta.L` e `fruta.R`).
-- **Texturas:** viraram **WebP** (`EXT_texture_webp`); a foto lado a lado (original × WebP) saiu igual. Malha, ossos e animações ficaram como no arquivo do Lâmina.
+- **Texturas:** viraram **WebP 512** (`EXT_texture_webp`); a foto lado a lado saiu igual. Malha, ossos e animações ficaram como no arquivo do Lâmina.
+- **Material:** o arquivo veio com **metal 0,76**, que deixava o Ardentroco escuro no jogo (sem reflexo de ambiente, o metal quase não pega a luz); agora é **0**, e ele ficou cerca de 50% mais claro.
 - As animações já escondem a fruta e fazem ela **crescer de novo**: no `GolpePerto` ele leva a `fruta.L` à boca; no `GolpeDisparo` arranca e joga a `fruta.R`.
 
 ### Animações

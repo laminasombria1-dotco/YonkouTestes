@@ -1199,8 +1199,9 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/modelos.js` | Os modelos 3D (o Brasito da forma inicial vem do `.glb`, por `js/modelos3d.js`): um construtor por linha que acrescenta peças a cada evolução. No fim, `juntarPecas` une as peças paradas de mesma aparência numa só (de ~24 para ~11 peças por monstro), deixando caudas, asas, pernas e peças animadas separadas |
 | `js/personagem.js` | **O protagonista** (o jogador no mapa): masculino ou feminino, cor da pele e do cabelo, as roupas (`SKINS`), a Coroa do Rei na cabeça e o padrão dos jogos salvos antigos (`PERSONAGEM_PADRAO`, `normalizarPersonagem`). Veja "O protagonista" |
 | `js/criacao.js` | A tela de **criar o personagem** (Novo jogo: personagem → roupa → parceiro) e o **Guarda-roupa**: o painel e a cena 3D com os bonecos nos pedestais |
-| `js/modelos3d.js` | Modelos feitos no Blender (`.glb`): carrega, faz uma cópia com ossos para cada monstro, toca as animações (parado, arrancada → correndo e os 3 golpes, no tempo certo de cada golpe), faz o fogo pulsar e o piscar, e as animações de levar dano e desmaiar (`tocarReacao`). Hoje o Brasito e o Gotinho (formas iniciais) |
-| `modelos/` | Os arquivos `.glb` (hoje `brasito.glb`) e um README com os detalhes de cada um |
+| `js/modelos3d.js` | Modelos feitos no Blender (`.glb`): carrega, faz uma cópia com ossos para cada monstro, toca as animações (parado, arrancada → correndo e os 3 golpes, no tempo certo de cada golpe), faz o fogo pulsar e o piscar, e as animações de levar dano e desmaiar (`tocarReacao`). Hoje o Brasito e o Gotinho (formas iniciais) e o Ardentroco |
+| `modelos/` | Os arquivos `.glb` (`brasito.glb`, `gotinho.glb` e `ardentroco.glb`) e um README com os detalhes de cada um |
+| `ferramentas/otimizar_glb.py` | Deixa um `.glb` novo do Blender leve para o celular (texturas WebP 512, pesos menores, um lado só, metal 0). Não é carregado pelo jogo. Veja `modelos/README.md` |
 | `js/plataforma.js` | A vitrine 3D do Monstruário e a animação de evolução |
 | `js/mundo.js` | Mapa aberto: regiões, dia e noite, monstros selvagens e grupos (em volta do jogador), cristais, fonte do castelo, casa, Estrada Real segura, colisão e câmera |
 | `js/jardim.js` | O jardim (sementes, plantar, colher, as plantas em tempo real e os canteiros em 3D) e o afeto (alimentar, Coração do Guardião, satisfeito) |
