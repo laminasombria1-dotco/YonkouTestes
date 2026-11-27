@@ -129,7 +129,7 @@ export class Nuvem {
 }
 
 // Confere a senha do GM sem guardar a senha no código (só a "impressão digital" dela)
-const GM_DIGITAL = '888b19a43b151683c87895f6211d9f8640f97bdc8ef32f03dbe057c8f5e56d32';
+const GM_DIGITAL = '0591b59c1bdd9acd2847a202ddd02c3f14f9b5a049a5707c3279c1e967745ed4';
 export async function senhaDoGM(senha) {
   if (!crypto?.subtle) return false;
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(senha));
