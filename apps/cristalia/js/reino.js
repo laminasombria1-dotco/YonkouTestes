@@ -997,11 +997,25 @@ export class Reino {
   muralha() {
     const RM = RAIO_MURALHA, g = this.raiz, ABRE = 4.6 / RM; // meia abertura de cada portão (radianos)
     const noPortao = (a, folga = 0) => PORTOES.some((p) => Math.abs(Math.atan2(Math.sin(a - p.ang), Math.cos(a - p.ang))) < ABRE + folga);
-    const N = 76;
+    const N = 76, angulos = [];
     for (let i = 0; i < N; i++) {
       const a = (i / N) * Math.PI * 2; if (noPortao(a, 0.02)) continue;
+      angulos.push(a);
       peca(g, caixa(8.4, 5, 1.5), PEDRA2, [Math.cos(a) * RM, 2.5, Math.sin(a) * RM], [0, -a + Math.PI / 2, 0]);
       if (i % 6 === 3 && !noPortao(a, 0.08)) { peca(g, cil(2, 2, 8, 8), PEDRA, [Math.cos(a) * RM, 4, Math.sin(a) * RM]); peca(g, cone(2.6, 4, 8), AZUL, [Math.cos(a) * RM, 10, Math.sin(a) * RM]); }
+    }
+    // emenda: um pedaço de muro do último trecho até a torre do portão (sem buraco dos lados)
+    const dif = (x, y) => Math.atan2(Math.sin(x - y), Math.cos(x - y));
+    const MEIO = 4.2 / RM; // meio trecho de muro (radianos)
+    for (const p of PORTOES) for (const lado of [-1, 1]) {
+      const aTorre = p.ang + lado * 4.5 / RM; // o meio da torre
+      let aMuro = null;
+      for (const a of angulos) { const d = dif(a, p.ang) * lado; if (d > 0 && (aMuro == null || d < dif(aMuro, p.ang) * lado)) aMuro = a; }
+      if (aMuro == null) continue;
+      const ini = aTorre, fim = aMuro - lado * MEIO; // da torre até a ponta do trecho
+      if (dif(fim, ini) * lado <= 0) continue;
+      const meio = ini + dif(fim, ini) / 2, comp = Math.abs(dif(fim, ini)) * RM + 1.2;
+      peca(g, caixa(comp, 5, 1.5), PEDRA2, [Math.cos(meio) * RM, 2.5, Math.sin(meio) * RM], [0, -meio + Math.PI / 2, 0]);
     }
     // cada portão: 2 torres com bandeira azul
     for (const p of PORTOES) {
