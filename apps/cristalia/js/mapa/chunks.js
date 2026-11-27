@@ -484,9 +484,10 @@ export class Chunks {
     for (const [m, lista] of grupos) {
       let total = 0;
       for (const r of lista) total += semIndice(GEO[r.t]).attributes.position.count;
-      const pos = new Float32Array(total * 3), cor = new Float32Array(total * 3), cen = m === 'base_d' ? new Float32Array(total * 3) : null;
+      const pos = new Float32Array(total * 3), cor = new Float32Array(total * 3), cen = m === 'base_d' ? new Float32Array(total * 3) : null, furo = new Float32Array(total);
       let o = 0;
       for (const r of lista) {
+        const o0 = o; let y0 = Infinity, y1 = -Infinity;
         e.set(r.rx, r.ry, r.rz, r.o ? 'YXZ' : 'XYZ');
         m4.compose(v.set(r.x, r.y, r.z), q.setFromEuler(e), s.set(r.sx, r.sy, r.sz));
         c3.set(r.cor || '#ffffff');
@@ -496,12 +497,17 @@ export class Chunks {
           pos[o * 3] = p.x; pos[o * 3 + 1] = p.y; pos[o * 3 + 2] = p.z;
           cor[o * 3] = c3.r; cor[o * 3 + 1] = c3.g; cor[o * 3 + 2] = c3.b;
           if (cen) { cen[o * 3] = r.cx; cen[o * 3 + 2] = r.cz; } // o pé da árvore (para desbotar)
+          if (p.y < y0) y0 = p.y; if (p.y > y1) y1 = p.y;
         }
+        // árvores grandes e peças altas: podem ficar transparentes (a copa conta do chão até o topo)
+        const chao = alturaEm(r.x, r.z);
+        furo.fill(y1 - Math.min(y0, chao) >= 4 && y1 - y0 >= 1.2 ? 1 : 0, o0, o); // (4 m: só árvores grandes e peças altas)
       }
       const g = new THREE.BufferGeometry();
       g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
       g.setAttribute('color', new THREE.BufferAttribute(cor, 3));
       if (cen) g.setAttribute('centro', new THREE.BufferAttribute(cen, 3));
+      g.setAttribute('furo', new THREE.BufferAttribute(furo, 1));
       g.computeVertexNormals();
       g.computeBoundingSphere();
       this.adicionar(ch, new THREE.Mesh(g, MAT_J[m]));

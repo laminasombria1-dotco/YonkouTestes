@@ -72,18 +72,23 @@ varying float vFade;`)
   m.userData.fixo = true;
   return m;
 }
-// ---------- parede que abre um "furo" quando fica entre a câmera e o jogador ----------
-// Para peças grandes (muralhas, castelo, casas), onde o centro da peça não serve: a placa de vídeo
-// vê, para cada ponto da parede, se ele está perto da linha câmera → jogador. Se estiver, fica
-// quase transparente (25% visível, pedido do Lâmina): dá para ver o boneco através. O chão nunca muda
-// (só o que está acima dos pés do jogador) e nem o que está colado nele.
-export function materialFuro(m, raio = 3.4) {
+// ---------- o que tampa o jogador fica quase transparente ----------
+// Só as coisas ALTAS (casas, paredes, muralhas, castelo, arena, árvores grandes; pedido do Lâmina).
+// A placa de vídeo vê, para cada ponto, se ele está perto da linha câmera → jogador; se estiver, a peça
+// fica 25% visível e dá para ver o boneco através. O chão e as coisas baixas nunca mudam.
+// Quem pode ficar transparente:
+//  - todo: true  → a malha inteira (uma casa, uma parede de masmorra)
+//  - senão       → cada peça diz no atributo "furo" (1 = pode, 0 = não): as malhas juntadas (Reino, chunks)
+export const ALTURA_FURO = 3; // peças com pelo menos essa altura (m) podem ficar transparentes
+export function materialFuro(m, { raio = 3.4, todo = false } = {}) {
   if (m.transparent || m.userData.semFuro) return m; // o que já é transparente (água, brilhos) fica como está
   m.onBeforeCompile = (sh) => {
     sh.uniforms.uCam = UNIF_DESBOTA.uCam; sh.uniforms.uJog = UNIF_DESBOTA.uJog;
     sh.vertexShader = sh.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vMundo;')
+      .replace('#include <common>', `#include <common>
+varying vec3 vMundo; varying float vFuro;${todo ? '' : '\nattribute float furo;'}`)
       .replace('#include <begin_vertex>', `#include <begin_vertex>
+vFuro = ${todo ? '1.0' : 'furo'};
 #ifdef USE_INSTANCING
 vMundo = (modelMatrix * instanceMatrix * vec4(transformed, 1.0)).xyz;
 #else
@@ -91,9 +96,9 @@ vMundo = (modelMatrix * vec4(transformed, 1.0)).xyz;
 #endif`);
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', `#include <common>
-uniform vec3 uCam; uniform vec3 uJog; varying vec3 vMundo; float vTransp = 0.0;`)
+uniform vec3 uCam; uniform vec3 uJog; varying vec3 vMundo; varying float vFuro; float vTransp = 0.0;`)
       .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
-{ vec3 a = uCam, d = uJog + vec3(0.0, 1.0, 0.0) - uCam;
+if (vFuro > 0.5) { vec3 a = uCam, d = uJog + vec3(0.0, 1.0, 0.0) - uCam;
   float t = dot(vMundo - a, d) / max(dot(d, d), 0.0001);
   if (t > 0.0 && t < 0.93 && vMundo.y > uJog.y + 0.35) {
     float r = ${raio.toFixed(2)} * (0.6 + 0.4 * t); // perto da câmera a área é um pouco menor
@@ -101,10 +106,28 @@ uniform vec3 uCam; uniform vec3 uJog; varying vec3 vMundo; float vTransp = 0.0;`
   } }`)
       .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.a *= 1.0 - 0.75 * vTransp; // fica 25% visível: dá para ver o boneco através');
   };
-  m.transparent = true; // a parede na frente fica meio transparente (como os coqueiros)
-  m.customProgramCacheKey = () => 'furo' + raio + m.type + (m.side || 0);
+  m.transparent = true;
+  m.customProgramCacheKey = () => 'furo' + raio + (todo ? 't' : 'a') + m.type + (m.side || 0);
   return m;
 }
+// Cópia "todo" de um material (guardada: cada material vira uma cópia só)
+const COPIAS_FURO = new WeakMap();
+export function furoTodo(mat) {
+  if (!mat || Array.isArray(mat) || mat.transparent || mat.userData.semFuro) return mat;
+  if (!COPIAS_FURO.has(mat)) { const c = materialFuro(mat.clone(), { todo: true }); c.userData = { ...mat.userData }; COPIAS_FURO.set(mat, c); }
+  return COPIAS_FURO.get(mat);
+}
+// As malhas altas de um grupo (masmorras, dungeons) passam a ficar transparentes quando tampam o jogador
+const _caixa = new THREE.Box3();
+export function furoNosAltos(grupo) {
+  grupo.updateMatrixWorld(true);
+  grupo.traverse((o) => {
+    if (!o.isMesh || o.isInstancedMesh || o.userData.semFuro) return;
+    if (_caixa.setFromObject(o).max.y - _caixa.min.y >= ALTURA_FURO) o.material = furoTodo(o.material);
+  });
+}
+// O atributo "furo" de uma peça juntada: 1 se ela é alta (do chão até o topo)
+export function ehAlta(min, max, chao) { return max - Math.min(min, chao) >= ALTURA_FURO && max - min >= 1.2 ? 1 : 0; }
 export function atualizarDesbota(camera, pos) { UNIF_DESBOTA.uCam.value.copy(camera.position); UNIF_DESBOTA.uJog.value.set(pos.x, pos.y, pos.z); }
 export const MAT_FORNO = {
   n: lambert({}),
@@ -121,7 +144,7 @@ export const MAT_FORNO = {
   g: lambert({ color: '#1c191d', emissive: '#3a1a10', emissiveIntensity: 0.2 }),                          // obsidiana
 };
 MAT_FORNO.p = materialDesbota(MAT_FORNO.n); // p = peça que desbota na frente da câmera (coqueiros)
-// as outras peças dos biomas ficam meio transparentes quando tampam o jogador
+// as peças altas dos biomas ficam meio transparentes quando tampam o jogador (atributo furo, no Forno)
 for (const [k, m] of Object.entries(MAT_FORNO)) if (k !== 'p') materialFuro(m);
 for (const m of Object.values(MAT_FORNO)) m.userData.fixo = true;
 
@@ -142,9 +165,10 @@ export class Forno {
     for (const [tipo, lista] of Object.entries(this.l)) {
       let total = 0;
       for (const it of lista) total += semIndice(UNI[it[0]]).attributes.position.count;
-      const pos = new Float32Array(total * 3), cor = new Float32Array(total * 3), cen = tipo === 'p' ? new Float32Array(total * 3) : null;
+      const pos = new Float32Array(total * 3), cor = new Float32Array(total * 3), cen = tipo === 'p' ? new Float32Array(total * 3) : null, furo = new Float32Array(total);
       let o = 0;
       for (const [g, x, y, z, sx, sy, sz, rx, ry, rz, hex, ce] of lista) {
+        const o0 = o; let y0 = Infinity, y1 = -Infinity;
         m4.compose(v.set(x, y, z), q.setFromEuler(e.set(rx, ry, rz, 'YXZ')), s.set(sx, sy, sz));
         const a = semIndice(UNI[g]).attributes.position;
         c.set(hex);
@@ -153,12 +177,15 @@ export class Forno {
           pos[o * 3] = p.x; pos[o * 3 + 1] = p.y; pos[o * 3 + 2] = p.z;
           cor[o * 3] = c.r; cor[o * 3 + 1] = c.g; cor[o * 3 + 2] = c.b;
           if (cen) { cen[o * 3] = ce ? ce[0] : 1e5; cen[o * 3 + 2] = ce ? ce[1] : 1e5; }
+          if (p.y < y0) y0 = p.y; if (p.y > y1) y1 = p.y;
         }
+        furo.fill(ehAlta(y0, y1, y0), o0, o); // peça alta: pode ficar transparente
       }
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
       geo.setAttribute('color', new THREE.BufferAttribute(cor, 3));
       if (cen) geo.setAttribute('centro', new THREE.BufferAttribute(cen, 3));
+      geo.setAttribute('furo', new THREE.BufferAttribute(furo, 1));
       geo.computeVertexNormals();
       geo.computeBoundingSphere();
       let mat = MAT_FORNO[tipo];

@@ -19,7 +19,7 @@ As **peças comuns** de cada bioma (árvores, pedras, plantas) saem nos chunks (
 - Peças comuns: os objetos de cada chunk são juntados numa malha só por material (etapa 0), então uma forma nova não soma desenhos; o que soma é um **material** novo. As peças do Forno entram nos chunks com `pecaFloresta` (o 13º valor da peça marca o detalhe que some de longe).
 - Peças únicas: junte numa malha só por área (o `Forno` do `gelo.js`: cor nos vértices, `n` = normal, `b` = brilho) e esconda a área quando estiver longe (na névoa).
 - Peça que tampa a câmera: tipo `p` do Forno (`materialDesbota`): cada peça desbota sozinha pelo atributo `centro`, mesmo juntada com as outras.
-- Parede grande que tampa a câmera (o jogo todo: Reino, vilas, chunks, peças dos biomas, masmorras e dungeons): `materialFuro` deixa quase transparente (25%) o que fica em volta da linha câmera → jogador, ponto por ponto (serve para muralhas compridas, onde o centro da peça não ajuda).
+- Parede ou peça alta que tampa a câmera: `materialFuro` deixa quase transparente (25%) só o que é alto (atributo `furo` por peça no `Forno` e nos chunks; `furoTodo` para malhas inteiras). O chão e as coisas baixas não mudam.
 - Luz: **brilho falso** (pontos com a textura redonda, `AdditiveBlending`), nunca luz de verdade.
 - Partículas: poucas centenas de pontos num desenho só; desligadas na qualidade Fraco.
 - **Nunca** ponha marcos novos na lista `POIS` do `gerador.js`: os lugares das vilas e das masmorras são sorteados depois dela e mudariam de lugar.

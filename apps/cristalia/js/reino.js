@@ -125,13 +125,14 @@ function material(tipo) {
       : tipo === 'claro' // paredes brancas do castelo: um pouco de luz própria
         ? new THREE.MeshLambertMaterial({ vertexColors: true, emissive: '#77746c' })
         : new THREE.MeshLambertMaterial({ vertexColors: true, side: tipo === 'duplo' ? THREE.DoubleSide : THREE.FrontSide });
-    materialFuro(MATS[tipo]); // paredes, telhados e árvores abrem um furo quando tampam o jogador
+    materialFuro(MATS[tipo]); // o que é alto (atributo furo) fica meio transparente quando tampa o jogador
     MATS[tipo].userData.fixo = true; // são do Reino inteiro: o fim da batalha não pode apagar
   }
   return MATS[tipo];
 }
 export function assar(rascunho, cena) {
   rascunho.updateMatrixWorld(true);
+  const chao = rascunho.getWorldPosition(new THREE.Vector3()).y; // o chão do Reino (ou da vila)
   const baldes = { normal: [], duplo: [], brilho: [], claro: [] };
   rascunho.traverse((o) => { if (o.isMesh) baldes[o.userData.tipo].push(o); });
   const c = new THREE.Color(), malhas = [];
@@ -141,14 +142,18 @@ export function assar(rascunho, cena) {
     const partes = lista.map((m) => {
       const g = (m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone()).applyMatrix4(m.matrixWorld);
       total += g.attributes.position.count;
-      return [g, m.userData.cor];
+      g.computeBoundingBox();
+      // pode ficar transparente quando tampa o jogador? só o que é alto (casas, muralha, castelo, arena, árvores)
+      const bb = g.boundingBox, alta = bb.max.y - chao >= 2.2 && bb.max.y - bb.min.y >= 0.8 ? 1 : 0;
+      return [g, m.userData.cor, alta];
     });
-    const pos = new Float32Array(total * 3), cores = new Float32Array(total * 3);
+    const pos = new Float32Array(total * 3), cores = new Float32Array(total * 3), furo = new Float32Array(total);
     let o = 0;
-    for (const [g, cor] of partes) {
+    for (const [g, cor, alta] of partes) {
       c.set(cor);
       const a = g.attributes.position.array;
       pos.set(a, o * 3);
+      furo.fill(alta, o, o + a.length / 3);
       for (let k = 0; k < a.length / 3; k++) { cores[(o + k) * 3] = c.r; cores[(o + k) * 3 + 1] = c.g; cores[(o + k) * 3 + 2] = c.b; }
       o += a.length / 3;
       g.dispose();
@@ -156,6 +161,7 @@ export function assar(rascunho, cena) {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     g.setAttribute('color', new THREE.BufferAttribute(cores, 3));
+    g.setAttribute('furo', new THREE.BufferAttribute(furo, 1));
     g.computeVertexNormals(); // sem índice: cada triângulo fica com a sua cor de luz (low poly)
     g.computeBoundingSphere();
     const malha = new THREE.Mesh(g, material(tipo));

@@ -1825,7 +1825,7 @@ export function criarCasa(nivel = 1) {
   g.userData = { janelas, fumacas, bandeira, nivel, yChamine };
   juntarPecas(g, new Set([...janelas, ...fumacas, bandeira]));
   // quando a casa fica entre a câmera e o jogador, a parte da frente fica meio transparente
-  g.traverse((o) => { if (o.isMesh && !o.material.transparent) o.material = materialFuro(o.material.clone()); });
+  g.traverse((o) => { if (o.isMesh && !o.material.transparent) o.material = materialFuro(o.material.clone(), { todo: true }); });
   return g;
 }
 

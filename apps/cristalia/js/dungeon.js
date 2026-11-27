@@ -20,7 +20,7 @@
 // semente do mapa e a origem fica numa linha do centro até a borda.
 // =============================================================
 import * as THREE from 'three';
-import { materialFuro } from './biomas/comum.js';
+import { furoTodo, ALTURA_FURO } from './biomas/comum.js';
 import { criarModelo, criarCoroa, animarModelo, criarAuraDupla } from './modelos.js';
 import { ESPECIES, ELEMENTOS, DUNGEONS, MASMORRA, niveisDaEtapa, nivelDoChefe, criarMonstro, statsDe, formaPorNivel, especieDaEscolha, dadosMasmorra, sortearChefe } from './dados.js';
 import { SAIDAS, RAIO_MUNDO, ANG_REINO, RAIO_REINO, alturaBase } from './mapa/gerador.js';
@@ -223,8 +223,7 @@ export function prenderDungeons(p, raio) {
 export function semCasaDungeons(x, z) { return TRACADOS.find((t) => t.semCasa(x, z)) || null; }
 
 // ---------- materiais e peças ----------
-// (o que fica entre a câmera e o jogador fica meio transparente: materialFuro)
-export const lambert = (cor, extra = {}) => materialFuro(new THREE.MeshLambertMaterial({ color: cor, flatShading: true, ...extra }));
+export const lambert = (cor, extra = {}) => new THREE.MeshLambertMaterial({ color: cor, flatShading: true, ...extra });
 export const GEO = {
   caixa: new THREE.BoxGeometry(1, 1, 1),
   cil: new THREE.CylinderGeometry(0.5, 0.5, 1, 7),
@@ -255,7 +254,10 @@ export class Lote {
   montar(cena) {
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), s = new THREE.Vector3();
     for (const { geo, mat, lista } of this.itens.values()) {
-      const im = new THREE.InstancedMesh(geo, mat, lista.length);
+      // peça alta (paredes, colunas, árvores grandes): fica meio transparente quando tampa o jogador
+      if (!geo.boundingBox) geo.computeBoundingBox();
+      const alta = (geo.boundingBox.max.y - geo.boundingBox.min.y) * Math.max(...lista.map((l) => l[4])) >= ALTURA_FURO;
+      const im = new THREE.InstancedMesh(geo, alta ? furoTodo(mat) : mat, lista.length);
       lista.forEach(([x, y, z, sx, sy, sz, rx, ry, rz], i) => {
         q.setFromEuler(e.set(rx, ry, rz));
         im.setMatrixAt(i, m4.compose(v.set(x, y, z), q, s.set(sx, sy, sz)));

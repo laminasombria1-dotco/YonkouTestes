@@ -15,7 +15,7 @@
 import * as THREE from 'three';
 import { criarModelo, criarCoroa, animarModelo, criarAuraDupla, descartar } from '../modelos.js';
 import { Lote, Bloco, GEO, aleatorio, sortear } from '../dungeon.js';
-import { materialFuro } from '../biomas/comum.js';
+import { furoNosAltos } from '../biomas/comum.js';
 import { alturaEm, alturaVertice, ESPACO, esquecerAlturas } from '../mapa/altura.js';
 import { LUGARES } from '../mapa/gerador.js';
 import {
@@ -78,7 +78,7 @@ export class MasmorraNova {
   // (todas as coordenadas são LOCAIS: em volta da origem da masmorra)
   mat(cor, extra = null) {
     const k = cor + (extra ? JSON.stringify(extra) : '');
-    if (!this.mats.has(k)) this.mats.set(k, materialFuro(new THREE.MeshLambertMaterial({ color: cor, flatShading: true, ...(extra || {}) })));
+    if (!this.mats.has(k)) this.mats.set(k, new THREE.MeshLambertMaterial({ color: cor, flatShading: true, ...(extra || {}) }));
     return this.mats.get(k);
   }
   brilho(cor, forca = 0.6) { return this.mat(cor, { emissive: cor, emissiveIntensity: forca }); }
@@ -123,11 +123,13 @@ export class MasmorraNova {
     this.m.cena.add(this.grupo);
     this.lote = new Lote(this.plano.tamLote || TAM_LOTE); // (as dungeons são pequenas: um lote só, menos desenhos)
     this.criarChao();
+    this.grupo.traverse((o) => { o.userData.semFuro = true; }); // o chão nunca fica transparente
     this.criarPortoes();
     this.criarAcampamentos();
     this.plano.decorar(this);
     this.criarSaidas();
     this.lote.montar(this.grupo);
+    furoNosAltos(this.grupo); // paredes e peças altas ficam meio transparentes quando tampam o jogador
     this.criarParticulas();
     this.prepararClima();
     this.prepararChefe();
