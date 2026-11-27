@@ -72,3 +72,27 @@ Gotinho (gota de água) feito no Blender pelo Lâmina (`gotinho_mobile.glb`). Um
 - **Novidade no código:** `tocarReacao(modelo, 'dano' | 'desmaiar')` em `js/modelos3d.js`, chamada pela batalha (`aplicarDano` e `desmaiar`). Só os modelos que têm essas animações usam; os outros continuam piscando e tombando de lado como antes.
 - **Só a forma inicial:** Marolo, Marulhão e Tsunamar continuam com as formas simples (`linhaAgua` em `js/modelos.js`).
 - **Para mudar:** `ARQUIVOS.gotinho` em `js/modelos3d.js` (`clips`, `marco`, `velArrancada`, `desmaioFim`, `velDesmaio`).
+
+## ardentroco.glb
+
+Ardentroco (3ª forma da linha do Brotobrasa) feito no Blender pelo Lâmina (`ardentronco_mobile.glb`). Um arquivo só, **1,47 MB**.
+
+- **Malha:** 5.004 triângulos, 23 ossos (com as duas frutas da cabeça, `fruta.L` e `fruta.R`).
+- **Texturas:** viraram **WebP** (`EXT_texture_webp`); a foto lado a lado (original × WebP) saiu igual. Malha, ossos e animações ficaram como no arquivo do Lâmina.
+- As animações já escondem a fruta e fazem ela **crescer de novo**: no `GolpePerto` ele leva a `fruta.L` à boca; no `GolpeDisparo` arranca e joga a `fruta.R`.
+
+### Animações
+
+| Nome | Duração | Uso no jogo |
+|---|---|---|
+| `Parado` | 2,0 s | parado (repete) |
+| `Andar` | 1,0 s | os passinhos antes de correr (2,5× mais rápido) |
+| `Correr` | 0,5 s | andando/correndo (repete) |
+| `GolpePerto` | 1,0 s | **Fruta Ardente** (bônus). Ele come a fruta em **0,6 s** |
+| `GolpeDisparo` | 1,21 s | **Bombinhas de Fruta**. A fruta sai da mão em **0,55 s** |
+| `GolpeArea` | 1,04 s | **Chuva de Frutas**. O giro começa em **0,3 s** |
+| `LevarDano` | 0,5 s | quando leva dano |
+| `Desmaiar` | 2,0 s | quando desmaia (1,4× mais rápido, para deitado em 1,3 s) |
+
+- **Só o Ardentroco:** Brotobrasa, Chamafolha e Florinferno continuam com as formas simples.
+- **Para mudar:** `ARQUIVOS.ardentroco` em `js/modelos3d.js`.

@@ -113,7 +113,7 @@ export class Lutador {
   // breu = bônus de dano da área da linha de Trevas (fica em c.breu = { cfg, t })
   // casco / blindado / arrancada / bafo = golpes da linha do Vaporito (no casco anda na metade da velocidade)
   // luarLento / luarVel = lentidão de quem está no luar inimigo / velocidade do Plenilúnio no próprio luar
-  get fatorVel() { return (this.veloz ? 1 + this.veloz.bonus : 1) * (this.sol ? 1 + this.sol.cfg.velocidade : 1) * (this.lento > 0 ? 0.5 : 1) * (this.tem('encharcado') ? 0.55 : 1) * (this.tem('parasita') ? 0.7 : 1) * (this.casco ? 0.5 : 1) * (this.luarLento ? 1 - this.luarLento.f : 1) * (this.luarVel ? 1 + this.luarVel.f : 1) * (this.espinhos ? 1 - this.espinhos.n * this.espinhos.f : 1) * (this.mod?.vel ?? 1); } // espinhos = Espinhado (agulhas do Espinhal)
+  get fatorVel() { return (this.veloz ? 1 + this.veloz.bonus : 1) * (this.sol ? 1 + this.sol.cfg.velocidade : 1) * (this.lento > 0 ? 0.5 : 1) * (this.tem('encharcado') ? 0.55 : 1) * (this.tem('parasita') ? 0.7 : 1) * (this.casco ? 0.5 : 1) * (this.luarLento ? 1 - this.luarLento.f : 1) * (this.luarVel ? 1 + this.luarVel.f : 1) * (this.espinhos ? 1 - this.espinhos.n * this.espinhos.f : 1) * (this.mod?.vel ?? 1) * (this.frutaArdente ? 1 + this.frutaArdente.cfg.vel : 1); } // espinhos = Espinhado (agulhas do Espinhal) | frutaArdente = Fruta Ardente (linha do Brotobrasa)
 }
 
 export class Batalha {
@@ -463,7 +463,8 @@ export class Batalha {
         if (gp.semente) { if (d > 2 && d < gp.alcance + 1) opcoes.push(i, i); continue; } // flor de fogo perto de você
         if (gp.leque) { if (d < gp.alcance + 0.8) opcoes.push(i, i); continue; } // folhas e galhada: de perto
         if (gp.anel) { if (d < gp.raio) opcoes.push(i, i, i); continue; } // anel de brotos
-        if (gp.florescer) { if (d < 6) opcoes.push(i, i); continue; } // flores por onde anda
+        if (gp.buff) { if (!e.frutaArdente && d < 7) opcoes.push(i, i); continue; } // Fruta Ardente: come quando você chega perto
+        if (gp.chuva) { if (d < gp.raio + 1.5) opcoes.push(i, i, i); continue; } // Chuva de Frutas: com você perto
         if (gp.bafo) { if (d < gp.alcance * 0.9 + e.raio) opcoes.push(i, i); continue; } // bafo: só de perto
         if (gp.arrancada) { if (d > 1.5 && d < gp.arrancada.distancia + 0.5) opcoes.push(i, i); continue; } // arrancada
         if (gp.vulcao) { if (!e.vulcao && d > 4 && d < gp.vulcao.alcance) opcoes.push(i, i, i); continue; } // Modo Vulcão: só com você longe
@@ -529,7 +530,7 @@ export class Batalha {
     if (gp.marca && c.choque) { this.faisquinho.usarChoque(c, gp); return; }
     const inimigo = c.lado === 'inimigo';
     c.rec[i] = gp.recarga * (inimigo ? (c.furia ? 0.95 : 1.4) : 1);
-    let prep = gp.tipo === 'area' ? 0.35 : gp.tipo === 'corpo' ? 0.1 : 0.06;
+    let prep = gp.buff ? 0.5 : gp.tipo === 'area' ? 0.35 : gp.tipo === 'corpo' ? 0.1 : 0.06; // Fruta Ardente: o tempo de pegar a fruta
     if (inimigo) prep = prep * 2 + 0.35; // o inimigo demora mais: tempo para você reagir
     const dir = new THREE.Vector3(alvo.pos.x - c.pos.x, 0, alvo.pos.z - c.pos.z);
     if (dir.lengthSq() < 1e-4) dir.set(Math.sin(c.ang), 0, Math.cos(c.ang));
@@ -564,7 +565,7 @@ export class Batalha {
     if (gp.laser) return inimigo ? this.solito.avisoLaser(c, gp, dir, cor) : null; // laser
     if (gp.bafo) return inimigo ? this.vaporito.avisoBafo(c, gp, dir) : null;     // bafo de vapor
     if (gp.casco) return null; // o casco não ataca na hora
-    if (gp.semente || gp.florescer) return null; // as flores de fogo têm o próprio aviso no chão
+    if (gp.semente || gp.buff) return null; // as flores e frutas têm o próprio aviso no chão; a Fruta Ardente não ataca
     if (gp.tipo === 'area') {
       const g = new THREE.Group();
       const anel = new THREE.Mesh(GEO_ANEL, matBrilho(cor, 0.75));
@@ -676,8 +677,10 @@ export class Batalha {
       this.brotobrasa.iniciarLeque(c, gp, dir, this.efeitoDoGolpe(c, gp));  // folhas / galhada em leque
     } else if (gp.anel) {
       this.brotobrasa.anelDeBrotos(c, gp, this.efeitoDoGolpe(c, gp));       // brotos que explodem em volta
-    } else if (gp.florescer) {
-      this.brotobrasa.iniciarFlorescer(c, gp);                              // flores por onde anda
+    } else if (gp.buff) {
+      this.brotobrasa.comerFruta(c, gp);                                    // Fruta Ardente: mais dano e velocidade
+    } else if (gp.chuva) {
+      this.brotobrasa.chuvaDeFrutas(c, gp);                                 // frutas caem em volta e ficam no chão
     } else if (gp.arrancada) {
       this.vaporito.iniciarArrancada(c, gp, dir, this.efeitoDoGolpe(c, gp)); // arrancada de vapor
     } else if (gp.bafo) {
@@ -764,7 +767,7 @@ export class Batalha {
     // Sol da linha do Solito: quem soltou causa mais dano e recebe menos
     const sol = (1 + (at.sol?.cfg.ataque ?? 0)) * (1 - (alvo.sol?.cfg.defesa ?? 0));
     const breu = 1 + (at.breu?.cfg.dano ?? 0); // área da linha de Trevas: +5% a +15% de dano
-    const ignicao = 1 + (at.ignicao?.I.dano ?? 0); // Ignição do Ignárion: +20% a +30% de dano
+    const ignicao = (1 + (at.ignicao?.I.dano ?? 0)) * (1 + (at.frutaArdente?.cfg.dano ?? 0)); // Ignição do Ignárion: +20% a +30% | Fruta Ardente: +25% a +30%
     // linha do Lunico (Crescêntio em diante): golpe em quem está dormindo dá mais dano
     // Redoma da linha do Lumino: quem está dentro recebe menos dano
     const redoma = alvo.redoma ? 1 - alvo.redoma.cfg.reducao : 1;
@@ -1026,7 +1029,7 @@ export class Batalha {
     const m = c.modelo;
     m.position.set(c.pos.x, 0, c.pos.z);
     // no modelo do Blender a volta do Rabo de Fogo já está na animação
-    m.rotation.y = c.ang + (c.dash?.esquiva ? (0.2 - c.dash.t) * 30 : 0) + (c.giro && !m.userData.glb ? c.giro.spin : 0);
+    m.rotation.y = c.ang + (c.dash?.esquiva ? (0.2 - c.dash.t) * 30 : 0) + (c.giro && !m.userData.glb ? c.giro.spin : 0) + (c.chuvaGiro && !m.userData.glb ? c.chuvaGiro.spin : 0);
     if (c.morto && c.desmaioGLB) {
       animarModelo(m, this.t, false); // a animação de desmaiar do arquivo
     } else if (c.morto) {
@@ -1470,7 +1473,7 @@ export class Batalha {
       b.querySelector('.nome').textContent = gp.fases ? this.lunico.faseAtual(j, gp).nome : gp.nome;
       const extra = gp.tipo === 'projetil' && j.melhoria.disparos > 1 ? ` ×${j.melhoria.disparos}` : '';
       const efB = this.efeitoDoGolpe(j, gp);
-      b.querySelector('.tipo').textContent = tipos[gp.tipo] + extra + (efB ? ' ' + pct(efB.chance) : '');
+      b.querySelector('.tipo').textContent = (gp.buff ? 'bônus' : tipos[gp.tipo]) + extra + (efB ? ' ' + pct(efB.chance) : '');
       b.style.setProperty('--cor', ELEMENTOS[gp.elemento].cor);
       // bolinha na cor do efeito quando o golpe causa um efeito negativo
       const ef = this.efeitoDoGolpe(j, gp);
@@ -1486,6 +1489,7 @@ export class Batalha {
   // Só os efeitos ativos (os bônus de arena não aparecem mais, para limpar a tela)
   htmlStatus(l) {
     const veloz = l.veloz ? `<span style="--cor:#7dffa0">Veloz +${Math.round(l.veloz.bonus * 100)}% ${l.veloz.t.toFixed(0)}s</span>` : '';
+    const fruta = l.frutaArdente ? `<span style="--cor:#ffb040">Fruta +${Math.round(l.frutaArdente.cfg.dano * 100)}% ${l.frutaArdente.t.toFixed(0)}s</span>` : '';
     const escudo = l.escudo ? `<span style="--cor:#8fdcff">Escudo ${l.escudo.valor} ${l.escudo.t.toFixed(0)}s</span>` : '';
     const sol = l.sol ? `<span style="--cor:#ffab2e">Sol +${Math.round(l.sol.cfg.ataque * 100)}% ${l.sol.t.toFixed(0)}s</span>` : '';
     const pedras = l.orbita ? `<span style="--cor:#d8c8a8">Pedras ${l.orbita.pedras.length}/${l.orbita.P.max}</span>` : '';
@@ -1498,7 +1502,7 @@ export class Batalha {
     const espinhos = l.espinhos ? `<span style="--cor:#c9f08a">Espinhos ${l.espinhos.n} ${l.espinhos.t.toFixed(0)}s</span>` : '';
     const seiva = this.silvarion.dele(l) ? `<span style="--cor:#1fe0a0">Seiva ${Math.round((l.seiva || 0) * 100)}%</span>` : '';
     const calor = l.ignicao ? `<span style="--cor:#ffb030">IGNIÇÃO ${l.ignicao.t.toFixed(0)}s</span>` : this.ignarion.dele(l) ? `<span style="--cor:#ff3d6a">Calor ${Math.round((l.calorIgneo || 0) * 100)}%</span>` : '';
-    return veloz + escudo + sol + breu + luar + redoma + casco + blindado + pedras + marcas + espinhos + calor + seiva + Object.entries(l.status).map(([k, v]) => `<span style="--cor:${EFEITOS[k].cor}">${EFEITOS[k].nome} ${v.toFixed(1)}s</span>`).join('');
+    return veloz + fruta + escudo + sol + breu + luar + redoma + casco + blindado + pedras + marcas + espinhos + calor + seiva + Object.entries(l.status).map(([k, v]) => `<span style="--cor:${EFEITOS[k].cor}">${EFEITOS[k].nome} ${v.toFixed(1)}s</span>`).join('');
   }
 
   // Placa em cima de cada inimigo: só o nome e uma barrinha de vida

@@ -166,20 +166,22 @@ Imanito (Nv.1) > Magnetito (Nv.12) > Ferrovolt (Nv.30) > Titanvolt (Nv.50, evolu
 - Leve para o celular de referência: no máximo 5 pedras por monstro, materiais fixos, raios que somem em 0,2 s.
 
 ### Fogo + Planta (tipo duplo): linha do Brotobrasa, o jardineiro de fogo (`brotobrasa.js` e `brotobrasa-batalha.js`)
-Brotobrasa (Nv.1) > Chamafolha (Nv.12) > Ardentroco (Nv.30) > Florinferno (Nv.50, evolução rara). Planta **flores de fogo** (armadilhas) que explodem quando o inimigo chega perto.
+Brotobrasa (Nv.1) > Chamafolha (Nv.12) > Ardentroco (Nv.30) > Florinferno (Nv.50, evolução rara). Planta **armadilhas de fogo** (flores e, no Ardentroco e no Florinferno, as **frutas da cabeça**) que explodem quando o inimigo chega perto.
 
 | Forma | Perto | Disparo | Área |
 |---|---|---|---|
 | Brotobrasa | Investida | **Semente de Brasa**: vira uma flor até 7 m; explode com inimigo a 1,5 m (ou depois de 6 s). Até **2** flores | **Anel de Brotos**: 5 brotos em volta explodem 1 s depois |
 | Chamafolha | **Folhas Ardentes**: leque de 2,5 m; **+30% em quem está queimando** | + Queimadura, até **3** flores | + Queimadura |
-| Ardentroco | **Galhada em Brasa**: 2 golpes (3 m); o 2º **planta uma flor** | **Semente de Chama**: deixa **fogo no chão** 2 s; até **4** flores | **7 brotos** (3,8 m) |
-| Florinferno | **Galhada Infernal** (também planta flor) | **Flor Gigante**: explosão de 2,5 m | **Florescer Infernal**: por 6 s, nasce uma flor a cada metro que ele anda (até 8) |
+| Ardentroco | **Fruta Ardente** (bônus, sem golpe de perto): come a fruta da cabeça, **+25% de dano e +20% de velocidade por 10 s**, recarga 15 s | **Bombinhas de Fruta**: joga a fruta da cabeça; armadilha que fica **15 s** no chão e deixa fogo; até **6** | **Chuva de Frutas**: gira e **6 frutas** caem em volta (até 4 m); **não explodem ao cair**, ficam **12 s** como armadilha |
+| Florinferno | **Fruta Ardente**: **+30% de dano e +25% de velocidade** | Explosão de 2,5 m, até **7** | **8 frutas** (até 4,5 m), com fogo no chão |
 
-- **Flores (`semente`, `florescer`):** ficam em `this.flores` (todas juntas, com o dono). Cada dono tem um limite por tipo ('semente' e 'trilha'): plantar mais uma tira a mais velha. A flor arma em 0,3 s e explode uma vez só. O aviso no chão é **vermelho** quando a flor é do inimigo.
-- **Fogo no chão (`semente.chao`):** em `this.fogos`, dá um pedaço de dano a cada 0,5 s em quem está em cima.
-- **Leque (`leque`):** golpe de perto em `c.leque` (1 ou 2 golpes); `queimando` dá mais dano em quem tem Queimadura. A Galhada planta uma flor igual à do disparo dele.
-- Leve para o celular de referência: cada flor tem 3 peças com materiais fixos; no máximo 4 flores do disparo + 8 da trilha por monstro. Quando ele sai da luta, as flores dele somem.
-- **IA:** planta flor quando você está a mais de 2 m, usa o leque de perto e o anel quando você está dentro dele.
+- **Armadilhas (`semente`, `chuva`):** ficam em `this.flores` (todas juntas, com o dono). Cada dono tem um limite por tipo ('semente' e 'chuva'): plantar mais uma tira a mais velha. Arma em 0,3 s e explode uma vez só. O aviso no chão é **vermelho** quando é do inimigo. `fruta: true` troca a flor pela fruta.
+- **Fruta Ardente (`buff`):** fica em `c.frutaArdente` (contagem e faíscas no `atualizar`). O dano entra no `aplicarDano` e a velocidade no `fatorVel` (`batalha.js`). Não tem aviso no chão e prepara em 0,5 s. O chip mostra "Fruta +25% Xs"; o botão diz "bônus".
+- **Chuva de Frutas (`chuva`):** as frutas saem uma depois da outra, voam e viram armadilhas onde caem (`chuvaDeFrutas`). O Ardentroco 3D gira pela animação; o Florinferno (formas simples) gira pelo `c.chuvaGiro`.
+- **Fogo no chão (`chao`):** em `this.fogos`, dá um pedaço de dano a cada 0,5 s em quem está em cima.
+- **Leque (`leque`):** só o Chamafolha (Folhas Ardentes); `queimando` dá mais dano em quem tem Queimadura.
+- Leve para o celular de referência: cada armadilha tem 2 ou 3 peças com materiais fixos; no máximo **12 frutas** do Ardentroco (6 + 6) e **15** do Florinferno (7 + 8) no campo. Quando ele sai da luta, as armadilhas dele somem.
+- **IA:** planta quando você está a mais de 2 m, come a fruta quando você está a menos de 7 m (e sem o bônus) e usa a Chuva quando você está dentro dela (raio + 1,5 m).
 
 ### Água + Fogo (tipo duplo): linha do Vaporito, o tanque (`vaporito.js` e `vaporito-batalha.js`)
 Vaporito (Nv.1) > Fumarolo (Nv.12) > Gêiserão (Nv.30) > Caldeirax (Nv.50, evolução rara). Atributos de tanque em `DUPLAS.aguaFogo` (`../dados.js`): vida 64, ataque 13, defesa 15, velocidade 5,2.

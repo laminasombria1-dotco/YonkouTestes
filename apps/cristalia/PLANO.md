@@ -382,3 +382,16 @@ Uma tela nova de criar o personagem, depois de "Novo jogo" e antes de escolher o
       para a Explorador ao entrar no jogo. GM, aba Mundo: **Liberar todas as roupas**, **Tirar as roupas ganhas** e
       **Abrir o Guarda-roupa aqui**.
 
+## Linha do Brotobrasa com frutas (pedido do Lâmina, com o Ardentroco 3D dele)
+### Decisões do Lâmina
+- Vale para o **Ardentroco e o Florinferno**; eles **ficam sem golpe de perto**.
+- **Fruta Ardente** (no lugar do golpe de perto): come a fruta da cabeça; **10 s**, **+25% de dano e +20% de velocidade**;
+  no Florinferno **+30% e +25%**; recarga **15 s**.
+- **Bombinhas de Fruta** (disparo): mudança visual (a fruta da cabeça no lugar da semente) e a fruta **fica mais tempo no chão**
+  (15 s) como armadilha, para dar mais estratégia.
+- **Chuva de Frutas** (área): ele gira e caem **6 frutas** (Ardentroco) ou **8** (Florinferno); **não explodem ao cair**, ficam no chão
+  como armadilha por um tempo (12 s).
+- No máximo **10 a 15 frutas** no campo (12 no Ardentroco, 15 no Florinferno).
+- O `ardentronco_mobile.glb` entra no jogo; as texturas viram WebP porque a imagem não mudou.
+- [x] **Feito:** `brotobrasa.js` (números), `brotobrasa-batalha.js` (`comerFruta`, `chuvaDeFrutas`, frutas no lugar das flores),
+      `batalha.js` (bônus no dano e na velocidade, IA), `modelos/ardentroco.glb` e `ARQUIVOS.ardentroco` no `modelos3d.js`.

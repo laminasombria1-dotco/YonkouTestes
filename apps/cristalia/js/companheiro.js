@@ -139,7 +139,7 @@ export class Companheiro {
     this.golpes.forEach((b, i) => {
       const gp = j.golpe(i);
       b.querySelector('.nome').textContent = gp.nome;
-      b.querySelector('.tipo').textContent = TIPOS[gp.tipo];
+      b.querySelector('.tipo').textContent = gp.buff ? 'bônus' : TIPOS[gp.tipo];
       b.style.setProperty('--cor', ELEMENTOS[gp.elemento].cor);
       b.dataset.nomeAtual = gp.nome;
     });

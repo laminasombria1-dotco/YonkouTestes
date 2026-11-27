@@ -1,7 +1,8 @@
 // =============================================================
 // MODELOS 3D FEITOS NO BLENDER (.glb)
-// Hoje: as formas iniciais do Brasito (modelos/brasito.glb) e do Gotinho
-// (modelos/gotinho.glb). As outras formas continuam com os modelos de formas simples de modelos.js.
+// Hoje: as formas iniciais do Brasito (modelos/brasito.glb) e do Gotinho (modelos/gotinho.glb)
+// e o Ardentroco (modelos/ardentroco.glb). As outras formas continuam com os modelos de formas
+// simples de modelos.js.
 //
 // Como funciona:
 //  - carregarModelos3D() baixa os .glb uma vez, quando o jogo abre (main.js espera,
@@ -57,6 +58,25 @@ const ARQUIVOS = {
     velArrancada: 2.5,           // o Andar (1 s) vira 0,4 s de passinhos antes do Correr
     desmaioFim: 1.3,             // o Desmaiar volta a ficar de pé no fim: para deitado aqui (s)
     velDesmaio: 1.4,             // mais rápido: o monstro desmaiado some da arena em 1,3 s
+  },
+  // Ardentroco (3ª forma da linha do Brotobrasa): o modelo do Lâmina, 0,9 m no arquivo, 8 animações.
+  // As frutas da cabeça são ossos (fruta.L e fruta.R): as animações já tiram e fazem nascer de novo.
+  ardentroco: {
+    arquivo: 'modelos/ardentroco.glb',
+    clips: {
+      parado: 'Parado',
+      arrancada: 'Andar',
+      correndo: 'Correr',
+      corpo: 'GolpePerto',       // Fruta Ardente: pega a fruta da esquerda e come
+      projetil: 'GolpeDisparo',  // Bombinhas de Fruta: arranca a fruta da direita e joga
+      area: 'GolpeArea',         // Chuva de Frutas: gira balançando a cabeça
+      dano: 'LevarDano',
+      desmaiar: 'Desmaiar',
+    },
+    marco: { corpo: 0.6, projetil: 0.55, area: 0.3 }, // come a fruta, solta a fruta, começa o giro
+    velArrancada: 2.5,
+    desmaioFim: 1.3,
+    velDesmaio: 1.4,
   },
 };
 const MISTURA = 0.18;          // segundos de transição entre uma animação e outra

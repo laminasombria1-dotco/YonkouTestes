@@ -504,7 +504,7 @@ class Jogo {
       const gp = GOLPES[g];
       const idEf = e.elementos.includes(gp.elemento) ? EFEITO_DO_ELEMENTO[gp.elemento] : null;
       const nomeEf = idEf ? EFEITOS[idEf]?.nome : null;
-      let extra = TIPOS[gp.tipo];
+      let extra = gp.buff ? 'bônus' : TIPOS[gp.tipo];
       if (gp.tipo === 'projetil' && mel.disparos > 1) extra += ` ×${mel.disparos}`;
       const causa = (gp.tipo === 'area' && mel.efeitoArea) || (gp.tipo === 'corpo' && mel.efeitoPerto) || (gp.tipo === 'projetil' && mel.efeitoDisparo);
       if (causa && nomeEf) extra += ` · ${nomeEf} ${pct(chanceDoEfeito(idEf, gp.tipo))}`;
