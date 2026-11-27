@@ -370,7 +370,10 @@ Uma tela nova de criar o personagem, depois de "Novo jogo" e antes de escolher o
 - [x] **Etapa 1 — Bonecos e roupas no jogo:** `js/personagem.js` (masculino e feminino, pele, cabelo, as 4 roupas,
       a Coroa do Rei no lugar do chapéu); `estado.personagem` no jogo salvo (antigo = padrão); `vestirPersonagem` e
       `vestirCoroa` no `mundo.js`. O `criarTreinador` antigo saiu do `modelos.js`.
-- [ ] **Etapa 2 — Tela de criação:** Novo jogo → 1. Personagem (gênero, pele, cabelo) → 2. Roupa → 3. Parceiro.
+- [x] **Etapa 2 — Tela de criação:** Novo jogo → 1. Personagem (gênero, pele, cabelo) → 2. Roupa → 3. Parceiro.
+      *Feito:* `js/criacao.js` (`Criacao`: a tela `#tela-personagem`, a cena 3D só enquanto está aberta, tocar no boneco
+      escolhe o gênero); no jogo novo só as roupas grátis (as outras aparecem com 🔒 e como ganhar); o Voltar da escolha
+      do parceiro volta para a roupa, com tudo guardado; `abrirCriacao` e `novoJogo(especie, personagem)` no `main.js`.
 - [ ] **Etapa 3 — Guarda-roupa, roupas ganhas e GM:** o Guarda-roupa na casa (pela Bolsa, perto da casa), o Traje Real
       ao virar Campeão, o Palhaço na Loja do Reino (`estado.roupas`), e no GM "Liberar todas as roupas" e "Trocar o personagem".
 

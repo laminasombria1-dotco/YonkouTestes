@@ -109,6 +109,16 @@ export const SKINS = {
   palhaco: { nome: 'Palhaço', como: 'loja', preco: 2000, icone: '🤡', texto: 'Gola de babado, camisa listrada, calça de retalhos e os sapatões.', tronco: 'listras', mangas: 'longa', corManga: 'listras', calca: 'bufante', corCalca: 'retalhos', sapato: 'palhaco', golaPalhaco: true, chapeuPalhaco: true, pompons: true },
 };
 
+// As roupas que o jogador pode vestir: as grátis, o Traje Real do Campeão do Reino e as compradas (estado.roupas)
+export function roupasLiberadas(estado) {
+  return Object.keys(SKINS).filter((id) => {
+    const s = SKINS[id];
+    if (s.como === 'gratis') return true;
+    if (s.como === 'campeao') return !!(estado?.campeao || estado?.coroa);
+    return !!estado?.roupas?.includes(id);
+  });
+}
+
 // Só o que é válido (jogo salvo antigo ou mexido): o resto volta para o padrão
 export function normalizarPersonagem(pp) {
   const o = { ...PERSONAGEM_PADRAO, ...(pp || {}) };

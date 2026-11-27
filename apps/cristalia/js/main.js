@@ -12,7 +12,8 @@ import { Batalha } from './batalha.js';
 import { Plataforma, CenaEvolucao } from './plataforma.js';
 import { carregarModelos3D } from './modelos.js';
 import { Companheiro } from './companheiro.js';
-import { PERSONAGEM_PADRAO, normalizarPersonagem } from './personagem.js';
+import { PERSONAGEM_PADRAO, normalizarPersonagem, roupasLiberadas } from './personagem.js';
+import { Criacao } from './criacao.js';
 import { TREINADORES, equipeDoTreinador } from './reino.js';
 import { TREINADORES_VILA, TESOURO_VILA, PREMIO_VILA, NOMES_VILA, ORDEM_VILAS, tituloDaVila } from './vilas.js';
 import { Bolsa, MOEDAS, sortearDrop, bonusDrop } from './bolsa.js';
@@ -135,6 +136,7 @@ class Jogo {
     this.mundo = new Mundo(this);
     this.pet = new Companheiro(this); // monstro invocado que segue o treinador
     this.bolsa = new Bolsa(this); // bolsa, loja de poções e moedas
+    this.criacao = new Criacao(this); // criação de personagem (Novo jogo) e o Guarda-roupa da casa
     this.ovo = new Ovo(this);     // o Ovo Misterioso do Campeão
     this.medir(); // de novo: agora a câmera do mapa já existe (senão ela fica quadrada e a imagem estica)
     this.plataforma = null;
@@ -190,6 +192,7 @@ class Jogo {
     $('#tela-login').hidden = nome !== 'login';
     $('#tela-titulo').hidden = nome !== 'titulo';
     $('#tela-colecao').hidden = nome !== 'colecao';
+    $('#tela-personagem').hidden = nome !== 'personagem';
     $('#tela-evolucao').hidden = nome !== 'evolucao';
     $('#hud-mundo').hidden = nome !== 'mundo';
     $('#hud-batalha').hidden = nome !== 'batalha';
@@ -229,11 +232,11 @@ class Jogo {
           delete btnNovo.dataset.confirmar;
           btnNovo.classList.remove('confirmar');
           titulo.textContent = 'Novo jogo';
-          linha.textContent = 'Escolha seu primeiro parceiro';
+          linha.textContent = 'Crie seu personagem e escolha o parceiro';
         }, 3500);
         return;
       }
-      this.abrirColecao('inicial');
+      this.abrirCriacao();
     });
     $('#btn-continuar').addEventListener('click', () => {
       const s = lerSave(this.chaveSave());
@@ -286,7 +289,7 @@ class Jogo {
     $('#btn-monstros').addEventListener('click', () => this.abrirColecao('ver'));
     $('#col-voltar').addEventListener('click', () => this.fecharColecao());
     $('#col-escolher').addEventListener('click', () => {
-      if (this.colecao.modo === 'inicial') this.novoJogo(formasDaLinha(this.colecao.aba)[0]);
+      if (this.colecao.modo === 'inicial') this.novoJogo(formasDaLinha(this.colecao.aba)[0], this.personagemNovo);
     });
     $('#col-abas').addEventListener('click', (e) => {
       const b = e.target.closest('[data-aba]');
@@ -297,6 +300,7 @@ class Jogo {
       if (b) this.selecionarForma(Number(b.dataset.forma));
     });
     this.palco.addEventListener('click', (e) => {
+      if (this.modo === 'personagem') { const r = this.palco.getBoundingClientRect(); this.criacao.tocarEm(e.clientX - r.left, e.clientY - r.top); return; }
       if (this.modo !== 'colecao') return;
       const r = this.palco.getBoundingClientRect();
       const i = this.plataforma.tocarEm(e.clientX - r.left, e.clientY - r.top);
@@ -406,6 +410,7 @@ class Jogo {
     if (this.bolsa.fechar()) return 'ok';
     if (this.painelAberto) { this.fecharEquipe(); return 'ok'; }
     if (this.modo === 'colecao') { this.fecharColecao(); return 'ok'; }
+    if (this.modo === 'personagem') { this.criacao.voltar(); return 'ok'; }
     if (this.modo === 'mundo' && this.pet.controlando) { this.pet.voltarAoTreinador(); return 'ok'; }
     if (this.modo === 'mundo') { this.abrirMenu(); return 'ok'; }
     if (this.modo === 'titulo') { this.salvar(); this.enviarNuvem(true, true); return 'sair'; }
@@ -453,6 +458,7 @@ class Jogo {
 
   fecharColecao() {
     const volta = this.colecao.volta;
+    if (volta === 'personagem') { this.criacao.reabrir(2); return; } // Novo jogo: volta para a escolha da roupa
     this.mostrarTela(volta === 'mundo' && this.estado ? 'mundo' : 'titulo');
   }
 
@@ -541,6 +547,19 @@ class Jogo {
     if (!this.plataforma) return;
     const a = this.palco.getBoundingClientRect(), r = $('#col-palco').getBoundingClientRect();
     this.plataforma.enquadrar({ left: r.left - a.left, top: r.top - a.top, width: r.width, height: r.height });
+  }
+
+  // ---------- criação de personagem ----------
+  // Novo jogo: 1. Personagem → 2. Roupa → 3. Parceiro (a escolha do monstro inicial)
+  abrirCriacao() {
+    this.criacao.abrir({
+      modo: 'novo',
+      personagem: this.personagemNovo || PERSONAGEM_PADRAO,
+      liberadas: roupasLiberadas(null), // jogo novo: só as grátis
+      nome: this.conta?.nome,
+      aoTerminar: (pp) => { this.personagemNovo = pp; this.abrirColecao('inicial'); },
+      aoVoltar: () => this.mostrarTela('titulo'),
+    });
   }
 
   novoJogo(especie, personagem = PERSONAGEM_PADRAO) {
@@ -1414,6 +1433,9 @@ class Jogo {
     if (this.nuvemPendente && this.envioT >= ENVIO_NUVEM) this.enviarNuvem();
     if (this.modo === 'titulo' || this.modo === 'login') {
       this.mundo.orbitar(this.t);
+    } else if (this.modo === 'personagem') {
+      this.criacao.atualizar(dt, this.t);
+      cena = this.criacao.cena || cena; camera = this.criacao.cena ? this.criacao.camera : camera;
     } else if (this.modo === 'colecao') {
       this.enquadrarColecao();
       this.plataforma.atualizar(dt, this.t);

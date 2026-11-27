@@ -81,6 +81,7 @@ Roda no navegador (celular ou PC), feito com JavaScript + [Three.js](https://thr
   | 👑 **Traje Real** | manto vermelho com arminho, faixa dourada, botas e manoplas douradas, cetro com gema | ao virar **Campeão do Reino** |
   | 🤡 **Palhaço** | chapeuzinho listrado, gola de babado com bolinhas, camisa listrada com pompons, calça de retalhos com estrelas e sapatões | **Loja do Reino** (ouro) |
 
+- **Criar o personagem (Novo jogo):** depois de tocar em **Novo jogo** vêm 3 passos: **1. Personagem** (masculino ou feminino, tocando no botão ou no boneco; cor da pele; cor do cabelo; o nome é o da conta) → **2. Roupa** (no jogo novo só as grátis; as outras aparecem com 🔒 e dizem como ganhar) → **3. Parceiro** (a escolha do monstro inicial de sempre). O **Voltar** volta um passo (do parceiro para a roupa, com tudo guardado; do passo 1, para o início). Código: `js/criacao.js` (`Criacao`), com `abrirCriacao` no `main.js`.
 - **Coroa do Rei:** quando está na cabeça, **o chapéu sai** (boné ou chapeuzinho) e a coroa (dourada, de pontas altas, com gemas vermelhas e verdes) senta no cabelo.
 - **Ele é o mesmo em todo lugar:** no Reino, no mapa, nas vilas, nas masmorras e nas dungeons (é o `mundo.jogador`). A batalha, o monstro invocado e o modo treino não usam o boneco.
 - **Jogo salvo:** fica em `estado.personagem` (`{ genero, skin, pele, cabelo }`), no celular e na nuvem junto com o resto. Um jogo salvo de antes (sem `personagem`) ou com algo errado volta para o padrão: **masculino, Explorador** (`normalizarPersonagem`).
@@ -1195,6 +1196,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/dados.js` | **Tabelas do jogo**: elementos, golpes, linhas evolutivas, níveis de evolução, onde cada monstro aparece. Para balancear, mexa aqui. |
 | `js/modelos.js` | Os modelos 3D (o Brasito da forma inicial vem do `.glb`, por `js/modelos3d.js`): um construtor por linha que acrescenta peças a cada evolução. No fim, `juntarPecas` une as peças paradas de mesma aparência numa só (de ~24 para ~11 peças por monstro), deixando caudas, asas, pernas e peças animadas separadas |
 | `js/personagem.js` | **O protagonista** (o jogador no mapa): masculino ou feminino, cor da pele e do cabelo, as roupas (`SKINS`), a Coroa do Rei na cabeça e o padrão dos jogos salvos antigos (`PERSONAGEM_PADRAO`, `normalizarPersonagem`). Veja "O protagonista" |
+| `js/criacao.js` | A tela de **criar o personagem** (Novo jogo: personagem → roupa → parceiro) e o **Guarda-roupa**: o painel e a cena 3D com os bonecos nos pedestais |
 | `js/modelos3d.js` | Modelos feitos no Blender (`.glb`): carrega, faz uma cópia com ossos para cada monstro, toca as animações (parado, arrancada → correndo e os 3 golpes, no tempo certo de cada golpe), faz o fogo pulsar e o piscar. Hoje só o Brasito (forma inicial) |
 | `modelos/` | Os arquivos `.glb` (hoje `brasito.glb`) e um README com os detalhes de cada um |
 | `js/plataforma.js` | A vitrine 3D do Monstruário e a animação de evolução |

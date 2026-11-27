@@ -189,6 +189,41 @@
   .col-detalhe .evo.duplo { border-left: 3px solid #c79bff; padding-left: 8px; }
   #rotulo .duplo { color: #e2c8ff; font-weight: 800; }
   #tela-colecao .col-palco { grid-area: palco; pointer-events: none; }
+  /* ---------- criação de personagem e Guarda-roupa (js/criacao.js) ---------- */
+  #tela-personagem { position: absolute; inset: 0; display: grid; pointer-events: none; gap: 8px;
+    grid-template-columns: minmax(0, 1fr) min(340px, 44%); grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas: "topo topo" "palco info";
+    padding-block: 10px; padding-left: max(10px, env(safe-area-inset-left, 0px)); padding-right: max(10px, env(safe-area-inset-right, 0px)); }
+  #tela-personagem > * { pointer-events: auto; min-width: 0; }
+  #tela-personagem .per-palco { grid-area: palco; pointer-events: none; }
+  .per-topo { grid-area: topo; display: flex; align-items: center; gap: 10px; }
+  .per-topo h2 { margin: 0; font-family: var(--f-titulo); font-weight: 600; font-size: 1.3rem; text-shadow: 0 2px 8px rgba(10, 20, 40, 0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .per-passos { margin-left: auto; display: flex; gap: 6px; flex: none; }
+  .per-passos button { border: 1px solid var(--painel-borda); background: var(--painel); border-radius: 999px; padding: 4px 10px; font-size: 0.74rem; font-weight: 800; color: var(--creme-suave); }
+  .per-passos button.ativo { background: var(--cristal); color: #0c3a48; border-color: var(--cristal); }
+  .per-passos button:disabled { opacity: 0.6; cursor: default; }
+  .per-info { grid-area: info; background: var(--painel); border: 1px solid var(--painel-borda); border-radius: 14px; padding: 10px 12px; overflow-y: auto; touch-action: pan-y;
+    display: flex; flex-direction: column; gap: 8px; }
+  .per-lbl { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--creme-suave); margin-bottom: -3px; }
+  .per-gen { display: flex; gap: 8px; }
+  .per-gen button { flex: 1; padding: 8px; border-radius: 12px; border: 2px solid var(--painel-borda); background: rgba(255, 255, 255, 0.06); font-family: var(--f-titulo); font-weight: 600; font-size: 1rem; }
+  .per-gen button.ativo { border-color: var(--sol); background: rgba(255, 210, 63, 0.18); }
+  .per-cores { display: flex; gap: 7px; flex-wrap: wrap; }
+  .per-cores button { width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.25); background: var(--c); }
+  .per-cores button.ativo { border: 3px solid var(--sol); box-shadow: 0 0 0 2px #14233f inset; }
+  .per-nome { display: flex; align-items: baseline; gap: 6px; background: rgba(0, 0, 0, 0.22); border-radius: 10px; padding: 6px 10px; font-size: 0.85rem; font-weight: 700; }
+  .per-nome b { font-family: var(--f-titulo); font-size: 1rem; }
+  .per-nome small { margin-left: auto; color: var(--creme-suave); font-size: 0.7rem; }
+  .per-info .btn-grande { margin-top: auto; padding: 11px 18px; font-size: 1.05rem; }
+  .per-skins { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .per-skins button { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; aspect-ratio: 1; padding: 3px;
+    border-radius: 12px; border: 2px solid var(--painel-borda); background: rgba(255, 255, 255, 0.06); font-size: 0.62rem; font-weight: 800; line-height: 1.1; color: var(--creme-suave); }
+  .per-skins button em { font-style: normal; font-size: 1.3rem; }
+  .per-skins button.ativo { border-color: var(--sol); background: rgba(255, 210, 63, 0.18); color: var(--creme); }
+  .per-skins button.trancada { opacity: 0.6; }
+  .per-skins .cadeado { position: absolute; top: 2px; right: 3px; font-style: normal; font-size: 0.75rem; }
+  .per-det { background: rgba(0, 0, 0, 0.22); border-radius: 10px; padding: 7px 10px; font-size: 0.8rem; line-height: 1.35; }
+  .per-det b { display: block; font-family: var(--f-titulo); font-size: 0.98rem; }
   .col-info { grid-area: info; background: var(--painel); border-radius: 14px; padding: 10px 12px; overflow-y: auto; touch-action: pan-y;
     display: flex; flex-direction: column; gap: 10px; }
   .col-formas { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 6px; }
@@ -584,7 +619,7 @@
         <span class="ic"><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg></span><span class="txt"><b>Continuar</b><small id="resumo-save"></small></span>
       </button>
       <button id="btn-novo" class="menu-item" type="button">
-        <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span><span class="txt"><b>Novo jogo</b><small>Escolha seu primeiro parceiro</small></span>
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span><span class="txt"><b>Novo jogo</b><small>Crie seu personagem e escolha o parceiro</small></span>
       </button>
       <button id="btn-monstruario" class="menu-item" type="button">
         <span class="ic"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5zM4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/></svg></span><span class="txt"><b>Monstruário</b><small>Todos os monstros e evoluções</small></span>
@@ -638,6 +673,17 @@
       <div id="col-detalhe" class="col-detalhe"></div>
       <button id="col-escolher" class="btn-grande" type="button" hidden>Escolher</button>
     </aside>
+  </section>
+
+  <!-- criação de personagem (Novo jogo) e o Guarda-roupa da casa: js/criacao.js -->
+  <section id="tela-personagem" hidden>
+    <header class="per-topo">
+      <button id="per-voltar" class="btn-hud" type="button">Voltar</button>
+      <h2 id="per-titulo">Crie o seu personagem</h2>
+      <nav id="per-passos" class="per-passos" aria-label="Passos"></nav>
+    </header>
+    <div id="per-palco" class="per-palco"></div>
+    <aside id="per-info" class="per-info"></aside>
   </section>
 
   <section id="tela-evolucao" class="tela" hidden>
