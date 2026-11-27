@@ -49,15 +49,16 @@ const lerpAng = (a, b, k) => { let d = ((b - a + Math.PI) % (Math.PI * 2)) - Mat
 // Uma masmorra montada (só existe enquanto você está lá dentro)
 // =============================================================
 export class MasmorraNova {
-  constructor(gerente, id) {
+  // op (as dungeons usam): { cfg, plano, origem, semente } no lugar dos da masmorra
+  constructor(gerente, id, op = {}) {
     this.g = gerente;
     this.m = gerente.m;
     this.id = id;
-    this.cfg = MASMORRAS_NOVAS[id];
-    this.plano = PLANOS[id];
-    this.rng = aleatorio(0x51ed + Object.keys(MASMORRAS_NOVAS).indexOf(id) * 977);
+    this.cfg = op.cfg || MASMORRAS_NOVAS[id];
+    this.plano = op.plano || PLANOS[id];
     const k = Object.keys(MASMORRAS_NOVAS).indexOf(id);
-    this.forma = new FormaMasmorra({ ...this.plano.forma, zona: this.cfg.zonaSoltos, origem: { x: ORIGEM_X + k * ESPACO_ORIGENS, z: 0 } });
+    this.rng = aleatorio(op.semente ?? 0x51ed + k * 977);
+    this.forma = new FormaMasmorra({ ...this.plano.forma, zona: this.cfg.zonaSoltos, origem: op.origem || { x: ORIGEM_X + k * ESPACO_ORIGENS, z: 0 } });
     this.o = this.forma.origem;
     this.grupo = new THREE.Group();
     this.grupo.name = 'masmorra-' + id;
@@ -119,7 +120,7 @@ export class MasmorraNova {
     esquecerAlturas(this.o.x + c.x0 - 40, this.o.z + c.z0 - 40, this.o.x + c.x1 + 40, this.o.z + c.z1 + 40);
     INTERIOR.forma = this.forma; // daqui para frente, alturaEm() usa a masmorra
     this.m.cena.add(this.grupo);
-    this.lote = new Lote(TAM_LOTE);
+    this.lote = new Lote(this.plano.tamLote || TAM_LOTE); // (as dungeons são pequenas: um lote só, menos desenhos)
     this.criarChao();
     this.criarPortoes();
     this.criarAcampamentos();
@@ -214,7 +215,7 @@ export class MasmorraNova {
         if (sumiu || !a.grupo.membros.some((mb) => mb.dados.lider)) {
           a.vencido = true;
           if (sumiu) a.grupo = null;
-          this.abrirPortao(a.etapa);
+          this.etapaVencida(a);
           continue;
         }
         if (d > 75) { m.removerGrupo(a.grupo); a.grupo = null; }
@@ -223,6 +224,7 @@ export class MasmorraNova {
       }
     }
   }
+  etapaVencida(a) { this.abrirPortao(a.etapa); } // (a dungeon troca: o portão do Rei abre com todos os grupos vencidos)
   niveis(etapa) { return niveisMasmorraNova(this.m.mediaEquipe(), etapa, this.id, this.nivelMasmorra); }
   liderFinal() { return this.nivelMasmorra >= MASMORRA.finalLider && Math.random() < MASMORRA.chanceFinalLider; }
 
@@ -535,7 +537,7 @@ export class Masmorras {
   // Onde o jogo salva a posição (dentro da masmorra, salva na porta de fora)
   posSalvar() {
     if (!this.ativa) return null;
-    const e = this.entrada(this.ativa.id);
+    const e = this.ativa.entradaMapa;
     return { x: e.fora.x, z: e.fora.z };
   }
 
@@ -559,12 +561,19 @@ export class Masmorras {
   // Entra (onde: 'inicio', uma etapa 0..4 ou 'chefe'; o GM usa as outras)
   entrar(id, onde = 'inicio') {
     if (!PLANOS[id] || this.mudando) return;
+    this.abrir(() => new MasmorraNova(this, id), this.entrada(id), onde);
+  }
+  // Monta uma área separada (masmorra ou dungeon) e põe o jogador lá dentro.
+  // criar() devolve a área; entrada = a porta no mapa (para onde você volta ao sair)
+  abrir(criar, entrada, onde = 'inicio') {
+    if (this.mudando) return;
     this.mudando = true;
     this.cortina();
     const m = this.m;
     m.jogo.pet?.voltarAoTreinador?.(true);
     this.resetar();
-    const ms = new MasmorraNova(this, id);
+    const ms = criar();
+    ms.entradaMapa = entrada;
     ms.construir();
     this.ativa = ms;
     const P = ms.plano;
@@ -582,15 +591,16 @@ export class Masmorras {
     m.chunks.atualizar(m.pos.x, m.pos.z); // o mapa de fora fica longe: os chunks são apagados
     m.posicionarCamera(1);
     m.zonaAvisada = null;
-    m.jogo.mostrarZona?.(ms.cfg.nome + ' · Nível ' + ms.nivelMasmorra);
+    m.jogo.mostrarZona?.(ms.tituloTela ? ms.tituloTela() : ms.cfg.nome + ' · Nível ' + ms.nivelMasmorra);
     if (m.jogo.estado) m.jogo.aviso(`Você entrou ${com('em', ms.cfg.fem)} ${ms.cfg.nome}. Encoste na porta de luz para sair a qualquer hora.`);
+    ms.aoEntrar?.();
     this.mudando = false;
   }
 
   // Sai (para a frente da porta, no mapa). Se você saiu por outro jeito (desmaiou, GM), só apaga.
   sair(paraPorta = true) {
     if (!this.ativa) return;
-    const m = this.m, e = this.entrada(this.ativa.id);
+    const m = this.m, e = this.ativa.entradaMapa;
     if (paraPorta) this.cortina();
     m.jogo.pet?.voltarAoTreinador?.(true);
     this.ativa.destruir();

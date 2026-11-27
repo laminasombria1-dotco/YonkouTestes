@@ -28,6 +28,7 @@ import { SEMENTES, ORDEM_SEMENTES, JARDIM, garantirJardim } from './jardim.js';
 import { ESTRADA, ESTRADAS, RAIO_REINO, LUGARES as LUGARES_MAPA } from './mapa/gerador.js';
 import { ORDEM_VILAS, NOMES_VILA } from './vilas.js';
 import { GELO } from './biomas/lugares.js';
+import { VARIACOES, BIOMAS_DUNGEON, DUNGEON } from './dungeons/lista.js';
 import { NOME_ACAMP } from './biomas/gelo.js';
 import { SEMENTE, SEMENTE_PADRAO, centroDe, LAGOS, POIS } from './mapa/gerador.js';
 
@@ -288,9 +289,25 @@ export class PainelGM {
     }).join('');
   }
 
+  // As dungeons novas (passo 5): ir até a entrada, entrar, ir ao Rei, resetar e trocar a variação
+  abaDungeonsNovas() {
+    const G = this.mundo.dungeonsNovas;
+    return G.vagas.map((v) => {
+      const sv = v.sv, cfg = VARIACOES[sv.variacao], dentro = this.mundo.masmorras.ativa?.vaga === v;
+      const estado = sv.vencida ? `Rei vencido · reseta em ${Math.ceil((DUNGEON.reset - sv.t) / 60)} min` : `${sv.vencidos.filter(Boolean).length}/${sv.grupos} grupos vencidos`;
+      const vars = BIOMAS_DUNGEON[v.bioma].variacoes.map((id) => `<button class="gm-btn${id === sv.variacao ? ' verde' : ''}" type="button" data-gm="dgVariacao" data-dg="${v.id}" data-var="${id}">${esc(VARIACOES[id].nome)}</button>`).join('');
+      return `<div class="gm-bloco">
+        <h3>${esc(cfg.nome)} (dungeon ${v.id}, ${esc(BIOMAS_DUNGEON[v.bioma].nome)}, lugar ${sv.lugar + 1})${dentro ? ' · você está aqui' : ''}</h3>
+        <div class="gm-linha"><small>${estado} · ${sv.achada ? 'descoberta' : 'ainda não descoberta'} · Rei: ${esc(sv.rei)}</small></div>
+        <div class="gm-linha"><button class="gm-btn" type="button" data-gm="dgIr" data-dg="${v.id}">A entrada no mapa</button><button class="gm-btn verde" type="button" data-gm="dgEntrar" data-dg="${v.id}" data-onde="inicio">Entrar</button><button class="gm-btn" type="button" data-gm="dgEntrar" data-dg="${v.id}" data-onde="chefe">${esc(cfg.fim)}</button><button class="gm-btn forte" type="button" data-gm="dgReset" data-dg="${v.id}">Resetar agora</button></div>
+        <div class="gm-grade">${vars}</div>
+      </div>`;
+    }).join('');
+  }
+
   abaDungeons() {
     const media = this.mundo.mediaEquipe();
-    return this.abaMasmorrasNovas() + Object.entries(DUNGEONS).map(([id, cfg]) => {
+    return this.abaDungeonsNovas() + this.abaMasmorrasNovas() + Object.entries(DUNGEONS).map(([id, cfg]) => {
       const d = this.dungeon(id), nm = d.nivelMasmorra;
       const nvChefe = this.sel.nivelChefe || nivelDoChefe(media, nm);
       const etapas = cfg.etapas.map((e, i) => {
@@ -566,6 +583,17 @@ export class PainelGM {
         if (acao === 'mmSortear') sv.chefe = sortearChefe(d.dg, Math.min(sv.nivel, MASMORRA.lendarioDesde - 1));
         if (a?.id === d.dg) { if (a.chefe) this.mundo.removerSelvagem(a.chefe); a.chefe = null; a.esperaAmanhecer = false; a.spawnarChefe(); }
         this.jogo.aviso(`GM: o chefe ${MASMORRAS_NOVAS[d.dg].fimFem ? 'da' : 'do'} ${MASMORRAS_NOVAS[d.dg].fim} é ${ESPECIES[sv.chefe || a?.chefe?.dados.especie || MASMORRA.chefes[d.dg][0][0]].nome}.`);
+        this.salvar(); break;
+      }
+      case 'dgIr': { const v = this.mundo.dungeonsNovas.vaga(d.dg), e = v.entrada; this.mundo.masmorras.resetar(); this.teleportar(e.fora.x + Math.sin(e.ang) * 4, e.fora.z + Math.cos(e.ang) * 4, e.ang + Math.PI); this.fecharPainel(); return; }
+      case 'dgEntrar': { const v = this.mundo.dungeonsNovas.vaga(d.dg); v.sv.vencida = false; this.mundo.dungeonsNovas.atualizarIcone(v); this.fecharPainel(); this.mundo.dungeonsNovas.entrar(v, d.onde); this.jogo.aviso(`GM: ${VARIACOES[v.sv.variacao].nome}.`); return; }
+      case 'dgReset': { const v = this.mundo.dungeonsNovas.vaga(d.dg); if (this.mundo.masmorras.ativa?.vaga === v) this.mundo.masmorras.sair(); this.mundo.dungeonsNovas.resetar(v, false); this.jogo.aviso(`GM: a dungeon ${v.id} virou ${VARIACOES[v.sv.variacao].nome}, no lugar ${v.sv.lugar + 1}.`); break; }
+      case 'dgVariacao': {
+        const G = this.mundo.dungeonsNovas, v = G.vaga(d.dg), outra = G.vagas.find((o) => o !== v && o.bioma === v.bioma && o.sv.variacao === d.var);
+        if (this.mundo.masmorras.ativa?.vaga === v) this.mundo.masmorras.sair();
+        if (outra) outra.sv.variacao = v.sv.variacao; // troca com a outra vaga (nunca duas iguais)
+        v.sv.variacao = d.var; v.sv.vencidos = []; v.sv.vencida = false;
+        for (const o of [v, outra].filter(Boolean)) { G.apagarEntrada(o); G.montarEntrada(o); }
         this.salvar(); break;
       }
       case 'soltoDungeon': this.soltoDungeon(d.dg); break;

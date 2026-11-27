@@ -297,8 +297,27 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
     - [ ] **Passo 5 — Dungeons** (a especificação do Lâmina, com o adaptador).
           *Especificação do Lâmina:* lugares isolados como as masmorras, mas mais fáceis, com só 2 ou 3 grupos de monstros
           e o **Rei da Dungeon** (o monstro mais forte); **todos capturáveis**.
-          *Proposta feita (com maquetes: lugares possíveis em cada bioma, entradas com ícone e o interior do Gelo);
-          esperando as decisões do Lâmina.*
+          *Decisões do Lâmina (depois da proposta com maquetes):* a dungeon **muda de lugar** no reset; as 2 horas contam
+          **depois de vencer o Rei**; **portão selado** do Rei (abre com todos os grupos vencidos); **2 ou 3 grupos sorteados**
+          no reset; prêmio do Rei: 1 Cristal Forte, 20% de um Supremo, 80 + 10 de ouro por nível da equipe **e a sorte de
+          Galho e Asa**; o Lâmina manda o **guia** (6 variações por bioma, com as artes) e a gente segue as referências,
+          montando um mapa próprio lá dentro (ex.: o caminho até a caverna).
+      - [x] **5.1 — O motor + o Arquipélago** (as 6 variações do guia). *Feito:* `js/dungeons/` (o motor, a lista, os
+            6 lugares de cada bioma e as peças); 3 dungeons ativas por bioma; entrada com o vórtice e o cristal flutuante
+            (aparece ao descobrir, cinza depois do Rei); o tipo de sala `plataforma` no `forma.js`; o prêmio do Rei no
+            `main.js`; o reset de 2 h; `estado.dungeons`; GM na aba Dungeons. As 6 do Arquipélago: Gruta dos Arcos de Maré,
+            Farol Submerso de Solis, Cemitério dos Galeões de Coral, Santuário das Águas Bioluminescentes, Caldeira Verde da
+            Ilha Alta e Labirinto do Manguezal Translúcido. Medido (cenário, sem monstros): 25 a 59 desenhos por quadro;
+            a entrada no mapa ~8.
+      - [ ] **5.2 — Vulcânico** (as 6 do guia: Forja Primordial das Correntes, Bacia do Vitriol Esmeralda, Catedral de
+            Obsidiana Espelhada, Pináculos do Basalto Partido, Necrópole das Cinzas Silenciosas, Garganta dos Gêiseres).
+      - [ ] **5.3 — Deserto** (Pirâmide do Espelho Solar, Hipogeu dos Escribas Azuis, Templo da Ampulheta Seca, Avenida das
+            Esfinges Soterradas, Cisterna Secreta do Oásis, Doca das Barcas Solares). *Falta a arte do Hipogeu.*
+      - [ ] **5.4 — Floresta** (Catedral das Cortinas de Âmbar, Observatório dos Freixos Cantantes, Pântano das
+            Lanternas-do-Brejo, Torre Oca da Árvore-Mãe, Garganta das Pontes Vivas, Jardim dos Esporos Dourados).
+            *Faltam as artes de 4.*
+      - [ ] **5.5 — Gelo** (Coração da Geleira Fendida, Mina Abandonada do Passo Norte, Templo Rúnico da Névoa Branca, Termas
+            Profundas de Vapor e Gelo, Casco do Quebra-Gelo Aprisionado, Torre de Vigia da Cordilheira). *Faltam as artes.*
     - [ ] **Passo 6 — Níveis** (o Lâmina vai rever a regra mais para frente).
   - [ ] **8.4 — Regiões** com outros reinos (futuro).
 
@@ -315,6 +334,8 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
 - **Masmorras novas são áreas separadas** (entra pela porta e o jogo carrega só aquele lugar). O Caminho das Brasas
   e a Trilha Ancestral continuam como corredores abertos.
 - **Dungeons** (especificação do Lâmina): adaptador sobre o nosso mapa, **brilho falso** no lugar da luz pontual,
-  jogo salvo **na conta e na nuvem** (`estado.dungeons`), **reset em 2 horas** de tempo de jogo.
+  jogo salvo **na conta e na nuvem** (`estado.dungeons`), **reset em 2 horas** de tempo de jogo (contadas depois de vencer
+  o Rei; a dungeon muda de lugar e de variação). Lugares isolados (área separada), mais fáceis, com **2 ou 3 grupos** e o
+  **Rei da Dungeon**; **todos capturáveis**; portão selado do Rei; 6 variações por bioma pelo guia do Lâmina.
 - **Sem mapa na tela e sem viagem rápida** (decisão do Lâmina): o jogador anda por tudo.
 - **Níveis:** a regra vai ser revista mais para frente.

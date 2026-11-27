@@ -7,8 +7,9 @@
 //
 // A forma é feita de:
 //  - salas: elipses (rx, rz) com a altura do chão (número ou função) e o tipo
-//    'aberta' (céu aberto: morros em volta), 'canion' (céu aberto, paredões de pedra)
-//    ou 'gruta' (paredes altas de pedra, sem céu);
+//    'aberta' (céu aberto: morros em volta), 'canion' (céu aberto, paredões de pedra),
+//    'gruta' (paredes altas de pedra, sem céu) ou 'plataforma' (a beirada CAI: convés,
+//    passarela sobre a água, topo de torre; "fundo" = quantos metros o chão desce);
 //  - corredores: ligam o centro de uma sala ao de outra (meia largura "larg");
 //  - abismos: cápsulas em volta de uma ponte, onde o chão cai (não dá para andar);
 //  - buracos: círculos de água funda (no Lago Congelado), que empurram para fora.
@@ -82,26 +83,26 @@ export class FormaMasmorra {
 
   // Onde dá para andar (local): d (negativo = dentro), a altura do chão e o tipo mais perto
   andavelLocal(x, z) {
-    let d = Infinity, soma = 0, somaH = 0, tipo = 'gruta', dTipo = Infinity;
+    let d = Infinity, soma = 0, somaH = 0, tipo = 'gruta', dTipo = Infinity, fundo = 6;
     for (const s of this.salas) {
       const di = this.dSala(s, x, z), w = pesoD(di);
       soma += w; somaH += w * this.hSala(s, x, z);
       if (di < d) d = di;
-      if (di < dTipo) { dTipo = di; tipo = s.tipo; }
+      if (di < dTipo) { dTipo = di; tipo = s.tipo; fundo = s.fundo ?? 6; }
     }
     for (const c of this.corredores) {
       const di = this.dCorredor(c, x, z), w = pesoD(di) * (c.forte || 1);
       const t = this.tCorredor(c, x, z);
       soma += w; somaH += w * (c.h ?? (c.ha + (c.hb - c.ha) * t));
       if (di < d) d = di;
-      if (di < dTipo - 1) { dTipo = di; tipo = c.tipo; }
+      if (di < dTipo - 1) { dTipo = di; tipo = c.tipo; fundo = c.fundo ?? 6; }
     }
-    return { d, h: soma > 0 ? somaH / soma : 0, tipo };
+    return { d, h: soma > 0 ? somaH / soma : 0, tipo, fundo };
   }
 
   // ---------- altura do chão (local) ----------
   alturaLocal(x, z) {
-    const { d, h, tipo } = this.andavelLocal(x, z);
+    const { d, h, tipo, fundo } = this.andavelLocal(x, z);
     // buracos de água funda (o fundo fica escuro lá embaixo)
     for (const b of this.buracos) {
       const db = Math.hypot(x - b.x, z - b.z) - b.r;
@@ -115,6 +116,8 @@ export class FormaMasmorra {
     for (const a of this.abismos) {
       if (this.dSegmento(a.a, a.b, x, z) < a.r) return h - Math.min(a.fundo, d * 5);
     }
+    // plataforma (convés, passarela, topo de torre): a beirada cai até o fundo
+    if (tipo === 'plataforma') return h - Math.min(fundo, 0.4 + d * 3);
     // paredes: morros nas áreas abertas, rocha alta nas grutas
     const ruido = (Math.sin(x * 0.21 + z * 0.13) * Math.sin(z * 0.17 - x * 0.07) + 0.5 * Math.sin(x * 0.53 - z * 0.41)) * Math.min(1, d / 4);
     if (tipo === 'aberta') return h + Math.min(14, d * 0.5 + d * d * 0.012) + ruido * 1.6;

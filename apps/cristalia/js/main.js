@@ -566,6 +566,7 @@ class Jogo {
     else this.mundo.tirarBandeira();
     this.mundo.trocarModeloCasa();
     this.mundo.trocarModeloBandeira();
+    this.mundo.dungeonsNovas.prepararEstado(); // as dungeons do jogo salvo (onde estão, quais já foram achadas)
     this.mundo.vestirCoroa(!!(this.estado.coroa && this.estado.coroaVestida));
     this.mundo.irParaBase();
     this.mostrarTela('mundo');
@@ -899,7 +900,13 @@ class Jogo {
     const ganho = { comum: 0, forte: 0, supremo: 0 };
     if (b.grupo && b.liderDerrotado) { ganho.comum += 2; ganho.forte += 1; }
     // o chefe deixa um tesouro, vencido ou capturado
-    if (b.chefe && vencidos.length) {
+    // o Rei de uma dungeon (passo 5) tem o prêmio dele: 1 forte, 20% de um supremo, ouro pelo nível e a sorte de Galho e Asa
+    const rei = b.chefe && vencidos.length ? b.selvagem.masmorra?.premioRei?.() : null;
+    if (rei) {
+      ganho.forte += rei.forte; ganho.supremo += rei.supremo;
+      this.aviso(b.selvagem.masmorra.textoRei(b.capturados.length > 0));
+      b.selvagem.masmorra.chefeVencido();
+    } else if (b.chefe && vencidos.length) {
       ganho.forte += 3; ganho.supremo += 2;
       const chefe = ESPECIES[b.chefeEspecie] || ESPECIES.ignarion, masmorra = b.selvagem.masmorra;
       const onde = masmorra ? `${masmorra.cfg.fimFem ? 'da' : 'do'} ${masmorra.cfg.fim}` : chefe.onde || 'da masmorra';
@@ -914,11 +921,12 @@ class Jogo {
     this.ganharCristais(ganho);
     // Ouro: cada selvagem vencido dá 5 a 10; num grupo, 4 por comum e 10 pelo líder; o chefe dá 300
     if (!b.treinador && ativo.hp > 0) {
-      let moedas = b.chefe && vencidos.length ? (b.selvagem.masmorra?.ouroChefe ?? MOEDAS.chefe) : 0; // masmorras novas: 300 + 50 por nível
+      let moedas = b.chefe && vencidos.length ? (rei?.ouro ?? b.selvagem.masmorra?.ouroChefe ?? MOEDAS.chefe) : 0; // masmorras novas: 300 + 50 por nível
       if (!b.chefe) for (const d of b.derrotados) moedas += b.grupo ? (d.lider ? MOEDAS.liderGrupo : MOEDAS.comumGrupo) : MOEDAS.selvagem[0] + Math.floor(Math.random() * (MOEDAS.selvagem[1] - MOEDAS.selvagem[0] + 1));
       this.bolsa.ganharMoedas(moedas);
       // Galho Raro e Asa do Anjo: por sorte, só do chefe da masmorra (os acampamentos e o mapa não dão)
-      if (b.chefe && vencidos.length) this.bolsa.ganharItens(sortearDrop('chefeMasmorra', Math.random(), bonusDrop(b.selvagem.masmorra?.nivelMasmorra)));
+      if (rei) this.bolsa.ganharItens(sortearDrop(rei.drop, Math.random()));
+      else if (b.chefe && vencidos.length) this.bolsa.ganharItens(sortearDrop('chefeMasmorra', Math.random(), bonusDrop(b.selvagem.masmorra?.nivelMasmorra)));
     }
     for (const novo of b.capturados) {
       novo.hp = Math.max(1, novo.hp);
@@ -1423,6 +1431,7 @@ class Jogo {
     }
     this.ovo.atualizar(dt); // o tempo do ovo passa no mapa e na batalha
     this.passarTesouro(dt); // o ouro do Reino (Campeão) junta enquanto você joga
+    if (this.estado && (this.modo === 'mundo' || this.modo === 'batalha')) this.mundo.dungeonsNovas?.passarTempo(dt); // o reset das dungeons (2 h de jogo)
     // a câmera sempre com a proporção da tela (senão a imagem fica achatada ou esticada)
     if (Math.abs(camera.aspect - this.aspecto) > 0.001 && (camera === this.mundo.camera || camera === this.batalha?.camera)) { camera.aspect = this.aspecto; camera.updateProjectionMatrix(); }
     if (this.modo === 'batalha' && this.batalha) { cena = this.batalha.cena; camera = this.batalha.camera; }

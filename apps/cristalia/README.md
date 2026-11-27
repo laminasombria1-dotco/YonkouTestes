@@ -390,9 +390,34 @@ O Reino fica **no meio do mapa** (mundo novo, `PLANO.md`): é o lugar seguro ond
 - Os cristais do chão reaparecem 1 minuto depois, com a cor sorteada de novo.
 - São cerca de 40 espalhados pelo mapa, mais os **lugares secretos**: embaixo do arco de pedra do Deserto e na margem do oásis (Forte), ao lado do cristal de gelo gigante da Neve (Supremo) e no píer do lago escondido da Floresta (Forte).
 
+## Dungeons (mundo novo, passo 5)
+
+**Dungeons são mais fáceis que as masmorras** (decisão do Lâmina): lugares isolados (área separada, como as masmorras) com **2 ou 3 grupos de monstros** e o **Rei da Dungeon**, o monstro mais forte. **Todos são capturáveis** (o Rei nunca vem na forma final, então os cristais normais seguram). O código fica em `js/dungeons/` (veja o README de lá).
+
+- **Quantas e onde:** **3 dungeons ativas por bioma**. Cada bioma tem **6 lugares possíveis** (`js/dungeons/lugares.js`, achados pela semente: planos, bem dentro do bioma, longe das vilas, das entradas das masmorras, da Estrada Real, dos corredores e dos lugares únicos dos biomas). **O mapa não muda:** a entrada é só posta em cima do chão, e os 6 lugares ficam sem árvore desde o começo. Cada dungeon usa uma das **6 variações do guia do Lâmina** daquele bioma (nunca duas iguais ao mesmo tempo).
+- **Pronto:** o **Arquipélago** (as 6 variações). Os outros biomas entram quando as variações deles ficarem prontas.
+- **A entrada:** um arco de pedra com o **vórtice** (o redemoinho colorido que serve de porta), o anel de pedras e a poça de brilho falso. A **25 m** aparece "Você descobriu..." e, daí em diante, um **cristal flutua em cima da entrada** (sem névoa: dá para ver de longe). Sem mapa na tela: é assim que você acha as dungeons.
+- **Lá dentro:** a porta de luz do começo (sair a qualquer hora), as salas com os grupos (os mesmos níveis dos grupos do mapa, +1 a cada grupo) e o **portão selado do Rei**, que só abre quando **todos os grupos** forem vencidos. Os grupos vencidos ficam salvos até o reset (dá para sair no meio). Sem monstros soltos.
+- **O Rei:** maior, com coroa, no trono da última sala. Nível = o líder do último grupo + 4. **Prêmio:** 1 Cristal Forte, **20% de chance de um Supremo**, **80 + 10 de ouro por nível da sua equipe** e a sorte de **Galho Raro e Asa do Anjo** (`DROPS.reiDungeon` no `bolsa.js`: 50% galho, 25% asa). Vencido ou capturado, abre o portal de saída.
+- **Reset:** depois de vencer o Rei, o cristal fica **cinza** e o vórtice apaga. **2 horas de tempo de jogo** depois (só conta com o jogo aberto, no mapa ou na batalha), a dungeon **se renova**: muda de lugar (para um dos lugares livres do bioma), de variação, sorteia de novo os grupos (2 ou 3) e o Rei, e precisa ser **descoberta de novo**.
+- **Jogo salvo:** na conta e na nuvem, em `estado.dungeons` (`{ agua0: { lugar, variacao, grupos, vencidos, rei, achada, vencida, t } ... }`). Um save antigo ganha dungeons sorteadas na primeira vez. Fechou o jogo lá dentro? Você volta na frente da entrada. A bandeira não pode ser fincada lá dentro.
+- **GM:** aba Dungeons, no começo: ir até a entrada, entrar, ir direto ao Rei, resetar agora e trocar a variação.
+
+### As 6 do Arquipélago (o guia do Lâmina)
+| Variação | Grupo 1 | Grupo 2 | Grupo 3 | O Rei |
+|---|---|---|---|---|
+| **Gruta dos Arcos de Maré** | Fenda da Maré Baixa (paredões dourados, conchas, cracas) | Salão dos Pilares de Calcário (colunas em arcos, água turquesa) | Câmaras de Sifão (arcos de coral seco) | Lagoa do Teto Aberto (claraboia, samambaias e orquídeas) |
+| **Farol Submerso de Solis** | Topo da Escadaria Quebrada (no alto da torre, ao sol) | Galeria dos Prismas Salinos (janelas, espelhos, cristais de sal) | Câmara da Lente Submersa (meio alagada, a lente gigante) | Base do Recife Profundo (arcos de pedra, esponjas que brilham, bolhas) |
+| **Cemitério dos Galeões de Coral** | Convés Inclinado da Proa | Porão dos Jardins de Esponja (navio partido, poças, frestas de sol) | Passarela das Âncoras Suspensas (vigas e correntes sobre o canal) | Câmara do Leme Cristalino (a popa com os vitrais) |
+| **Santuário das Águas Bioluminescentes** (sempre de noite) | Cais das Lanternas Âmbar | Corredor das Marés Luminosas (o chão alagado brilha) | Anfiteatro das Conchas Gigantes (degraus em roda da piscina) | Poço Estelar (o espelho d'água sob as estrelas) |
+| **Caldeira Verde da Ilha Alta** (subida ao ar livre) | Garganta das Samambaias Gigantes | Terraços das Cachoeiras Gêmeas (piscinas esmeralda, arco-íris) | Ponte Pênsil dos Bambuzais (sobre o abismo) | Mirante da Cratera Florido (a ruína no pico, o mar lá embaixo) |
+| **Labirinto do Manguezal Translúcido** | Portal das Raízes em Arco | Passarela dos Espelhos Rasos (o cruzamento, com becos) | Clareira das Árvores-Gaiola (a cúpula de galhos) | Relicário da Maré Parada (a plataforma octogonal branca) |
+
+- **Leve:** as peças de cada dungeon são juntadas numa malha só por material. O cenário custa **25 a 59 desenhos por quadro** (as masmorras ficam entre 37 e 58); com um grupo de 6 monstros na tela, 82 a 101 (como no mapa de fora). A entrada no mapa custa ~8 desenhos. A busca dos lugares leva ~0,15 s no PC na primeira vez e depois fica guardada no aparelho.
+
 ## Masmorras novas (áreas separadas, mundo novo passo 4)
 
-São **2 por bioma** (o Caminho das Brasas e a Trilha Ancestral contam como uma delas e continuam como corredores abertos), nos lugares que a semente guardou em `LUGARES` (`js/mapa/gerador.js`). **Masmorras são difíceis e demoradas; dungeons são fáceis** (passo 5). Prontas: **Gruta do Trovão** e **Torre da Nevasca** (Gelo), **Mina Abandonada** e **Tumba das Areias** (Deserto), **Pântano Sombrio** (Floresta), **Forja Antiga** (Vulcânico), **Templo Submerso** e **Gruta das Marés** (Arquipélago): as 8 completas.
+São **2 por bioma** (o Caminho das Brasas e a Trilha Ancestral contam como uma delas e continuam como corredores abertos), nos lugares que a semente guardou em `LUGARES` (`js/mapa/gerador.js`). **Masmorras são difíceis e demoradas; dungeons são fáceis** (passo 5, veja "Dungeons" acima). Prontas: **Gruta do Trovão** e **Torre da Nevasca** (Gelo), **Mina Abandonada** e **Tumba das Areias** (Deserto), **Pântano Sombrio** (Floresta), **Forja Antiga** (Vulcânico), **Templo Submerso** e **Gruta das Marés** (Arquipélago): as 8 completas.
 
 - **Entrada escondida:** no mapa só fica a porta, **sem ícone**. As exceções, bem à vista, pelas artes do Lâmina: a **Gruta do Trovão** (a caverna de gelo: paredão de rocha escura, vigas de mina, pingentes, brilho ciano lá dentro e uma lanterna) a **Tumba das Areias** (o hipogeu no penhasco de arenito, com o disco solar alado e 2 colossos) a **Forja Antiga** (a entrada das Cavernas de Tubos de Lava, no flanco do Monte Vael; a porta mudou para lá) e a **Gruta das Marés** (a gruta marinha de calcário, com samambaias, orquídeas e o barco). A 22 m dela aparece **"Você descobriu a Gruta do Trovão!"** (fica salvo: `estado.masmorras.trovao.achada`). Encostou na boca, a tela escurece e o jogo monta **só a masmorra**.
 - **Área separada:** cada masmorra fica **bem longe do mapa redondo** (x = 1800, 2700, ...). Lá dentro, `alturaEm`, a colisão e a região perguntam à forma da masmorra (`interiorEm` em `js/masmorras/forma.js`); o mapa de fora some sozinho (os chunks ficam longe e são apagados) e os monstros dele somem. Ao sair, **tudo da masmorra é apagado da memória** (só uma existe por vez).
@@ -1155,6 +1180,11 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/biomas/vulcao.js` | O Vulcânico (Caldeira de Ignis-Vael): a Forja Primordial, o Monte Vael, a Bacia do Vitriol, as cinzas, a Chuva de Cinzas e as peças comuns |
 | `js/biomas/arquipelago.js` | O Arquipélago (Marés de Safira): a Enseada dos Bangalôs, a Ilha da Cachoeira, o arco, o farol, o naufrágio, o atol, os veleiros, o plâncton, a chuva com arco-íris e as peças comuns |
 | `js/biomas/clima.js` | A cor do céu, da névoa e da luz de cada bioma |
+| `js/dungeons/dungeons.js` | As dungeons (passo 5): as entradas no mapa, o cristal flutuante, descobrir, entrar, os grupos, o portão do Rei, o Rei, o reset de 2 horas e o jogo salvo (`estado.dungeons`) |
+| `js/dungeons/lista.js` | Os números das dungeons (vagas, reset, prêmio) e as variações de cada bioma |
+| `js/dungeons/lugares.js` | Os 6 lugares possíveis das dungeons em cada bioma. Só matemática, guardada no aparelho |
+| `js/dungeons/pecas.js` | As peças que as dungeons repetem (água, feixe de luz, brilho falso, samambaia, flor, cipó, coluna, arco, casco de navio, corrente) |
+| `js/dungeons/arq-*.js` | As 6 dungeons do Arquipélago (arcos, farol, galeões, santuário, caldeira, mangue) |
 | `js/biomas/gelo.js` | As peças únicas do Gelo (`BiomaGelo`), o brilho falso, a neve caindo e o pinheiro nevado |
 | `js/mapa/chunks.js` | Os chunks: cria o chão, a água, a lava e os objetos de cada pedaço do mapa, carrega e apaga conforme você anda, e o LOD |
 | `js/mapa/grade.js` | Grade de obstáculos: guarda as árvores, pedras e peças em quadradinhos de 8 m, para a colisão só olhar o que está perto |

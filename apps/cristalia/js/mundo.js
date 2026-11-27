@@ -28,6 +28,7 @@ import { Grade, ListaObstaculos } from './mapa/grade.js';
 import { Chunks } from './mapa/chunks.js';
 import { interiorEm } from './masmorras/forma.js';
 import { Masmorras } from './masmorras/masmorra.js';
+import { Dungeons } from './dungeons/dungeons.js';
 import { lerQualidade } from './mapa/config.js';
 import { ESPECIES, ELEMENTOS, APARICOES, PERIODO_DA_LINHA, DUPLAS, ORDEM_DUPLAS, INTERVALO_DUPLO, CRISTAIS, criarMonstro, statsDe, formaPorNivel, especieDaEscolha, nomeTipo, tetoSuave } from './dados.js';
 
@@ -138,6 +139,7 @@ export class Mundo {
     this.reino = new Reino(this, alturaEm);
     this.vilas = new Vilas(this); // as 5 vilas (uma em cada bioma), com loja e arena
     this.masmorras = new Masmorras(this); // as masmorras novas: a entrada no mapa e a área separada
+    this.dungeonsNovas = new Dungeons(this); // as dungeons (passo 5): 3 por bioma, sorteadas pelo mapa, resetam em 2 h de jogo
     this.gelo = new BiomaGelo(this); // as peças únicas do Gelo (acampamento, trilha, lago, arco, fonte termal) e a neve caindo
     this.floresta2 = new BiomaFloresta(this); // as peças únicas da Floresta (Catedral das Cortinas, Pontes de Raiz, Pântano das Lanternas Azuis)
     this.deserto = new BiomaDeserto(this); // as peças únicas do Deserto (o caminho até as pirâmides, o oásis, a caravana) e a tempestade de Khamsin
@@ -989,6 +991,7 @@ export class Mundo {
     for (const d of this.dungeons) d.atualizar(dt, t);
     // Masmorras novas: a entrada no mapa ou, lá dentro, as etapas, os portões e o chefe
     this.masmorras.atualizar(dt, t, pausado);
+    this.dungeonsNovas.atualizar(dt, t, pausado); // as entradas das dungeons (lá dentro, quem cuida é o this.masmorras)
     if (this.jogo.batalha) return;
 
     // Grupos: andam juntos em formação; aparecem mais conforme sua equipe fica forte
