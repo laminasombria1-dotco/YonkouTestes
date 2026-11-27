@@ -9,6 +9,7 @@
 import * as THREE from 'three';
 import { ESPECIES, CRISTAIS } from './dados.js';
 import { temGLB, montarGLB, animarGLB, piscarGLB, descartarGLB } from './modelos3d.js';
+import { materialFuro } from './biomas/comum.js';
 export { carregarModelos3D, tocarGolpe, ajustarGiro, pararGolpe } from './modelos3d.js';
 
 // ---------- peças reaproveitáveis ----------
@@ -1823,6 +1824,8 @@ export function criarCasa(nivel = 1) {
   for (let i = 0; i < 3; i++) fumacas.push(p(g, G.ico(0.22, 0), mat('#e0e0e0', { transparent: true, opacity: 0.7, depthWrite: false }), [1.0, yChamine, -0.5]));
   g.userData = { janelas, fumacas, bandeira, nivel, yChamine };
   juntarPecas(g, new Set([...janelas, ...fumacas, bandeira]));
+  // quando a casa fica entre a câmera e o jogador, a parte da frente fica meio transparente
+  g.traverse((o) => { if (o.isMesh && !o.material.transparent) o.material = materialFuro(o.material.clone()); });
   return g;
 }
 

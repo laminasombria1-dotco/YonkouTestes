@@ -74,8 +74,8 @@ varying float vFade;`)
 }
 // ---------- parede que abre um "furo" quando fica entre a câmera e o jogador ----------
 // Para peças grandes (muralhas, castelo, casas), onde o centro da peça não serve: a placa de vídeo
-// vê, para cada ponto da parede, se ele está perto da linha câmera → jogador. Se estiver, some
-// por completo (totalmente transparente, pedido do Lâmina). O chão nunca some
+// vê, para cada ponto da parede, se ele está perto da linha câmera → jogador. Se estiver, fica
+// quase transparente (25% visível, pedido do Lâmina): dá para ver o boneco através. O chão nunca muda
 // (só o que está acima dos pés do jogador) e nem o que está colado nele.
 export function materialFuro(m, raio = 3.4) {
   m.onBeforeCompile = (sh) => {
@@ -85,15 +85,17 @@ export function materialFuro(m, raio = 3.4) {
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvMundo = (modelMatrix * vec4(transformed, 1.0)).xyz;');
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', `#include <common>
-uniform vec3 uCam; uniform vec3 uJog; varying vec3 vMundo;`)
+uniform vec3 uCam; uniform vec3 uJog; varying vec3 vMundo; float vTransp = 0.0;`)
       .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
 { vec3 a = uCam, d = uJog + vec3(0.0, 1.0, 0.0) - uCam;
   float t = dot(vMundo - a, d) / max(dot(d, d), 0.0001);
   if (t > 0.0 && t < 0.93 && vMundo.y > uJog.y + 0.35) {
-    float r = ${raio.toFixed(2)} * (0.4 + 0.6 * t); // perto da câmera o furo é um pouco menor
-    if (length(vMundo - (a + d * t)) < r) discard; // dentro do furo: totalmente transparente
-  } }`);
+    float r = ${raio.toFixed(2)} * (0.6 + 0.4 * t); // perto da câmera a área é um pouco menor
+    vTransp = 1.0 - smoothstep(r * 0.6, r, length(vMundo - (a + d * t))); // 1 = bem na frente do jogador
+  } }`)
+      .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.a *= 1.0 - 0.75 * vTransp; // fica 25% visível: dá para ver o boneco através');
   };
+  m.transparent = true; // a parede na frente fica meio transparente (como os coqueiros)
   m.customProgramCacheKey = () => 'furo' + raio + m.type + (m.side || 0);
   return m;
 }
