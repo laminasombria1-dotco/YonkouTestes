@@ -113,9 +113,9 @@ export const SKINS = {
 export function roupasLiberadas(estado) {
   return Object.keys(SKINS).filter((id) => {
     const s = SKINS[id];
-    if (s.como === 'gratis') return true;
+    if (s.como === 'gratis' || estado?.roupas?.includes(id)) return true; // grátis, comprada (ou liberada pelo GM)
     if (s.como === 'campeao') return !!(estado?.campeao || estado?.coroa);
-    return !!estado?.roupas?.includes(id);
+    return false;
   });
 }
 

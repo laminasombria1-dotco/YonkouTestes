@@ -33,7 +33,7 @@ export class Criacao {
     this.ligarBotoes();
   }
 
-  // op: { modo: 'novo' | 'guarda', personagem, liberadas: [ids], nome, aoTerminar(pp), aoVoltar() }
+  // op: { modo: 'novo' | 'guarda', personagem, liberadas: [ids], nome, coroa, aoTerminar(pp), aoVoltar() }
   abrir(op, passo = 1) {
     this.op = op;
     this.pp = normalizarPersonagem(op.personagem);
@@ -93,7 +93,7 @@ export class Criacao {
     this.bonecos = [];
     const lista = this.passo === 1 ? [['m', 0], ['f', 1]] : [[this.pp.genero, 2]];
     for (const [genero, ped] of lista) {
-      const modelo = criarPersonagem({ ...this.pp, genero });
+      const modelo = criarPersonagem({ ...this.pp, genero, coroa: !!this.op.coroa }); // no Guarda-roupa, com a coroa (se estiver vestida)
       const p = this.pedestais[ped];
       modelo.position.set(p.position.x, 0.23, 0);
       modelo.rotation.y = this.passo === 1 ? (genero === 'm' ? 0.35 : -0.35) : 0.4;

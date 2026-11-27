@@ -11,6 +11,7 @@
 //  - Loja: a barraca listrada da vila do Reino. Encoste nela para comprar.
 // Na batalha, as poções ficam no botão do frasco (recarga de 10 s): batalha.js.
 // =============================================================
+import { SKINS, roupasLiberadas } from './personagem.js';
 import { ESPECIES, ELEMENTOS, MASMORRA, statsDe } from './dados.js';
 import { SEMENTES, ORDEM_SEMENTES, JARDIM, AFETO, garantirJardim, faseDo, tempoTexto, plantar, colher, afetoDe, alimentar } from './jardim.js';
 
@@ -113,6 +114,7 @@ export class Bolsa {
     garantirJardim(estado); // jardim, sementes e frutas
     if (typeof estado.asas !== 'number') estado.asas = 0;       // Asa do Anjo (evolução rara)
     if (typeof estado.coracoes !== 'number') estado.coracoes = 0; // Coração do Guardião (evolução rara)
+    if (!Array.isArray(estado.roupas)) estado.roupas = [];      // roupas compradas na Loja do Reino (o Guarda-roupa da casa)
   }
 
   ganharMoedas(n) {
@@ -225,6 +227,22 @@ export class Bolsa {
       if (txt) { j.aviso(txt); j.salvar(); }
     }
     if (cmd === 'evoluirJardim') this.evoluirJardim();
+    if (cmd === 'guardaRoupa') {
+      if (j.mundo.distanciaCasa() > 8) { j.aviso('O Guarda-roupa fica na sua casa, no Reino (entre a arena e o portão).'); return; }
+      this.fechar();
+      j.abrirGuardaRoupa();
+      return;
+    }
+    if (cmd === 'comprarRoupa') {
+      const s = SKINS[d.qual];
+      if (!s || s.como !== 'loja' || est.roupas.includes(d.qual)) return;
+      if (est.moedas < s.preco) { j.aviso(`Faltam ${s.preco - est.moedas} de ouro.`); return; }
+      est.moedas -= s.preco;
+      est.roupas.push(d.qual);
+      j.aviso(`Você comprou a roupa ${s.nome}! Vista no Guarda-roupa da sua casa.`);
+      j.atualizarHudMundo(); j.salvar(); this.renderLoja();
+      return;
+    }
     if (cmd === 'coroa' && est.coroa) { est.coroaVestida = !est.coroaVestida; j.mundo.vestirCoroa(est.coroaVestida); j.aviso(est.coroaVestida ? 'Você vestiu a Coroa do Rei.' : 'Você guardou a Coroa do Rei.'); j.salvar(); }
     if (cmd === 'alimentar') {
       const m = [...est.equipe, ...est.reserva].find((x) => x.uid === d.uid);
@@ -281,7 +299,9 @@ export class Bolsa {
         <div class="bolsa-linha">${evoluirBandeira}</div></div>
       <div class="bolsa-secao"><h3>Casa no Reino · nível ${nv}</h3>
         <div class="bolsa-linha"><small>${CASA.texto[nv]} Ela fica entre a arena e o portão do Reino.</small></div>
-        <div class="bolsa-linha"><span class="item"><i class="madeira"></i>Galho Raro ×${est.galhos}</span>${evoluirCasa}</div></div>
+        <div class="bolsa-linha"><span class="item"><i class="madeira"></i>Galho Raro ×${est.galhos}</span>${evoluirCasa}</div>
+        <div class="bolsa-linha"><button class="bolsa-btn" type="button" data-bolsa="guardaRoupa" ${m.distanciaCasa() <= 8 ? '' : 'disabled'}>👕 Guarda-roupa</button>
+          <small>Troque o personagem, a pele, o cabelo e a roupa (agora: ${SKINS[est.personagem?.skin]?.nome || 'Explorador(a)'}; ${roupasLiberadas(est).length} de ${Object.keys(SKINS).length} roupas)${m.distanciaCasa() <= 8 ? '' : ' (vá até a sua casa no Reino)'}.</small></div></div>
       <div class="bolsa-secao"><h3>Itens raros</h3>
         <div class="bolsa-linha"><span class="item"><i class="madeira"></i>Galho Raro ×${est.galhos}</span><span class="item"><i class="asa"></i>Asa do Anjo ×${est.asas}</span><span class="item"><i class="coracao"></i>Coração do Guardião ×${est.coracoes}</span></div>
         <small>Galho Raro e Asa do Anjo: caem por sorte dos chefes das masmorras (o galho cai mais). Coração do Guardião: vem do afeto do seu monstro. A Asa e o Coração servem para a evolução rara (Nv.50).</small></div>
@@ -364,6 +384,20 @@ export class Bolsa {
           <button class="bolsa-btn" type="button" data-bolsa="comprarSemente" data-qual="${id}" data-n="1" ${est.moedas < S.preco ? 'disabled' : ''}>Comprar 1</button>
           <button class="bolsa-btn" type="button" data-bolsa="comprarSemente" data-qual="${id}" data-n="5" ${est.moedas < S.preco * 5 ? 'disabled' : ''}>Comprar 5</button></div>
       </div>`;
-    }).join('')) + '<p class="vazio">Ganhe ouro vencendo monstros, grupos, chefes e os treinadores das arenas.</p>';
+    }).join('') + this.htmlRoupasLoja()) + '<p class="vazio">Ganhe ouro vencendo monstros, grupos, chefes e os treinadores das arenas.</p>';
+  }
+
+  // Roupas à venda (só na Loja do Reino): depois de comprar, vista no Guarda-roupa da casa
+  htmlRoupasLoja() {
+    const est = this.est, lista = Object.entries(SKINS).filter(([, s]) => s.como === 'loja');
+    if (!lista.length) return '';
+    return '<h3 class="loja-titulo">Roupas</h3>' + lista.map(([id, s]) => {
+      const tem = est.roupas.includes(id);
+      return `<div class="loja-item"><i class="roupa">${s.icone}</i>
+        <div><b>${s.nome}</b> <small>${tem ? '(já é sua)' : ''}</small><p>${s.texto} Vista no Guarda-roupa da sua casa.</p></div>
+        <div class="bolsa-linha"><span class="preco"><i class="moeda"></i>${s.preco}</span>
+          <button class="bolsa-btn" type="button" data-bolsa="comprarRoupa" data-qual="${id}" ${tem || est.moedas < s.preco ? 'disabled' : ''}>${tem ? 'Comprada' : 'Comprar'}</button></div>
+      </div>`;
+    }).join('');
   }
 }

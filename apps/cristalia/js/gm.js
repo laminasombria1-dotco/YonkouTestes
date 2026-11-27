@@ -21,6 +21,7 @@ import {
   MASMORRAS_NOVAS, dadosMasmorra, niveisMasmorraNova, nivelChefeMasmorraNova,
 } from './dados.js';
 import { criarModelo, criarCoroa, criarAuraDupla } from './modelos.js';
+import { SKINS, roupasLiberadas } from './personagem.js';
 import { zonaEm, NOMES_ZONA, NASCER, ANG_NASCER } from './mundo.js';
 import { REINO } from './dungeon.js';
 import { ARENA_REINO, TREINADORES } from './reino.js';
@@ -429,6 +430,9 @@ export class PainelGM {
           <button class="gm-btn" type="button" data-gm="tesouroCheio">Encher o ouro do Reino</button>
           <button class="gm-btn" type="button" data-gm="arenaProg" data-v="zerar">Zerar a arena</button>
           <button class="gm-btn" type="button" data-gm="moedas">+1000 de ouro</button>
+          <button class="gm-btn" type="button" data-gm="roupasTodas">Liberar todas as roupas</button>
+          <button class="gm-btn" type="button" data-gm="roupasZerar">Tirar as roupas ganhas</button>
+          <button class="gm-btn" type="button" data-gm="guardaRoupa">Abrir o Guarda-roupa aqui</button>
           <button class="gm-btn" type="button" data-gm="chocar">Chocar o ovo agora</button>
           <button class="gm-btn" type="button" data-gm="madeira">+6 Galhos Raros</button>
           ${[1, 2, 3, 4, 5].map((n) => `<button class="gm-btn" type="button" data-gm="casaNivel" data-n="${n}">Casa nível ${n}</button>`).join('')}
@@ -629,6 +633,13 @@ export class PainelGM {
       case 'semFome': for (const m of [...this.estado.equipe, ...this.estado.reserva]) if (m.afeto) { m.afeto.satisfeito = 0; m.afeto.comeu = 0; } this.jogo.aviso('GM: ninguém está satisfeito.'); this.salvar(); break;
       case 'jardimNivel': this.estado.jardim.nivel = Number(d.n); this.estado.jardim.canteiros.length = Math.min(this.estado.jardim.canteiros.length, JARDIM.vagas[d.n - 1]); garantirJardim(this.estado); this.jogo.aviso(`GM: jardim no nível ${d.n}.`); this.salvar(); break;
       case 'bandeiraNivel': this.jogo.estado.bandeiraNivel = Number(d.n); this.mundo.trocarModeloBandeira(); this.jogo.aviso(`GM: bandeira no nível ${d.n}.`); this.jogo.salvar(); break;
+      case 'roupasTodas': this.jogo.estado.roupas = Object.keys(SKINS); this.jogo.salvar(); this.jogo.aviso('GM: todas as roupas liberadas (vista no Guarda-roupa).'); break;
+      case 'roupasZerar': {
+        const est = this.jogo.estado; est.roupas = [];
+        if (!roupasLiberadas(est).includes(est.personagem?.skin)) { est.personagem = { ...est.personagem, skin: 'explorador' }; this.mundo.vestirPersonagem(est.personagem); }
+        this.jogo.salvar(); this.jogo.aviso('GM: só as roupas grátis (e o Traje Real, se for Campeão).'); break;
+      }
+      case 'guardaRoupa': this.fecharPainel(); this.jogo.abrirGuardaRoupa(); break;
       case 'moedas': this.jogo.estado.moedas = (this.jogo.estado.moedas || 0) + 1000; this.jogo.atualizarHudMundo(); this.jogo.salvar(); break;
       case 'chocar': if (this.jogo.ovo.dados) { this.jogo.ovo.chocarAgora(); this.fecharPainel(); return; } this.jogo.aviso('GM: você não tem ovo (domine a arena).'); break;
       case 'tesouroCheio': if (this.jogo.estado.tesouro) { this.jogo.estado.tesouro.guardado = 600; this.jogo.aviso('GM: 600 de ouro esperando no saquinho.'); } else this.jogo.aviso('GM: só o Campeão tem ouro do Reino (domine a arena).'); break;

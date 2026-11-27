@@ -562,6 +562,25 @@ class Jogo {
     });
   }
 
+  // Guarda-roupa da casa (pela Bolsa, perto da casa): troca tudo, de graça, com as roupas liberadas
+  abrirGuardaRoupa() {
+    this.criacao.abrir({
+      modo: 'guarda',
+      personagem: this.estado.personagem,
+      coroa: !!(this.estado.coroa && this.estado.coroaVestida),
+      liberadas: roupasLiberadas(this.estado),
+      nome: this.conta?.nome,
+      aoTerminar: (pp) => {
+        this.estado.personagem = pp;
+        this.mundo.vestirPersonagem(pp);
+        this.mostrarTela('mundo');
+        this.aviso('Pronto! Visual novo.');
+        this.salvar();
+      },
+      aoVoltar: () => this.mostrarTela('mundo'),
+    });
+  }
+
   novoJogo(especie, personagem = PERSONAGEM_PADRAO) {
     this.estado = { personagem: normalizarPersonagem(personagem), equipe: [criarMonstro(especie, 3)], reserva: [], pedras: { comum: 5, forte: 0, supremo: 0 }, capturados: [especie], bandeira: null, bandeiraNivel: 1,
       moedas: 0, pocoes: { cura: 3, reviver: 1 }, galhos: 0, casaNivel: 1, asas: 0, coracoes: 0, versaoAtributos: VERSAO_ATRIBUTOS };
@@ -602,6 +621,7 @@ class Jogo {
     this.mundo.dungeonsNovas.prepararEstado(); // as dungeons do jogo salvo (onde estão, quais já foram achadas)
     // o protagonista (saves de antes da criação de personagem: o padrão) e a Coroa do Rei
     this.estado.personagem = normalizarPersonagem(this.estado.personagem);
+    if (!roupasLiberadas(this.estado).includes(this.estado.personagem.skin)) this.estado.personagem.skin = PERSONAGEM_PADRAO.skin; // roupa que não é mais dele
     this.mundo.vestirPersonagem(this.estado.personagem);
     this.mundo.vestirCoroa(!!(this.estado.coroa && this.estado.coroaVestida));
     this.mundo.irParaBase();
@@ -796,6 +816,7 @@ class Jogo {
     this.aviso('Você dominou a arena! Agora você é o Campeão do Reino!');
     this.aviso('Rei Julius: Tome a Coroa do Rei. Use com orgulho (dá para tirar na Bolsa).');
     this.aviso(`O Reino vai guardar ${TESOURO.ouro} de ouro para você a cada ${TESOURO.cada / 60} minutos de jogo. Pegue no saquinho 💰 da tela.`);
+    this.aviso('Você ganhou o Traje Real! Vista no Guarda-roupa da sua casa.');
     this.ovo.receber(1);
   }
 

@@ -374,6 +374,11 @@ Uma tela nova de criar o personagem, depois de "Novo jogo" e antes de escolher o
       *Feito:* `js/criacao.js` (`Criacao`: a tela `#tela-personagem`, a cena 3D só enquanto está aberta, tocar no boneco
       escolhe o gênero); no jogo novo só as roupas grátis (as outras aparecem com 🔒 e como ganhar); o Voltar da escolha
       do parceiro volta para a roupa, com tudo guardado; `abrirCriacao` e `novoJogo(especie, personagem)` no `main.js`.
-- [ ] **Etapa 3 — Guarda-roupa, roupas ganhas e GM:** o Guarda-roupa na casa (pela Bolsa, perto da casa), o Traje Real
+- [x] **Etapa 3 — Guarda-roupa, roupas ganhas e GM:** o Guarda-roupa na casa (pela Bolsa, perto da casa), o Traje Real
       ao virar Campeão, o Palhaço na Loja do Reino (`estado.roupas`), e no GM "Liberar todas as roupas" e "Trocar o personagem".
+      *Feito:* botão **👕 Guarda-roupa** na seção da casa da Bolsa (até 8 m da casa) abre a mesma tela da criação no modo
+      `guarda` (botão "Vestir", com a coroa se estiver vestida); `roupasLiberadas` no `personagem.js`; a seção **Roupas** da
+      Loja do Reino (Palhaço, 2.000 de ouro); o aviso do Traje Real em `virarCampeao`; uma roupa que deixou de ser dele volta
+      para a Explorador ao entrar no jogo. GM, aba Mundo: **Liberar todas as roupas**, **Tirar as roupas ganhas** e
+      **Abrir o Guarda-roupa aqui**.
 
