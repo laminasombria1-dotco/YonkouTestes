@@ -293,8 +293,12 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
             coqueiro desbota sozinho, mesmo juntado com os outros); chão, mar turquesa, corais e peças nos chunks.
             Medido (Médio, sem monstros): estrada 61 → 75, enseada 46 → 60, arco 38 → 46, farol 47 → 57, gruta 77 → 94,
             naufrágio 48 → 59, meio 43 → 48 desenhos.
-      **Os 5 biomas estão prontos.** Vão juntos para a `main` quando o Lâmina disser "pode colocar na main".
+      **Os 5 biomas estão prontos e já foram publicados na `main`.**
     - [ ] **Passo 5 — Dungeons** (a especificação do Lâmina, com o adaptador).
+          *Especificação do Lâmina:* lugares isolados como as masmorras, mas mais fáceis, com só 2 ou 3 grupos de monstros
+          e o **Rei da Dungeon** (o monstro mais forte); **todos capturáveis**.
+          *Proposta feita (com maquetes: lugares possíveis em cada bioma, entradas com ícone e o interior do Gelo);
+          esperando as decisões do Lâmina.*
     - [ ] **Passo 6 — Níveis** (o Lâmina vai rever a regra mais para frente).
   - [ ] **8.4 — Regiões** com outros reinos (futuro).
 
