@@ -10,6 +10,7 @@ O mapa de fora (Gelo, Floresta, Deserto, Vulcânico e Arquipélago) ganhando pe�
 | `floresta.js` | A Floresta: Carvalho-Véu, Freixo-Oco, Salgueiro, samambaia, cogumelos, Fungo-Tambor e a Catedral, a Ponte e o Pântano. |
 | `deserto.js` | O Deserto: o caminho (Desfiladeiro, Estrada Cerimonial, Templo Solar, Avenida das Esfinges, Planalto das Pirâmides), o oásis, a caravana, a areia voando, a Khamsin e as peças comuns (acácia, tufo, arenito, fragmento, ânfora). O chão do caminho é aplainado no `gerador.js` (`alvoDeserto`). |
 | `vulcao.js` | O Vulcânico: a trilha, a Forja Primordial, o rio, o Monte Vael, a Bacia do Vitriol, as cinzas, a Chuva de Cinzas e as peças comuns (basalto, obsidiana, Árvore-Brasa, ignita, enxofre, petrificado, junco, fungo). O chão muda no `gerador.js` (`mudarVulcao`). |
+| `arquipelago.js` | O Arquipélago: a Enseada dos Bangalôs, a Ilha da Cachoeira, o arco de pedra, o farol, o naufrágio, o atol, os veleiros, o plâncton, a chuva com arco-íris e as peças comuns (coqueiro, amendoeira, flores, bananeira, bambu, samambaia, coral, concha). |
 | `gelo.js` | O Gelo: acampamento (refúgio que cura), trilha com lanternas, lago congelado com barco e píer, arco rúnico, fonte termal, floresta fechada, neve caindo. |
 
 As **peças comuns** de cada bioma (árvores, pedras, plantas) saem nos chunks (`js/mapa/chunks.js`, função `objeto`), e a cor do chão em `corDoChao` (o Gelo tem a `corDoGelo`).
@@ -17,6 +18,7 @@ As **peças comuns** de cada bioma (árvores, pedras, plantas) saem nos chunks (
 ## Regras para pesar pouco (celular de referência: Helio G95)
 - Peças comuns: os objetos de cada chunk são juntados numa malha só por material (etapa 0), então uma forma nova não soma desenhos; o que soma é um **material** novo. As peças do Forno entram nos chunks com `pecaFloresta` (o 13º valor da peça marca o detalhe que some de longe).
 - Peças únicas: junte numa malha só por área (o `Forno` do `gelo.js`: cor nos vértices, `n` = normal, `b` = brilho) e esconda a área quando estiver longe (na névoa).
+- Peça que tampa a câmera: tipo `p` do Forno (`materialDesbota`): cada peça desbota sozinha pelo atributo `centro`, mesmo juntada com as outras.
 - Luz: **brilho falso** (pontos com a textura redonda, `AdditiveBlending`), nunca luz de verdade.
 - Partículas: poucas centenas de pontos num desenho só; desligadas na qualidade Fraco.
 - **Nunca** ponha marcos novos na lista `POIS` do `gerador.js`: os lugares das vilas e das masmorras são sorteados depois dela e mudariam de lugar.

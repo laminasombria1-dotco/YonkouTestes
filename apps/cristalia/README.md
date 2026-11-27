@@ -394,7 +394,7 @@ O Reino fica **no meio do mapa** (mundo novo, `PLANO.md`): é o lugar seguro ond
 
 São **2 por bioma** (o Caminho das Brasas e a Trilha Ancestral contam como uma delas e continuam como corredores abertos), nos lugares que a semente guardou em `LUGARES` (`js/mapa/gerador.js`). **Masmorras são difíceis e demoradas; dungeons são fáceis** (passo 5). Prontas: **Gruta do Trovão** e **Torre da Nevasca** (Gelo), **Mina Abandonada** e **Tumba das Areias** (Deserto), **Pântano Sombrio** (Floresta), **Forja Antiga** (Vulcânico), **Templo Submerso** e **Gruta das Marés** (Arquipélago): as 8 completas.
 
-- **Entrada escondida:** no mapa só fica a porta, **sem ícone**. As exceções, bem à vista, pelas artes do Lâmina: a **Gruta do Trovão** (a caverna de gelo: paredão de rocha escura, vigas de mina, pingentes, brilho ciano lá dentro e uma lanterna) a **Tumba das Areias** (o hipogeu no penhasco de arenito, com o disco solar alado e 2 colossos) e a **Forja Antiga** (a entrada das Cavernas de Tubos de Lava, no flanco do Monte Vael; a porta mudou para lá). A 22 m dela aparece **"Você descobriu a Gruta do Trovão!"** (fica salvo: `estado.masmorras.trovao.achada`). Encostou na boca, a tela escurece e o jogo monta **só a masmorra**.
+- **Entrada escondida:** no mapa só fica a porta, **sem ícone**. As exceções, bem à vista, pelas artes do Lâmina: a **Gruta do Trovão** (a caverna de gelo: paredão de rocha escura, vigas de mina, pingentes, brilho ciano lá dentro e uma lanterna) a **Tumba das Areias** (o hipogeu no penhasco de arenito, com o disco solar alado e 2 colossos) a **Forja Antiga** (a entrada das Cavernas de Tubos de Lava, no flanco do Monte Vael; a porta mudou para lá) e a **Gruta das Marés** (a gruta marinha de calcário, com samambaias, orquídeas e o barco). A 22 m dela aparece **"Você descobriu a Gruta do Trovão!"** (fica salvo: `estado.masmorras.trovao.achada`). Encostou na boca, a tela escurece e o jogo monta **só a masmorra**.
 - **Área separada:** cada masmorra fica **bem longe do mapa redondo** (x = 1800, 2700, ...). Lá dentro, `alturaEm`, a colisão e a região perguntam à forma da masmorra (`interiorEm` em `js/masmorras/forma.js`); o mapa de fora some sozinho (os chunks ficam longe e são apagados) e os monstros dele somem. Ao sair, **tudo da masmorra é apagado da memória** (só uma existe por vez).
 - **5 etapas + o chefe.** Cada etapa tem **1 grupo com líder** e até 4 monstros soltos. O **portão selado** (a parede de energia azul) da saída da etapa **só abre quando o líder é vencido**. Cada vez que você entra, os portões começam fechados de novo.
 - **Monstros:** só os tipos do bioma (na Gruta: linha Raio e Imanito); Sol, Luz, Lua e Trevas como visitantes raros (`aparicoes`).
@@ -576,7 +576,7 @@ Sai da borda do mapa pela Floresta, seguindo as lanternas de flor (a direção d
 | Floresta | **Mata de Véu-Âmbar**: Carvalhos-Véu com cortinas de âmbar, freixos, salgueiros, samambaias, cogumelos ciano, a Catedral das Cortinas, as Pontes de Raiz e o Pântano das Lanternas Azuis (veja "Bioma da Floresta") | Planta (Musguinho), Espinhal (raro); Luz de dia, Trevas à noite. Daqui sai a Trilha Ancestral |
 | Deserto | **Areias de Djeser-Ra** (Antigo Egito): dunas, cânions, acácias, o caminho até as pirâmides, o Templo Solar, a Avenida das Esfinges, o Oásis do Lótus Azul e a tempestade de Khamsin (veja "Bioma do Deserto") | Terra (Pedrisco); Sol de dia, Lua à noite |
 | Vulcão | **Caldeira de Ignis-Vael**: colunas de basalto, obsidiana, Árvores-Brasa, a Forja Primordial, o Monte Vael, a Bacia do Vitriol (ácido) e a Chuva de Cinzas (veja "Bioma Vulcânico") | Fogo (Brasito), Vulcarapa (raro); Sol de dia, Trevas à noite. Daqui sai o Caminho das Brasas |
-| Arquipélago | **Água**: quase todo água rasa (dá para andar, mais devagar), ilhas com palmeiras e canais fundos | Água (Gotinho), Aquaraia (raro); Luz de dia, Lua à noite |
+| Arquipélago | **Marés de Safira**: água rasa turquesa (dá para andar, mais devagar), ilhas com praia, coqueiros e mata, canais fundos azul-safira, a Enseada dos Bangalôs, a Ilha da Cachoeira, o farol e os veleiros (veja "Bioma do Arquipélago") | Água (Gotinho), Aquaraia (raro); Luz de dia, Lua à noite |
 | Lago | Em volta dos lagos da Floresta e do oásis do Deserto | Água (Gotinho), Aquaraia (raro) |
 
 **Sol, Luz, Lua e Trevas** são **visitantes raros** (cerca de 1 em cada 10 monstros): Sol e Luz de dia, Lua e Trevas à noite. Cada bioma tem só os seus tipos (`APARICOES` no `dados.js`).
@@ -648,6 +648,23 @@ Do fim da Estrada Real do Fogo (a entrada sul) até o vulcão do meio do bioma:
 - **O chão:** muda só na trilha, na fenda, no rio e na bacia (`CALDEIRA` e `mudarVulcao` no `js/mapa/gerador.js`). A Vila das Cinzas e o Caminho das Brasas não mudam.
 - **Peso:** de 5 a 22 desenhos a mais por quadro (o pior é perto do vulcão, ~109 no Médio).
 - **Código:** `js/biomas/vulcao.js` (`BiomaVulcao` e as peças comuns), a porta em `js/masmorras/forja-antiga.js` (`lugarNoMapa`), o chão nos chunks (`corDoVulcao`) e o céu no `js/biomas/clima.js`.
+
+## Bioma do Arquipélago: Marés de Safira (o guia do Lâmina)
+
+O chão não muda (as ilhas, a água rasa e os canais são os da semente); mudam as cores e as peças.
+- **Cores:** água rasa turquesa e verde-esmeralda (o mar ficou mais transparente), canais fundos azul-safira, praia de areia marfim, falésias de calcário dourado e mata tropical no alto das ilhas.
+- **Peças comuns** (nos chunks): coqueiros inclinados com cocos, amendoeiras, hibisco e buganvília, pedras calcárias e, no alto, bananeiras, bambu e samambaias; corais coloridos no fundo da água rasa, estrelas-do-mar e conchas na areia.
+- **Enseada dos Bangalôs:** na ilha logo depois da Estrada Real: 2 bangalôs de palha sobre a água, o píer com lanternas, o barco a remo, a rede entre os coqueiros, amendoeiras e flores.
+- **Ilha da Cachoeira e Arco de Pedra:** a ilha grande vira um pico verde com rochas e a cachoeira caindo na enseada; na frente, o arco de calcário gigante no mar.
+- **Farol Antigo:** o farol de pedra com musgo (a luz brilha à noite), a torre de vigia, muros caídos, pedras entalhadas e o manguezal no canal ao lado.
+- **Naufrágio do Mercante** (no raso, com corais) e o **Atol de Coral**.
+- **Gruta das Marés:** a entrada virou a gruta marinha de calcário da arte do Lâmina (à vista).
+- **Veleiros:** 4 barcos brancos vão e voltam pelos canais (só enfeite).
+- **Coqueiros que desbotam:** cada coqueiro fica transparente sozinho quando tampa a câmera (`materialDesbota` no `js/biomas/comum.js`: a placa de vídeo faz a conta, sem custo extra).
+- **Plâncton:** à noite, a água rasa perto de você brilha em azul-elétrico.
+- **Chuva morna com arco-íris:** rara (de 7 a 14 minutos no Arquipélago entre uma e outra, 75 s). O céu fica cinza e cai a chuva; quando acaba, um arco-íris aparece sobre o mar por 40 s (arraste a tela para baixo para olhar o horizonte). Só visual.
+- **Peso:** de 5 a 17 desenhos a mais por quadro (era o bioma mais leve; o pior é a gruta, ~94 no Médio).
+- **Código:** `js/biomas/arquipelago.js` (`BiomaArquipelago` e as peças comuns), os lugares em `ARQ` (`js/biomas/lugares.js`), a gruta em `js/masmorras/gruta-mares.js`, o chão nos chunks (`corDoArquipelago`) e o céu no `js/biomas/clima.js`.
 
 ## Mapa procedural
 
@@ -1136,6 +1153,7 @@ Um golpe forte contra o alvo dá **1,5×** de dano; um golpe fraco, **0,6×**.
 | `js/biomas/floresta.js` | A Floresta (Mata de Véu-Âmbar): as peças e a Catedral das Cortinas, as Pontes de Raiz e o Pântano das Lanternas Azuis |
 | `js/biomas/deserto.js` | O Deserto (Areias de Djeser-Ra): o caminho até as pirâmides, o oásis, a caravana, a areia voando, a Khamsin e as peças comuns |
 | `js/biomas/vulcao.js` | O Vulcânico (Caldeira de Ignis-Vael): a Forja Primordial, o Monte Vael, a Bacia do Vitriol, as cinzas, a Chuva de Cinzas e as peças comuns |
+| `js/biomas/arquipelago.js` | O Arquipélago (Marés de Safira): a Enseada dos Bangalôs, a Ilha da Cachoeira, o arco, o farol, o naufrágio, o atol, os veleiros, o plâncton, a chuva com arco-íris e as peças comuns |
 | `js/biomas/clima.js` | A cor do céu, da névoa e da luz de cada bioma |
 | `js/biomas/gelo.js` | As peças únicas do Gelo (`BiomaGelo`), o brilho falso, a neve caindo e o pinheiro nevado |
 | `js/mapa/chunks.js` | Os chunks: cria o chão, a água, a lava e os objetos de cada pedaço do mapa, carrega e apaga conforme você anda, e o LOD |

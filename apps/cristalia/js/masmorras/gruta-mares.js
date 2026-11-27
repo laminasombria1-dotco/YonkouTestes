@@ -256,18 +256,40 @@ export const GRUTA_MARES = {
     }
   },
 
-  // A entrada no mapa: a boca de uma gruta nas pedras da ilha, com um barquinho e uma lanterna (sem ícone)
+  // A entrada no mapa (a arte do Lâmina: a gruta marinha de calcário, à vista): o arco claro em 4
+  // anéis, as rochas cobertas de mata, a boca escura com o reflexo da água lá dentro, estalactites,
+  // samambaias penduradas, orquídeas, o barco a remo e uma lanterna. A porta fica na frente da boca.
   entrada(b, { x, z, ang, y, obst }) {
     const fx = Math.sin(ang), fz = Math.cos(ang), sx = Math.cos(ang), sz = -Math.sin(ang);
     const P = (f, s) => ({ x: x + fx * f + sx * s, z: z + fz * f + sz * s });
-    const pedra = lambert('#6a7a80'), pedra2 = lambert('#4a5a62'), escuro = lambert('#081016'), mad = lambert('#7a5a40'), luz = lambert('#ffcc55', { emissive: '#ffb347', emissiveIntensity: 0.9 }), espuma = lambert('#e8f4f8');
-    const base = y(x, z);
-    for (const [f, s, e, h, m] of [[-3, 0, 6.5, 6, pedra], [-1.5, -4, 4, 4.2, pedra2], [-1.5, 4, 4, 4.6, pedra], [-5, -2.5, 4.4, 3.8, pedra2], [-5, 2.5, 4.4, 4, pedra]]) { const p = P(f, s); b.add(GEO.dode, m, p.x, base + h * 0.4, p.z, e, h, e * 0.95, 0.15, f * s, 0); }
-    const d = P(0.6, 0); b.add(GEO.caixa, escuro, d.x, base + 1.6, d.z, 2.8, 3.2, 0.5, 0, ang, 0);
-    const bt = P(2.6, 3); b.add(GEO.caixa, mad, bt.x, base + 0.3, bt.z, 1.3, 0.6, 3.2, 0, ang + 0.6, 0.2);
-    const l = P(1.6, -2.4); b.add(GEO.cil, mad, l.x, base + 1.2, l.z, 0.16, 2.4, 0.16); b.add(GEO.ico, luz, l.x, base + 2.6, l.z, 0.3, 0.4, 0.3);
-    for (const [f, s2] of [[2, -1], [2.4, 1.4]]) { const p = P(f, s2); b.add(GEO.ico, espuma, p.x, base + 0.1, p.z, 1, 0.2, 0.7); }
-    const c = P(-3, 0);
-    obst(c.x, c.z, 4.4);
+    const cal = lambert('#d6d0bc'), cal2 = lambert('#c8c4b4'), cal3 = lambert('#d9c28a'), escuro = lambert('#0a1418'), mata = lambert('#3a8a3a'), mata2 = lambert('#4a9a3a');
+    const agua = lambert('#9ae8ff', { emissive: '#4ac8e8', emissiveIntensity: 0.5 }), orq = lambert('#e85ad8'), orq2 = lambert('#c83ac8');
+    const mad = lambert('#7a5232'), mad2 = lambert('#8a6240'), luz = lambert('#ffd890', { emissive: '#f2a030', emissiveIntensity: 1 }), ferro = lambert('#3a3024');
+    const b0 = Math.max(-0.55, y(P(4, 0).x, P(4, 0).z)) - 0.3, R = 4;
+    // o arco de calcário (4 anéis, cada um maior e mais para trás)
+    for (let k = 0; k < 4; k++) for (let i = 0; i <= 10; i++) {
+      const t = (i / 10) * Math.PI, p = P(1.5 - k * 1.3, Math.cos(t) * (R + k * 1.2));
+      b.add(GEO.caixa, k ? (i % 2 ? cal2 : cal) : cal, p.x, b0 + Math.sin(t) * (R + k * 1.2) * 1.05, p.z, 1.6, 1.4, 1.6, 0, ang, t + Math.PI / 2);
+    }
+    // as rochas em volta, com a mata por cima
+    for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI, d = R + 5, p = P(-1 - Math.sin(a) * 2, Math.cos(a) * d); b.add(GEO.dode, i % 2 ? cal2 : cal3, p.x, b0 + Math.sin(a) * 5 + 1.2, p.z, 4.5, 4, 4, i * 0.7, i * 1.3, 0); b.add(GEO.ico, i % 2 ? mata : mata2, p.x, b0 + Math.sin(a) * 5 + 3.4, p.z, 3.5, 1.2, 3.5, 0, i, 0); }
+    // a boca escura e o reflexo da água lá dentro
+    { const p = P(0.2, 0); b.add(GEO.caixa, escuro, p.x, b0 + R * 0.45, p.z, R * 1.7, R * 0.95, 3, 0, ang, 0); const g = P(-1.2, 0.5); b.add(GEO.ico, agua, g.x, b0 + 0.8, g.z, 3.2, 1.2, 0.3, 0, ang, 0); }
+    // estalactites
+    for (let i = -5; i <= 5; i++) { const t = Math.PI / 2 + i * 0.22, p = P(1.8, Math.cos(t) * (R - 0.4)), h = 0.6 + ((i * 7 + 13) % 5) * 0.3; b.add(GEO.cone, cal2, p.x, b0 + Math.sin(t) * (R - 0.4) * 1.05 - h / 2, p.z, 0.35, h, 0.35, Math.PI, 0, 0); }
+    // samambaias penduradas e orquídeas
+    for (const s of [-1, 1]) {
+      for (let k = 0; k < 4; k++) { const p = P(2.2, s * (2 + k * 0.6)); b.add(GEO.cone4, mata, p.x, b0 + 3.4 - k * 0.3, p.z, 0.25, 1.6 + k * 0.4, 0.08, Math.PI, 0, 0); }
+      const o = P(2.4, s * 4.2); b.add(GEO.ico, orq, o.x, b0 + 2.4, o.z, 0.4, 0.3, 0.4); b.add(GEO.ico, orq2, o.x, b0 + 2.7, o.z + 0.2, 0.35, 0.25, 0.35);
+    }
+    // o barco a remo e a lanterna
+    { const bc = P(4.5, 1.2), ry = ang + 0.3, bs = Math.cos(ry), bz = -Math.sin(ry), yy = -0.5;
+      b.add(GEO.caixa, mad, bc.x, yy + 0.05, bc.z, 1.2, 0.3, 3, 0, ry, 0);
+      for (const s of [-1, 1]) b.add(GEO.caixa, mad2, bc.x + bs * s * 0.6, yy + 0.3, bc.z + bz * s * 0.6, 0.1, 0.5, 3, 0, ry, s * 0.2);
+      obst(bc.x, bc.z, 1.2); }
+    { const l = P(3, -3), ly = Math.max(-0.25, y(l.x, l.z)); b.add(GEO.cil, mad, l.x, ly + 0.6, l.z, 0.12, 1.2, 0.12); b.add(GEO.caixa, luz, l.x, ly + 1.35, l.z, 0.3, 0.42, 0.3); b.add(GEO.cone4, ferro, l.x, ly + 1.65, l.z, 0.42, 0.22, 0.42, 0, 0.785, 0); obst(l.x, l.z, 0.3); }
+    // a gruta é sólida (só a boca é a porta)
+    const c = P(-3, 0); obst(c.x, c.z, 4.6);
+    for (const s of [-1, 1]) { const q = P(0.5, s * 4.8); obst(q.x, q.z, 1.6); }
   },
 };

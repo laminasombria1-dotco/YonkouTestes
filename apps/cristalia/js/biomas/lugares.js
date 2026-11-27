@@ -137,3 +137,40 @@ const PONTE = (() => {
 })();
 const PANTANO = LAGOS.filter((L) => L.bioma === 'planta' && !L.escondido).sort((a, b) => b.r - a.r)[0] || null;
 export const FLORESTA = { catedral: CATEDRAL, ponte: PONTE, pantano: PANTANO, livre: livreFloresta };
+
+// ---------- ARQUIPÉLAGO: "Arquipélago das Marés de Safira" (o guia do Lâmina) ----------
+// Os lugares únicos, em volta da Estrada Real da Água (ao = metros ao longo dela, lado = para o lado).
+// O chão NÃO muda: as ilhas, a água rasa e os canais ficam como a semente fez.
+const EA = ESTRADAS.find((e) => e.bioma === 'agua');
+const DA = EA.dir, LA = { x: -DA.z, z: DA.x };
+const QA = (ao, l) => ({ x: DA.x * ao + LA.x * l, z: DA.z * ao + LA.z * l });
+// A beira da ilha mais perto, olhando para o alvo (a = direção da praia para a água)
+function costa(cx, cz, ax, az) {
+  const a0 = Math.atan2(ax - cx, az - cz); let melhor = null;
+  for (let da = -0.6; da <= 0.6; da += 0.1) {
+    const a = a0 + da;
+    for (let d = 0; d < 40; d += 0.5) { const x = cx + Math.sin(a) * d, z = cz + Math.cos(a) * d; if (alturaEm(x, z) < NIVEL_AGUA + 0.15) { if (!melhor || Math.abs(da) < Math.abs(melhor.da)) melhor = { x, z, a, da }; break; } }
+  }
+  return melhor;
+}
+// Uma rota de veleiro: de A a B, só se o caminho todo for água
+function rota(a, b) {
+  for (let t = 0; t <= 1; t += 0.05) { const x = a.x + (b.x - a.x) * t, z = a.z + (b.z - a.z) * t; if (alturaEm(x, z) > NIVEL_AGUA - 0.2 || biomaEm(x, z) !== 'agua') return null; }
+  return { a, b };
+}
+const ILHA_ENSEADA = QA(150, -42);
+export const ARQ = {
+  dir: DA, lat: LA, ponto: QA,
+  enseada: { ilha: ILHA_ENSEADA, costa: costa(ILHA_ENSEADA.x, ILHA_ENSEADA.z, QA(150, -5).x, QA(150, -5).z) },
+  vulcao: QA(300, 52),   // a ilha vulcânica com a cachoeira
+  arco: QA(262, 22),     // o arco de pedra no mar
+  farol: QA(302, -126),  // o farol e a torre de vigia (longe da entrada do Templo Submerso)
+  nau: QA(212, -14),     // o naufrágio
+  atol: QA(228, 26),     // o atol
+  // 4 veleiros: perto de cada ponto, uma reta de 30 a 50 m só por água
+  veleiros: [[205, 4], [255, -40], [330, 0], [285, 95]].map(([ao, l], i) => {
+    const rng = aleatorio(SEMENTE ^ (0x7e11 + i * 97));
+    for (let t = 0; t < 80; t++) { const a = QA(ao + (rng() - 0.5) * 20, l + (rng() - 0.5) * 20), ang = rng() * 6.28, d = 30 + rng() * 20, r = rota(a, { x: a.x + Math.sin(ang) * d, z: a.z + Math.cos(ang) * d }); if (r) return r; }
+    return null;
+  }).filter(Boolean),
+};

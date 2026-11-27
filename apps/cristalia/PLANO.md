@@ -282,11 +282,18 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
             `masmorra.js`) e a caverna em `masmorras/forja-antiga.js`; chão, ácido e peças comuns nos chunks; o céu ferrugem
             e a luz de baixo no `clima.js` (que agora mistura as cores como a gente vê). Medido (Médio, sem monstros):
             trilha 66 → 71, Forja 63 → 75, ácido 49 → 60, caverna 71 → 93, cinzas 61 → 68, vulcão 88 → 109, borda 61 → 76.
-      - [ ] **Arquipélago** — o Lâmina mandou o guia "Arquipélago das Marés de Safira" e as artes. *Maquete feita* (sem
-            mudar o chão): água turquesa e canais safira, ilhas com praia marfim e mata, a Enseada dos Bangalôs (píer com
-            lanternas, barco, rede), naufrágio e atol, ilha vulcânica com cachoeira, arco de pedra, farol e torre de vigia
-            com manguezal, gruta marinha na entrada da Gruta das Marés, veleiros. Esperando as decisões: a gruta, coqueiros
-            transparentes, plâncton à noite, veleiros andando, chuva com arco-íris rara.
+      - [x] **Arquipélago** — "Arquipélago das Marés de Safira", pelo guia e pelas artes do Lâmina. *Decisões:* fica como
+            a maquete; a entrada da Gruta das Marés vira a gruta marinha (à vista); coqueiros grandes ficam transparentes
+            quando tampam a câmera (o Lâmina quer o mesmo no castelo, mais para frente); plâncton bioluminescente à noite;
+            veleiros andando (só enfeite; dá para fazer algo com eles depois); chuva morna com arco-íris como evento raro.
+            *Feito (sem mudar o chão):* `js/biomas/arquipelago.js` (Enseada dos Bangalôs, Ilha da Cachoeira, Arco de Pedra,
+            Farol Antigo com torre de vigia e manguezal, Naufrágio do Mercante, Atol de Coral, 4 veleiros, plâncton, a chuva
+            de 7 a 14 min entre uma e outra, 75 s, e o arco-íris por 40 s); os lugares em `ARQ` (`lugares.js`); a gruta em
+            `masmorras/gruta-mares.js`; o material que desbota sozinho por peça (`materialDesbota` no `comum.js`: cada
+            coqueiro desbota sozinho, mesmo juntado com os outros); chão, mar turquesa, corais e peças nos chunks.
+            Medido (Médio, sem monstros): estrada 61 → 75, enseada 46 → 60, arco 38 → 46, farol 47 → 57, gruta 77 → 94,
+            naufrágio 48 → 59, meio 43 → 48 desenhos.
+      **Os 5 biomas estão prontos.** Vão juntos para a `main` quando o Lâmina disser "pode colocar na main".
     - [ ] **Passo 5 — Dungeons** (a especificação do Lâmina, com o adaptador).
     - [ ] **Passo 6 — Níveis** (o Lâmina vai rever a regra mais para frente).
   - [ ] **8.4 — Regiões** com outros reinos (futuro).

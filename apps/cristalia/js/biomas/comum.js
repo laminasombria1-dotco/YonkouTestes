@@ -37,9 +37,42 @@ export const UNI = {
   elo: new THREE.TorusGeometry(0.5, 0.12, 4, 8),                              // elo de corrente
   disco: new THREE.CylinderGeometry(1, 1, 0.1, 14),
   dente: new THREE.CylinderGeometry(1, 1, 0.3, 12),                           // engrenagem
+  // a vela do barco: um triângulo dos dois lados
+  vela: (() => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 0, 1, 0, 0.7, 0, 0, 0, 0, 0, 0.7, 0, 0, 0, 1, 0], 3)); return g; })(),
 };
 
 const lambert = (o) => new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, ...o });
+
+// ---------- material que fica transparente quando tampa a câmera ----------
+// Cada peça guarda o "centro" dela (o pé da árvore) num atributo. A placa de vídeo vê, para cada
+// ponto, se esse centro está entre a câmera e o jogador e, se estiver, deixa a peça transparente.
+// Assim cada coqueiro desbota sozinho, mesmo juntado com os outros numa malha só (sem custo extra).
+// As posições da câmera e do jogador são atualizadas a cada quadro (atualizarDesbota).
+export const UNIF_DESBOTA = { uCam: { value: new THREE.Vector3(0, 1e5, 0) }, uJog: { value: new THREE.Vector3(0, 1e5, 0) } };
+export function materialDesbota(base, raio = 3.2) {
+  const m = base.clone();
+  m.transparent = true;
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.uCam = UNIF_DESBOTA.uCam; sh.uniforms.uJog = UNIF_DESBOTA.uJog;
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', `#include <common>
+attribute vec3 centro;
+uniform vec3 uCam; uniform vec3 uJog;
+varying float vFade;`)
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+{ vec2 c = centro.xz, a = uCam.xz, d = uJog.xz - uCam.xz;
+  float t = dot(c - a, d) / max(dot(d, d), 0.0001);
+  float dist = length(c - (a + d * clamp(t, 0.0, 1.0)));
+  vFade = (t > 0.0 && t < 0.97) ? mix(0.22, 1.0, smoothstep(${(raio * 0.55).toFixed(2)}, ${raio.toFixed(2)}, dist)) : 1.0; }`);
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying float vFade;')
+      .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.a *= vFade;');
+  };
+  m.customProgramCacheKey = () => 'desbota' + raio;
+  m.userData.fixo = true;
+  return m;
+}
+export function atualizarDesbota(camera, pos) { UNIF_DESBOTA.uCam.value.copy(camera.position); UNIF_DESBOTA.uJog.value.set(pos.x, pos.y, pos.z); }
 export const MAT_FORNO = {
   n: lambert({}),
   b: new THREE.MeshBasicMaterial({ vertexColors: true }),
@@ -54,6 +87,7 @@ export const MAT_FORNO = {
   v: new THREE.MeshBasicMaterial({ color: '#2cf2c4', transparent: true, opacity: 0.7, depthWrite: false, blending: THREE.AdditiveBlending }), // chama de ácido
   g: lambert({ color: '#1c191d', emissive: '#3a1a10', emissiveIntensity: 0.2 }),                          // obsidiana
 };
+MAT_FORNO.p = materialDesbota(MAT_FORNO.n); // p = peça que desbota na frente da câmera (coqueiros)
 for (const m of Object.values(MAT_FORNO)) m.userData.fixo = true;
 
 const SEM_INDICE = new Map();
@@ -62,8 +96,9 @@ export const semIndice = (g) => { if (!SEM_INDICE.has(g)) SEM_INDICE.set(g, g.in
 // Junta peças numa malha só por material. As rotações usam a ordem YXZ: a peça
 // inclina (rx, rz) e depois gira em volta do eixo de pé (ry).
 export class Forno {
-  constructor() { this.l = {}; }
-  add(g, tipo, x, y, z, sx, sy, sz, rx = 0, ry = 0, rz = 0, cor = '#ffffff') { (this.l[tipo] ||= []).push([g, x, y, z, sx, sy, sz, rx, ry, rz, cor]); }
+  constructor() { this.l = {}; this.centro = null; } // centro = [x, z] da peça que desbota (tipo p)
+  // (cx, cz no fim: o centro da peça que desbota, quando a própria peça diz; senão vale this.centro)
+  add(g, tipo, x, y, z, sx, sy, sz, rx = 0, ry = 0, rz = 0, cor = '#ffffff', _d, cx, cz) { (this.l[tipo] ||= []).push([g, x, y, z, sx, sy, sz, rx, ry, rz, cor, cx != null ? [cx, cz] : this.centro]); }
   get vazio() { return !Object.keys(this.l).length; }
   // clonar = true: cada material é copiado (para a peça poder ficar transparente sozinha)
   montar(pai, clonar = false) {
@@ -72,9 +107,9 @@ export class Forno {
     for (const [tipo, lista] of Object.entries(this.l)) {
       let total = 0;
       for (const it of lista) total += semIndice(UNI[it[0]]).attributes.position.count;
-      const pos = new Float32Array(total * 3), cor = new Float32Array(total * 3);
+      const pos = new Float32Array(total * 3), cor = new Float32Array(total * 3), cen = tipo === 'p' ? new Float32Array(total * 3) : null;
       let o = 0;
-      for (const [g, x, y, z, sx, sy, sz, rx, ry, rz, hex] of lista) {
+      for (const [g, x, y, z, sx, sy, sz, rx, ry, rz, hex, ce] of lista) {
         m4.compose(v.set(x, y, z), q.setFromEuler(e.set(rx, ry, rz, 'YXZ')), s.set(sx, sy, sz));
         const a = semIndice(UNI[g]).attributes.position;
         c.set(hex);
@@ -82,11 +117,13 @@ export class Forno {
           p.fromBufferAttribute(a, k).applyMatrix4(m4);
           pos[o * 3] = p.x; pos[o * 3 + 1] = p.y; pos[o * 3 + 2] = p.z;
           cor[o * 3] = c.r; cor[o * 3 + 1] = c.g; cor[o * 3 + 2] = c.b;
+          if (cen) { cen[o * 3] = ce ? ce[0] : 1e5; cen[o * 3 + 2] = ce ? ce[1] : 1e5; }
         }
       }
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
       geo.setAttribute('color', new THREE.BufferAttribute(cor, 3));
+      if (cen) geo.setAttribute('centro', new THREE.BufferAttribute(cen, 3));
       geo.computeVertexNormals();
       geo.computeBoundingSphere();
       let mat = MAT_FORNO[tipo];

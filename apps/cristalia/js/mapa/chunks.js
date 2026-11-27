@@ -23,7 +23,8 @@ import { alturaVertice, alturaEm, ESPACO } from './altura.js';
 import { TRACADOS, REINO, S_LAGO, foraDungeons } from '../dungeon.js';
 import { GELO, naTrilhaGelo } from '../biomas/lugares.js';
 import { PAL_GELO, pinheiroNevado } from '../biomas/gelo.js';
-import { semIndice, UNI } from '../biomas/comum.js';
+import { semIndice, UNI, materialDesbota, atualizarDesbota } from '../biomas/comum.js';
+import * as AR from '../biomas/arquipelago.js';
 import * as FL from '../biomas/floresta.js';
 import * as DS from '../biomas/deserto.js';
 import * as VU from '../biomas/vulcao.js';
@@ -58,17 +59,20 @@ const MAT = {
 };
 // tipo das peças do Forno (biomas/) -> material dos chunks
 // (no chunk o enxofre e a obsidiana usam o material comum com a cor deles: 1 desenho a menos cada, por chunk)
-const TIPO_MAT = { n: 'base', a: 'ambar', c: 'ciano', o: 'ouro', f: 'lavaViva', e: 'base', g: 'base' };
+const TIPO_MAT = { n: 'base', a: 'ambar', c: 'ciano', o: 'ouro', f: 'lavaViva', e: 'base', g: 'base', p: 'base_d' };
 const TIPO_COR = { e: '#f2d84a', g: '#1c191d' };
 // Etapa 0 (melhorias dos biomas): os objetos de cada chunk são JUNTADOS numa malha só por
 // material (a cor de cada peça vai nos vértices). Mesmo visual, bem menos desenhos por quadro.
 // Por isso cada material tem uma cópia com "cor nos vértices" (a peça sem cor fica branca = a cor do material).
 const MAT_J = Object.fromEntries(Object.entries(MAT).map(([k, m]) => { const c = m.clone(); c.vertexColors = true; return [k, c]; }));
+// os coqueiros do Arquipélago: cada um fica transparente sozinho quando tampa a câmera (biomas/comum.js)
+MAT_J.base_d = materialDesbota(MAT_J.base);
 const MAT_CHAO = lambert({ vertexColors: true });
 // o gelo do Gelo (lagos e rios congelados): o ciano do guia
 const GELO_LAGO = ['#4a89aa', '#5596b6', '#3f7d9e', '#6aaac8', '#4a89aa'];
 const GELO_RIO = ['#5596b6', '#6aaac8', '#4a89aa', '#8fc4dc'];
 const MAT_AGUA = lambert({ color: '#4fc3f7', transparent: true, opacity: 0.82 });
+const MAT_AGUA_ARQ = lambert({ color: '#48d8d8', transparent: true, opacity: 0.55, emissive: '#0a4a5a', emissiveIntensity: 0.25 }); // o mar do Arquipélago: turquesa e transparente
 const MAT_ACIDO = lambert({ color: '#b8f060', emissive: '#8ce62e', emissiveIntensity: 0.85 }); // os lagos de ácido do Vulcânico
 const MAT_AGUA_OASIS = lambert({ color: '#3ab5a8', transparent: true, opacity: 0.85, emissive: '#0a3a36', emissiveIntensity: 0.35 }); // o oásis do Deserto: turquesa
 const MAT_AGUA_FLORESTA = lambert({ color: '#2b4652', transparent: true, opacity: 0.9, emissive: '#0a1a1e', emissiveIntensity: 0.3 }); // água escura de tanino
@@ -337,6 +341,7 @@ export class Chunks {
     if (id === 'planta') return this.corDaFloresta(y, inc, rng);
     if (id === 'terra') return this.corDoDeserto(x, z, y, inc, rng);
     if (id === 'fogo') return this.corDoVulcao(x, z, y, inc, rng);
+    if (id === 'agua') return this.corDoArquipelago(y, inc, rng);
     if (y < NIVEL_AGUA - 0.15) return id === 'fogo' ? '#3a1a12' : id === 'agua' ? (y < -1.3 ? '#2f7fa0' : '#5fc8c0') : '#4f9fb8'; // no Arquipélago: rasa clarinha, funda escura
     if (y < NIVEL_AGUA + 0.45) return id === 'fogo' ? sorteio(rng, ['#c8461a', '#8a2e14']) : id === 'raio' ? '#d8e8f2' : sorteio(rng, ['#e2cd90', '#ecd9a0']);
     if (y > 13 && id !== 'fogo' && inc > 0.55) return sorteio(rng, PALETA.raio); // neve no alto dos picos
@@ -399,11 +404,23 @@ export class Chunks {
     return sorteio(rng, ['#2e2a2c', '#3a3436', '#24201f', '#463e3c', '#2e2a2c']);
   }
 
+  // O chão do Arquipélago (o guia "Marés de Safira"): canais azul-safira, rasa turquesa e esmeralda,
+  // praia de areia marfim, falésia de calcário dourado e mata tropical no alto das ilhas
+  corDoArquipelago(y, inc, rng) {
+    if (y < -1.3) return sorteio(rng, ['#1f5f9a', '#1a5590', '#24689f']);
+    if (y < -0.85) return sorteio(rng, ['#2fa8b8', '#34b0c0', '#2a9cb0']);
+    if (y < NIVEL_AGUA - 0.1) return sorteio(rng, ['#5fd8c8', '#6ae0cc', '#58d0c4', '#7ae8d4']);
+    if (y < NIVEL_AGUA + 0.5) return sorteio(rng, ['#f2e6c8', '#ece0c0', '#f6ecd2']);
+    if (inc < 0.6) return sorteio(rng, ['#d9c28a', '#cdb47a', '#e2cc96']);
+    if (y < 1.3) return sorteio(rng, ['#f2e6c8', '#ece0c0', '#e8dab8', '#f6ecd2']);
+    return sorteio(rng, ['#3a8a3a', '#4a9a3e', '#2f7a34', '#58a844']);
+  }
+
   // ---------- água e lava ----------
   criarLiquidos(ch) {
     const passo = ch.lod ? DIV / C.divisoesLonge : 1, n = DIV / passo;
     const i0 = ch.cx * DIV, j0 = ch.cz * DIV, E = ESPACO;
-    const agua = [], lava = [], aguaF = [], aguaO = [], acido = [];
+    const agua = [], lava = [], aguaF = [], aguaO = [], acido = [], aguaA = [];
     for (let a = 0; a < n; a++) for (let b = 0; b < n; b++) {
       const i = i0 + a * passo, j = j0 + b * passo, ip = i + passo, jp = j + passo;
       const hmin = Math.min(alturaVertice(i, j), alturaVertice(ip, j), alturaVertice(i, jp), alturaVertice(ip, jp));
@@ -413,7 +430,7 @@ export class Chunks {
       if (Math.hypot(mx - LAGOA.x, mz - LAGOA.z) < LAGOA.r + 8) continue;      // o lago escondido tem a dele
       const bm = biomaEm(mx, mz);
       if (bm === 'raio') continue;                                            // no Gelo os rios são congelados (o chão já é gelo)
-      (bm === 'fogo' ? (naBaciaAcida(mx, mz) ? acido : lava) : bm === 'planta' ? aguaF : bm === 'terra' ? aguaO : agua).push(i * E, j * E, ip * E, jp * E);
+      (bm === 'fogo' ? (naBaciaAcida(mx, mz) ? acido : lava) : bm === 'planta' ? aguaF : bm === 'terra' ? aguaO : bm === 'agua' ? aguaA : agua).push(i * E, j * E, ip * E, jp * E);
     }
     const malha = (lista, mat, y) => {
       if (!lista.length) return;
@@ -438,6 +455,7 @@ export class Chunks {
     malha(aguaF, MAT_AGUA_FLORESTA, NIVEL_AGUA);
     malha(aguaO, MAT_AGUA_OASIS, NIVEL_AGUA);
     malha(acido, MAT_ACIDO, NIVEL_AGUA + 0.04);
+    malha(aguaA, MAT_AGUA_ARQ, NIVEL_AGUA);
     malha(lava, MAT_LAVA, NIVEL_AGUA + 0.04);
   }
 
@@ -446,6 +464,7 @@ export class Chunks {
     for (const m of this.liquidos) m.position.y = m.userData.y0 + Math.sin(t * 1.3) * 0.05;
     MAT_LAVA.emissiveIntensity = 0.75 + Math.sin(t * 2.2) * 0.15;
     MAT_J.lavaViva.emissiveIntensity = 0.8 + Math.sin(t * 2.6) * 0.2;
+    if (this.m.camera) atualizarDesbota(this.m.camera, this.m.pos); // os coqueiros que tampam a câmera ficam transparentes
     MAT_ACIDO.emissiveIntensity = 0.75 + Math.sin(t * 1.8) * 0.15; // o ácido borbulha
     MAT_J.ciano.emissiveIntensity = 0.5 + 0.6 * (this.m.fatorNoite || 0); // os cogumelos da Floresta brilham mais à noite
   }
@@ -463,7 +482,7 @@ export class Chunks {
     for (const [m, lista] of grupos) {
       let total = 0;
       for (const r of lista) total += semIndice(GEO[r.t]).attributes.position.count;
-      const pos = new Float32Array(total * 3), cor = new Float32Array(total * 3);
+      const pos = new Float32Array(total * 3), cor = new Float32Array(total * 3), cen = m === 'base_d' ? new Float32Array(total * 3) : null;
       let o = 0;
       for (const r of lista) {
         e.set(r.rx, r.ry, r.rz, r.o ? 'YXZ' : 'XYZ');
@@ -474,11 +493,13 @@ export class Chunks {
           p.fromBufferAttribute(a, k).applyMatrix4(m4);
           pos[o * 3] = p.x; pos[o * 3 + 1] = p.y; pos[o * 3 + 2] = p.z;
           cor[o * 3] = c3.r; cor[o * 3 + 1] = c3.g; cor[o * 3 + 2] = c3.b;
+          if (cen) { cen[o * 3] = r.cx; cen[o * 3 + 2] = r.cz; } // o pé da árvore (para desbotar)
         }
       }
       const g = new THREE.BufferGeometry();
       g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
       g.setAttribute('color', new THREE.BufferAttribute(cor, 3));
+      if (cen) g.setAttribute('centro', new THREE.BufferAttribute(cen, 3));
       g.computeVertexNormals();
       g.computeBoundingSphere();
       this.adicionar(ch, new THREE.Mesh(g, MAT_J[m]));
@@ -516,7 +537,11 @@ export class Chunks {
     for (let a = 0; a < G; a++) for (let b = 0; b < G; b++) {
       const x = (cx * G + a + 0.15 + rng() * 0.7) * cel, z = (cz * G + b + 0.15 + rng() * 0.7) * cel;
       const r1 = rng(), r2 = rng(), r3 = rng(), esc = rng();
-      if (!this.livre(x, z)) continue;
+      if (!this.livre(x, z)) {
+        // os corais do Arquipélago ficam no fundo da água rasa (onde não nasce mais nada)
+        if (r2 < 0.12 * dq && Math.hypot(x, z) > 125) { const h = alturaEm(x, z); if (h < NIVEL_AGUA - 0.15 && h > -1.15 && biomaEm(x, z) === 'agua') this.pecaFloresta((ad, rr, xx, yy, zz, e) => AR.coral(ad, rr, xx, h, zz, e), x, z, 0.6 + esc * 0.5, k, 0, 0, true); }
+        continue;
+      }
       const P = pesosEm(x, z);
       let r = r1, id = 'campo';
       for (let i = 0; i < N_PESOS; i++) { r -= P[i]; if (r <= 0) { id = idDoPeso(i); break; } }
@@ -524,6 +549,7 @@ export class Chunks {
       else if (id === 'planta' && r2 > 0.85) this.pecaFloresta(FL.samambaia, x, z, 0.6 + esc * 0.4, k, 0, 0.3, true);
       else if (id === 'campo' && r2 > 0.78) add('flor', 'base', x, alturaEm(x, z) + 0.12, z, 1, 1, 1, 0, 0, 0, sorteio(rng, COR.flor), true);
       else if (id === 'terra' && r2 > 0.93) this.pecaFloresta(DS.tufoSeco, x, z, 0.6 + esc * 0.4, k, 0, 0.3, true);
+      else if (id === 'agua' && r2 > 0.9) this.pecaFloresta(AR.conchinha, x, z, 0.8 + esc * 0.4, k, 0, 0.2, true);
       else if (id === 'raio' && r2 > 0.9) { if (esc < 0.6) this.capimSeco(x, z, k); else this.montinhoNeve(x, z, k); }
     }
     return { recs, obst };
@@ -577,10 +603,21 @@ export class Chunks {
         else if (r3 < 0.88) this.pecaFloresta(VU.petrificado, x, z, 0.7, k, 0.5, 0.4);
         else this.pecaFloresta(VU.juncoEnxofre, x, z, 0.9, k, 0, 0.3, true);
         return;
-      case 'agua': // ilhas do Arquipélago
-        if (r3 < 0.55) this.palmeira(x, z, 0.85 + esc * 0.45, k);
-        else if (r3 < 0.85) this.pedra(x, z, 0.5 + esc * 0.9, sorteio(rng, COR.pedra.agua), k);
-        else this.arbusto(x, z, 0.7 + esc * 0.5, '#5cb553', k);
+      case 'agua': { // ilhas do Arquipélago: "Marés de Safira" (o guia do Lâmina; as peças ficam em biomas/arquipelago.js)
+        if (alturaEm(x, z) < 1.3) { // a praia
+          if (r3 < 0.5) this.pecaFloresta(AR.coqueiro, x, z, 0.8 + esc * 0.4, k, 0.4, 0.3);
+          else if (r3 < 0.65) this.pecaFloresta(AR.amendoeira, x, z, 0.9, k, 0.6, 0.4);
+          else if (r3 < 0.85) this.pecaFloresta(AR.flores, x, z, 0.8 + esc * 0.3, k, 0, 0.4, true);
+          else this.pecaFloresta(AR.pedraCalcaria, x, z, 0.8 + esc, k, 0.6, 0.4);
+        } else { // o alto da ilha: a mata tropical
+          if (r3 < 0.3) this.pecaFloresta(AR.bananeira, x, z, 1, k, 0.4, 0.3);
+          else if (r3 < 0.5) this.pecaFloresta(AR.samambaiaTropical, x, z, 1.1, k, 0, 0.3, true);
+          else if (r3 < 0.65) this.pecaFloresta(AR.bambu, x, z, 1, k, 0.5, 0.3);
+          else if (r3 < 0.85) this.pecaFloresta(AR.coqueiro, x, z, 1, k, 0.4, 0.3);
+          else this.pecaFloresta(AR.flores, x, z, 1, k, 0, 0.4, true);
+        }
+        return;
+      }
     }
   }
 
@@ -588,7 +625,7 @@ export class Chunks {
   // pequena = some de longe (LOD)
   pecaFloresta(fn, x, z, e, k, ob, pe, pequena = false) {
     const y = this.pe(x, z, pe * e);
-    fn((g, tipo, ...a) => { k.add('u_' + g, TIPO_MAT[tipo], ...a.slice(0, 9), TIPO_COR[tipo] || a[9] || null, pequena || !!a[10]); k.recs[k.recs.length - 1].o = 1; }, k.rng, x, y, z, e);
+    fn((g, tipo, ...a) => { k.add('u_' + g, TIPO_MAT[tipo], ...a.slice(0, 9), TIPO_COR[tipo] || a[9] || null, pequena || !!a[10]); const rc = k.recs[k.recs.length - 1]; rc.o = 1; if (tipo === 'p') { rc.cx = a[11] ?? x; rc.cz = a[12] ?? z; } }, k.rng, x, y, z, e);
     if (ob) k.ob(x, z, ob * e);
   }
 

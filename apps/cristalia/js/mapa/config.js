@@ -37,7 +37,7 @@ export const CONFIG_MAPA = {
   },
 
   // Quantos pontos (de 64 por chunk) ganham um objeto (árvore, pedra, cacto...)
-  densidade: { campo: 0.12, planta: 0.3, terra: 0.15, raio: 0.3, fogo: 0.17, agua: 0.1 },
+  densidade: { campo: 0.12, planta: 0.3, terra: 0.15, raio: 0.3, fogo: 0.17, agua: 0.16 },
   orcamentoMs: 3,         // tempo máximo por quadro criando chunks (para não travar; sempre sai pelo menos 1)
 };
 
