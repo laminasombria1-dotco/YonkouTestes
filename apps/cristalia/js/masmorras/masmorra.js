@@ -15,6 +15,7 @@
 import * as THREE from 'three';
 import { criarModelo, criarCoroa, animarModelo, criarAuraDupla, descartar } from '../modelos.js';
 import { Lote, Bloco, GEO, aleatorio, sortear } from '../dungeon.js';
+import { materialFuro } from '../biomas/comum.js';
 import { alturaEm, alturaVertice, ESPACO, esquecerAlturas } from '../mapa/altura.js';
 import { LUGARES } from '../mapa/gerador.js';
 import {
@@ -77,7 +78,7 @@ export class MasmorraNova {
   // (todas as coordenadas são LOCAIS: em volta da origem da masmorra)
   mat(cor, extra = null) {
     const k = cor + (extra ? JSON.stringify(extra) : '');
-    if (!this.mats.has(k)) this.mats.set(k, new THREE.MeshLambertMaterial({ color: cor, flatShading: true, ...(extra || {}) }));
+    if (!this.mats.has(k)) this.mats.set(k, materialFuro(new THREE.MeshLambertMaterial({ color: cor, flatShading: true, ...(extra || {}) })));
     return this.mats.get(k);
   }
   brilho(cor, forca = 0.6) { return this.mat(cor, { emissive: cor, emissiveIntensity: forca }); }

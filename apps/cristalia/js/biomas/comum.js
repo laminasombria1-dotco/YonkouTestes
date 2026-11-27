@@ -78,11 +78,17 @@ varying float vFade;`)
 // quase transparente (25% visível, pedido do Lâmina): dá para ver o boneco através. O chão nunca muda
 // (só o que está acima dos pés do jogador) e nem o que está colado nele.
 export function materialFuro(m, raio = 3.4) {
+  if (m.transparent || m.userData.semFuro) return m; // o que já é transparente (água, brilhos) fica como está
   m.onBeforeCompile = (sh) => {
     sh.uniforms.uCam = UNIF_DESBOTA.uCam; sh.uniforms.uJog = UNIF_DESBOTA.uJog;
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vMundo;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvMundo = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+#ifdef USE_INSTANCING
+vMundo = (modelMatrix * instanceMatrix * vec4(transformed, 1.0)).xyz;
+#else
+vMundo = (modelMatrix * vec4(transformed, 1.0)).xyz;
+#endif`);
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', `#include <common>
 uniform vec3 uCam; uniform vec3 uJog; varying vec3 vMundo; float vTransp = 0.0;`)
@@ -115,6 +121,8 @@ export const MAT_FORNO = {
   g: lambert({ color: '#1c191d', emissive: '#3a1a10', emissiveIntensity: 0.2 }),                          // obsidiana
 };
 MAT_FORNO.p = materialDesbota(MAT_FORNO.n); // p = peça que desbota na frente da câmera (coqueiros)
+// as outras peças dos biomas ficam meio transparentes quando tampam o jogador
+for (const [k, m] of Object.entries(MAT_FORNO)) if (k !== 'p') materialFuro(m);
 for (const m of Object.values(MAT_FORNO)) m.userData.fixo = true;
 
 const SEM_INDICE = new Map();

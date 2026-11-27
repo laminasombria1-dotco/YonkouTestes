@@ -23,7 +23,7 @@ import { alturaVertice, alturaEm, ESPACO } from './altura.js';
 import { TRACADOS, REINO, S_LAGO, foraDungeons } from '../dungeon.js';
 import { GELO, naTrilhaGelo } from '../biomas/lugares.js';
 import { PAL_GELO, pinheiroNevado } from '../biomas/gelo.js';
-import { semIndice, UNI, materialDesbota, atualizarDesbota } from '../biomas/comum.js';
+import { semIndice, UNI, materialDesbota, atualizarDesbota, materialFuro } from '../biomas/comum.js';
 import * as AR from '../biomas/arquipelago.js';
 import * as FL from '../biomas/floresta.js';
 import * as DS from '../biomas/deserto.js';
@@ -67,6 +67,8 @@ const TIPO_COR = { e: '#f2d84a', g: '#1c191d' };
 const MAT_J = Object.fromEntries(Object.entries(MAT).map(([k, m]) => { const c = m.clone(); c.vertexColors = true; return [k, c]; }));
 // os coqueiros do Arquipélago: cada um fica transparente sozinho quando tampa a câmera (biomas/comum.js)
 MAT_J.base_d = materialDesbota(MAT_J.base);
+// árvores, pedras e o resto: ficam meio transparentes quando tampam o jogador (o chão fica de fora)
+for (const [k, m] of [...Object.entries(MAT), ...Object.entries(MAT_J)]) if (k !== 'base_d') materialFuro(m);
 const MAT_CHAO = lambert({ vertexColors: true });
 // o gelo do Gelo (lagos e rios congelados): o ciano do guia
 const GELO_LAGO = ['#4a89aa', '#5596b6', '#3f7d9e', '#6aaac8', '#4a89aa'];
