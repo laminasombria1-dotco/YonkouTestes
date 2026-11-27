@@ -181,7 +181,7 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
         Elo enchem; a área gasta, cura e solta mais cervos), Investida da Galhada (árvore que enraíza), Elo Vital
         (cipó que suga vida) e Manada Espiritual (cervos-espírito). `js/habilidades/silvarion.js` e
         `silvarion-batalha.js`, modelo em `linhaSilvarion` (`js/modelos.js`).
-- [ ] **Fase 8 — Conteúdo do Nv.50+:** masmorras que crescem, chefes de masmorra (monstros
+- [ ] **Fase 8 — Conteúdo do Nv.50+** (falta só a 8.4, para o futuro): masmorras que crescem, chefes de masmorra (monstros
       normais), biomas com vila e arena.
       *Dividida em etapas (aprovado):* 8.1 (tudo até o Nv.100 + chefes novos), 8.2 (masmorras de bioma escondidas,
       com proposta e imagens do mapa antes), 8.3 (biomas novos com vila e arena, depois que o Lâmina criar os biomas)
@@ -196,7 +196,7 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
         **o lendário só a partir do nível 9, por sorteio (15%)**. **Qualquer monstro na forma final** fora da equipe do
         jogador (chefe ou líder) só é capturado com o **Cristal Supremo**, com 40% da chance normal. Tudo em `MASMORRA`
         (`js/dados.js`) e `spawnarChefe`/`chefeVencido` (`js/dungeon.js`).
-  - [ ] **Mundo novo** (substitui as etapas 8.2 e 8.3; decisões abaixo). Ordem aprovada, cada passo com proposta e imagem antes:
+  - [x] **Mundo novo** (substitui as etapas 8.2 e 8.3; decisões abaixo). Ordem aprovada, cada passo com proposta e imagem antes:
     - [x] **Passo 1 — Mapa novo:** redondo, Reino no centro, 5 biomas, arquipélago, as 2 masmorras de hoje no lugar novo.
           *Feito:* raio de 390 m (`versaoMapa: 2`); ordem fixa Gelo > Floresta > Deserto > Vulcânico > Arquipélago (aprovada);
           Reino de 100 m de raio no meio com 5 portões, estrada em anel e espaço livre; a Estrada Real virou os 5 caminhos
@@ -232,7 +232,7 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
             de hoje; com os lendários Silvárion e Ignárion no Nível 9+). `pantano-sombrio.js` e `forja-antiga.js`.
       - [x] **4.4 — Arquipélago:** Templo Submerso (recife, conchas gigantes, tridente) e Gruta das Marés (navio naufragado,
             piratas, polvo gigante). `templo-submerso.js` e `gruta-mares.js`.
-    - [ ] **Passo 4.5 — Melhorias dos biomas** (o mapa de fora: Gelo, Floresta, Deserto, Vulcânico e Arquipélago).
+    - [x] **Passo 4.5 — Melhorias dos biomas** (o mapa de fora: Gelo, Floresta, Deserto, Vulcânico e Arquipélago).
           Cada bioma mais bonito e com cara própria, com peças específicas (os mesmos truques de peso das masmorras).
           **Um bioma por vez**, medindo os desenhos por quadro antes e depois (qualidade Médio, celular de referência).
           Sem trocar a semente nem a `versaoMapa` (o jogo salvo continua onde está). Nada em cima das vilas, das entradas
@@ -318,7 +318,7 @@ afeto, bandeira, Rei, raros, lendários e o conteúdo do Nv.50 para cima).
           *Decisões do Lâmina:* **atributos novos**: Nv.1 baixo para todos (Vida 40, Ataque 10, Defesa 10); a cada nível
           +2 em cada atributo, e esse ganho sobe **+0,1 por nível** (metade depois do Nv.50, como na fase 8.1);
           **papéis por monstro** (não por elemento): Ataque +20% ataque, Defesa +20% defesa, Vida +35% vida e −10% defesa
-          (empatados); **o Lâmina vai dizer o papel de cada monstro depois** (`PAPEIS_DOS_MONSTROS`, hoje vazio);
+          (empatados); **o papel de cada monstro veio da planilha do Lâmina** (`PAPEIS_DOS_MONSTROS`, veja abaixo);
           duplos ×1,05, raros ×1,1 ("medianos"), lendários ×1,3 (base e crescimento); raros e lendários sobem
           sozinhos nos Nv.12/30/50 e as formas deles dão +10/20/30%; a vantagem de elemento continua fixa;
           o dano cresce com a vida do nível do alvo (`escalaDoNivel`), `DANO_GERAL` 0,25 (mesmo número de golpes de antes).

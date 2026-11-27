@@ -16,6 +16,7 @@
 import * as THREE from 'three';
 import { REINO } from './dungeon.js';
 import { ESTRADAS, RAIO_REINO, aleatorio } from './mapa/gerador.js';
+import { materialFuro } from './biomas/comum.js';
 import { ESPECIES, criarMonstro, formaPorNivel, especieDaEscolha } from './dados.js';
 
 // ---------- medidas do Reino (locais) ----------
@@ -124,6 +125,7 @@ function material(tipo) {
       : tipo === 'claro' // paredes brancas do castelo: um pouco de luz própria
         ? new THREE.MeshLambertMaterial({ vertexColors: true, emissive: '#77746c' })
         : new THREE.MeshLambertMaterial({ vertexColors: true, side: tipo === 'duplo' ? THREE.DoubleSide : THREE.FrontSide });
+    materialFuro(MATS[tipo]); // paredes, telhados e árvores abrem um furo quando tampam o jogador
     MATS[tipo].userData.fixo = true; // são do Reino inteiro: o fim da batalha não pode apagar
   }
   return MATS[tipo];
