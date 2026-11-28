@@ -17,8 +17,10 @@ import * as THREE from 'three';
 import { CONFIG_MAPA as C, QUALIDADES } from './config.js';
 import {
   SEMENTE, RAIO_MUNDO, NIVEL_AGUA, POIS, RESERVAS, LAGOA, aleatorio, semente3,
-  pesosEm, idDoPeso, N_PESOS, biomaEm, lagoEm, geloEm, naEstradaReal, ESTRADA, CAMINHO_DESERTO, CALDEIRA, naBaciaAcida,
+  pesosEm, idDoPeso, N_PESOS, biomaEm, lagoEm, geloEm, naEstradaReal, ESTRADA, CAMINHO_DESERTO, CALDEIRA, naBaciaAcida, FUNDO_BLOQUEIO,
 } from './gerador.js';
+// Água funda (onde não dá para andar, bloqueadoEm no altura.js): o fundo é bem mais escuro, para ver de longe
+const FUNDO = FUNDO_BLOQUEIO;
 import { alturaVertice, alturaEm, ESPACO } from './altura.js';
 import { TRACADOS, REINO, S_LAGO, foraDungeons } from '../dungeon.js';
 import { GELO, naTrilhaGelo } from '../biomas/lugares.js';
@@ -344,7 +346,7 @@ export class Chunks {
     if (id === 'terra') return this.corDoDeserto(x, z, y, inc, rng);
     if (id === 'fogo') return this.corDoVulcao(x, z, y, inc, rng);
     if (id === 'agua') return this.corDoArquipelago(y, inc, rng);
-    if (y < NIVEL_AGUA - 0.15) return id === 'fogo' ? '#3a1a12' : id === 'agua' ? (y < -1.3 ? '#2f7fa0' : '#5fc8c0') : '#4f9fb8'; // no Arquipélago: rasa clarinha, funda escura
+    if (y < NIVEL_AGUA - 0.15) return id === 'fogo' ? '#3a1a12' : y < FUNDO ? '#1f4f70' : id === 'agua' ? '#5fc8c0' : '#4f9fb8'; // rasa clarinha, funda (não dá para andar) escura
     if (y < NIVEL_AGUA + 0.45) return id === 'fogo' ? sorteio(rng, ['#c8461a', '#8a2e14']) : id === 'raio' ? '#d8e8f2' : sorteio(rng, ['#e2cd90', '#ecd9a0']);
     if (y > 13 && id !== 'fogo' && inc > 0.55) return sorteio(rng, PALETA.raio); // neve no alto dos picos
     if (inc < 0.72) {
@@ -371,6 +373,7 @@ export class Chunks {
   // O chão da Floresta (a paleta do guia): musgo profundo, folhas caídas, ardósia nas
   // ladeiras, lama nas margens e o fundo escuro de tanino dos rios
   corDaFloresta(y, inc, rng) {
+    if (y < FUNDO) return sorteio(rng, ['#121f25', '#0f1b21', '#16242b']);           // funda: não dá para andar
     if (y < NIVEL_AGUA - 0.15) return sorteio(rng, ['#2b4652', '#24404a', '#30505a']);
     if (y < NIVEL_AGUA + 0.4) return sorteio(rng, ['#3a3a2a', '#2f3a2c', '#45402c']);
     if (inc < 0.6) return sorteio(rng, ['#7a8489', '#6a7479', '#5f696e']);
@@ -382,7 +385,7 @@ export class Chunks {
   // sombras das dunas, arenito em camadas nos cânions, lajes no caminho, calcário no planalto e o oásis
   corDoDeserto(x, z, y, inc, rng) {
     const O = DS.OASIS;
-    if (O) { const d = Math.hypot(x - O.x, z - O.z); if (d < O.r + 0.5) return sorteio(rng, ['#3ab5a8', '#34a89c', '#44c0b2']); if (d < O.r + 4) return rng() < 0.12 ? '#e8e4d4' : sorteio(rng, ['#4a5a3a', '#5a6a3e', '#56663c']); }
+    if (O) { const d = Math.hypot(x - O.x, z - O.z); if (d < O.r + 0.5) return y < FUNDO ? sorteio(rng, ['#1d6a64', '#1a625c']) : sorteio(rng, ['#3ab5a8', '#34a89c', '#44c0b2']); if (d < O.r + 4) return rng() < 0.12 ? '#e8e4d4' : sorteio(rng, ['#4a5a3a', '#5a6a3e', '#56663c']); }
     if (y < NIVEL_AGUA + 0.3) return sorteio(rng, ['#9e5a38', '#8a4e32']);
     const C = CAMINHO_DESERTO, ao = x * C.dir.x + z * C.dir.z, l = x * C.lat.x + z * C.lat.z;
     if (ao > C.ao0 + 8 && ao < C.ao1 - 8 && Math.abs(l - C.lado) < 3.2 && rng() < 0.8) return sorteio(rng, ['#cfc3a8', '#bfb39a', '#d9cdb2', '#c4b898']); // lajes da estrada
@@ -409,7 +412,7 @@ export class Chunks {
   // O chão do Arquipélago (o guia "Marés de Safira"): canais azul-safira, rasa turquesa e esmeralda,
   // praia de areia marfim, falésia de calcário dourado e mata tropical no alto das ilhas
   corDoArquipelago(y, inc, rng) {
-    if (y < -1.3) return sorteio(rng, ['#1f5f9a', '#1a5590', '#24689f']);
+    if (y < FUNDO) return sorteio(rng, ['#0d2f63', '#0a2a5a', '#10366e']);           // funda (não dá para andar): azul-safira bem escuro
     if (y < -0.85) return sorteio(rng, ['#2fa8b8', '#34b0c0', '#2a9cb0']);
     if (y < NIVEL_AGUA - 0.1) return sorteio(rng, ['#5fd8c8', '#6ae0cc', '#58d0c4', '#7ae8d4']);
     if (y < NIVEL_AGUA + 0.5) return sorteio(rng, ['#f2e6c8', '#ece0c0', '#f6ecd2']);
