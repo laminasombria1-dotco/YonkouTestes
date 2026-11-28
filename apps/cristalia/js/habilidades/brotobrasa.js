@@ -110,5 +110,5 @@ export const NOVIDADES_BROTOBRASA = [
   null,
   ['Folhas Ardentes (+30% em quem queima)', 'flores e brotos agora queimam', 'até 3 flores'],
   ['Fruta Ardente (+25% de dano, +10% de velocidade)', 'Bombinhas de Fruta', 'Chuva de Frutas'],
-  ['Fruta Ardente +30% / +25%', 'Bombinhas de Fruta maiores', 'Chuva de 8 frutas'],
+  ['Fruta Ardente +30% / +15%', 'Bombinhas de Fruta maiores', 'Chuva de 8 frutas'],
 ];
