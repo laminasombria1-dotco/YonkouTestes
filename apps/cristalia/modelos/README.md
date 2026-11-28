@@ -117,4 +117,5 @@ Ardentroco (3ª forma da linha do Brotobrasa) feito no Blender pelo Lâmina (`ar
 | `Desmaiar` | 2,0 s | quando desmaia (1,4× mais rápido, para deitado em 1,3 s) |
 
 - **Só o Ardentroco:** Brotobrasa, Chamafolha e Florinferno continuam com as formas simples.
+- **Correr mais devagar:** ele anda 20% mais devagar que os outros (`AJUSTE_VELOCIDADE` no `dados.js`), então o `Correr` toca a 0,8× (`velCorrer`) para os pés não escorregarem.
 - **Para mudar:** `ARQUIVOS.ardentroco` em `js/modelos3d.js`.

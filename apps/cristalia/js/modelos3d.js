@@ -75,6 +75,7 @@ const ARQUIVOS = {
     },
     marco: { corpo: 0.6, projetil: 0.55, area: 0.3 }, // come a fruta, solta a fruta, começa o giro
     velArrancada: 2.5,
+    velCorrer: 0.8,            // anda 20% mais devagar (AJUSTE_VELOCIDADE no dados.js): os passos também
     desmaioFim: 1.3,
     velDesmaio: 1.4,
   },
@@ -158,6 +159,7 @@ function trocar(g, estado, mistura = MISTURA) {
   if (!nova) return;
   nova.reset();
   if (estado === 'arrancada') nova.timeScale = g.cfg.velArrancada || 1;
+  if (estado === 'correndo') nova.timeScale = g.cfg.velCorrer || 1; // passos no ritmo da velocidade dele
   tocar(g, nova, mistura);
   g.estado = estado;
 }

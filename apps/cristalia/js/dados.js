@@ -517,6 +517,10 @@ for (const [k, linha] of Object.entries(DUPLAS)) {
     };
   });
 }
+// Ajuste de velocidade de movimento de uma espécie só (1 = normal, 0,8 = 20% mais lento).
+// Pedido do Lâmina: o Ardentroco (árvore pesada) estava rápido demais.
+export const AJUSTE_VELOCIDADE = { ardentroco: 0.8 };
+for (const [id, f] of Object.entries(AJUSTE_VELOCIDADE)) ESPECIES[id].base.vel *= f;
 // =============================================================
 // RAROS COM FORMAS NOVAS (fase 6: Vulcarapa, Aquaraia e Espinhal)
 // A forma de hoje é a inicial (Nv.1 a 54). 1ª evolução no Nv.55 e 2ª no Nv.70, sozinhas;

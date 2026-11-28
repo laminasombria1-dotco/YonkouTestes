@@ -172,8 +172,8 @@ Brotobrasa (Nv.1) > Chamafolha (Nv.12) > Ardentroco (Nv.30) > Florinferno (Nv.50
 |---|---|---|---|
 | Brotobrasa | Investida | **Semente de Brasa**: vira uma flor até 7 m; explode com inimigo a 1,5 m (ou depois de 6 s). Até **2** flores | **Anel de Brotos**: 5 brotos em volta explodem 1 s depois |
 | Chamafolha | **Folhas Ardentes**: leque de 2,5 m; **+30% em quem está queimando** | + Queimadura, até **3** flores | + Queimadura |
-| Ardentroco | **Fruta Ardente** (bônus, sem golpe de perto): come a fruta da cabeça, **+25% de dano e +20% de velocidade por 10 s**, recarga 15 s | **Bombinhas de Fruta**: joga a fruta da cabeça; armadilha que fica **15 s** no chão e deixa fogo; até **6** | **Chuva de Frutas**: gira e **6 frutas** caem em volta (até 4 m); **não explodem ao cair**, ficam **12 s** como armadilha |
-| Florinferno | **Fruta Ardente**: **+30% de dano e +25% de velocidade** | Explosão de 2,5 m, até **7** | **8 frutas** (até 4,5 m), com fogo no chão |
+| Ardentroco | **Fruta Ardente** (bônus, sem golpe de perto): come a fruta da cabeça, **+25% de dano e +10% de velocidade por 10 s**, recarga 15 s | **Bombinhas de Fruta**: joga a fruta da cabeça; armadilha que fica **15 s** no chão e deixa fogo; até **6** | **Chuva de Frutas**: gira e **6 frutas** caem em volta (até 4 m); **não explodem ao cair**, ficam **12 s** como armadilha |
+| Florinferno | **Fruta Ardente**: **+30% de dano e +15% de velocidade** | Explosão de 2,5 m, até **7** | **8 frutas** (até 4,5 m), com fogo no chão |
 
 - **Armadilhas (`semente`, `chuva`):** ficam em `this.flores` (todas juntas, com o dono). Cada dono tem um limite por tipo ('semente' e 'chuva'): plantar mais uma tira a mais velha. Arma em 0,3 s e explode uma vez só. O aviso no chão é **vermelho** quando é do inimigo. `fruta: true` troca a flor pela fruta.
 - **Fruta Ardente (`buff`):** fica em `c.frutaArdente` (contagem e faíscas no `atualizar`). O dano entra no `aplicarDano` e a velocidade no `fatorVel` (`batalha.js`). Não tem aviso no chão e prepara em 0,5 s. O chip mostra "Fruta +25% Xs"; o botão diz "bônus".

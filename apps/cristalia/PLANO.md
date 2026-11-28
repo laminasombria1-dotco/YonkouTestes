@@ -393,5 +393,7 @@ Uma tela nova de criar o personagem, depois de "Novo jogo" e antes de escolher o
   como armadilha por um tempo (12 s).
 - No máximo **10 a 15 frutas** no campo (12 no Ardentroco, 15 no Florinferno).
 - O `ardentronco_mobile.glb` entra no jogo; as texturas viram WebP porque a imagem não mudou.
+- **Ajuste depois de jogar:** o Ardentroco estava rápido demais. Ele anda **20% mais devagar** (`AJUSTE_VELOCIDADE` no `dados.js`,
+  e os passos do 3D também) e a Fruta Ardente dá **+10% de velocidade** (Florinferno +15%, mantendo os 5% a mais). O dano continua igual.
 - [x] **Feito:** `brotobrasa.js` (números), `brotobrasa-batalha.js` (`comerFruta`, `chuvaDeFrutas`, frutas no lugar das flores),
       `batalha.js` (bônus no dano e na velocidade, IA), `modelos/ardentroco.glb` e `ARQUIVOS.ardentroco` no `modelos3d.js`.

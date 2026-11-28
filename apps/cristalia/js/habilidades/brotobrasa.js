@@ -25,7 +25,7 @@
 //  leque    = golpe de perto em leque: { abertura (meio ângulo, radianos), golpes (1 ou 2),
 //             intervalo (s entre os golpes) }
 //  buff     = Fruta Ardente (no lugar do golpe de perto): { duracao (s), dano (0,25 = +25%),
-//             vel (0,2 = +20% de velocidade) }
+//             vel (0,1 = +10% de velocidade) }
 //  queimando = golpe de perto em quem está com Queimadura dá mais dano (0,3 = +30%)
 //  anel     = brotos nascem em volta dele e explodem: { n, atraso (s), fator (força de cada) }
 //  chuva    = Chuva de Frutas: ele gira e n frutas caem em volta (até "raio" m) e ficam no chão
@@ -60,11 +60,11 @@ export const GOLPES_BROTOBRASA = {
   // ele come a fruta da cabeça: por "duracao" segundos causa mais dano e anda mais rápido (não ataca)
   frutaArdente: {
     nome: 'Fruta Ardente', elemento: 'planta', tipo: 'corpo', poder: 0, recarga: 15, alcance: 0,
-    buff: { duracao: 10, dano: 0.25, vel: 0.2 },
+    buff: { duracao: 10, dano: 0.25, vel: 0.1 },
   },
   frutaArdenteMax: {
     nome: 'Fruta Ardente', elemento: 'planta', tipo: 'corpo', poder: 0, recarga: 15, alcance: 0,
-    buff: { duracao: 10, dano: 0.3, vel: 0.25 },
+    buff: { duracao: 10, dano: 0.3, vel: 0.15 },
   },
   // ---- Área: Anel de Brotos | Chuva de Frutas (Ardentroco em diante) ----
   anelBrotos: {
@@ -103,12 +103,12 @@ export const MELHORIAS_BROTOBRASA = [
 export const TEXTOS_BROTOBRASA = [
   ['Semente de Brasa: joga uma semente até 7 m que vira uma flor de fogo; ela explode quando um inimigo chega a 1,5 m (ou sozinha depois de 6 s). Até 2 flores no campo.', 'Anel de Brotos: 5 brotos nascem em volta dele e explodem 1 s depois.'],
   ['Folhas Ardentes: corte em leque de 2,5 m; quem está queimando leva +30%.', 'Flores e brotos podem causar Queimadura; até 3 flores.'],
-  ['Fruta Ardente (no lugar do golpe de perto): come a fruta da cabeça e ganha +25% de dano e +20% de velocidade por 10 s (recarga 15 s).', 'Bombinhas de Fruta: joga uma fruta da cabeça que fica no chão como bomba por 15 s (fogo no chão ao explodir); até 6.', 'Chuva de Frutas: gira e 6 frutas caem em volta (4 m), ficando no chão como bombas por 12 s.'],
-  ['Fruta Ardente mais forte: +30% de dano e +25% de velocidade por 10 s.', 'Bombinhas de Fruta maiores: explosão de 2,5 m; até 7.', 'Chuva de Frutas com 8 frutas (4,5 m) e fogo no chão.', 'Queimadura dura 50% mais.'],
+  ['Fruta Ardente (no lugar do golpe de perto): come a fruta da cabeça e ganha +25% de dano e +10% de velocidade por 10 s (recarga 15 s).', 'Bombinhas de Fruta: joga uma fruta da cabeça que fica no chão como bomba por 15 s (fogo no chão ao explodir); até 6.', 'Chuva de Frutas: gira e 6 frutas caem em volta (4 m), ficando no chão como bombas por 12 s.'],
+  ['Fruta Ardente mais forte: +30% de dano e +15% de velocidade por 10 s.', 'Bombinhas de Fruta maiores: explosão de 2,5 m; até 7.', 'Chuva de Frutas com 8 frutas (4,5 m) e fogo no chão.', 'Queimadura dura 50% mais.'],
 ];
 export const NOVIDADES_BROTOBRASA = [
   null,
   ['Folhas Ardentes (+30% em quem queima)', 'flores e brotos agora queimam', 'até 3 flores'],
-  ['Fruta Ardente (+25% de dano, +20% de velocidade)', 'Bombinhas de Fruta', 'Chuva de Frutas'],
+  ['Fruta Ardente (+25% de dano, +10% de velocidade)', 'Bombinhas de Fruta', 'Chuva de Frutas'],
   ['Fruta Ardente +30% / +25%', 'Bombinhas de Fruta maiores', 'Chuva de 8 frutas'],
 ];

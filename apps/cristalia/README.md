@@ -1076,10 +1076,10 @@ O Brotobrasa planta **armadilhas de fogo** no chão (flores e, depois, as frutas
 |---|---|---|---|
 | Brotobrasa | Investida | **Semente de Brasa**: vira uma flor de fogo (até 2 no campo) | **Anel de Brotos**: brotos nascem em volta e explodem |
 | Chamafolha | **Folhas Ardentes**: leque; +30% em quem está queimando | + Queimadura, até 3 flores | + Queimadura |
-| Ardentroco | **Fruta Ardente** (bônus): come a fruta, +25% de dano e +20% de velocidade por 10 s (recarga 15 s) | **Bombinhas de Fruta**: a fruta fica 15 s no chão como armadilha; até 6 | **Chuva de Frutas**: gira e 6 frutas caem em volta e ficam 12 s como armadilha |
-| Florinferno | **Fruta Ardente**: +30% de dano e +25% de velocidade | explosão maior, até 7 | 8 frutas, com fogo no chão |
+| Ardentroco | **Fruta Ardente** (bônus): come a fruta, +25% de dano e +10% de velocidade por 10 s (recarga 15 s) | **Bombinhas de Fruta**: a fruta fica 15 s no chão como armadilha; até 6 | **Chuva de Frutas**: gira e 6 frutas caem em volta e ficam 12 s como armadilha |
+| Florinferno | **Fruta Ardente**: +30% de dano e +15% de velocidade | explosão maior, até 7 | 8 frutas, com fogo no chão |
 
-- **Como jogar:** espalhe frutas e atraia o inimigo para cima delas; coma a Fruta Ardente antes de lutar, porque o bônus vale para as explosões também. O Ardentroco e o Florinferno **não têm golpe de perto**.
+- **Como jogar:** espalhe frutas e atraia o inimigo para cima delas; coma a Fruta Ardente antes de lutar, porque o bônus vale para as explosões também. O Ardentroco e o Florinferno **não têm golpe de perto**. O Ardentroco anda **20% mais devagar** que os outros da linha (árvore pesada; `AJUSTE_VELOCIDADE` no `dados.js`).
 - As armadilhas **do inimigo** têm um aviso **vermelho** no chão: desvie delas.
 - O **Ardentroco** usa o modelo 3D do Lâmina (`modelos/ardentroco.glb`): nas animações ele tira as frutas da cabeça e elas crescem de novo.
 
