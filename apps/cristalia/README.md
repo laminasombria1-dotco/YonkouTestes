@@ -709,7 +709,7 @@ Do fim da Estrada Real do Fogo (a entrada sul) até o vulcão do meio do bioma:
 O chão não muda (as ilhas, a água rasa e os canais são os da semente); mudam as cores e as peças.
 - **Cores:** água rasa turquesa e verde-esmeralda (o mar ficou mais transparente), canais fundos azul-safira, praia de areia marfim, falésias de calcário dourado e mata tropical no alto das ilhas.
 - **Peças comuns** (nos chunks): coqueiros inclinados com cocos, amendoeiras, hibisco e buganvília, pedras calcárias e, no alto, bananeiras, bambu e samambaias; corais coloridos no fundo da água rasa, estrelas-do-mar e conchas na areia.
-- **Enseada dos Bangalôs:** na ilha logo depois da Estrada Real: 2 bangalôs de palha sobre a água, o píer com lanternas, o barco a remo, a rede entre os coqueiros, amendoeiras e flores.
+- **Enseada dos Bangalôs:** na ilha logo depois da Estrada Real: 2 bangalôs de palha sobre a água, o píer com lanternas (o píer, a passarela e os deques dos bangalôs são **pisos**: dá para subir e andar em cima, inclusive sobre o canal fundo; `mundo.pisos`, `pisoEm` e `chaoEm` no `mundo.js`), o barco a remo, a rede entre os coqueiros, amendoeiras e flores.
 - **Ilha da Cachoeira e Arco de Pedra:** a ilha grande vira um pico verde com rochas e a cachoeira caindo na enseada; na frente, o arco de calcário gigante no mar.
 - **Farol Antigo:** o farol de pedra com musgo (a luz brilha à noite), a torre de vigia, muros caídos, pedras entalhadas e o manguezal no canal ao lado.
 - **Naufrágio do Mercante** (no raso, com corais) e o **Atol de Coral**.

@@ -11,7 +11,6 @@
 import * as THREE from 'three';
 import { ESPECIES, GOLPES, ELEMENTOS } from './dados.js';
 import { criarModelo, animarModelo, descartar } from './modelos.js';
-import { alturaEm } from './mundo.js';
 import { Treino } from './treino.js';
 
 const DIST_ATRAS = 2.2;   // metros atrás do treinador
@@ -210,7 +209,7 @@ export class Companheiro {
     } else {
       this.ang = virar(this.ang, m.ang, 1 - Math.exp(-4 * dt)); // parado: olha para onde o treinador olha
     }
-    this.modelo.position.set(this.pos.x, alturaEm(this.pos.x, this.pos.z), this.pos.z);
+    this.modelo.position.set(this.pos.x, m.chaoEm(this.pos.x, this.pos.z), this.pos.z);
     this.modelo.rotation.y = this.ang;
     animarModelo(this.modelo, t, movendo);
   }

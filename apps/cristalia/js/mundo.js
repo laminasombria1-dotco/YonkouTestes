@@ -127,6 +127,7 @@ export class Mundo {
     this.obstaculos = new ListaObstaculos().ligar(this.grade); // os fixos (fonte, casa, dungeons)
     this.reservas = [];                                      // lugares sem árvore (cristais)
     this.nomesLugares = [];                                  // lugares com nome próprio na tela (Pântano das Lanternas Azuis...)
+    this.pisos = [];                                         // pisos de madeira onde dá para subir e andar (píer e deques da Enseada dos Bangalôs)
     this.refugios = [];                                      // lugares seguros fora do Reino (o Acampamento do Gelo): nenhum selvagem entra
     this.criarAgua();
     this.criarFonte();
@@ -822,7 +823,7 @@ export class Mundo {
       return;
     }
     for (const t of TRACADOS) t.empurrar?.(p, raio); // água do Lago Escondido (dentro da dungeon)
-    if (bloqueadoEm(p.x, p.z)) this.sairDoLiquido(p); // lago fundo e lava (rio raso dá para atravessar)
+    if (bloqueadoEm(p.x, p.z) && this.pisoEm(p.x, p.z) == null) this.sairDoLiquido(p); // lago fundo e lava (rio raso dá para atravessar; em cima de um píer pode)
     // limites: o mapa redondo ou o corredor de uma dungeon (vale o mais perto)
     const dc = Math.hypot(p.x, p.z);
     if (dc > RAIO_MUNDO - 4 && !dentroDungeonLivre(p.x, p.z, raio)) {
@@ -837,9 +838,25 @@ export class Mundo {
     for (let r = 0.4; r <= 12; r += 0.4) {
       for (let k = 0; k < 16; k++) {
         const a = (k / 16) * Math.PI * 2, x = p.x + Math.cos(a) * r, z = p.z + Math.sin(a) * r;
-        if (!bloqueadoEm(x, z)) { p.x = x; p.z = z; return; }
+        if (!bloqueadoEm(x, z) || this.pisoEm(x, z) != null) { p.x = x; p.z = z; return; }
       }
     }
+  }
+
+  // Altura do piso de madeira neste ponto (píer, passarela, deque), ou null se não tem piso.
+  // Cada piso é um retângulo girado: { x, z, a (giro), hx, hz (meia largura e meio comprimento), y (altura do chão dele) }
+  pisoEm(x, z) {
+    let y = null;
+    for (const P of this.pisos) {
+      const dx = x - P.x, dz = z - P.z, c = Math.cos(P.a), s = Math.sin(P.a);
+      if (Math.abs(dx * c - dz * s) <= P.hx && Math.abs(dx * s + dz * c) <= P.hz && (y == null || P.y > y)) y = P.y;
+    }
+    return y;
+  }
+  // Onde os pés ficam: o chão, ou o piso de madeira se tiver um mais alto
+  chaoEm(x, z) {
+    const h = alturaEm(x, z), p = this.pisos.length ? this.pisoEm(x, z) : null;
+    return p != null && p > h ? p : h;
   }
 
   // Distância e altura padrão da câmera (com o celular em pé ela fica mais longe e mais alta)
@@ -875,14 +892,14 @@ export class Mundo {
     if (movendo) {
       // na água rasa (rios e o Arquipélago) anda mais devagar
       // (no Gelo os rios são congelados: anda normal)
-      const naAgua = alturaEm(this.pos.x, this.pos.z) < NIVEL_AGUA - 0.1 && !geloEm(this.pos.x, this.pos.z) && biomaEm(this.pos.x, this.pos.z) !== 'raio';
+      const naAgua = this.chaoEm(this.pos.x, this.pos.z) < NIVEL_AGUA - 0.1 && !geloEm(this.pos.x, this.pos.z) && biomaEm(this.pos.x, this.pos.z) !== 'raio';
       const vel = VEL_JOGADOR * (naAgua ? AGUA_RASA : 1) * (this.jogo.gm?.vel || 1); // GM: andar ×2 ou ×3
       this.pos.x += v.x * vel * dt;
       this.pos.z += v.z * vel * dt;
       this.ang = lerpAngulo(this.ang, Math.atan2(v.x, v.z), 1 - Math.exp(-14 * dt));
     }
     this.colidir(this.pos, 0.4);
-    this.pos.y = alturaEm(this.pos.x, this.pos.z);
+    this.pos.y = this.chaoEm(this.pos.x, this.pos.z);
     this.jogador.position.copy(this.pos);
     this.jogador.rotation.y = this.ang;
     animarModelo(this.jogador, t, movendo);

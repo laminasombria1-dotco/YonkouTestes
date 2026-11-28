@@ -15,7 +15,6 @@
 // =============================================================
 import * as THREE from 'three';
 import { Batalha, Lutador } from './batalha.js';
-import { alturaEm } from './mundo.js';
 import { descartar } from './modelos.js';
 import { VisualTrevas } from './habilidades/trevas-batalha.js';
 import { HabilidadesBrasito } from './habilidades/brasito-batalha.js';
@@ -47,7 +46,7 @@ export class Treino extends Batalha {
     t.centro = new THREE.Vector3(centro.x, 0, centro.z);
     // a camada: tudo do treino fica aqui dentro (some de uma vez no fim)
     t.cena = new THREE.Group();
-    t.cena.position.set(t.centro.x, alturaEm(posMundo.x, posMundo.z), t.centro.z);
+    t.cena.position.set(t.centro.x, mundo.chaoEm(posMundo.x, posMundo.z), t.centro.z);
     mundo.cena.add(t.cena);
     t.camera = mundo.camera;
     t.efeitos = [];
@@ -149,7 +148,7 @@ export class Treino extends Batalha {
     this.silvarion.atualizar(dt);
     // a camada acompanha o chão embaixo do monstro
     const w = this.posMundo();
-    this.cena.position.y += (alturaEm(w.x, w.z) - this.cena.position.y) * (1 - Math.exp(-10 * dt));
+    this.cena.position.y += (this.mundo.chaoEm(w.x, w.z) - this.cena.position.y) * (1 - Math.exp(-10 * dt));
   }
 
   // Fim do treino: tira tudo da cena

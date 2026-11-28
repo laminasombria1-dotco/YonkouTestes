@@ -105,6 +105,7 @@ export class BiomaArquipelago {
 
   y(x, z) { return alturaEm(x, z) - 0.05; }
   obst(x, z, r) { this.m.obstaculos.push({ x, z, r, fixo: true }); }
+  piso(x, z, a, hx, hz, y) { this.m.pisos.push({ x, z, a, hx, hz, y }); } // madeira onde dá para andar (mundo.pisoEm)
   // um coqueiro que desbota na frente da câmera
   coq(f, x, z, e, dir) { f.centro = [x, z]; coqueiro(f.add.bind(f), this.r, x, this.y(x, z), z, e, dir); f.centro = null; this.obst(x, z, 0.45 * e); }
   lanterna(add, x, z, yy) { add('cil', 'n', x, yy + 0.6, z, 0.12, 1.2, 0.12, 0, 0, 0, '#5a4030'); add('caixa', 'b', x, yy + 1.35, z, 0.3, 0.42, 0.3, 0, 0, 0, '#ffc070'); add('cone4', 'n', x, yy + 1.65, z, 0.42, 0.22, 0.42, 0, 0.785, 0, '#3a3024'); this.luzes.push(x, yy + 1.35, z); }
@@ -121,10 +122,10 @@ export class BiomaArquipelago {
   enseada(f) {
     const add = f.add.bind(f), r = this.r, { ilha, costa: c } = ARQ.enseada, a = c.a, P = W(c.x, c.z, a);
     for (let k = 0; k < 7; k++) { // o píer (com lanternas)
-      const p = P(0, k * 1.3 - 1); add('caixa', 'n', p.x, NA + 0.55, p.z, 2.2, 0.15, 1.2, 0, a, 0, k % 2 ? '#9a7048' : '#8a6040'); this.obst(p.x, p.z, 1.1);
-      if (k % 2 === 0) for (const s of [-1, 1]) { const q = P(s * 1.05, k * 1.3 - 1); add('cil', 'n', q.x, NA - 0.2, q.z, 0.25, 1.8, 0.25, 0, 0, 0, '#6a4a30'); if (k > 0 && s > 0) this.lanterna(add, q.x, q.z, NA + 0.6); }
+      const p = P(0, k * 1.3 - 1); add('caixa', 'n', p.x, NA + 0.55, p.z, 2.2, 0.15, 1.2, 0, a, 0, k % 2 ? '#9a7048' : '#8a6040');
+      if (k % 2 === 0) for (const s of [-1, 1]) { const q = P(s * 1.05, k * 1.3 - 1); add('cil', 'n', q.x, NA - 0.2, q.z, 0.25, 1.8, 0.25, 0, 0, 0, '#6a4a30'); if (k > 0 && s > 0) { this.lanterna(add, q.x, q.z, NA + 0.6); this.obst(q.x, q.z, 0.15); } }
     }
-    const T0 = P(0, 8.5); for (let k = 0; k < 6; k++) { const p = W(T0.x, T0.z, a)(k * 1.3 + 1.2, 0); add('caixa', 'n', p.x, NA + 0.55, p.z, 1.2, 0.15, 2.2, 0, a, 0, k % 2 ? '#9a7048' : '#8a6040'); this.obst(p.x, p.z, 1.1); }
+    const T0 = P(0, 8.5); for (let k = 0; k < 6; k++) { const p = W(T0.x, T0.z, a)(k * 1.3 + 1.2, 0); add('caixa', 'n', p.x, NA + 0.55, p.z, 1.2, 0.15, 2.2, 0, a, 0, k % 2 ? '#9a7048' : '#8a6040'); }
     for (const [lx, lz] of [[3.6, 11], [8.6, 10.5]]) { // os bangalôs de palha sobre a água
       const b = P(lx, lz), Pb = W(b.x, b.z, a + Math.PI), by = NA + 0.6;
       for (const [ox, oz] of [[-1.8, -1.6], [1.8, -1.6], [-1.8, 1.6], [1.8, 1.6], [-1.8, -3.4], [1.8, -3.4]]) { const q = Pb(ox, oz); add('cil', 'n', q.x, by - 0.9, q.z, 0.26, 2.2, 0.26, 0, 0, 0, '#5a4028'); }
@@ -134,8 +135,13 @@ export class BiomaArquipelago {
       const pd = Pb(0, -1.72); add('caixa', 'n', pd.x, by + 1, pd.z, 0.8, 1.6, 0.05, 0, a, 0, '#5a3a22');
       for (let i = 0; i < 6; i++) { const q = Pb(-2 + i * 0.8, -3.6); add('caixa', 'n', q.x, by + 0.55, q.z, 0.08, 0.8, 0.08, 0, a, 0, '#6a4a30'); }
       const rl = Pb(0, -3.6); add('caixa', 'n', rl.x, by + 0.95, rl.z, 4.2, 0.08, 0.1, 0, a, 0, '#6a4a30');
-      this.obst(b.x, b.z, 2.4); const fr = Pb(0, -2.6); this.obst(fr.x, fr.z, 1.8);
+      this.obst(b.x, b.z, 2.1); // só a casinha é parede: o deque em volta é piso
+      this.piso(b.x, b.z, a, 2.1, 3.6, by + 0.18);
     }
+    // o píer e a passarela até os bangalôs: pisos de madeira (dá para subir e andar em cima,
+    // inclusive sobre o canal fundo; antes eram parede e prendiam o jogador entre o píer e o canal)
+    { const p = P(0, 3.4); this.piso(p.x, p.z, a, 1.1, 5.0, NA + 0.63); }
+    { const p = P(4.45, 8.5); this.piso(p.x, p.z, a, 3.85, 1.1, NA + 0.63); }
     this.barco(add, P(-2.2, 5).x, P(-2.2, 5).z, a + 0.3);
     for (const i of [-4, -2, 1, 3, 4]) { const p = P(i * 3.4, -2.5 - Math.abs(i) * 0.4); this.coq(f, p.x, p.z, 1 + r() * 0.2, a + (r() - 0.5) * 0.6); } // coqueiros inclinados sobre a água
     { const p1 = P(-5.5, -5), p2 = P(-2.5, -5.6); this.coq(f, p1.x, p1.z, 1, a + 0.4); this.coq(f, p2.x, p2.z, 1, a - 0.2); // a rede
